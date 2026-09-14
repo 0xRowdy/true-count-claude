@@ -165,6 +165,10 @@ export default tseslint.config(
       ".expo/**",
       "expo-env.d.ts",
       "assets/**",
+
+      // Parallel agents run in git worktrees here. Their trees are separate
+      // checkouts, and linting them fails CI on code that is not ours.
+      ".claude/**",
     ],
   },
 
