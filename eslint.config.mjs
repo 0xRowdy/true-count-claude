@@ -115,27 +115,51 @@ const ENGINE_FORBIDDEN_IMPORT_PATTERNS = [
  * banned. The MemberExpression selectors also catch a bare reference being passed around
  * (e.g. `shuffle(deck, Math.random)`), not just a direct call.
  */
+const RANDOM_SELECTORS = [
+  "MemberExpression[object.name='Math'][property.name='random']",
+  // `globalThis.Math.random` reaches the same function by a longer road.
+  "MemberExpression[object.property.name='Math'][property.name='random']",
+].join(", ");
+
+const CLOCK_SELECTORS = [
+  "MemberExpression[object.name='Date'][property.name='now']",
+  "MemberExpression[object.name='performance'][property.name='now']",
+  "NewExpression[callee.name='Date']",
+  // The `globalThis.`-prefixed forms of each of the above.
+  "MemberExpression[object.property.name='Date'][property.name='now']",
+  "MemberExpression[object.property.name='performance'][property.name='now']",
+  "MemberExpression[object.object.name='globalThis'][object.property.name='performance']",
+].join(", ");
+
+const RANDOM_MESSAGE =
+  "ADR-0004: Math.random() is banned in src/engine. The shoe must be reproducible from its seed — take randomness from the injected Rng (src/engine/rng.ts).";
+
+const CLOCK_MESSAGE =
+  "ADR-0004: src/engine reads no clock. A clock read makes the engine non-deterministic — pass the value in from the caller. (Benchmarks in src/engine/**/*.test.ts are exempt; see below.)";
+
 const ENGINE_FORBIDDEN_SYNTAX = [
+  { selector: RANDOM_SELECTORS, message: RANDOM_MESSAGE },
+  { selector: CLOCK_SELECTORS, message: CLOCK_MESSAGE },
   {
-    selector: "MemberExpression[object.name='Math'][property.name='random']",
-    message:
-      "ADR-0004: Math.random() is banned in src/engine. The shoe must be reproducible from its seed — take randomness from the injected Rng (src/engine/rng.ts).",
+    selector: "CallExpression[callee.name='setTimeout'], CallExpression[callee.name='setInterval']",
+    message: "ADR-0002: src/engine is synchronous. Timers belong in src/ui or src/state.",
   },
-  {
-    selector: "MemberExpression[object.name='Date'][property.name='now']",
-    message:
-      "ADR-0004: src/engine reads no clock. Date.now() makes the engine non-deterministic — pass the timestamp in from the caller.",
-  },
-  {
-    selector: "NewExpression[callee.name='Date']",
-    message:
-      "ADR-0004: src/engine reads no clock. Construct Dates in src/state or src/ui and pass the value in.",
-  },
-  {
-    selector: "MemberExpression[object.name='performance'][property.name='now']",
-    message:
-      "ADR-0004: src/engine reads no clock. performance.now() makes the engine non-deterministic.",
-  },
+];
+
+/**
+ * Engine tests may read a clock, and only a clock.
+ *
+ * A benchmark has to time something, and a timing taken inside a `.test.ts` cannot reach
+ * shipped behaviour — nothing imports a test. `Math.random()` stays banned here as firmly
+ * as in the source: a test that draws unseeded randomness is a flaky test, which is a
+ * different way of making the suite meaningless.
+ *
+ * This exemption is deliberate. It exists because the EV benchmark in `ev.test.ts` was
+ * passing the old rule only by writing `globalThis.performance.now()` instead of
+ * `performance.now()` — an accident, not a decision. Better a stated exception than a hole.
+ */
+const ENGINE_TEST_FORBIDDEN_SYNTAX = [
+  { selector: RANDOM_SELECTORS, message: RANDOM_MESSAGE },
   {
     selector: "CallExpression[callee.name='setTimeout'], CallExpression[callee.name='setInterval']",
     message: "ADR-0002: src/engine is synchronous. Timers belong in src/ui or src/state.",
@@ -203,6 +227,19 @@ export default tseslint.config(
       "no-restricted-imports": ["error", { patterns: ENGINE_FORBIDDEN_IMPORT_PATTERNS }],
       "no-restricted-syntax": ["error", ...ENGINE_FORBIDDEN_SYNTAX],
       "no-restricted-globals": ["error", ...ENGINE_FORBIDDEN_GLOBALS],
+    },
+  },
+
+  // Engine tests: everything above still applies, except that a benchmark may read a
+  // clock. See ENGINE_TEST_FORBIDDEN_SYNTAX for why this exception is stated rather
+  // than left as an accident of selector shape.
+  {
+    files: ["src/engine/**/*.test.ts"],
+    languageOptions: {
+      globals: { ...globals.es2024, performance: "readonly" },
+    },
+    rules: {
+      "no-restricted-syntax": ["error", ...ENGINE_TEST_FORBIDDEN_SYNTAX],
     },
   },
 
