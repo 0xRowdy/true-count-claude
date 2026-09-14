@@ -14,3 +14,4 @@ export * from "./counting";
 export * from "./round";
 export * from "./strategy";
 export * from "./deviations";
+export * from "./ev";
