@@ -40,6 +40,9 @@ export default function Home() {
       <View style={styles.card}>
         <Text style={styles.heading}>Table</Text>
         <Text style={styles.mono}>{describeRules(DEFAULT_RULES)}</Text>
+        <Link href="/rules" style={styles.link}>
+          Configure your Rule Set →
+        </Link>
       </View>
 
       <View style={styles.card}>
