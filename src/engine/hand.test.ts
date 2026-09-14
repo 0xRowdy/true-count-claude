@@ -138,3 +138,59 @@ describe("legal actions", () => {
     expect(actions).not.toContain("split");
   });
 });
+
+/**
+ * `oneCardToSplitAces` and `resplitAces` are independent rules and real tables run both at
+ * once. Applying the one-card freeze first made `resplitAces` unreachable under the default
+ * rule set, which hid a legal split from the player (invariant 7).
+ */
+describe("re-splitting aces", () => {
+  const splitAce = (second: Card["rank"], overrides: Partial<RuleSet> = {}, handCount = 1) => ({
+    hand: createHand([card("A"), card(second, "h")], 10, true),
+    rules: { ...DEFAULT_RULES, oneCardToSplitAces: true, resplitAces: true, ...overrides },
+    handCount,
+    bankroll: 1000,
+  });
+
+  it("offers the split when a split ace draws another ace", () => {
+    expect(legalActions(splitAce("A"))).toContain("split");
+  });
+
+  it("offers nothing but the split and standing on it", () => {
+    // The hand has had its one card, so hitting and doubling are gone — but the player must
+    // still be able to decline, and declining is a stand.
+    expect(legalActions(splitAce("A"))).toEqual(["stand", "split"]);
+  });
+
+  it("withholds the split when the table does not re-split aces", () => {
+    expect(legalActions(splitAce("A", { resplitAces: false }))).toEqual([]);
+  });
+
+  it("still freezes a split ace that draws anything else", () => {
+    for (const rank of ["9", "K", "2"] as const) {
+      expect(legalActions(splitAce(rank))).toEqual([]);
+    }
+  });
+
+  it("stops re-splitting aces at the hand limit", () => {
+    expect(legalActions(splitAce("A", { maxSplitHands: 4 }, 4))).toEqual([]);
+    expect(legalActions(splitAce("A", { maxSplitHands: 4 }, 3))).toContain("split");
+  });
+
+  it("withholds the re-split when the bankroll cannot cover it", () => {
+    expect(legalActions({ ...splitAce("A"), bankroll: 5 })).toEqual([]);
+  });
+
+  it("leaves the hand fully playable when split aces are not frozen", () => {
+    const actions = legalActions(splitAce("A", { oneCardToSplitAces: false }));
+    expect(actions).toEqual(expect.arrayContaining(["hit", "stand", "split"]));
+  });
+
+  it("never offers a re-split on a hand that only looks like split aces", () => {
+    // Not from a split: a fresh A,A is an ordinary pair and keeps its full action set.
+    const fresh = { ...splitAce("A"), hand: createHand([card("A"), card("A", "h")], 10) };
+    expect(legalActions(fresh)).toEqual(
+      expect.arrayContaining(["hit", "stand", "double", "split", "surrender"]),
+    );
+  });
+});

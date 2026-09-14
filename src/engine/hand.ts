@@ -93,22 +93,35 @@ export function legalActions(context: LegalActionContext): Action[] {
   if (value.busted || hand.surrendered || hand.doubled) return [];
   if (isBlackjack(hand)) return [];
 
-  // Split aces normally receive exactly one card and cannot act again.
-  const isSplitAce = hand.fromSplit && isAce(hand.cards[0]?.rank ?? "2");
-  if (isSplitAce && rules.oneCardToSplitAces && hand.cards.length >= 2) return [];
-
-  const actions: Action[] = ["hit", "stand"];
   const isFirstDecision = hand.cards.length === 2;
   const canAfford = bankroll >= hand.bet;
+  const holdingAces = isAce(hand.cards[0]?.rank ?? "2");
+
+  const canSplit =
+    isFirstDecision &&
+    canAfford &&
+    isSplittablePair(hand) &&
+    handCount < rules.maxSplitHands &&
+    (!hand.fromSplit || !holdingAces || rules.resplitAces);
+
+  // Split aces normally receive exactly one card and cannot act again. A second ace is the
+  // exception: `oneCardToSplitAces` and `resplitAces` are independent rules, and plenty of
+  // tables run both — one card to each split ace, but an ace among them may be split again.
+  // So the re-split is checked *before* the freeze, or `resplitAces` would be unreachable
+  // under the default rule set. Declining leaves the hand standing, exactly as at the table;
+  // offering `split` alone would force the player's hand (invariant 6, never a dead end).
+  const isSplitAce = hand.fromSplit && holdingAces;
+  if (isSplitAce && rules.oneCardToSplitAces && hand.cards.length >= 2) {
+    return canSplit ? ["stand", "split"] : [];
+  }
+
+  const actions: Action[] = ["hit", "stand"];
 
   if (isFirstDecision && canAfford && allowsDouble(value.total, rules)) {
     if (!hand.fromSplit || rules.doubleAfterSplit) actions.push("double");
   }
 
-  if (isFirstDecision && canAfford && isSplittablePair(hand) && handCount < rules.maxSplitHands) {
-    const splittingAces = isAce(hand.cards[0]?.rank ?? "2");
-    if (!hand.fromSplit || !splittingAces || rules.resplitAces) actions.push("split");
-  }
+  if (canSplit) actions.push("split");
 
   if (isFirstDecision && !hand.fromSplit && rules.surrender !== "none") {
     actions.push("surrender");

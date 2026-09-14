@@ -425,6 +425,95 @@ describe("splitting", () => {
     expect(state.bankroll).toBe(1040);
   });
 
+  /**
+   * Re-splitting aces at a table that also gives split aces one card each. The two rules are
+   * independent (`oneCardToSplitAces` and `resplitAces`), and running both is common — the
+   * engine used to freeze the hand before it ever considered the re-split.
+   */
+  describe("re-splitting aces", () => {
+    const rsa: Partial<RuleSet> = { oneCardToSplitAces: true, resplitAces: true };
+
+    it("offers the split when a split ace draws another ace", () => {
+      // A-A against a dealer 9. The left half draws an ace, the right half an 8.
+      const shoe = stack("A", "9", "A", "7", "A", "8", "K", "5", "Q");
+      const state = play(open(shoe, rsa), splitAction);
+
+      expect(state.phase).toBe("player");
+      expect(ranksOf(state, 0)).toEqual(["A", "A"]);
+      expect(ranksOf(state, 1)).toEqual(["A", "8"]);
+      // The hand has had its one card, so only the re-split and declining it are on offer.
+      expect(currentLegalActions(state)).toEqual(["stand", "split"]);
+    });
+
+    it("plays the re-split out and freezes each new ace on its one card", () => {
+      const state = play(
+        open(stack("A", "9", "A", "7", "A", "8", "K", "5", "Q"), rsa),
+        splitAction,
+        splitAction,
+      );
+
+      // The re-split hands sit at 0 and 1; the original right half is pushed to 2.
+      expect(state.playerHands).toHaveLength(3);
+      expect(ranksOf(state, 0)).toEqual(["A", "K"]);
+      expect(ranksOf(state, 1)).toEqual(["A", "5"]);
+      expect(ranksOf(state, 2)).toEqual(["A", "8"]);
+
+      // Every hand is frozen on two cards, so the player's turn is over without another
+      // decision and the dealer's 16 draws the Q and busts.
+      expect(state.phase).toBe("settled");
+      expect(state.settlement?.outcomes.map((o) => o.result)).toEqual(["win", "win", "win"]);
+      expect(state.settlement?.outcomes.map((o) => o.wagered)).toEqual([10, 10, 10]);
+      expect(state.bankroll).toBe(1030);
+    });
+
+    it("lets the player decline the re-split, which stands the hand", () => {
+      const state = play(open(stack("A", "9", "A", "7", "A", "8", "K"), rsa), splitAction, stand);
+
+      expect(state.phase).toBe("settled");
+      expect(state.playerHands).toHaveLength(2);
+      expect(ranksOf(state, 0)).toEqual(["A", "A"]);
+      expect(state.bankroll).toBe(1020);
+    });
+
+    it("stops re-splitting aces at the rule set's hand limit", () => {
+      const shoe = stack("A", "9", "A", "7", "A", "A", "A", "2", "3", "4", "K");
+      const limit = { ...rsa, maxSplitHands: 4 };
+      const state = play(open(shoe, limit), splitAction, splitAction, splitAction);
+
+      expect(state.playerHands).toHaveLength(4);
+      expect(ranksOf(state, 0)).toEqual(["A", "3"]);
+      expect(ranksOf(state, 1)).toEqual(["A", "4"]);
+      expect(ranksOf(state, 2)).toEqual(["A", "2"]);
+      // The fourth hand is another pair of aces, but the table is out of boxes — so it is
+      // never offered a split and the round settles without asking.
+      expect(ranksOf(state, 3)).toEqual(["A", "A"]);
+      expect(state.phase).toBe("settled");
+      expect(state.bankroll).toBe(1040);
+    });
+
+    it("refuses the re-split outright when the table does not allow it", () => {
+      // The same cards under the default rule set: the second ace freezes like any other card.
+      const state = play(open(stack("A", "9", "A", "7", "A", "8", "K")), splitAction);
+
+      expect(state.phase).toBe("settled");
+      expect(ranksOf(state, 0)).toEqual(["A", "A"]);
+      expect(state.bankroll).toBe(1020);
+    });
+
+    it("replays a re-split of aces exactly", () => {
+      const options = {
+        rules: { ...DEFAULT_RULES, ...rsa },
+        shoe: stack("A", "9", "A", "7", "A", "8", "K", "5", "Q"),
+        bet: 10,
+        bankroll: 1000,
+      };
+      const actions = [splitAction, splitAction];
+
+      const played = play(startRound(options), ...actions);
+      expect(JSON.stringify(replayRound(options, actions))).toBe(JSON.stringify(played));
+    });
+  });
+
   it("stakes one bet per hand and pays each one separately", () => {
     const state = play(open(stack("8", "9", "8", "7", "3", "4", "K")), splitAction, stand, stand);
 
