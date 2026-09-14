@@ -16,6 +16,10 @@
  *   card is dealt long before it is turned over, so it is excluded until it is revealed.
  * - Unbalanced systems (KO, Red 7) start at a non-zero count, so the count the player holds
  *   is `currentRunningCount`, not `runningCount`.
+ *
+ * Since #19 the table also carries a *pending* Rule Set: the game the user has configured but
+ * which this table has not taken up yet. Rules never change under a live Shoe — see
+ * `rulesHold` for the three things that hold one back and why each of them has to.
  */
 
 import { useCallback, useMemo, useState } from "react";
@@ -46,6 +50,8 @@ import {
   decksRemaining,
   isCutCardReached,
 } from "@/engine/shoe";
+import { deriveShoeSeed } from "@/state";
+import { sameRules } from "@/ui/rules/presets";
 
 /** Opening bankroll, and the amount a one-tap reset restores (invariant 6). */
 export const STARTING_BANKROLL = 500;
@@ -64,7 +70,13 @@ export const CHIP_VALUES: readonly number[] = [5, 10, 25, 50, 100, 250, 500];
 const RESERVE_CARDS = 30;
 
 export interface PlayTable {
+  /** The Rule Set this table is actually dealing. Fixed for the life of the Shoe. */
   readonly rules: RuleSet;
+  /**
+   * The Rule Set the user has configured but which this table has not taken up yet, or `null`
+   * when the configured table is the one being dealt. See `rulesHold`.
+   */
+  readonly pendingRules: RuleSet | null;
   readonly system: CountingSystem;
   /** The seed of the session. Every shoe's seed is derived from it, so the run is replayable. */
   readonly sessionSeed: number;
@@ -87,10 +99,11 @@ export interface PlayTable {
 export function createPlayTable(rules: RuleSet, sessionSeed: number): PlayTable {
   return {
     rules,
+    pendingRules: null,
     system: getCountingSystem("hi-lo"),
     sessionSeed,
     shoeIndex: 0,
-    shoe: createShoe(rules, shoeSeed(sessionSeed, 0)),
+    shoe: createShoe(rules, deriveShoeSeed(sessionSeed, 0)),
     bankroll: STARTING_BANKROLL,
     bet: rules.minBet,
     round: null,
@@ -125,6 +138,7 @@ export function restorePlayTable(input: RestorePlayTableInput): PlayTable {
   return chooseBet(
     {
       rules: input.rules,
+      pendingRules: null,
       system: input.system,
       sessionSeed: input.sessionSeed,
       shoeIndex: input.shoeIndex,
@@ -140,13 +154,11 @@ export function restorePlayTable(input: RestorePlayTableInput): PlayTable {
   );
 }
 
-/**
- * Each shoe's seed is derived from the session seed and the shoe's index, so a whole session
- * reproduces from one number (ADR-0004) while no two shoes in it are the same deal.
- */
-function shoeSeed(sessionSeed: number, shoeIndex: number): number {
-  return (Math.imul(sessionSeed ^ (shoeIndex + 1), 2654435761) >>> 0) || 1;
-}
+// Each Shoe's seed is derived from the session seed and the Shoe's index, so a whole session
+// reproduces from one number (ADR-0004) while no two Shoes in it are the same deal. That
+// derivation lives in `@/state`'s `deriveShoeSeed` and nowhere else: this module used to carry
+// a second one, and two mixing functions that must agree but are never compared is a bug
+// waiting for the day someone changes one of them (#19).
 
 // --- Derived views ------------------------------------------------------------------------
 
@@ -265,6 +277,69 @@ export function isBroke(table: PlayTable): boolean {
   return table.round === null && table.bankroll < table.rules.minBet;
 }
 
+// --- The configured Rule Set ----------------------------------------------------------------
+
+/**
+ * Why a configured Rule Set is not being dealt yet. `null` means nothing is holding it.
+ *
+ * - `"round"` — a hand is on the table. It was dealt under the rules that settle it, and a
+ *   payout rule that changed between the deal and the settlement would pay the wrong money.
+ * - `"session"` — a Session is recording. `Session.rules` (`src/state/types.ts`) is one Rule
+ *   Set for the whole run, and `rebuildShoe` reconstructs *every* Shoe in the log from it. A
+ *   second table inside one Session would therefore make the earlier Shoes replay as cards
+ *   that were never dealt — the Shoe Integrity Panel's central guarantee, broken silently.
+ *   This is the strongest of the three holds, and the only one with a one-tap way out.
+ * - `"shoe"` — cards are already off this Shoe. Changing the deck count or the penetration
+ *   under it would move the True Count's divisor mid-count and leave the zero-sum check
+ *   unable to reconcile (ADR-0004).
+ *
+ * The order is the order the user has to act in, not a priority: finish the hand, then close
+ * the Session, then shuffle.
+ */
+export type RulesHold = "round" | "session" | "shoe";
+
+export function rulesHold(table: PlayTable, recording: boolean): RulesHold | null {
+  if (table.pendingRules === null) return null;
+  if (table.round !== null) return "round";
+  if (recording) return "session";
+  if (table.shoe.dealtCount > 0) return "shoe";
+  return null;
+}
+
+/**
+ * Notes the table the user has configured. Never changes the table being dealt — that is
+ * `takeUpRules`, and what stands between the two is `rulesHold`.
+ */
+export function configureRules(table: PlayTable, configured: RuleSet): PlayTable {
+  if (sameRules(table.rules, configured)) {
+    return table.pendingRules === null ? table : { ...table, pendingRules: null };
+  }
+  if (table.pendingRules !== null && sameRules(table.pendingRules, configured)) return table;
+  return { ...table, pendingRules: configured };
+}
+
+/**
+ * Takes up the configured Rule Set, rebuilding the Shoe under it.
+ *
+ * The Shoe keeps its number and its seed: no card has come off it, so this is the same Shoe
+ * being built from a different set of decks rather than a successor to one. Callers are
+ * expected to have checked `rulesHold` first; the guard here covers only the case that would
+ * corrupt a hand in progress.
+ */
+export function takeUpRules(table: PlayTable): PlayTable {
+  const next = table.pendingRules;
+  if (next === null || table.round !== null) return table;
+  return chooseBet(
+    {
+      ...table,
+      rules: next,
+      pendingRules: null,
+      shoe: createShoe(next, deriveShoeSeed(table.sessionSeed, table.shoeIndex)),
+    },
+    next.minBet,
+  );
+}
+
 // --- Transitions --------------------------------------------------------------------------
 
 export function chooseSystem(table: PlayTable, id: CountingSystemId): PlayTable {
@@ -322,7 +397,7 @@ export function nextRound(table: PlayTable): PlayTable {
     ...table,
     shoeIndex,
     shoe: needsShuffle
-      ? createShoe(table.rules, shoeSeed(table.sessionSeed, shoeIndex))
+      ? createShoe(table.rules, deriveShoeSeed(table.sessionSeed, shoeIndex))
       : round.shoe,
     bankroll: round.bankroll,
     round: null,
@@ -341,7 +416,7 @@ export function shuffleShoe(table: PlayTable): PlayTable {
   return {
     ...table,
     shoeIndex,
-    shoe: createShoe(table.rules, shoeSeed(table.sessionSeed, shoeIndex)),
+    shoe: createShoe(table.rules, deriveShoeSeed(table.sessionSeed, shoeIndex)),
     justShuffled: true,
   };
 }
@@ -366,6 +441,10 @@ export interface PlayTableController {
  * Holds a `PlayTable` in React state. The seed is drawn once, at mount, and never again — the
  * engine stays free of `Math.random()` (ADR-0004) and the session remains reproducible from
  * the seed the Shoe panel shows the user.
+ *
+ * The Rule Set here is only the one the table *opens* with. The user's stored table is read
+ * asynchronously and arrives through `configureRules`, which is why this defaults rather than
+ * requiring one: a prerendered first frame cannot know it yet.
  */
 export function usePlayTable(rules: RuleSet = DEFAULT_RULES): PlayTableController {
   const [table, setTable] = useState(() =>

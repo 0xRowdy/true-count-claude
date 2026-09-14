@@ -9,12 +9,19 @@
  *
  * What ends a Session: `end()`, and nothing else. Running out of chips does not, a reshuffle
  * does not, navigating away does not, and closing the app does not (ADR-0003, and
- * `src/state/session.test.ts` asserts the first two). That is the whole point of #10.
+ * `src/state/session.test.ts` asserts the first two). Changing your Rule Set does not either —
+ * see `switchTable`, which offers the end as a button rather than performing one behind the
+ * user's back. That is the whole point of #10.
+ *
+ * This is also where the configured Rule Set meets the table (#19). It has to be here: the
+ * table knows whether a Shoe is part-dealt and the Session store knows whether a run is being
+ * recorded, and a rules change is only safe when neither of them objects.
  */
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { CountingSystemId } from "@/engine/counting";
 import type { Action } from "@/engine/hand";
+import type { RuleSet } from "@/engine/rules";
 import { createShoe } from "@/engine/shoe";
 import {
   type Session,
@@ -26,19 +33,24 @@ import {
   resetBankroll as resetSessionBankroll,
   currentShoe as currentSessionShoe,
 } from "@/state";
+import type { ConfiguredRules } from "@/ui/rules/rulesStore";
 import {
   type PlayTable,
   type PlayTableController,
+  type RulesHold,
   chooseBet,
   chooseSystem,
+  configureRules,
   createPlayTable,
   dealRound,
   nextRound,
   playAction,
   resetBankroll as resetTableBankroll,
   restorePlayTable,
+  rulesHold,
   shuffleShoe,
   takeInsurance,
+  takeUpRules,
 } from "@/ui/table/usePlayTable";
 import {
   type PendingRound,
@@ -69,6 +81,16 @@ export interface PlaySession {
   readonly ended: Session | null;
   readonly error: string | null;
 
+  /** The table the user has configured but which is not being dealt yet, or `null`. */
+  readonly pendingRules: RuleSet | null;
+  /** What is holding `pendingRules` back. `null` whenever nothing is pending. */
+  readonly rulesHold: RulesHold | null;
+  /**
+   * Takes up the configured table now, doing whatever that costs: a Session in the way is
+   * ended and a fresh one opens on the next deal. Offered as a button, never inferred.
+   */
+  readonly switchTable: () => void;
+
   readonly deal: () => void;
   readonly act: (action: Action) => void;
   readonly insurance: (take: boolean) => void;
@@ -83,7 +105,10 @@ export interface PlaySession {
   readonly startNew: () => void;
 }
 
-export function usePlaySession(controller: PlayTableController): PlaySession {
+export function usePlaySession(
+  controller: PlayTableController,
+  configured: ConfiguredRules,
+): PlaySession {
   const { table, update } = controller;
   const store = useSessionState();
   const pending = useRef<PendingRound | null>(null);
@@ -94,13 +119,48 @@ export function usePlaySession(controller: PlayTableController): PlaySession {
   }, []);
 
   // One restore, on the first load that finds an unfinished Session. The table is rebuilt
-  // between rounds, where the log left it.
+  // between rounds, where the log left it — under the Rule Set that Session was played at,
+  // which is why a configured change already noted survives the rebuild as a pending one.
   useEffect(() => {
     if (restored.current || store.status !== "ready") return;
     restored.current = true;
     const session = store.session;
-    if (session && isActive(session)) update(() => tableFromSession(session));
+    if (!session || !isActive(session)) return;
+    update((current) => {
+      const resumed = tableFromSession(session);
+      return current.pendingRules === null
+        ? resumed
+        : configureRules(resumed, current.pendingRules);
+    });
   }, [store.status, store.session, update]);
+
+  // The configured Rule Set, noted on the table. This never changes the game being dealt;
+  // `takeUp` below is the only thing that does, and only when nothing objects.
+  useEffect(() => {
+    if (!configured.ready) return;
+    update((current) => configureRules(current, configured.rules));
+  }, [configured.ready, configured.rules, update]);
+
+  /**
+   * Takes up a pending Rule Set the moment it is free to be taken up.
+   *
+   * Read through `currentSession()` rather than the rendered `store.session` so the check is
+   * made against the Session as it stands at the instant of the update, not as it stood when
+   * this render began — a deal and a rules change landing in the same tick would otherwise
+   * rebuild the Shoe the round was dealt from.
+   */
+  const takeUp = useCallback(() => {
+    update((current) => {
+      const session = currentSession();
+      const recording = session !== null && isActive(session);
+      return rulesHold(current, recording) === null ? takeUpRules(current) : current;
+    });
+  }, [update]);
+
+  useEffect(() => {
+    if (table.pendingRules === null) return;
+    takeUp();
+  }, [table, store.session, takeUp]);
 
   /** Applies a table transition and returns the result, so the recorder can observe it. */
   const advance = useCallback(
@@ -195,13 +255,46 @@ export function usePlaySession(controller: PlayTableController): PlaySession {
     endCurrentSession(reason);
   }, []);
 
+  // A fresh table is the one moment nothing is in the way, so it opens at the configured Rule
+  // Set rather than repeating the one the last run happened to be played at.
   const startNew = useCallback(() => {
     pending.current = null;
     clearSession();
-    update(() => createPlayTable(table.rules, freshSeed()));
-  }, [table.rules, update]);
+    update((current) => createPlayTable(current.pendingRules ?? current.rules, freshSeed()));
+  }, [update]);
 
   const session = store.session;
+  const recording = session !== null && isActive(session);
+  const hold = rulesHold(table, recording);
+
+  /**
+   * Invariant 6 in a different costume: a pending table the user cannot reach is a dead end.
+   * A Session in the way is ended here — but by this button, which says so, and never by the
+   * rules change itself.
+   */
+  const switchTable = useCallback(() => {
+    switch (hold) {
+      case "session":
+        // The Session keeps every hand it recorded; it simply stops being the open one, and
+        // the fresh table that replaces it opens at the configured Rule Set.
+        end();
+        startNew();
+        return;
+      case "shoe":
+        // Nothing is recording, so a new Shoe is all that is wanted — and the effect above
+        // takes the new rules up the moment it exists.
+        update(shuffleShoe);
+        return;
+      case "round":
+        // A hand is being played under the rules that settle it. Nothing to offer but "finish
+        // it", and the panel renders no button here rather than one that does nothing.
+        return;
+      case null:
+        takeUp();
+        return;
+    }
+  }, [hold, end, startNew, update, takeUp]);
+
   const stats = useMemo(() => computeStats(session ?? EMPTY_SESSION), [session]);
 
   return useMemo(
@@ -209,9 +302,12 @@ export function usePlaySession(controller: PlayTableController): PlaySession {
       status: store.status,
       session,
       stats,
-      recording: session !== null && isActive(session),
+      recording,
       ended: session !== null && !isActive(session) ? session : null,
       error: store.error,
+      pendingRules: table.pendingRules,
+      rulesHold: hold,
+      switchTable,
       deal,
       act,
       insurance,
@@ -228,6 +324,10 @@ export function usePlaySession(controller: PlayTableController): PlaySession {
       store.error,
       session,
       stats,
+      recording,
+      table.pendingRules,
+      hold,
+      switchTable,
       deal,
       act,
       insurance,

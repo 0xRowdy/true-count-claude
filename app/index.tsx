@@ -1,8 +1,8 @@
 import { Link } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { RANKS } from "@/engine/cards";
-import { DEFAULT_RULES, describeRules } from "@/engine/rules";
+import { describeRules } from "@/engine/rules";
 import {
   createShoe,
   deal,
@@ -11,6 +11,7 @@ import {
   remainingComposition,
   verifyComposition,
 } from "@/engine/shoe";
+import { useConfiguredRules } from "@/ui/rules/rulesStore";
 import { colors, radius, spacing, type } from "@/ui/theme";
 
 /**
@@ -18,8 +19,20 @@ import { colors, radius, spacing, type } from "@/ui/theme";
  * This screen is scaffolding — the real Play and Drill surfaces replace it.
  */
 export default function Home() {
+  // The user's own table, not the default one: this card names the game every other screen
+  // will deal, and naming a different one is the inconsistency #19 exists to remove.
+  const rules = useConfiguredRules().rules;
   const [seed] = useState(() => 20260914);
-  const [shoe, setShoe] = useState(() => createShoe(DEFAULT_RULES, seed));
+  const [shoe, setShoe] = useState(() => createShoe(rules, seed));
+
+  // The stored table arrives a tick after first paint, so the demo shoe is rebuilt when it
+  // does. Without this the card below would name a single-deck game over a six-deck rank count.
+  const builtFor = useRef(rules);
+  useEffect(() => {
+    if (builtFor.current === rules) return;
+    builtFor.current = rules;
+    setShoe(createShoe(rules, seed));
+  }, [rules, seed]);
 
   const composition = useMemo(() => remainingComposition(shoe), [shoe]);
   const intact = useMemo(() => verifyComposition(shoe), [shoe]);
@@ -44,7 +57,7 @@ export default function Home() {
 
       <View style={styles.card}>
         <Text style={styles.heading}>Table</Text>
-        <Text style={styles.mono}>{describeRules(DEFAULT_RULES)}</Text>
+        <Text style={styles.mono}>{describeRules(rules)}</Text>
         <Link href="/rules" style={styles.link}>
           Configure your Rule Set →
         </Link>
@@ -85,7 +98,7 @@ export default function Home() {
           onPress={() => setShoe((current) => deal(current).shoe)}
           disabled={shoe.dealtCount >= shoe.cards.length}
         />
-        <Button label="Reset shoe" onPress={() => setShoe(createShoe(DEFAULT_RULES, seed))} />
+        <Button label="Reset shoe" onPress={() => setShoe(createShoe(rules, seed))} />
       </View>
     </ScrollView>
   );

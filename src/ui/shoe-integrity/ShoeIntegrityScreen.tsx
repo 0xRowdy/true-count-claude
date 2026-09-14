@@ -19,15 +19,23 @@
  *
  * Always reachable and never gated (invariant 1): this is the cheapest credibility the
  * product can buy, and putting a price on it would be self-defeating.
+ *
+ * Two things arrive from outside (#19). The Shoe is built at the **configured** Rule Set, not
+ * the default one — a panel that proved the integrity of a six-deck shoe to a user who plays
+ * single deck would be proving the wrong thing, and the composition table would claim a count
+ * of each rank they never see. And the expectation band takes an optional `session`, so it can
+ * place the hands the user actually played rather than a worked example. The manual path stays
+ * exactly as it was, because checking a Session played somewhere else is the case where this
+ * argument is most often needed.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text } from "react-native";
 import Constants from "expo-constants";
 import { getCountingSystem, keyCount, trueCount } from "@/engine/counting";
 import type { CountingSystemId } from "@/engine/counting";
 import { COUNTING_SYSTEMS, DEFAULT_COUNTING_SYSTEM } from "@/engine/counting";
-import { DEFAULT_RULES } from "@/engine/rules";
+import { describeRules } from "@/engine/rules";
 import {
   createShoe,
   deal,
@@ -58,6 +66,7 @@ import { RankTable } from "./RankTable";
 import { SeedPanel } from "./SeedPanel";
 import { ZeroSumCheckPanel } from "./ZeroSumCheckPanel";
 import { ActionButton, Panel, Screen, SecondaryButton, SegmentedControl } from "@/ui/primitives";
+import { useConfiguredRules } from "@/ui/rules/rulesStore";
 import { colors, spacing, type } from "@/ui/theme";
 
 /**
@@ -76,8 +85,22 @@ const SYSTEM_OPTIONS = COUNTING_SYSTEMS.map((system) => ({
   label: system.name,
 }));
 
-export function ShoeIntegrityScreen() {
-  const rules = DEFAULT_RULES;
+export interface ShoeIntegrityScreenProps {
+  /**
+   * A real run to place against the expectation band, in hands and betting units.
+   *
+   * Optional, and the panel is fully usable without it: with nothing passed the band is a
+   * calculator, which is what it has to be for a user checking a Session they played
+   * elsewhere. With a Session passed it opens on those numbers, and typing over them is still
+   * allowed — with a way back.
+   */
+  readonly session?: SessionResult;
+}
+
+export function ShoeIntegrityScreen({ session: played }: ShoeIntegrityScreenProps = {}) {
+  const configured = useConfiguredRules();
+  const rules = configured.rules;
+
   const [shoe, setShoe] = useState<Shoe>(() => createShoe(rules, DEFAULT_SEED));
   const [systemId, setSystemId] = useState<CountingSystemId>(DEFAULT_COUNTING_SYSTEM.id);
   const [running, setRunning] = useState(false);
@@ -86,6 +109,24 @@ export function ShoeIntegrityScreen() {
   const [seedNotice, setSeedNotice] = useState<string | undefined>(undefined);
   const [handsText, setHandsText] = useState("500");
   const [netUnitsText, setNetUnitsText] = useState("-40");
+  /** True once typed figures have replaced the Session's own. Never set without a Session. */
+  const [typedResult, setTypedResult] = useState(false);
+
+  /**
+   * The Shoe follows the configured Rule Set, rebuilt at the same seed.
+   *
+   * In an effect rather than during render because the stored Rule Set is read asynchronously:
+   * first paint is the default table (the web build is prerendered and must match), and the
+   * user's own arrives a tick later. Rebuilding at the same seed keeps the panel's promise
+   * intact — the seed on screen is still the whole description of the cards.
+   */
+  const builtFor = useRef(rules);
+  useEffect(() => {
+    if (builtFor.current === rules) return;
+    builtFor.current = rules;
+    setRunning(false);
+    setShoe((current) => createShoe(rules, current.seed));
+  }, [rules]);
 
   const [historyExpanded, setHistoryExpanded] = useState(false);
   const [preview, setPreview] = useState<string | undefined>(undefined);
@@ -137,9 +178,16 @@ export function ShoeIntegrityScreen() {
     return trueCount(check.countNow, decksLeft);
   }, [system, shoe, check]);
 
+  // The Session's own figures unless the user has typed over them. Held as the text the fields
+  // render rather than as parsed numbers, so a half-typed minus sign is not silently a zero on
+  // the way back out.
+  const readingPlay = played !== undefined && !typedResult;
+  const handsValue = readingPlay ? String(played.hands) : handsText;
+  const netUnitsValue = readingPlay ? played.netUnits.toFixed(2) : netUnitsText;
+
   const session = useMemo<SessionResult>(
-    () => ({ hands: parseNumber(handsText), netUnits: parseNumber(netUnitsText) }),
-    [handsText, netUnitsText],
+    () => ({ hands: parseNumber(handsValue), netUnits: parseNumber(netUnitsValue) }),
+    [handsValue, netUnitsValue],
   );
   const band = useMemo(() => expectationBand(session), [session]);
   const fileName = useMemo(() => integrityReportFileName(shoe), [shoe]);
@@ -227,6 +275,9 @@ export function ShoeIntegrityScreen() {
             it before the developer did. Arguing about it is useless. So here is everything you
             need to check ours yourself.
           </Text>
+          {/* Checked against *your* table, not a generic one. A six-deck proof shown to a
+              single-deck player would be proving the wrong shoe. */}
+          <Text style={styles.source}>Your table: {describeRules(rules)}</Text>
         </Panel>
 
         <SeedPanel
@@ -281,11 +332,27 @@ export function ShoeIntegrityScreen() {
         />
 
         <ExpectationBandPanel
-          handsText={handsText}
-          netUnitsText={netUnitsText}
-          onHandsChange={setHandsText}
-          onNetUnitsChange={setNetUnitsText}
+          handsText={handsValue}
+          netUnitsText={netUnitsValue}
+          onHandsChange={(next) => {
+            setTypedResult(true);
+            setHandsText(next);
+          }}
+          onNetUnitsChange={(next) => {
+            setTypedResult(true);
+            setNetUnitsText(next);
+          }}
           band={band}
+          {...(readingPlay
+            ? { source: "These are the hands you actually played, in your own betting unit." }
+            : {})}
+          {...(played !== undefined && typedResult
+            ? {
+                onUseRecorded: () => {
+                  setTypedResult(false);
+                },
+              }
+            : {})}
         />
 
         <DealtHistoryPanel
