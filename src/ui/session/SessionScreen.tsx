@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { type LoadResult, type SessionStats, type SessionSummary, aggregateStats } from "@/state";
+import { ReportBugButton } from "@/ui/bug-report/ReportBugButton";
 import { Panel, Screen, SecondaryButton, StatRow } from "@/ui/primitives";
 import { ExpectationBandPanel } from "@/ui/shoe-integrity/ExpectationBandPanel";
 import { expectationBand } from "@/ui/shoe-integrity/integrity";
@@ -69,9 +70,13 @@ export function SessionScreen() {
             next to the counts it was divided from. A rate with nothing to divide reads{" "}
             {NO_VALUE} — a fresh Session has no accuracy, not 0% accuracy.
           </Text>
-          <Link href="/play" style={styles.link}>
-            Back to the table →
-          </Link>
+          <View style={styles.headerActions}>
+            <Link href="/play" style={styles.link}>
+              Back to the table →
+            </Link>
+            {/* No Shoe of its own: the report reads the Session's current Shoe off its log. */}
+            <ReportBugButton screen="Statistics" />
+          </View>
         </Panel>
 
         <SessionControlBar
@@ -204,6 +209,13 @@ const styles = StyleSheet.create({
   note: { ...type.caption, color: colors.textMuted, lineHeight: 18 },
   warning: { ...type.caption, color: colors.warning, lineHeight: 18 },
   controls: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.xs },
+  headerActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+  },
   link: {
     ...type.body,
     color: colors.accent,

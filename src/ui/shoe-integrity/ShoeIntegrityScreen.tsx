@@ -30,7 +30,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ScrollView, StyleSheet, Text } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import Constants from "expo-constants";
 import { getCountingSystem, keyCount, trueCount } from "@/engine/counting";
 import type { CountingSystemId } from "@/engine/counting";
@@ -67,6 +67,7 @@ import { SeedPanel } from "./SeedPanel";
 import { ZeroSumCheckPanel } from "./ZeroSumCheckPanel";
 import { ActionButton, Panel, Screen, SecondaryButton, SegmentedControl } from "@/ui/primitives";
 import { useConfiguredRules } from "@/ui/rules/rulesStore";
+import { ReportBugButton } from "@/ui/bug-report/ReportBugButton";
 import { colors, spacing, type } from "@/ui/theme";
 
 /**
@@ -278,6 +279,15 @@ export function ShoeIntegrityScreen({ session: played }: ShoeIntegrityScreenProp
           {/* Checked against *your* table, not a generic one. A six-deck proof shown to a
               single-deck player would be proving the wrong shoe. */}
           <Text style={styles.source}>Your table: {describeRules(rules)}</Text>
+          {/* A Shoe that looks wrong here is reported as this Shoe, at this card. */}
+          <View style={styles.reportRow}>
+            <ReportBugButton
+              screen="Shoe Integrity"
+              table={{ shoe }}
+              rules={rules}
+              countingSystem={system.name}
+            />
+          </View>
         </Panel>
 
         <SeedPanel
@@ -465,5 +475,6 @@ const styles = StyleSheet.create({
   title: { ...type.title, color: colors.text },
   lede: { ...type.body, color: colors.textMuted },
   source: { ...type.caption, color: colors.textMuted },
+  reportRow: { flexDirection: "row", flexWrap: "wrap" },
   footer: { ...type.caption, color: colors.textMuted, textAlign: "center" },
 });

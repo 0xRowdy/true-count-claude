@@ -33,6 +33,7 @@ import { Link } from "expo-router";
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import type { Action } from "@/engine/hand";
 import { type RuleSet, describeRules } from "@/engine/rules";
+import { ReportBugButton } from "@/ui/bug-report/ReportBugButton";
 import {
   type RoundState,
   currentLegalActions,
@@ -275,6 +276,20 @@ export function PlayTable() {
           <Link href="/session" style={styles.statsLink}>
             Statistics →
           </Link>
+          {/* In the bar that is on screen at every moment of a Session (invariant 10). The
+              between-rounds Shoe, the live round and the bankroll it was dealt from are what
+              let the report replay this exact hand. */}
+          <ReportBugButton
+            screen="Play table"
+            table={{
+              shoe: table.shoe,
+              round: table.round,
+              bankroll: table.bankroll,
+              shoeIndex: table.shoeIndex,
+            }}
+            rules={table.rules}
+            countingSystem={table.system.name}
+          />
         </SessionControlBar>
 
         {play.ended ? (
