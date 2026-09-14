@@ -11,7 +11,7 @@
 
 import { StyleSheet, Text, View } from "react-native";
 import { colors, radius, spacing, type } from "@/ui/theme";
-import { type EvRowView, TIER_LABEL, TIER_TONE, type TierTone } from "./explanationFormat";
+import { type EvRowView, ROW_TIER_LABEL, TIER_TONE, type TierTone } from "./explanationFormat";
 
 export const TONE_COLOR: Readonly<Record<TierTone, string>> = {
   good: colors.accent,
@@ -42,7 +42,7 @@ function EvRow({ row }: { row: EvRowView }) {
     <View
       accessible
       accessibilityLabel={`${row.label}: expected value ${row.evText} bets, ${
-        row.best ? "the best play" : `${row.lossText} behind the best, ${TIER_LABEL[row.tier]}`
+        row.best ? "the best play" : `${row.lossText} behind the best, ${ROW_TIER_LABEL[row.tier]}`
       }${marks.length ? `. ${marks.join(", ").toLowerCase()}` : ""}`}
       style={[styles.row, row.chosen && styles.chosenRow]}
     >
@@ -66,7 +66,7 @@ function EvRow({ row }: { row: EvRowView }) {
           ) : null}
         </View>
         <Text style={[styles.gap, { color: tone }]} numberOfLines={1}>
-          {row.best ? TIER_LABEL.best : `${row.lossText} · ${TIER_LABEL[row.tier]}`}
+          {row.best ? ROW_TIER_LABEL.best : `${row.lossText} · ${ROW_TIER_LABEL[row.tier]}`}
         </Text>
       </View>
     </View>
@@ -103,14 +103,15 @@ const styles = StyleSheet.create({
   youMark: { borderColor: colors.text },
   youMarkText: { color: colors.text },
   ev: { ...type.mono, ...type.body, color: colors.text },
-  bottomLine: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  // The track spans the full row on every row, so the same gap draws the same length on every
+  // line: a label beside the track would steal a different width from each one.
+  bottomLine: { gap: 2 },
   track: {
-    flex: 1,
     height: 8,
     borderRadius: 4,
     backgroundColor: colors.background,
     overflow: "hidden",
   },
   fill: { height: 8, borderRadius: 4 },
-  gap: { ...type.mono, fontSize: 12, minWidth: 128, textAlign: "right" },
+  gap: { ...type.mono, fontSize: 12, textAlign: "right" },
 });

@@ -273,7 +273,8 @@ describe("the count", () => {
       buildCountContext({ system: HI_LO, decks: 6, runningCount: 7, cardsRemaining: 156 }),
     );
     expect(view.division).toBe("+7 ÷ 3.0 = +2.3");
-    expect(view.trueCount).toBe("+2 (truncated toward zero)");
+    expect(view.trueCount).toBe("+2");
+    expect(view.rounding).toBe("truncated toward zero");
     expect(view.note).toBeNull();
   });
 
@@ -389,6 +390,16 @@ describe("what would have to change", () => {
     expect(change.lines[0]).toBe("Hit would be right at a true count below -1. It is +0.");
     // A wrong answer's cost is the verdict's headline, not repeated here.
     expect(change.lines.some((line) => /trails/.test(line))).toBe(false);
+  });
+
+  it("still names the count play for a hand when the mistake itself had none", () => {
+    // 14 vs 10 under late surrender: standing is simply wrong, but surrendering is Fab 4 #1.
+    const result = grade({ player: ["5", "9"], upcard: "10" }, "stand");
+    const change = whatWouldChange(result.explanation, result);
+    expect(change.lines[0]).toMatch(/No published index makes Stand the play/);
+    expect(change.lines).toContain(
+      "The count does move this hand: Surrender becomes the play at a true count of +3 or higher. It is +0.",
+    );
   });
 
   it("says plainly when no count makes the other play right", () => {

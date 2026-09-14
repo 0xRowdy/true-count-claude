@@ -340,12 +340,13 @@ function CountBlock({ count }: { count: CountContext }) {
       <Text style={styles.body}>
         <Text style={styles.strong}>{view.systemName}</Text> running count{" "}
         <Text style={styles.mono}>{view.runningCount}</Text> with{" "}
-        <Text style={styles.mono}>{view.decksRemaining}</Text> left
+        {view.decksRemaining} left
       </Text>
       {view.division && view.trueCount ? (
         <Text style={styles.body}>
           True count <Text style={styles.mono}>{view.division}</Text>, played as{" "}
           <Text style={[styles.mono, styles.strong]}>{view.trueCount}</Text>
+          {view.rounding ? <Text style={styles.muted}> ({view.rounding})</Text> : null}
         </Text>
       ) : null}
       {view.note ? <Text style={styles.refusal}>{view.note}</Text> : null}
@@ -435,6 +436,7 @@ const styles = StyleSheet.create({
   body: { ...type.body, color: colors.text },
   strong: { fontWeight: "700" },
   mono: { ...type.mono },
+  muted: { color: colors.textMuted },
   note: { ...type.caption, color: colors.textMuted, lineHeight: 18 },
   refusal: {
     ...type.caption,

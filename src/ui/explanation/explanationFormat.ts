@@ -193,6 +193,19 @@ export const TIER_LABEL: Readonly<Record<EvGapTier, string>> = {
   severe: "Big mistake",
 };
 
+/**
+ * The same tiers, said about an action rather than about a choice. On the EV ladder most rows
+ * are plays the user did *not* make, and calling each of them a "big mistake" would scold the
+ * user for options they rightly passed over.
+ */
+export const ROW_TIER_LABEL: Readonly<Record<EvGapTier, string>> = {
+  best: "Best play",
+  "near-tie": "Near-tie",
+  close: "Close behind",
+  clear: "Clearly worse",
+  severe: "Far worse",
+};
+
 export type TierTone = "good" | "info" | "warn" | "bad";
 
 export const TIER_TONE: Readonly<Record<EvGapTier, TierTone>> = {
@@ -258,7 +271,7 @@ export function evRows(
       ev,
       evText: formatEv(ev),
       loss,
-      lossText: tier === "best" ? "best" : `-${loss < 0.0005 ? "<0.001" : loss.toFixed(3)}`,
+      lossText: tier === "best" ? "best" : loss < 0.0005 ? "under 0.001" : `-${loss.toFixed(3)}`,
       tier,
       bar: lossBarFraction(loss),
       chosen: verdict?.actionTaken === action,
@@ -499,8 +512,10 @@ export interface CountView {
   readonly decksRemaining: string;
   /** "+5 ÷ 2.9 decks = +1.7", or null when there is no conversion. */
   readonly division: string | null;
-  /** "+1 (truncated toward zero)", or null. */
+  /** "+1", or null. */
   readonly trueCount: string | null;
+  /** "truncated toward zero", or null when the count is unrounded or absent. */
+  readonly rounding: string | null;
   /** Why there is no True Count, said out loud rather than left blank. */
   readonly note: string | null;
 }
@@ -515,12 +530,9 @@ export function countView(count: CountContext): CountView {
       count.exactTrueCount === null
         ? null
         : `${formatSignedCount(count.runningCount)} ÷ ${decks} = ${formatSignedCount(count.exactTrueCount)}`,
-    trueCount:
-      count.trueCount === null
-        ? null
-        : count.rounding === "exact"
-          ? formatSignedCount(count.trueCount)
-          : `${formatSignedCount(count.trueCount)} (${ROUNDING_NAME[count.rounding]})`,
+    trueCount: count.trueCount === null ? null : formatSignedCount(count.trueCount),
+    rounding:
+      count.trueCount === null || count.rounding === "exact" ? null : ROUNDING_NAME[count.rounding],
     note: count.trueCountNote,
   };
 }
@@ -766,6 +778,30 @@ export function whatWouldChange(
       lines.push(
         `On this exact shoe ${name} is already ahead of ${ACTION_NAME[answer]} by ${formatBets(-gap)} — ` +
           `a composition effect the chart and the published indexes are too coarse to capture.`,
+      );
+    }
+  }
+
+  // A wrong play no index covers still sits in a hand an index *does* cover — 14 vs 10 stood
+  // on is not a count play, but surrendering it is, at +3. Name that too: it is the lesson the
+  // count actually has to teach about this hand.
+  if (
+    other !== null &&
+    entry !== null &&
+    tc !== null &&
+    (index.skipped === null || index.skipped === "count-on-basic-side") &&
+    other !== entry.deviate &&
+    other !== entry.from
+  ) {
+    const across = answer === entry.from ? entry.deviate : answer === entry.deviate ? entry.from : null;
+    if (across !== null && isAction(across) && explanation.legalActions.includes(across)) {
+      const firesAbove = entry.direction === "at-or-above";
+      const needsHigh = firesAbove === (across === entry.deviate);
+      const threshold = signed(entry.index);
+      lines.push(
+        needsHigh
+          ? `The count does move this hand: ${ACTION_NAME[across]} becomes the play at a true count of ${threshold} or higher. It is ${formatSignedCount(tc)}.`
+          : `The count does move this hand: ${ACTION_NAME[across]} becomes the play at a true count below ${threshold}. It is ${formatSignedCount(tc)}.`,
       );
     }
   }
