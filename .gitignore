@@ -43,3 +43,6 @@ yarn-error.*
 # Build output
 dist/
 .expo/
+
+# Agent worktrees
+.claude/worktrees/
