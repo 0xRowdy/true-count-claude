@@ -50,8 +50,9 @@ export function upcardOf(card: Card): DealerUpcard {
  * The composite codes exist because a chart row is a *total*, and a total can arrive on
  * three cards or on a hand the rules have already restricted — at which point doubling,
  * splitting, and surrendering are no longer legal and the cell needs a second choice.
- * `resolve` applies that fallback against `legalActions`, which is why `basicStrategy`
- * can never name an action the player may not take.
+ * `resolve` applies that fallback against `legalActions`. The single-choice codes carry
+ * no published alternative, so `resolve` backstops those too — which together is why
+ * `basicStrategy` can never name an action the player may not take.
  */
 export type ChartCode =
   /** Hit. */
@@ -387,6 +388,51 @@ export function basicStrategy(
   return governingCell(hand, dealerUpcard, rules, context).action;
 }
 
+/**
+ * Each cell code as the sequence of plays it names, best first.
+ *
+ * This is just the published notation spelled out: `Ds` is "double, else stand", so it
+ * reads `["double", "stand"]`. The single-choice codes are one-element chains — a printed
+ * `H` offers no alternative, which is the whole reason `resolve` needs a floor beneath
+ * these chains as well.
+ */
+const FALLBACK_CHAINS: Readonly<Record<ChartCode, readonly Action[]>> = {
+  H: ["hit"],
+  S: ["stand"],
+  D: ["double", "hit"],
+  Ds: ["double", "stand"],
+  P: ["split"],
+  Rh: ["surrender", "hit"],
+  Rs: ["surrender", "stand"],
+  Rp: ["surrender", "split"],
+};
+
+/**
+ * The play to take when a cell's own chain names nothing the hand may do.
+ *
+ * Standing first is not an arbitrary tie-break: every chain that runs out does so because
+ * the rules have taken plays off the table, and the passive play is the only one that
+ * cannot commit money the published cell was not asking to commit. Hitting comes next
+ * because it is the other no-extra-bet action; the wagering plays are last and are only
+ * ever reached when nothing else is on offer.
+ */
+const LAST_RESORT: readonly Action[] = ["stand", "hit", "split", "double", "surrender"];
+
+/**
+ * Turns a chart cell into the play the player may actually make.
+ *
+ * Invariant 7 (CONTEXT.md): `legalActions` is the single source of truth for what is on
+ * offer, so this function never returns anything outside it. A printed cell can name a
+ * play the hand has lost — a three-card total cannot double, a split hand cannot
+ * surrender — and the composite codes carry the published second choice for exactly that.
+ *
+ * The chains are not enough on their own, though. A rule set can strip *every* play a
+ * cell names: a no-peek table publishes `"H"` for A,A vs an ace, and under `resplitAces`
+ * with `oneCardToSplitAces` a split ace holding a second ace may only stand or split
+ * (#17). `H` has no published fallback, so the chain runs dry and `LAST_RESORT` takes
+ * over. The chart cell is still reported unchanged — `usedFallback` is what tells the
+ * Explanation panel the printed play was not available (ADR-0005).
+ */
 function resolve(
   code: ChartCode,
   legal: readonly Action[],
@@ -396,36 +442,17 @@ function resolve(
   // something to highlight, but the play is the no-op.
   if (legal.length === 0) return { action: "stand", usedFallback: code !== "S" };
 
-  const can = (action: Action) => legal.includes(action);
-  switch (code) {
-    case "H":
-      return { action: "hit", usedFallback: false };
-    case "S":
-      return { action: "stand", usedFallback: false };
-    case "D":
-      return can("double")
-        ? { action: "double", usedFallback: false }
-        : { action: "hit", usedFallback: true };
-    case "Ds":
-      return can("double")
-        ? { action: "double", usedFallback: false }
-        : { action: "stand", usedFallback: true };
-    case "P":
-      // `governingCell` only reads the pairs chart when splitting is legal.
-      return { action: "split", usedFallback: false };
-    case "Rh":
-      return can("surrender")
-        ? { action: "surrender", usedFallback: false }
-        : { action: "hit", usedFallback: true };
-    case "Rs":
-      return can("surrender")
-        ? { action: "surrender", usedFallback: false }
-        : { action: "stand", usedFallback: true };
-    case "Rp":
-      return can("surrender")
-        ? { action: "surrender", usedFallback: false }
-        : { action: "split", usedFallback: true };
+  const chain = FALLBACK_CHAINS[code];
+  for (const [index, action] of chain.entries()) {
+    if (legal.includes(action)) return { action, usedFallback: index > 0 };
   }
+
+  for (const action of LAST_RESORT) {
+    if (legal.includes(action)) return { action, usedFallback: true };
+  }
+
+  // Unreachable: `legal` is non-empty here and `LAST_RESORT` lists every `Action`.
+  return { action: "stand", usedFallback: true };
 }
 
 function pairRankOf(hand: Hand): PairRank {

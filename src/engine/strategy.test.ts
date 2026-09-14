@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Card, Rank } from "./cards";
-import { type Hand, createHand, legalActions } from "./hand";
+import { type Action, type Hand, createHand, legalActions } from "./hand";
 import { DEFAULT_RULES, type RuleSet } from "./rules";
 import {
   DEALER_UPCARDS,
@@ -316,15 +316,18 @@ describe("basicStrategy never names an illegal action", () => {
   const ruleSets = rulePermutations();
 
   it(`holds across ${ruleSets.length} rule sets and every chart row`, () => {
-    // Every violation is collected rather than asserted in place: this is roughly 190,000
+    // Every violation is collected rather than asserted in place: this is roughly 760,000
     // decisions, and a per-decision matcher is slower than the engine it is checking.
     const violations: string[] = [];
 
     for (const rules of ruleSets) {
+      const chartKey = chartIdentity(rules);
       for (const probe of probeHands(rules)) {
         for (const upcard of DEALER_UPCARDS) {
           const context = { handCount: probe.handCount, bankroll: probe.bankroll };
           const legal = legalActions({ hand: probe.hand, rules, ...context });
+          if (alreadyChecked(chartKey, probe, upcard, legal)) continue;
+
           const action = basicStrategy(probe.hand, card(rankFor(upcard)), rules, context);
           const label = `${probe.label} vs ${upcardName(upcard)} (${ruleLabel(rules)})`;
 
@@ -367,6 +370,34 @@ describe("basicStrategy never names an illegal action", () => {
     expect(cell.code).toBe("Rs");
     expect(cell.action).toBe("stand");
     expect(cell.usedFallback).toBe(true);
+  });
+
+  it("falls back when a frozen split ace cannot take the cell's only play (#17)", () => {
+    // The cell that has no published fallback. A no-peek table prints "H" for A,A vs an
+    // ace, but with `resplitAces` on top of `oneCardToSplitAces` a split ace holding a
+    // second ace may only stand or split — hitting is not on offer, and "H" names no
+    // second choice. The chart is still right; the hand just cannot play it.
+    const rules: RuleSet = {
+      ...DEFAULT_RULES,
+      dealerPeek: false,
+      resplitAces: true,
+      oneCardToSplitAces: true,
+    };
+    const splitAces = hand(["A", "A"], true);
+    const legal = legalActions({ hand: splitAces, rules, handCount: 1, bankroll: 1000 });
+    expect(legal).toEqual(["stand", "split"]);
+
+    const cell = governingCell(splitAces, card("A"), rules);
+    // The Explanation panel still gets the cell that governs (#8, ADR-0005): the pairs
+    // row, the published code, and the flag saying the printed play was unavailable.
+    expect(cell.section).toBe("pairs");
+    expect(cell.row).toBe("A,A");
+    expect(cell.code).toBe("H");
+    expect(cell.usedFallback).toBe(true);
+    // Standing is the play: the no-peek cell declines to put a second bet out, so the
+    // fallback must not reach for the split.
+    expect(cell.action).toBe("stand");
+    expect(legal).toContain(cell.action);
   });
 });
 
@@ -433,9 +464,19 @@ function ruleLabel(rules: RuleSet): string {
     rules.doubleRule,
     rules.surrender,
     rules.dealerPeek ? "peek" : "no-peek",
+    rules.resplitAces ? "RSA" : "NRSA",
+    rules.oneCardToSplitAces ? "1-card-aces" : "draw-to-aces",
   ].join(" ");
 }
 
+/**
+ * Every rule set the sweep checks.
+ *
+ * The split-ace rules are in here because they change `legalActions` without changing a
+ * single chart cell, which is exactly the shape of bug the sweep exists to catch: a
+ * no-peek table publishes `"H"` for A,A vs an ace, and `resplitAces` plus
+ * `oneCardToSplitAces` together leave a split ace holding only stand and split (#17).
+ */
 function rulePermutations(): RuleSet[] {
   const out: RuleSet[] = [];
   for (const decks of [1, 2, 6, 8]) {
@@ -444,15 +485,21 @@ function rulePermutations(): RuleSet[] {
         for (const doubleRule of ["any", "9-11", "10-11"] as const) {
           for (const surrender of ["none", "late", "early"] as const) {
             for (const dealerPeek of [true, false]) {
-              out.push({
-                ...DEFAULT_RULES,
-                decks,
-                dealerSoft17,
-                doubleAfterSplit,
-                doubleRule,
-                surrender,
-                dealerPeek,
-              });
+              for (const resplitAces of [true, false]) {
+                for (const oneCardToSplitAces of [true, false]) {
+                  out.push({
+                    ...DEFAULT_RULES,
+                    decks,
+                    dealerSoft17,
+                    doubleAfterSplit,
+                    doubleRule,
+                    surrender,
+                    dealerPeek,
+                    resplitAces,
+                    oneCardToSplitAces,
+                  });
+                }
+              }
             }
           }
         }
@@ -465,6 +512,66 @@ function rulePermutations(): RuleSet[] {
 /** Peeked games only — the no-peek tables deliberately stop splitting against an ace. */
 function peekedPermutations(): RuleSet[] {
   return rulePermutations().filter((rules) => rules.dealerPeek);
+}
+
+// ---------------------------------------------------------------------------
+// Sweep de-duplication
+// ---------------------------------------------------------------------------
+
+/**
+ * The generated chart itself, serialised, as a rule set's identity for sweep purposes.
+ *
+ * Adding the two split-ace rules multiplied the sweep fourfold, and essentially all of
+ * its cost is `strategyChart` re-deriving the same chart for every decision — the chart
+ * is rebuilt once per `basicStrategy` call by design (it is pure and cheap, and ADR-0002
+ * leaves caching to callers), so 1152 rule sets times 54 probes times 10 upcards is over
+ * 600,000 rebuilds of a few hundred distinct charts.
+ *
+ * Rather than sample the rule space and give up coverage, the sweep skips decisions it
+ * has provably already made. This is the exact chart, not a guess at which rules feed it,
+ * so two rule sets share a key only when their charts are genuinely identical.
+ */
+const CHART_IDS = new Map<string, number>();
+
+/**
+ * Interns the three chart sections to a small integer, so the per-decision key stays short.
+ *
+ * `StrategyChart` carries its `RuleSet` alongside the sections, and that field is
+ * deliberately left out here: including it would make all 1152 identities distinct and
+ * defeat the whole exercise. The 1152 rule sets publish 204 distinct charts between them.
+ */
+function chartIdentity(rules: RuleSet): number {
+  const chart = strategyChart(rules);
+  const serialised = JSON.stringify([chart.hard, chart.soft, chart.pairs]);
+  let id = CHART_IDS.get(serialised);
+  if (id === undefined) {
+    id = CHART_IDS.size;
+    CHART_IDS.set(serialised, id);
+  }
+  return id;
+}
+
+const CHECKED = new Set<string>();
+
+/**
+ * True when this decision has already been swept.
+ *
+ * `governingCell` reads exactly two things: the chart, and `legalActions` for the hand.
+ * So its verdict is fully determined by the chart, the hand and its context, the upcard,
+ * and the resulting legal set — every one of which is in this key. A repeat can only
+ * produce the repeat of an answer already checked, which keeps the coverage of all 1152
+ * rule sets intact while doing the work of roughly the original 288.
+ */
+function alreadyChecked(
+  chartKey: number,
+  probe: Probe,
+  upcard: DealerUpcard,
+  legal: readonly Action[],
+): boolean {
+  const key = `${chartKey}|${probe.label}|${probe.handCount}|${probe.bankroll}|${upcard}|${legal.join(",")}`;
+  if (CHECKED.has(key)) return true;
+  CHECKED.add(key);
+  return false;
 }
 
 interface Probe {
