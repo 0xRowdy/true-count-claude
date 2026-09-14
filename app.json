@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "True Count",
+    "slug": "true-count",
+    "version": "0.1.0",
+    "orientation": "default",
+    "scheme": "truecount",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.truecount.app"
+    },
+    "android": {
+      "package": "com.truecount.app",
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
