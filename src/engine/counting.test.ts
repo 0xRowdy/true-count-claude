@@ -11,7 +11,11 @@ import {
   RED_7,
   WONG_HALVES,
   ZEN,
+  aceAdjustedRunningCount,
+  aceAdjustmentValue,
   aceSideCount,
+  aceTrueCountAdjustment,
+  bettingTrueCount,
   currentRunningCount,
   deckTagSum,
   getCountingSystem,
@@ -482,6 +486,172 @@ describe("ace side count", () => {
   it("counts aces regardless of suit", () => {
     const aces = SUITS.map((suit) => card("A", suit));
     expect(aceSideCount(aces, 6).seen).toBe(4);
+  });
+});
+
+/**
+ * The betting adjustment, straight from Omega II's own book: "add +2 to the running count for
+ * each 'extra' Ace per 13 dealt cards ... add -2 ... for each Ace 'short'" (Carlson, Blackjack
+ * for Blood). Wattenberger's Modern Blackjack states the same rule generally, as excess aces
+ * times |ten tag|, and adds the true-count conversion.
+ *
+ * Every case below deals eights as filler, which Omega II tags 0, so the running count under
+ * test is whatever the test passes in and the ace surplus is the only thing moving.
+ */
+describe("ace side count adjustment for betting", () => {
+  /** `total` cards dealt, `aces` of them aces and the rest count-neutral eights. */
+  const dealtWith = (aces: number, total: number): Card[] => [
+    ...Array.from({ length: aces }, () => card("A")),
+    ...Array.from({ length: total - aces }, () => card("8")),
+  ];
+
+  /**
+   * Carlson's own worked example, reproduced exactly: a double-deck game, about one deck dealt,
+   * one ace out where average distribution would have dropped four — "we have three 'extra'
+   * Aces left in the pack. Let's say our raw running count at this point is -1; adding +2 for
+   * each of our three 'extra' Aces, we end up with an adjusted running count, for betting
+   * purposes, of +5." If this assertion ever fails, the engine has left the book behind.
+   */
+  it("reproduces Carlson's worked example: -1 raw becomes +5 for betting", () => {
+    const side = aceSideCount(dealtWith(1, 52), 2);
+    expect(side.seen).toBe(1);
+    expect(side.surplus).toBe(3);
+    expect(aceAdjustedRunningCount(-1, side, OMEGA_II)).toBe(5);
+  });
+
+  it("measures the surplus off dealt cards the way Carlson does: one ace per 13", () => {
+    // He counts "extra" aces against the cards dealt; `surplus` counts against the cards left.
+    // The two are the same number, so the engine and the book never disagree by a rounding.
+    for (const decks of DECK_COUNTS) {
+      for (const dealt of [13, 26, 52, 91, decks * 26]) {
+        for (const aces of [0, 1, 4]) {
+          if (dealt > decks * 52 || aces > Math.min(dealt, decks * 4)) continue;
+          expect(aceSideCount(dealtWith(aces, dealt), decks).surplus).toBeCloseTo(
+            dealt / 13 - aces,
+            10,
+          );
+        }
+      }
+    }
+  });
+
+  it("values a surplus ace at the magnitude of the system's own ten tag", () => {
+    // Derived from the tag table rather than stored, so it cannot drift away from the tags.
+    expect(aceAdjustmentValue(OMEGA_II)).toBe(2);
+    expect(aceAdjustmentValue(OMEGA_II)).toBe(Math.abs(OMEGA_II.tags["10"]));
+    // The filler really is count-neutral, so these tests isolate the ace effect.
+    expect(runningCount(dealtWith(0, 52), OMEGA_II)).toBe(0);
+  });
+
+  it("refuses to adjust a system that already counts aces", () => {
+    for (const system of COUNTING_SYSTEMS) {
+      if (system.usesAceSideCount) continue;
+      expect(() => aceAdjustmentValue(system)).toThrow(/ace-neutral/);
+    }
+    expect(() => aceAdjustmentValue(HI_LO)).toThrow(/Hi-Lo counts aces at -1/);
+    expect(() => bettingTrueCount(6, 3, aceSideCount([], 6), ZEN)).toThrow(/ace-neutral/);
+  });
+
+  it("leaves a neutral shoe's true count untouched, at every deck count", () => {
+    for (const decks of DECK_COUNTS) {
+      // Half the shoe dealt, holding exactly half its aces: no surplus, so no adjustment.
+      const side = aceSideCount(dealtWith(decks * 2, decks * 26), decks);
+      expect(side.surplus).toBe(0);
+      expect(aceTrueCountAdjustment(side, OMEGA_II)).toBe(0);
+      expect(aceAdjustedRunningCount(7, side, OMEGA_II)).toBe(7);
+      expect(bettingTrueCount(7, decks / 2, side, OMEGA_II, "exact")).toBe(
+        trueCount(7, decks / 2, "exact"),
+      );
+    }
+  });
+
+  it("adds two running-count points per surplus ace", () => {
+    // Six decks, one deck dealt and not an ace in it: 24 aces left where 20 are expected.
+    const side = aceSideCount(dealtWith(0, 52), 6);
+    expect(side.surplus).toBe(4);
+    expect(aceAdjustedRunningCount(9, side, OMEGA_II)).toBe(17); // 9 + 2 x 4
+    expect(bettingTrueCount(9, 5, side, OMEGA_II, "exact")).toBeCloseTo(3.4, 10);
+    // The unadjusted count says +1 and the shoe is really worth +3. That gap is the whole
+    // reason Omega II asks for a side count before a bet.
+    expect(trueCount(9, 5)).toBe(1);
+    expect(bettingTrueCount(9, 5, side, OMEGA_II)).toBe(3);
+  });
+
+  it("subtracts two per missing ace, so an ace-stripped shoe stops looking rich", () => {
+    // Four decks, two dealt, and twelve of the sixteen aces already gone.
+    const side = aceSideCount(dealtWith(12, 104), 4);
+    expect(side.surplus).toBe(-4);
+    expect(aceAdjustedRunningCount(10, side, OMEGA_II)).toBe(2); // 10 - 2 x 4
+    expect(trueCount(10, 2)).toBe(5);
+    expect(bettingTrueCount(10, 2, side, OMEGA_II)).toBe(1);
+
+    // A single deck with all four aces already out is worth nothing, whatever the tens say.
+    const stripped = aceSideCount(dealtWith(4, 13), 1);
+    expect(stripped.surplus).toBe(-3);
+    expect(stripped.surplusPerDeck).toBe(-4);
+    expect(trueCount(6, 0.75)).toBe(8);
+    expect(bettingTrueCount(6, 0.75, stripped, OMEGA_II, "exact")).toBe(0);
+  });
+
+  it("moves the exact true count by two per surplus ace per deck remaining", () => {
+    const cases = [
+      // decks, dealt, aces in it, decks remaining, surplus per deck
+      { decks: 1, dealt: 26, aces: 0, remaining: 0.5, perDeck: 4 },
+      { decks: 2, dealt: 26, aces: 0, remaining: 1.5, perDeck: 4 / 3 },
+      { decks: 4, dealt: 104, aces: 12, remaining: 2, perDeck: -2 },
+      { decks: 6, dealt: 52, aces: 0, remaining: 5, perDeck: 0.8 },
+      { decks: 8, dealt: 104, aces: 4, remaining: 6, perDeck: 2 / 3 },
+    ];
+
+    for (const { decks, dealt, aces, remaining, perDeck } of cases) {
+      const side = aceSideCount(dealtWith(aces, dealt), decks);
+      expect(side.surplusPerDeck).toBeCloseTo(perDeck, 10);
+      expect(aceTrueCountAdjustment(side, OMEGA_II)).toBeCloseTo(2 * perDeck, 10);
+
+      // The identity that ties the two forms together: adjusting the running count by the
+      // surplus and converting equals converting and adding the per-deck adjustment.
+      for (const rc of [-13, -4, 0, 5, 12]) {
+        expect(bettingTrueCount(rc, remaining, side, OMEGA_II, "exact")).toBeCloseTo(
+          trueCount(rc, remaining, "exact") + aceTrueCountAdjustment(side, OMEGA_II),
+          10,
+        );
+      }
+    }
+  });
+
+  it("adjusts the running count before converting, not the rounded true count", () => {
+    // Rounding twice loses a whole point here: +1.8 truncates to +1 and the +1.6 ace
+    // adjustment truncates to +1, which would report +2 for a shoe that is worth +3.
+    const side = aceSideCount(dealtWith(0, 52), 6);
+    expect(trueCount(9, 5)).toBe(1);
+    expect(Math.trunc(aceTrueCountAdjustment(side, OMEGA_II))).toBe(1);
+    expect(bettingTrueCount(9, 5, side, OMEGA_II)).toBe(3);
+  });
+
+  it("carries the rounding mode through, and never reports -0", () => {
+    const rich = aceSideCount(dealtWith(0, 52), 6);
+    expect(bettingTrueCount(9, 5, rich, OMEGA_II, "round")).toBe(3); // 3.4 to nearest
+    expect(bettingTrueCount(9, 5, rich, OMEGA_II, "floor")).toBe(3);
+
+    // Eight decks, an ace surplus that cancels a negative count almost exactly.
+    const side = aceSideCount(dealtWith(4, 104), 8);
+    expect(aceAdjustedRunningCount(-8, side, OMEGA_II)).toBe(0);
+    expect(Object.is(aceAdjustedRunningCount(-8, side, OMEGA_II), 0)).toBe(true);
+    expect(Object.is(bettingTrueCount(-9, 6, side, OMEGA_II), 0)).toBe(true);
+    expect(Object.is(aceTrueCountAdjustment(aceSideCount([], 6), OMEGA_II), 0)).toBe(true);
+  });
+
+  it("adjusts a real seeded shoe's count", () => {
+    const shoe = createShoe({ ...DEFAULT_RULES, decks: 6 }, 4242);
+    const seen = shoe.cards.slice(0, 156); // three decks dealt
+    const side = aceSideCount(seen, 6);
+    const rc = runningCount(seen, OMEGA_II);
+
+    expect(side.seen + side.remaining).toBe(24);
+    expect(bettingTrueCount(rc, 3, side, OMEGA_II, "exact")).toBeCloseTo(
+      (rc + 2 * side.surplus) / 3,
+      10,
+    );
   });
 });
 

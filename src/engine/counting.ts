@@ -355,10 +355,12 @@ export interface AceSideCount {
  * The ace side count Omega II needs. Omega II tags aces 0, so its Running Count says nothing
  * about how many aces are left — and aces are the single most bet-relevant rank in the shoe.
  *
- * This reports the side count only. It deliberately does not fold an ace adjustment into the
- * true count: the published adjustments differ by author and by deck count, and inventing one
- * would be exactly the "wrong math" failure this engine exists to avoid (ADR-0002). The
- * betting and deviation modules apply a sourced adjustment to `surplusPerDeck`.
+ * This reports the side count only; `aceAdjustmentValue` folds it into a count for betting.
+ *
+ * `surplus` is exactly Carlson's "extra" aces. He defines the baseline off the cards *dealt* —
+ * "there should be one Ace for every 13 cards" — where this counts up from the cards remaining,
+ * and the two are the same number, not an approximation: with `n` cards dealt and `seen` aces
+ * among them, `remaining - expectedRemaining` reduces to `n / 13 - seen`.
  */
 export function aceSideCount(cards: readonly Card[], decks: number): AceSideCount {
   let seen = 0;
@@ -376,6 +378,98 @@ export function aceSideCount(cards: readonly Card[], decks: number): AceSideCoun
     surplus: normalizeZero(surplus),
     surplusPerDeck: decksLeft > 0 ? normalizeZero(surplus / decksLeft) : 0,
   };
+}
+
+/**
+ * What one surplus ace is worth on the system's own count scale, for betting.
+ *
+ * Carlson states it outright for Omega II, in the system's own book — "If an excess of Aces
+ * remain, add +2 to the running count for each 'extra' Ace per 13 dealt cards. If an excess of
+ * Aces have fallen, add -2 to the running count for each Ace 'short' per 13 dealt cards."
+ * Source: Carlson, Blackjack for Blood, "adjusting count for" aces — pp. 77-79 in the 2017
+ * Huntington Press edition, p. 90 in the 1992 Gamestar edition.
+ *
+ * So the number is +/-2 for Omega II, from the primary source. It is nevertheless *derived from
+ * the tag table* here rather than stored, because 2 is not a free constant: it is the magnitude
+ * of the system's own ten tag. Humble's Hi-Opt I, which tags tens -1, publishes the same rule at
+ * +/-1 — "for every extra ace that is left in the deck, you can add a count of plus one to the
+ * running count for betting purposes ... for every extra ace that is out of the deck ... minus
+ * one" (Humble, Blackjack Gold). Wattenberger states the generalised form, naming Omega II:
+ * multiply excess aces by "the absolute value of the point count value assigned by the current
+ * strategy to Ten-value cards" (Modern Blackjack, "Blackjack Side Counts",
+ * www.qfit.com/book/ModernBlackjackPage185.htm; per-system values at
+ * www.qfit.com/blackjack-side-counting-setup.htm). Reading it off `tags["10"]` means a seventh
+ * ace-neutral system needs no new number, and a mistyped ten tag cannot leave the two disagreeing.
+ *
+ * Consistency check on the magnitude: this adjustment is equivalent to counting the ace -2 for
+ * betting, and Carlson's published claim is that the side count lifts Advanced Omega II's betting
+ * correlation to .99 from .92 without it (both figures repeated in Dalton, Blackjack Encyclopedia;
+ * QFIT lists the unadjusted .92). Recomputing BC against Griffin's betting effects of removal
+ * (Theory of Blackjack, ch. 4 p. 44) reproduces both: .917 with the ace at 0, .989 with it at -2.
+ *
+ * Throws for ace-reckoned systems. The rule is published as valid only for ace-neutral counts;
+ * Hi-Lo and friends already price the ace into their tags, and quietly returning a no-op
+ * adjustment would hide a caller's mistake instead of surfacing it.
+ */
+export function aceAdjustmentValue(system: CountingSystem): number {
+  if (!system.usesAceSideCount) {
+    throw new Error(
+      `${system.name} counts aces at ${system.tags.A}, so it needs no ace side count adjustment. ` +
+        `The betting adjustment is defined only for ace-neutral systems (Omega II here).`,
+    );
+  }
+  return Math.abs(system.tags["10"]);
+}
+
+/**
+ * The exact amount the ace side count moves the true count: the adjustment value times the ace
+ * surplus per deck remaining.
+ *
+ * This is the number to *show* a user — "+1.6 from a four-ace surplus" — and it is exact, not
+ * rounded. Do not add it to an already-rounded true count: the published procedure adjusts the
+ * running count and then converts, which is what `bettingTrueCount` does.
+ */
+export function aceTrueCountAdjustment(side: AceSideCount, system: CountingSystem): number {
+  return normalizeZero(aceAdjustmentValue(system) * side.surplusPerDeck);
+}
+
+/**
+ * The Running Count as adjusted for betting: `runningCount + adjustmentValue x surplus`.
+ *
+ * This is the number Carlson's own worked examples end on, and the adjustment is explicitly
+ * disposable: "after placing our bet, we would toss out the +5 adjusted running count, revert
+ * back to the original running count of -1, and continue with the play." Playing decisions keep
+ * using the unadjusted count, which is the whole reason Omega II tags aces 0 to begin with.
+ */
+export function aceAdjustedRunningCount(
+  runningCount: number,
+  side: AceSideCount,
+  system: CountingSystem,
+): number {
+  return normalizeZero(runningCount + aceAdjustmentValue(system) * side.surplus);
+}
+
+/**
+ * The True Count to bet off: the ace-adjusted running count, converted.
+ *
+ * The order matters. Rounding is applied *after* the ace adjustment, because the procedure
+ * adjusts the running count and only then recalculates the true count — "temporarily add the
+ * result to the running count / recalculate the true count for betting purposes only"
+ * (Wattenberger, www.qfit.com/blackjack-side-counts.htm). Adjusting an already-truncated true
+ * count rounds twice and can land a whole point away.
+ *
+ * The conversion step is sourced to Wattenberger rather than to Carlson: Carlson's own worked
+ * examples are pitch games and stop at the adjusted running count, so `aceAdjustedRunningCount`
+ * is the function that matches the primary source literally.
+ */
+export function bettingTrueCount(
+  runningCount: number,
+  decksRemaining: number,
+  side: AceSideCount,
+  system: CountingSystem,
+  rounding: TrueCountRounding = DEFAULT_TRUE_COUNT_ROUNDING,
+): number {
+  return trueCount(aceAdjustedRunningCount(runningCount, side, system), decksRemaining, rounding);
 }
 
 /**
