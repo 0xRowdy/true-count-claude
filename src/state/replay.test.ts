@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { cardId, remainingComposition } from "@/engine";
-import { buildSession } from "./fixtures";
+import { DEFAULT_RULES, type Card, cardId, remainingComposition } from "@/engine";
+import { buildSession, buildSplitSession } from "./fixtures";
 import { rebuildShoe, replaySession, verifyReplay } from "./replay";
-import type { Session } from "./types";
+import type { Decision, RoundResult, Session } from "./types";
 
 /** A Session as it comes back off disk: through JSON, with no live objects surviving. */
 function roundTrip(session: Session): Session {
@@ -104,3 +104,208 @@ describe("verifyReplay", () => {
     expect(verification.problems.join(" ")).toMatch(/carries index|rewinds Shoe/);
   });
 });
+
+/**
+ * Splits, from real dealt cards (#21).
+ *
+ * A split is the case where two recorded hands hold the same card: `Decision.hand` is the
+ * hand state that produced the Decision, so the split Decision records the *pair*, and each
+ * card of that pair then becomes the first card of one of the hands the split produces.
+ * Tallying every recorded hand demanded one card twice from a Shoe that dealt it once, and
+ * so reported a shortage on every split round that never happened.
+ *
+ * These rounds are dealt by `buildSplitSession` through the engine's own round state
+ * machine rather than written by hand, because a hand-written split round would encode what
+ * the author believed a split records — which is exactly the assumption that was wrong.
+ */
+describe("verifyReplay on rounds that split", () => {
+  /** Seed 8 deals, within one Shoe: plain splits, a resplit to three, one to four, and split aces. */
+  const session = buildSplitSession({ seed: 8, rounds: 60 });
+
+  it("passes a whole run of split-every-pair play", () => {
+    expect(session.rounds.filter((round) => round.hands.length > 1).length).toBeGreaterThan(4);
+    expect(verifyReplay(session)).toEqual({ ok: true, problems: [] });
+  });
+
+  it("counts a split pair's cards once, though two hands record them", () => {
+    const round = splitRound(session, 2);
+    const decisions = decisionsIn(session, round);
+    const split = decisions.find((decision) => decision.actionTaken === "split") as Decision;
+    const sibling = decisions.find(
+      (decision) => decision.hand.handIndex === split.hand.handIndex + 1,
+    ) as Decision;
+
+    // One card, two recorded views: the second card of the pair *is* the second hand's first.
+    expect(cardId(sibling.hand.playerCards[0] as Card)).toBe(
+      cardId(split.hand.playerCards[1] as Card),
+    );
+    expect(verifyReplay(session).problems).toEqual([]);
+  });
+
+  it("follows a resplit into three hands, where the sibling is inserted, not appended", () => {
+    const round = splitRound(session, 3);
+    const decisions = decisionsIn(session, round);
+    const splits = decisions.filter((decision) => decision.actionTaken === "split");
+    expect(splits).toHaveLength(2);
+
+    // The resplit is of the hand the first split produced, and its sibling lands at index 2.
+    expect((splits[1] as Decision).hand.fromSplit).toBe(true);
+    expect(decisions.some((decision) => decision.hand.handIndex === 2)).toBe(true);
+    expect(verifyReplay(session).problems).toEqual([]);
+  });
+
+  it("follows a resplit into four hands, tracking the indices the siblings shift to", () => {
+    const round = splitRound(session, 4);
+    const decisions = decisionsIn(session, round);
+    const splits = decisions.filter((decision) => decision.actionTaken === "split");
+    expect(splits).toHaveLength(3);
+
+    // Every split here is of hand 0, and `src/engine/round` inserts each new hand directly
+    // after the hand it came from — so the first pair's right-hand card has been pushed out
+    // to hand 3 by the time the round is played out. Reading it as hand 1 would tally the
+    // wrong hand's cards.
+    const opening = splits[0] as Decision;
+    const last = decisions.find((decision) => decision.hand.handIndex === 3) as Decision;
+    expect(cardId(last.hand.playerCards[0] as Card)).toBe(
+      cardId(opening.hand.playerCards[1] as Card),
+    );
+    expect(verifyReplay(session).problems).toEqual([]);
+  });
+
+  it("accepts split aces, which are frozen after one card and so record nothing further", () => {
+    const round = session.rounds.find((candidate) => {
+      const split = decisionsIn(session, candidate).find((d) => d.actionTaken === "split");
+      return split?.hand.playerCards.every((card) => card.rank === "A") ?? false;
+    });
+    expect(round, "the fixture dealt no split aces").toBeDefined();
+
+    // Two hands on the table, one Decision in the log, and the two cards dealt onto the aces
+    // never recorded. A card the log does not claim is not a card it has to account for.
+    expect(round?.hands).toHaveLength(2);
+    expect(decisionsIn(session, round as RoundResult)).toHaveLength(1);
+    expect(verifyReplay(session).problems).toEqual([]);
+  });
+
+  it("accepts an ace resplit at a table that allows one", () => {
+    const resplitAces = buildSplitSession({
+      seed: 30,
+      rounds: 60,
+      rules: { ...DEFAULT_RULES, resplitAces: true },
+    });
+    const aceResplit = resplitAces.decisions.filter(
+      (decision) =>
+        decision.actionTaken === "split" &&
+        decision.hand.fromSplit &&
+        decision.hand.playerCards.every((card) => card.rank === "A"),
+    );
+
+    expect(aceResplit.length, "the fixture resplit no aces").toBeGreaterThan(0);
+    expect(verifyReplay(resplitAces)).toEqual({ ok: true, problems: [] });
+  });
+
+  it("survives a round trip through storage", () => {
+    expect(verifyReplay(roundTrip(session))).toEqual({ ok: true, problems: [] });
+  });
+});
+
+/**
+ * The other half of the fix: a verifier that accepted every split round by being permissive
+ * would be worse than the bug. Sharing a card is forgiven *only* where a split accounts for
+ * it, and nowhere else.
+ */
+describe("verifyReplay still catches a card the Shoe never dealt", () => {
+  const session = buildSplitSession({ seed: 8, rounds: 60 });
+
+  it("catches a card substituted into a hand that was dealt from a split", () => {
+    const round = splitRound(session, 2);
+    const target = decisionsIn(session, round)
+      .filter((decision) => decision.actionTaken !== "split")
+      .pop() as Decision;
+    const intruder = cardOutsideSpan(session, round);
+
+    const cards = target.hand.playerCards.slice();
+    cards[cards.length - 1] = intruder;
+    const verification = verifyReplay(
+      replaceDecision(session, { ...target, hand: { ...target.hand, playerCards: cards } }),
+    );
+
+    expect(verification.ok).toBe(false);
+    expect(verification.problems.join(" ")).toMatch(
+      new RegExp(`used 1x ${cardId(intruder)} but its Shoe span .* holds only 0`),
+    );
+  });
+
+  it("catches a card claimed by two hands when no split accounts for it", () => {
+    const round = splitRound(session, 2);
+    const split = decisionsIn(session, round).find(
+      (decision) => decision.actionTaken === "split",
+    ) as Decision;
+
+    // The same log, with the split recorded as a stand. The pair's cards then have no reason
+    // to reappear under the second hand — and the Shoe span holds them once.
+    const verification = verifyReplay(
+      replaceDecision(session, { ...split, actionTaken: "stand", correctAction: "stand" }),
+    );
+
+    expect(verification.ok).toBe(false);
+    expect(verification.problems.join(" ")).toMatch(/holds only 1/);
+  });
+
+  it("catches a split pair whose cards were altered after the fact", () => {
+    const round = splitRound(session, 2);
+    const split = decisionsIn(session, round).find(
+      (decision) => decision.actionTaken === "split",
+    ) as Decision;
+    const intruder = cardOutsideSpan(session, round);
+
+    const verification = verifyReplay(
+      replaceDecision(session, {
+        ...split,
+        hand: { ...split.hand, playerCards: [split.hand.playerCards[0] as Card, intruder] },
+      }),
+    );
+
+    expect(verification.ok).toBe(false);
+    // Two ways of seeing the same tamper: the smuggled card is not in the span, and the hand
+    // the split produced no longer starts with the card the pair says it was dealt.
+    expect(verification.problems.join(" ")).toMatch(new RegExp(`1x ${cardId(intruder)}`));
+    expect(verification.problems.join(" ")).toMatch(/does not continue/);
+  });
+
+  it("catches a Shoe seed that no longer deals a split round's cards", () => {
+    const tampered: Session = {
+      ...session,
+      shoes: [{ ...(session.shoes[0] as Session["shoes"][number]), seed: 1 }],
+    };
+
+    expect(verifyReplay(tampered).ok).toBe(false);
+    expect(verifyReplay(tampered).problems.join(" ")).toMatch(/holds only/);
+  });
+});
+
+/** The first round of the Session that finished with exactly `hands` hands on the table. */
+function splitRound(session: Session, hands: number): RoundResult {
+  const round = session.rounds.find((candidate) => candidate.hands.length === hands);
+  expect(round, `the fixture dealt no round of ${hands} hands`).toBeDefined();
+  return round as RoundResult;
+}
+
+function decisionsIn(session: Session, round: RoundResult): Decision[] {
+  return session.decisions.filter((decision) => decision.roundIndex === round.index);
+}
+
+/** The Session with one Decision swapped out, in place, keeping every index intact. */
+function replaceDecision(session: Session, decision: Decision): Session {
+  const decisions = session.decisions.slice();
+  decisions[decision.index] = decision;
+  return { ...session, decisions };
+}
+
+/** A card the round's Shoe span does not hold — what a tampered log would have to smuggle in. */
+function cardOutsideSpan(session: Session, round: RoundResult): Card {
+  const shoe = rebuildShoe(session, round.shoeIndex, round.shoeEndIndex);
+  const span = new Set(shoe.cards.slice(round.shoeStartIndex, round.shoeEndIndex).map(cardId));
+  const intruder = shoe.cards.find((card) => !span.has(cardId(card)));
+  expect(intruder, "every card in the deck appears in this round's span").toBeDefined();
+  return intruder as Card;
+}
