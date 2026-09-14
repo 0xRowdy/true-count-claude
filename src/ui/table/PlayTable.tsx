@@ -213,7 +213,7 @@ export function PlayTable() {
   );
 
   return (
-    <Screen>
+    <Screen width="wide">
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}

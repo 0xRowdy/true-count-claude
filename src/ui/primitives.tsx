@@ -171,9 +171,25 @@ export function Badge({ label, tone = "neutral" }: { label: string; tone?: Tone 
   );
 }
 
-/** Constrains content to a readable column and centres it on wide screens. */
-export function Screen({ children }: { children: ReactNode }) {
-  return <View style={styles.screen}>{children}</View>;
+/**
+ * Constrains content to a comfortable measure and centres it on wide screens.
+ *
+ * `width` picks the cap. Prose and settings want `"reading"`, because a line of text
+ * that runs the full width of a desktop monitor is hard to read. A play table or a
+ * strategy chart wants `"wide"` — those are laid out in columns and genuinely use the
+ * space. Neither is letterboxing: there is no fixed aspect ratio and nothing is scaled,
+ * the content simply stops growing past the point where it stops helping.
+ */
+export function Screen({
+  children,
+  width = "reading",
+}: {
+  children: ReactNode;
+  width?: "reading" | "wide";
+}) {
+  return (
+    <View style={[styles.screen, width === "wide" && styles.screenWide]}>{children}</View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -186,6 +202,7 @@ const styles = StyleSheet.create({
     maxWidth: 780,
     alignSelf: "center",
   },
+  screenWide: { maxWidth: 1280 },
   panel: {
     backgroundColor: colors.surface,
     borderRadius: radius.md,

@@ -1,6 +1,5 @@
 import { Link } from "expo-router";
 import { useMemo, useState } from "react";
-import { Link } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { RANKS } from "@/engine/cards";
 import { DEFAULT_RULES, describeRules } from "@/engine/rules";
