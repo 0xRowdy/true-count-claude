@@ -20,13 +20,19 @@
  *
  * The action bar is deliberately the third thing on the page, above the count rail, so it is
  * inside the first screenful on a 360x640 phone without the page having to be pinned.
+ *
+ * The table being dealt is named on the page (#19), because the Rule Set screen shows a
+ * strategy chart generated from the user's own game and a Play surface that quietly dealt a
+ * different one would make the app's own chart wrong. When the two disagree — a change is
+ * configured but cannot be taken up yet — the page says so and says why, rather than deferring
+ * it in silence.
  */
 
 import { useMemo, useState } from "react";
 import { Link } from "expo-router";
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import type { Action } from "@/engine/hand";
-import { describeRules } from "@/engine/rules";
+import { type RuleSet, describeRules } from "@/engine/rules";
 import {
   type RoundState,
   currentLegalActions,
@@ -44,6 +50,8 @@ import {
   StatRow,
   type Tone,
 } from "@/ui/primitives";
+import { useConfiguredRules } from "@/ui/rules/rulesStore";
+import { matchingPreset } from "@/ui/rules/presets";
 import {
   SessionControlBar,
   SessionEndedPanel,
@@ -59,6 +67,7 @@ import { formatChips, formatNet } from "./format";
 import {
   STARTING_BANKROLL,
   type PlayTable as PlayTableState,
+  type RulesHold,
   affordableChips,
   amountAtRisk,
   availableBankroll,
@@ -103,11 +112,14 @@ const ACTION_HINT: Record<Action, string> = {
 };
 
 export function PlayTable() {
+  const configured = useConfiguredRules();
   const controller = usePlayTable();
   const { table } = controller;
   // Every transition goes through the Session controller, so a Decision cannot be made
-  // without being recorded and a round cannot settle without its result being written.
-  const play = usePlaySession(controller);
+  // without being recorded and a round cannot settle without its result being written. The
+  // configured Rule Set goes through it too, for the same reason: only the controller can see
+  // both the Shoe and the Session, and a rules change is unsafe if either objects.
+  const play = usePlaySession(controller, configured);
   const { width } = useWindowDimensions();
   const [visibility, setVisibility] = useState<CountVisibility>("shown");
   const feedback = useTableFeedback();
@@ -198,6 +210,7 @@ export function PlayTable() {
 
   const railColumn = (
     <View style={columnStyle}>
+      <TablePanel rules={table.rules} />
       <CountPanel
         readout={readout}
         systemName={table.system.name}
@@ -246,6 +259,15 @@ export function PlayTable() {
           />
         ) : null}
 
+        {play.pendingRules ? (
+          <PendingTablePanel
+            current={table.rules}
+            pending={play.pendingRules}
+            hold={play.rulesHold}
+            onSwitch={play.switchTable}
+          />
+        ) : null}
+
         {table.justShuffled ? (
           <Badge label="Cut card reached — new shoe, count reset" tone="info" />
         ) : cutCardOut && round !== null ? (
@@ -257,7 +279,9 @@ export function PlayTable() {
           {railColumn}
         </View>
 
-        <Text style={styles.rules}>{describeRules(table.rules)}</Text>
+        <Text style={styles.rules}>
+          Dealing {describeRules(table.rules)}
+        </Text>
       </ScrollView>
     </Screen>
   );
@@ -464,6 +488,94 @@ function SettlementBar({
   );
 }
 
+// --- The table being dealt -------------------------------------------------------------------
+
+/**
+ * Which game this is, named on the surface that deals it.
+ *
+ * `describeRules` names every rule that moves a strategy cell, so a user can check the chart
+ * they were shown against the game they are in without leaving the felt. The preset name is
+ * added when the Rule Set is one of the real games, because "Downtown double deck" is what a
+ * player calls their table and `2D · H17 · 3:2 · DAS · 70% pen` is what it means.
+ */
+function TablePanel({ rules }: { rules: RuleSet }) {
+  const preset = matchingPreset(rules);
+  return (
+    <Panel title="Table">
+      {preset ? <Text style={styles.tableName}>{preset.name}</Text> : null}
+      <Text style={styles.tableRules}>{describeRules(rules)}</Text>
+      <Link href="/rules" style={styles.statsLink}>
+        Change your table →
+      </Link>
+    </Panel>
+  );
+}
+
+const HOLD_REASON: Record<RulesHold, string> = {
+  round:
+    "The hand on the table was dealt under your current game and will be settled under it — a payout rule that changed mid-hand would pay the wrong money. Finish the hand.",
+  session:
+    "A Session records one table for its whole length, and its Shoes are rebuilt from that record to prove the count. Playing a second game inside it would make the hands you have already played replay as cards that were never dealt.",
+  shoe:
+    "Cards are already off this shoe. Changing the deck count or the penetration under it would move the True Count's divisor mid-count and leave the zero-sum check unable to reconcile (ADR-0004).",
+};
+
+const HOLD_ACTION: Record<RulesHold, string | null> = {
+  round: null,
+  session: "End this session and deal the new table",
+  shoe: "Shuffle to the new table",
+};
+
+/**
+ * The deferred rules change, said out loud.
+ *
+ * A change the app silently ignores is worse than one it refuses: the user sets a single-deck
+ * 6:5 game, sees the house edge treble on the Rule Set screen, comes here and is dealt a
+ * six-deck shoe with no explanation. So the pending table is named, the reason it is waiting
+ * is given in full, and the way through it is one tap — never a dead end (invariant 6).
+ */
+function PendingTablePanel({
+  current,
+  pending,
+  hold,
+  onSwitch,
+}: {
+  current: RuleSet;
+  pending: RuleSet;
+  hold: RulesHold | null;
+  onSwitch: () => void;
+}) {
+  const preset = matchingPreset(pending);
+  const action = hold === null ? null : HOLD_ACTION[hold];
+
+  return (
+    <Panel>
+      <Badge label="NEW TABLE WAITING" tone="warn" />
+      <StatRow label="Dealing now" value={describeRules(current)} />
+      <StatRow
+        label={preset ? `Configured — ${preset.name}` : "Configured"}
+        value={describeRules(pending)}
+        tone="info"
+      />
+      <Text style={styles.note}>
+        {hold === null
+          ? "Taking effect now."
+          : HOLD_REASON[hold]}
+      </Text>
+      {action ? (
+        <View style={styles.actions}>
+          <ActionButton
+            label={action}
+            tone="info"
+            accessibilityHint="Switch to the table you configured on the Rule Set screen."
+            onPress={onSwitch}
+          />
+        </View>
+      ) : null}
+    </Panel>
+  );
+}
+
 // --- Rail panels ---------------------------------------------------------------------------
 
 function BankrollPanel({ table }: { table: PlayTableState }) {
@@ -550,4 +662,6 @@ const styles = StyleSheet.create({
   shuffle: { marginTop: spacing.xs, alignSelf: "flex-start" },
   statsLink: { ...type.body, color: colors.accent, minHeight: 44, paddingTop: spacing.sm },
   rules: { ...type.caption, color: colors.textMuted, textAlign: "center" },
+  tableName: { ...type.body, color: colors.text, fontWeight: "600" },
+  tableRules: { ...type.mono, ...type.caption, color: colors.textMuted, lineHeight: 19 },
 });

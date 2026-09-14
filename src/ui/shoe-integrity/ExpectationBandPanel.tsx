@@ -12,9 +12,10 @@
  * roughly one Session in seven. Shown on a band, that reads as normal. Left unshown, it
  * reads as theft.
  *
- * The Session store does not exist yet, so the figures are entered by hand. That is not
- * purely a stopgap: it also lets a user check a Session they played somewhere else, which
- * is where most of this suspicion is actually formed.
+ * The figures can be entered by hand, and that is not merely a stopgap from before the
+ * Session store existed: it lets a user check a Session they played somewhere else, which is
+ * where most of this suspicion is actually formed. When a real Session is passed in, the
+ * panel opens holding those numbers instead, says so, and offers the way back.
  */
 
 import { StyleSheet, Text, TextInput, View } from "react-native";
@@ -23,7 +24,7 @@ import {
   describeExpectation,
   formatUnits,
 } from "./integrity";
-import { Badge, Panel, StatRow } from "@/ui/primitives";
+import { Badge, Panel, SecondaryButton, StatRow } from "@/ui/primitives";
 import { colors, radius, spacing, type } from "@/ui/theme";
 
 const FRAME_HEIGHT = 72;
@@ -50,12 +51,18 @@ export function ExpectationBandPanel({
   onHandsChange,
   onNetUnitsChange,
   band,
+  source,
+  onUseRecorded,
 }: {
   handsText: string;
   netUnitsText: string;
   onHandsChange: (next: string) => void;
   onNetUnitsChange: (next: string) => void;
   band: ExpectationBand;
+  /** Where these numbers came from, when it is not simply "you typed them". */
+  source?: string;
+  /** Offered only once typed numbers have replaced a real Session's own result. */
+  onUseRecorded?: () => void;
 }) {
   const hasSession = band.hands > 0 && band.sd > 0;
 
@@ -65,6 +72,8 @@ export function ExpectationBandPanel({
         A losing run feels like evidence. Usually it is arithmetic. Enter a Session and see
         where it falls against what a fair Shoe produces.
       </Text>
+
+      {source ? <Text style={styles.source}>{source}</Text> : null}
 
       <View style={styles.inputs}>
         <Field
@@ -80,6 +89,12 @@ export function ExpectationBandPanel({
           placeholder="-40"
         />
       </View>
+
+      {onUseRecorded ? (
+        <View style={styles.controls}>
+          <SecondaryButton label="Use my recorded play" onPress={onUseRecorded} />
+        </View>
+      ) : null}
 
       {hasSession ? (
         <>
@@ -198,6 +213,8 @@ function Field({
 
 const styles = StyleSheet.create({
   prose: { ...type.body, color: colors.textMuted },
+  source: { ...type.caption, color: colors.accent, lineHeight: 18 },
+  controls: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   note: { ...type.caption, color: colors.textMuted, lineHeight: 18 },
   verdict: { ...type.body, color: colors.text },
   badges: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
