@@ -61,9 +61,11 @@ import { usePlaySession } from "@/ui/session/usePlaySession";
 import { colors, spacing, type } from "@/ui/theme";
 import type { CardSize } from "./CardView";
 import { CountPanel, type CountVisibility, SystemPanel } from "./CountPanel";
+import { DecisionFeedback } from "./DecisionFeedback";
 import { DealerHandView, PlayerHandView } from "./HandView";
 import { useTableFeedback } from "./feedback";
 import { formatChips, formatNet } from "./format";
+import { type TableDecision, gradeTableInsurance, gradeTablePlay } from "./tableExplanation";
 import {
   STARTING_BANKROLL,
   type PlayTable as PlayTableState,
@@ -123,6 +125,18 @@ export function PlayTable() {
   const { width } = useWindowDimensions();
   const [visibility, setVisibility] = useState<CountVisibility>("shown");
   const feedback = useTableFeedback();
+  // The round's graded Decisions, each carrying its Explanation. Cleared when the next hand is
+  // dealt, never when a round settles: the cards stay up through the settlement, and so does
+  // the why (invariant 3).
+  const [decisions, setDecisions] = useState<readonly TableDecision[]>([]);
+  const [explanationOpen, setExplanationOpen] = useState(true);
+  const remember = (decision: TableDecision | null) => {
+    if (decision) setDecisions((current) => [...current, decision]);
+  };
+  const startNew = () => {
+    setDecisions([]);
+    play.startNew();
+  };
 
   const twoColumn = width >= TWO_COLUMN_WIDTH;
   const cardSize: CardSize = width < COMPACT_CARD_WIDTH ? "sm" : "md";
@@ -136,6 +150,9 @@ export function PlayTable() {
   const onAction = (action: Action) => {
     // Doubling and splitting push chips out; everything else is a card off the shoe.
     feedback.play(action === "double" || action === "split" ? "chips" : "card");
+    // Graded against the table as it stands *before* the action is applied — the hand the
+    // player was looking at, not whatever the round did next.
+    remember(gradeTablePlay(table, action, Date.now()));
     play.act(action);
   };
 
@@ -173,6 +190,7 @@ export function PlayTable() {
           onChooseBet={play.setBet}
           onDeal={() => {
             feedback.play("deal");
+            setDecisions([]);
             play.deal();
           }}
           onReset={play.resetBankroll}
@@ -183,6 +201,7 @@ export function PlayTable() {
           round={round}
           onDecide={(take) => {
             if (take) feedback.play("chips");
+            remember(gradeTableInsurance(table, take, Date.now()));
             play.insurance(take);
           }}
         />
@@ -203,6 +222,13 @@ export function PlayTable() {
           onAction={onAction}
         />
       )}
+
+      <DecisionFeedback
+        decisions={decisions}
+        roundOver={round === null}
+        expanded={explanationOpen}
+        onChangeExpanded={setExplanationOpen}
+      />
 
       <BankrollPanel table={table} />
     </View>
@@ -244,7 +270,7 @@ export function PlayTable() {
           recording={play.recording}
           error={play.error}
           onEnd={() => play.end()}
-          onStartNew={play.startNew}
+          onStartNew={startNew}
         >
           <Link href="/session" style={styles.statsLink}>
             Statistics →
@@ -255,7 +281,7 @@ export function PlayTable() {
           <SessionEndedPanel
             session={play.ended}
             stats={play.stats}
-            onStartNew={play.startNew}
+            onStartNew={startNew}
           />
         ) : null}
 

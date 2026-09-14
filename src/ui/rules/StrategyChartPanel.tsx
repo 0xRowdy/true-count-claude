@@ -14,13 +14,20 @@
  * not fit 360pt and never will; the page itself must never scroll sideways.
  */
 
-import { useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type LayoutChangeEvent,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import type { RuleSet } from "@/engine/rules";
 import {
   type ChartCode,
   type ChartSection,
   DEALER_UPCARDS,
+  type DealerUpcard,
   type StrategyChart,
 } from "@/engine/strategy";
 import { Badge, Panel, SegmentedControl } from "@/ui/primitives";
@@ -30,6 +37,7 @@ import {
   CHART_CODE_TEXT,
   CHART_SECTIONS,
   type ChartChange,
+  type ChartRowView,
   type CodeFamily,
   CODE_FAMILY,
   SECTION_TITLE,
@@ -40,9 +48,13 @@ import {
   upcardLabel,
 } from "./chartChanges";
 
-const ROW_HEIGHT = 30;
-const COLUMN_WIDTH = 38;
-const LABEL_WIDTH = 58;
+/** Cell geometry. `compact` is for a chart embedded in another surface, like an Explanation. */
+const DENSITY = {
+  regular: { rowHeight: 30, columnWidth: 38, labelWidth: 58 },
+  compact: { rowHeight: 28, columnWidth: 32, labelWidth: 48 },
+} as const;
+
+export type ChartDensity = keyof typeof DENSITY;
 
 /**
  * Five colours for five families of play, so the shape of the chart is readable before a
@@ -106,62 +118,9 @@ export function StrategyChartPanel({
         ) : null}
       </View>
 
-      <View style={styles.table}>
-        <View style={styles.labelColumn}>
-          <View style={[styles.cell, styles.cornerCell]}>
-            <Text style={styles.cornerText}>{section === "pairs" ? "Pair" : "You"}</Text>
-          </View>
-          {rows.map((row) => (
-            <View key={row.key} style={[styles.cell, styles.labelCell]}>
-              <Text style={styles.labelText} numberOfLines={1}>
-                {row.label}
-              </Text>
-            </View>
-          ))}
-        </View>
+      <StrategyChartGrid rows={rows} section={section} changedKeys={changedKeys} />
 
-        <ScrollView horizontal showsHorizontalScrollIndicator>
-          <View>
-            <View style={styles.headerRow}>
-              {DEALER_UPCARDS.map((upcard) => (
-                <View key={upcard} style={[styles.cell, styles.column]}>
-                  <Text style={styles.headerText}>{upcardLabel(upcard)}</Text>
-                </View>
-              ))}
-            </View>
-            {rows.map((row) => (
-              <View key={row.key} style={styles.bodyRow}>
-                {DEALER_UPCARDS.map((upcard) => {
-                  const code = row.cells[upcard];
-                  const moved = changedKeys.has(cellKey(row.key, upcard));
-                  const palette = FAMILY_STYLE[CODE_FAMILY[code]];
-                  return (
-                    <View
-                      key={upcard}
-                      accessible
-                      accessibilityLabel={`${row.label} versus ${upcardLabel(upcard)}: ${
-                        CHART_CODE_LABEL[code]
-                      }${moved ? ", changed" : ""}`}
-                      style={[
-                        styles.cell,
-                        styles.column,
-                        { backgroundColor: palette.bg },
-                        moved && styles.movedCell,
-                      ]}
-                    >
-                      <Text style={[styles.cellText, { color: palette.fg }]}>
-                        {CHART_CODE_TEXT[code]}
-                      </Text>
-                    </View>
-                  );
-                })}
-              </View>
-            ))}
-          </View>
-        </ScrollView>
-      </View>
-
-      <Legend />
+      <ChartLegend />
 
       <Text style={styles.footnote}>
         Hard 21 and soft 21 are not printed — a 21 is never a decision. Split aces take one
@@ -169,6 +128,143 @@ export function StrategyChartPanel({
         .
       </Text>
     </Panel>
+  );
+}
+
+/** The cell a chart is asked to point at: one row, one upcard column. */
+export interface ChartHighlight {
+  /** The row as `ChartRowView.label` prints it — which is also `GoverningCell.row`. */
+  readonly rowLabel: string;
+  readonly upcard: DealerUpcard;
+}
+
+/**
+ * The chart table itself: pinned row labels, ten upcard columns scrolling in their own
+ * container. Shared by the Rule Set screen and the Explanation panel, so there is exactly one
+ * way this app draws a strategy chart.
+ *
+ * With a `highlight`, the governing row and column stay at full strength, every other cell
+ * dims, and the cell where they cross is outlined — the cell in context, not a bare code
+ * (ADR-0005). The column is scrolled into view on layout, because on a 360pt phone the 10 and
+ * ace columns, the most common upcards in the game, start off-screen.
+ */
+export function StrategyChartGrid({
+  rows,
+  section,
+  changedKeys,
+  highlight = null,
+  density = "regular",
+}: {
+  rows: readonly ChartRowView[];
+  section: ChartSection;
+  changedKeys?: ReadonlySet<string>;
+  highlight?: ChartHighlight | null;
+  density?: ChartDensity;
+}) {
+  const size = DENSITY[density];
+  const scroller = useRef<ScrollView>(null);
+  const highlightColumn = highlight ? DEALER_UPCARDS.indexOf(highlight.upcard) : -1;
+
+  const [viewport, setViewport] = useState(0);
+  const onLayout = useCallback((event: LayoutChangeEvent) => {
+    setViewport(event.nativeEvent.layout.width);
+  }, []);
+
+  // Re-run whenever the highlighted column or the available width changes, so a panel that
+  // switches between decisions keeps its cell in view without remounting the table.
+  useEffect(() => {
+    if (highlightColumn < 0 || viewport <= 0) return;
+    const content = DEALER_UPCARDS.length * size.columnWidth;
+    if (content <= viewport) return;
+    const centred = highlightColumn * size.columnWidth - (viewport - size.columnWidth) / 2;
+    const x = Math.max(0, Math.min(centred, content - viewport));
+    scroller.current?.scrollTo({ x, animated: false });
+  }, [highlightColumn, viewport, size.columnWidth]);
+
+  const cellSize = { height: size.rowHeight };
+  const column = { width: size.columnWidth };
+
+  return (
+    <View style={styles.table}>
+      <View style={[styles.labelColumn, { width: size.labelWidth }]}>
+        <View style={[styles.cell, cellSize, styles.cornerCell, { width: size.labelWidth }]}>
+          <Text style={styles.cornerText}>{section === "pairs" ? "Pair" : "You"}</Text>
+        </View>
+        {rows.map((row) => {
+          const lit = highlight?.rowLabel === row.label;
+          return (
+            <View
+              key={row.key}
+              style={[styles.cell, cellSize, { width: size.labelWidth }, lit && styles.litLabel]}
+            >
+              <Text style={[styles.labelText, lit && styles.litLabelText]} numberOfLines={1}>
+                {row.label}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+
+      <ScrollView
+        ref={scroller}
+        horizontal
+        showsHorizontalScrollIndicator
+        onLayout={onLayout}
+      >
+        <View>
+          <View style={styles.headerRow}>
+            {DEALER_UPCARDS.map((upcard) => {
+              const lit = highlight?.upcard === upcard;
+              return (
+                <View
+                  key={upcard}
+                  style={[styles.cell, cellSize, column, lit && styles.litLabel]}
+                >
+                  <Text style={[styles.headerText, lit && styles.litLabelText]}>
+                    {upcardLabel(upcard)}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+          {rows.map((row) => (
+            <View key={row.key} style={styles.bodyRow}>
+              {DEALER_UPCARDS.map((upcard) => {
+                const code = row.cells[upcard];
+                const moved = changedKeys?.has(cellKey(row.key, upcard)) ?? false;
+                const palette = FAMILY_STYLE[CODE_FAMILY[code]];
+                const inRow = highlight?.rowLabel === row.label;
+                const inColumn = highlight?.upcard === upcard;
+                const target = inRow && inColumn;
+                const dimmed = highlight !== null && !inRow && !inColumn;
+                return (
+                  <View
+                    key={upcard}
+                    accessible
+                    accessibilityLabel={`${row.label} versus ${upcardLabel(upcard)}: ${
+                      CHART_CODE_LABEL[code]
+                    }${moved ? ", changed" : ""}${target ? ", the cell behind this decision" : ""}`}
+                    style={[
+                      styles.cell,
+                      cellSize,
+                      column,
+                      { backgroundColor: palette.bg },
+                      dimmed && styles.dimmedCell,
+                      moved && styles.movedCell,
+                      target && styles.targetCell,
+                    ]}
+                  >
+                    <Text style={[styles.cellText, { color: palette.fg }]}>
+                      {CHART_CODE_TEXT[code]}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -202,7 +298,8 @@ function ChangeReport({ changes }: { changes: readonly ChartChange[] }) {
   );
 }
 
-function Legend() {
+/** What each colour and code means. Shared with the Explanation panel. */
+export function ChartLegend() {
   return (
     <View style={styles.legend}>
       {LEGEND_ORDER.map((code) => {
@@ -252,28 +349,28 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   labelColumn: {
-    width: LABEL_WIDTH,
     borderRightWidth: 1,
     borderRightColor: colors.border,
     backgroundColor: colors.surfaceRaised,
   },
   headerRow: { flexDirection: "row", backgroundColor: colors.surfaceRaised },
   bodyRow: { flexDirection: "row" },
-  column: { width: COLUMN_WIDTH },
   cell: {
-    height: ROW_HEIGHT,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
   },
-  cornerCell: { width: LABEL_WIDTH, backgroundColor: colors.surfaceRaised },
+  cornerCell: { backgroundColor: colors.surfaceRaised },
   cornerText: { ...type.caption, color: colors.textMuted, fontSize: 11 },
-  labelCell: { width: LABEL_WIDTH },
   labelText: { ...type.mono, ...type.caption, color: colors.text, fontWeight: "700" },
   headerText: { ...type.mono, ...type.caption, color: colors.text, fontWeight: "700" },
   cellText: { ...type.mono, fontSize: 12, fontWeight: "700" },
   movedCell: { borderWidth: 2, borderColor: colors.text },
+  litLabel: { backgroundColor: colors.accentMuted },
+  litLabelText: { color: colors.accent },
+  dimmedCell: { opacity: 0.35 },
+  targetCell: { borderWidth: 3, borderColor: colors.text },
   legend: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   legendItem: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   legendSwatch: {
