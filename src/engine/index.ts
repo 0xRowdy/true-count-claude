@@ -13,3 +13,4 @@ export * from "./shoe";
 export * from "./counting";
 export * from "./round";
 export * from "./strategy";
+export * from "./ev";
