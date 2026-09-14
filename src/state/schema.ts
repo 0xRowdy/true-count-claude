@@ -5,8 +5,8 @@
  * ADR-0003 ships the MVP with no backend, and accepts one risk explicitly: "we will need a
  * migration path when sync lands — mitigated by versioning the persisted schema from the
  * first commit." This is that mitigation. Version 1 is the shape shipped on day one; every
- * future change to the persisted shape appends a `Migration` to `SESSION_MIGRATIONS` and
- * bumps `CURRENT_SCHEMA_VERSION`. Nothing else is needed, and nothing may skip it.
+ * change to the persisted shape appends a `Migration` to `SESSION_MIGRATIONS` and bumps
+ * `CURRENT_SCHEMA_VERSION`. Nothing else is needed, and nothing may skip it.
  *
  * The runner is pure and takes its chain as an argument, so it is testable without storage
  * and a Repository can be pointed at a different chain in a test.
@@ -15,7 +15,7 @@
 import type { Session } from "./types";
 
 /** The version this build writes. Bump on every change to the persisted shape. */
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
 
 /**
  * What a stored value looks like on disk. The version travels with the data, not beside it,
@@ -42,13 +42,64 @@ export interface Migration {
 }
 
 /**
- * The shipped upgrade path for Session records.
+ * Counting Systems that version 1 builds shipped as unbalanced, by the published name a
+ * `CountSnapshot` stores.
  *
- * Empty today: version 1 is the first schema, so there is nothing yet to upgrade *from*.
- * It is declared, exported, and wired through the Repository from the first commit so that
- * adding the first real migration is a one-line change rather than an architecture change.
+ * Frozen here rather than read from `@/engine/counting`: a migration describes what an old
+ * build *wrote*, so it must not change meaning if the engine later renames a system or adds
+ * a new unbalanced one — a v1 record cannot contain a system v1 did not ship.
  */
-export const SESSION_MIGRATIONS: readonly Migration[] = [];
+export const V1_UNBALANCED_SYSTEMS: ReadonlySet<string> = new Set(["KO", "Red 7"]);
+
+/**
+ * 1→2: `CountSnapshot.trueCount` becomes `number | null` (#22).
+ *
+ * Version 1 typed it as a plain number, so where no True Count existed — an unbalanced
+ * system, or no decks left to divide by — both writers stored a stand-in `0`. This step
+ * turns that stand-in into `null`, and touches nothing else:
+ *
+ * - Only a stored `0` is a candidate. No v1 writer produced any other stand-in, and a
+ *   non-zero number is not ours to reinterpret.
+ * - A `0` becomes `null` only when the snapshot itself proves no True Count could exist:
+ *   its system is one v1 shipped as unbalanced, or its `decksRemaining` is zero or less.
+ * - A balanced system's `0` with decks remaining is a genuine True Count of 0 — the most
+ *   common count in the shoe — and survives untouched.
+ *
+ * Defensive about shape because it runs before `isSession`: a mangled record must come out
+ * the other side still mangled, and be reported there, rather than throw here.
+ */
+export const TRUE_COUNT_NULLABLE: Migration = {
+  from: 1,
+  to: 2,
+  describe: "1→2: record an absent True Count as null instead of 0",
+  migrate: (data) => {
+    if (typeof data !== "object" || data === null) return data;
+    const session = data as { decisions?: unknown };
+    if (!Array.isArray(session.decisions)) return data;
+    return { ...session, decisions: session.decisions.map(nullAbsentTrueCount) };
+  },
+};
+
+function nullAbsentTrueCount(decision: unknown): unknown {
+  if (typeof decision !== "object" || decision === null) return decision;
+  const count = (decision as { count?: unknown }).count;
+  if (typeof count !== "object" || count === null) return decision;
+
+  const snapshot = count as { system?: unknown; trueCount?: unknown; decksRemaining?: unknown };
+  if (snapshot.trueCount !== 0) return decision;
+
+  const unbalanced =
+    typeof snapshot.system === "string" && V1_UNBALANCED_SYSTEMS.has(snapshot.system);
+  const exhausted = typeof snapshot.decksRemaining === "number" && snapshot.decksRemaining <= 0;
+  if (!unbalanced && !exhausted) return decision;
+
+  return { ...decision, count: { ...snapshot, trueCount: null } };
+}
+
+/**
+ * The shipped upgrade path for Session records, one single-version hop per entry, in order.
+ */
+export const SESSION_MIGRATIONS: readonly Migration[] = [TRUE_COUNT_NULLABLE];
 
 export type MigrationOutcome<T> =
   | { readonly ok: true; readonly data: T; readonly applied: readonly string[] }

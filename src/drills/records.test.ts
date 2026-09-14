@@ -114,7 +114,7 @@ describe("a Decision for the Session log", () => {
     expect(record.at).toBe(1_700_000);
   });
 
-  it("records an unbalanced system's Running Count and a zero True Count it never uses", () => {
+  it("records an unbalanced system's Running Count and no True Count at all", () => {
     const drill = dealNextHand(
       startBasicStrategyDrill({ ...DEFAULT_BASIC_STRATEGY_CONFIG, system: KO }, 8),
     );
@@ -126,10 +126,10 @@ describe("a Decision for the Session log", () => {
 
     expect(record.count.system).toBe("KO");
     expect(record.count.runningCount).toBe(situation!.count.runningCount);
-    // `CountSnapshot.trueCount` is not nullable, and KO never converts. The Running Count
-    // alongside it is the number that means something for this system.
-    expect(record.count.trueCount).toBe(0);
+    // KO never converts, so there is no True Count to store — null, not a 0 that would read
+    // as a real one. The Running Count alongside it is the number that means something here.
     expect(situation!.count.trueCount).toBeNull();
+    expect(record.count.trueCount).toBeNull();
   });
 
   it("records an insurance decision, with the hand that was on the table", () => {

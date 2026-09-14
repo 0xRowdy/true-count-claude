@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ARCHIVE_FORMAT, createArchive, parseArchive, serializeArchive } from "./archive";
-import { buildSession } from "./fixtures";
-import { CURRENT_SCHEMA_VERSION, type Migration } from "./schema";
+import { V1_COUNT_CASES, buildSession, buildV1Session } from "./fixtures";
+import { CURRENT_SCHEMA_VERSION, type Migration, SESSION_MIGRATIONS } from "./schema";
 import { endSession } from "./session";
 import { verifyReplay } from "./replay";
 
@@ -35,11 +35,34 @@ describe("the session archive", () => {
     for (const session of parsed.sessions) expect(verifyReplay(session).ok).toBe(true);
   });
 
-  it("upgrades an archive written by an older build", () => {
+  it("upgrades an archive exported by a version 1 build, nulling only its stand-in zeros", () => {
+    const raw = JSON.stringify({
+      format: ARCHIVE_FORMAT,
+      schemaVersion: 1,
+      exportedAt: 5,
+      sessions: [buildV1Session({ id: "old" })],
+    });
+
+    const parsed = parseArchive(raw);
+
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.applied).toEqual(SESSION_MIGRATIONS.map((step) => step.describe));
+    expect(parsed.sessions[0]!.decisions.map((decision) => decision.count.trueCount)).toEqual([
+      null,
+      null,
+      null,
+      0,
+      0,
+      V1_COUNT_CASES.omegaNonZero.trueCount,
+    ]);
+  });
+
+  it("upgrades an archive through every step of a longer chain", () => {
     const step: Migration = {
-      from: 1,
-      to: 2,
-      describe: "1→2: add a per-Session note",
+      from: 2,
+      to: 3,
+      describe: "2→3: add a per-Session note",
       migrate: (data) => ({ ...(data as object), note: "" }),
     };
     const raw = JSON.stringify({
@@ -49,11 +72,11 @@ describe("the session archive", () => {
       sessions: [buildSession({ id: "old", rounds: 2 })],
     });
 
-    const parsed = parseArchive(raw, [step], 2);
+    const parsed = parseArchive(raw, [...SESSION_MIGRATIONS, step], 3);
 
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.applied).toEqual([step.describe]);
+    expect(parsed.applied).toEqual([...SESSION_MIGRATIONS.map((s) => s.describe), step.describe]);
     expect((parsed.sessions[0] as unknown as { note: string }).note).toBe("");
   });
 

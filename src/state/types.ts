@@ -39,10 +39,15 @@ export type SessionEndReason = "user" | "drill-complete" | "bankroll-exhausted" 
  * showing the division is part of proving the math (invariant 4).
  */
 export interface CountSnapshot {
-  /** Counting System name — "Hi-Lo", "KO", "Omega II", "Wong Halves", "Zen", "Red 7". */
+  /** Counting System name — "Hi-Lo", "KO", "Omega II", "Wong Halves", "Zen Count", "Red 7". */
   readonly system: string;
   readonly runningCount: number;
-  readonly trueCount: number;
+  /**
+   * `null` when there is no True Count to record: an unbalanced system (KO, Red 7) does not
+   * convert, and the conversion is undefined with no decks remaining. Never a stand-in 0 —
+   * a stored 0 is a real True Count of 0.
+   */
+  readonly trueCount: number | null;
   readonly decksRemaining: number;
 }
 

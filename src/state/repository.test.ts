@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { buildSession } from "./fixtures";
+import { V1_COUNT_CASES, buildSession, buildV1Session } from "./fixtures";
 import { DEFAULT_KEY_PREFIX, createSessionRepository } from "./repository";
-import type { Migration } from "./schema";
+import { type Migration, SESSION_MIGRATIONS } from "./schema";
 import { endSession } from "./session";
 import { createMemoryStore } from "./store";
 
@@ -182,33 +182,78 @@ describe("export and import", () => {
  * path the app uses — not a parallel test-only one.
  */
 describe("reading through a migration chain", () => {
+  /** A future step on top of the shipped chain, standing in for the next shape change. */
   const ADD_NOTE: Migration = {
-    from: 1,
-    to: 2,
-    describe: "1→2: add a per-Session note",
+    from: 2,
+    to: 3,
+    describe: "2→3: add a per-Session note",
     migrate: (data) => ({ ...(data as object), note: "" }),
   };
+  const V3_CHAIN = [...SESSION_MIGRATIONS, ADD_NOTE];
 
-  it("upgrades a stored v1 Session on read", async () => {
+  /** A repository as the version 1 build configured it: it wrote v1 and knew no migrations. */
+  const v1Build = (store: ReturnType<typeof createMemoryStore>) =>
+    createSessionRepository({ store, migrations: [], schemaVersion: 1 });
+
+  it("upgrades a stored v1 Session on read, telling a stand-in 0 from a real 0", async () => {
     const store = createMemoryStore();
-    // Written by the v1 build, with the v1 repository.
-    await createSessionRepository({ store }).save(buildSession({ id: "old", rounds: 2 }));
+    // Written by the v1 build, stand-in zeros and all.
+    await v1Build(store).save(buildV1Session({ id: "old" }));
+    const stored = JSON.parse((await store.getItem(`${DEFAULT_KEY_PREFIX}/session/old`))!);
+    expect(stored.schemaVersion).toBe(1);
 
-    // The v2 build reads the same device storage.
-    const v2 = createSessionRepository({ store, migrations: [ADD_NOTE], schemaVersion: 2 });
-    const upgraded = await v2.load("old");
+    // This build reads the same device storage, through the app's own read path.
+    const upgraded = await createSessionRepository({ store }).load("old");
+
+    expect(upgraded).not.toBeNull();
+    expect(upgraded!.decisions.map((decision) => decision.count)).toEqual([
+      { ...V1_COUNT_CASES.koStandIn, trueCount: null },
+      { ...V1_COUNT_CASES.red7StandIn, trueCount: null },
+      { ...V1_COUNT_CASES.exhaustedStandIn, trueCount: null },
+      // A balanced system's genuine True Count of 0 is a count, not an absence.
+      V1_COUNT_CASES.hiLoRealZero,
+      V1_COUNT_CASES.zenRealZero,
+      V1_COUNT_CASES.omegaNonZero,
+    ]);
+  });
+
+  it("persists the upgrade as a v2 record once the Session is saved again", async () => {
+    const store = createMemoryStore();
+    await v1Build(store).save(buildV1Session({ id: "old" }));
+
+    const repository = createSessionRepository({ store });
+    await repository.save((await repository.load("old"))!);
+
+    const raw = JSON.parse((await store.getItem(`${DEFAULT_KEY_PREFIX}/session/old`))!);
+    expect(raw.schemaVersion).toBe(2);
+    expect(raw.data.decisions[0].count.trueCount).toBeNull();
+    expect(raw.data.decisions[3].count.trueCount).toBe(0);
+    // And it reads back unchanged, with no migration left to run.
+    expect(await createSessionRepository({ store }).load("old")).toEqual(
+      await repository.load("old"),
+    );
+  });
+
+  it("walks a stored v1 Session through every later step too", async () => {
+    const store = createMemoryStore();
+    await v1Build(store).save(buildV1Session({ id: "old" }));
+
+    const v3 = createSessionRepository({ store, migrations: V3_CHAIN, schemaVersion: 3 });
+    const upgraded = await v3.load("old");
 
     expect(upgraded).not.toBeNull();
     expect((upgraded as unknown as { note: string }).note).toBe("");
+    expect(upgraded!.decisions[0]!.count.trueCount).toBeNull();
+    expect(upgraded!.decisions[3]!.count.trueCount).toBe(0);
   });
 
-  it("refuses to read a v2 record from the v1 build rather than dropping fields", async () => {
+  it("refuses to read a newer record from an older build rather than dropping fields", async () => {
     const store = createMemoryStore();
-    const v2 = createSessionRepository({ store, migrations: [ADD_NOTE], schemaVersion: 2 });
-    await v2.save(buildSession({ id: "future", rounds: 1 }));
+    const v3 = createSessionRepository({ store, migrations: V3_CHAIN, schemaVersion: 3 });
+    await v3.save(buildSession({ id: "future", rounds: 1 }));
 
-    const v1 = createSessionRepository({ store });
-    const { sessions, unreadable } = await v1.loadAll();
+    const current = createSessionRepository({ store });
+    const { sessions, unreadable } = await current.loadAll();
 
     expect(sessions).toEqual([]);
     expect(unreadable[0]!.reason).toMatch(/newer than this build understands/);

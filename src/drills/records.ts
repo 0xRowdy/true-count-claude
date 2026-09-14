@@ -66,8 +66,8 @@ function toDecisionHand(snapshot: HandSnapshot): DecisionHand {
  * The count snapshot is stored rather than left to be recomputed: a Decision must be
  * explainable years later even if a tag table is corrected, and the user's Explanation
  * showed *these* numbers. A True Count that does not exist — an unbalanced system, or a
- * shoe with nothing left to divide by — is recorded as 0 alongside the Running Count that
- * is the real answer for those systems, since `CountSnapshot.trueCount` is not nullable.
+ * shoe with nothing left to divide by — is recorded as null alongside the Running Count
+ * that is the real answer for those systems.
  */
 export function toDecisionInput(
   result: DrillDecisionResult,
@@ -94,7 +94,7 @@ export function toDecisionInput(
     count: {
       system: count.systemName,
       runningCount: count.runningCount,
-      trueCount: count.trueCount ?? 0,
+      trueCount: count.trueCount,
       decksRemaining: count.decksRemaining,
     },
     at: result.at,

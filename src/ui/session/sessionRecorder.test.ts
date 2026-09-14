@@ -9,8 +9,9 @@
 
 import { describe, expect, it } from "vitest";
 import { rankValue } from "@/engine/cards";
+import type { CountingSystemId } from "@/engine/counting";
 import type { Action } from "@/engine/hand";
-import { DEFAULT_RULES } from "@/engine/rules";
+import { DEFAULT_RULES, type RuleSet } from "@/engine/rules";
 import { currentLegalActions, isRoundOver } from "@/engine/round";
 import {
   computeStats,
@@ -24,6 +25,7 @@ import type { Session } from "@/state";
 import {
   type PlayTable,
   chooseBet,
+  chooseSystem,
   createPlayTable,
   dealRound,
   nextRound,
@@ -65,8 +67,15 @@ const HIT_TO_SEVENTEEN: Policy = (legal) => (legal.includes("hit") ? "hit" : ALW
  * Plays `rounds` rounds through the table's own transitions, recording every one. Insurance
  * is always declined, which is Basic Strategy.
  */
-function play(rounds: number, seed = 1234, bet = 10, policy: Policy = ALWAYS_STAND): Run {
-  let table = chooseBet(createPlayTable(DEFAULT_RULES, seed), bet);
+function play(
+  rounds: number,
+  seed = 1234,
+  bet = 10,
+  policy: Policy = ALWAYS_STAND,
+  system: CountingSystemId = "hi-lo",
+  rules: RuleSet = DEFAULT_RULES,
+): Run {
+  let table = chooseBet(chooseSystem(createPlayTable(rules, seed), system), bet);
   let session = beginSession({ table, id: "run", startedAt: AT });
 
   for (let round = 0; round < rounds; round++) {
@@ -145,13 +154,13 @@ describe("recording a Session from the Play table", () => {
     for (const decision of splits) {
       const [first, second] = decision.hand.playerCards;
       // `Decision.hand` is "the hand state that produced a Decision" — for a split that is
-      // the pair, because a pair is the only thing that can be split. See the report note:
-      // `src/state/replay.ts`'s `verifyRoundCards` double-counts the second card of a pair,
-      // which is why a split round is deliberately not asserted against `verifyReplay` here.
+      // the pair, because a pair is the only thing that can be split.
       expect(decision.hand.playerCards).toHaveLength(2);
       // A pair by value, not by rank — Q and 10 split at every table that deals blackjack.
       expect(rankValue(first?.rank ?? "A")).toBe(rankValue(second?.rank ?? "2"));
     }
+    // Recording the pair is what lets replay account for each card exactly once.
+    expect(verifyReplay(session)).toEqual({ ok: true, problems: [] });
   });
 
   it("stores the count that was showing at the moment of each Decision", () => {
@@ -159,8 +168,30 @@ describe("recording a Session from the Play table", () => {
     for (const decision of session.decisions) {
       expect(decision.count.system).toBe("Hi-Lo");
       expect(decision.count.decksRemaining).toBeGreaterThan(0);
+      // A balanced system with cards left always has a True Count — 0 included.
+      expect(decision.count.trueCount).not.toBeNull();
     }
   });
+
+  it("stores a balanced system's True Count of 0 as 0, not as an absence", () => {
+    const { session } = play(40);
+    const level = session.decisions.filter((decision) => decision.count.runningCount === 0);
+    expect(level.length, "40 rounds never passed a Running Count of 0").toBeGreaterThan(0);
+    for (const decision of level) expect(decision.count.trueCount).toBe(0);
+  });
+
+  it.each(["ko", "red-7"] as const)(
+    "stores no True Count for %s, which does not convert, and still replays",
+    (system) => {
+      const { session } = play(20, 1234, 10, ALWAYS_STAND, system);
+      expect(session.decisions.length).toBeGreaterThan(0);
+      for (const decision of session.decisions) {
+        expect(decision.count.trueCount).toBeNull();
+        expect(decision.count.decksRemaining).toBeGreaterThan(0);
+      }
+      expect(verifyReplay(session)).toEqual({ ok: true, problems: [] });
+    },
+  );
 
   it("stores the deviation-aware answer and the chart answer side by side", () => {
     const { session } = play(20);
@@ -176,6 +207,24 @@ describe("recording a Session from the Play table", () => {
     const stats = computeStats(play(25).session);
     expect(stats.basicStrategyAccuracy).not.toBeNull();
     expect(stats.basicStrategyAccuracy ?? 1).toBeLessThan(1);
+  });
+});
+
+/**
+ * The property this seam exists to keep: whatever the player does, the recorded log replays
+ * from its seed. Every policy, several seeds, and a double-deck shoe so each run crosses at
+ * least one reshuffle before hitting every hand can run the bankroll out.
+ */
+describe("every recorded run replays from its seed", () => {
+  const policies = { ALWAYS_STAND, ALWAYS_SPLIT, HIT_TO_SEVENTEEN } as const;
+  const doubleDeck: RuleSet = { ...DEFAULT_RULES, decks: 2 };
+
+  it.each(Object.keys(policies) as (keyof typeof policies)[])("under %s", (name) => {
+    for (const seed of [1, 7, 1234, 4242]) {
+      const { session } = play(40, seed, doubleDeck.minBet, policies[name], "hi-lo", doubleDeck);
+      expect(session.shoes.length, `seed ${seed} never reshuffled`).toBeGreaterThan(1);
+      expect(verifyReplay(session), `seed ${seed}`).toEqual({ ok: true, problems: [] });
+    }
   });
 });
 
@@ -278,6 +327,7 @@ describe("mapping the engine's settlement onto the log", () => {
 
   it("records a bust as a loss that is also a bust", () => {
     const { session } = play(40, 1234, 10, HIT_TO_SEVENTEEN);
+    expect(verifyReplay(session)).toEqual({ ok: true, problems: [] });
     const busted = session.rounds.flatMap((round) => round.hands).filter((hand) => hand.busted);
     expect(busted.length, "40 rounds of hitting produced no bust").toBeGreaterThan(0);
     // The Session log has no "bust" outcome: a bust is a loss, with its cause kept beside it,

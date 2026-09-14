@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildSession } from "./fixtures";
+import { COUNTING_SYSTEMS } from "@/engine";
+import { V1_COUNT_CASES, buildSession, buildV1Session } from "./fixtures";
 import {
   CURRENT_SCHEMA_VERSION,
   type Migration,
   SESSION_MIGRATIONS,
+  TRUE_COUNT_NULLABLE,
+  V1_UNBALANCED_SYSTEMS,
   decodeSession,
   encodeSession,
   isSession,
@@ -12,9 +15,8 @@ import {
 import type { Session } from "./types";
 
 /**
- * A worked example of the upgrade path ADR-0003 requires, exercised through the same runner
- * the app uses. Version 1 is what ships today; these two steps stand in for the first real
- * shape changes, and prove the mechanism is wired rather than merely intended.
+ * A synthetic chain exercising the runner the app uses, independent of the shipped history:
+ * two invented steps prove that a multi-step walk, a partial walk, and a gap all behave.
  */
 const V1_TO_V2: Migration = {
   from: 1,
@@ -65,7 +67,7 @@ describe("the persisted record carries its schema version", () => {
     expect(record.data.id).toBe("session-1");
   });
 
-  it("reads back what it wrote, with no migrations needed at version 1", () => {
+  it("reads back what it wrote, with no migrations needed at the current version", () => {
     const session = buildSession({ rounds: 2, seed: 17 });
     const outcome = decodeSession(encodeSession(session));
 
@@ -75,9 +77,109 @@ describe("the persisted record carries its schema version", () => {
     expect(outcome.session).toEqual(JSON.parse(JSON.stringify(session)));
   });
 
-  it("ships an upgrade path, empty today because version 1 is the first schema", () => {
-    expect(SESSION_MIGRATIONS).toEqual([]);
-    expect(CURRENT_SCHEMA_VERSION).toBe(1);
+  it("ships an unbroken upgrade path from version 1 to the current version", () => {
+    expect(CURRENT_SCHEMA_VERSION).toBe(2);
+    expect(SESSION_MIGRATIONS.map((step) => [step.from, step.to])).toEqual([[1, 2]]);
+  });
+});
+
+/**
+ * #22: version 1 typed `CountSnapshot.trueCount` as a number, so an absent True Count was
+ * stored as 0. The migration must tell that stand-in apart from a real True Count of 0 —
+ * which is the most common count in any shoe — using only what the snapshot itself says.
+ */
+describe("1→2: an absent True Count becomes null, and a real 0 stays 0", () => {
+  const upgrade = (session: Session): Session => {
+    const outcome = migrateRecord<Session>(
+      { schemaVersion: 1, kind: "session", data: JSON.parse(JSON.stringify(session)) },
+      SESSION_MIGRATIONS,
+    );
+    if (!outcome.ok) throw new Error(outcome.reason);
+    expect(outcome.applied).toEqual([TRUE_COUNT_NULLABLE.describe]);
+    return outcome.data;
+  };
+
+  const counts = (session: Session) => session.decisions.map((decision) => decision.count);
+
+  it("nulls the stand-in 0 an unbalanced system recorded, for KO and Red 7", () => {
+    const [ko, red7] = counts(upgrade(buildV1Session()));
+
+    expect(ko).toEqual({ ...V1_COUNT_CASES.koStandIn, trueCount: null });
+    expect(red7).toEqual({ ...V1_COUNT_CASES.red7StandIn, trueCount: null });
+  });
+
+  it("nulls the stand-in 0 recorded with no decks left to divide by, even for Hi-Lo", () => {
+    const [, , exhausted] = counts(upgrade(buildV1Session()));
+    expect(exhausted).toEqual({ ...V1_COUNT_CASES.exhaustedStandIn, trueCount: null });
+  });
+
+  it("keeps a balanced system's genuine True Count of 0 as 0, not null", () => {
+    const [, , , hiLo, zen] = counts(upgrade(buildV1Session()));
+
+    expect(hiLo).toEqual(V1_COUNT_CASES.hiLoRealZero);
+    expect(hiLo?.trueCount).toBe(0);
+    expect(zen).toEqual(V1_COUNT_CASES.zenRealZero);
+    expect(zen?.trueCount).toBe(0);
+  });
+
+  it("leaves every non-zero True Count, and everything else in the Session, untouched", () => {
+    const v1 = JSON.parse(JSON.stringify(buildV1Session())) as Session;
+    const upgraded = upgrade(v1);
+
+    expect(counts(upgraded)[5]).toEqual(V1_COUNT_CASES.omegaNonZero);
+    const withoutCounts = (session: Session) => ({
+      ...session,
+      decisions: session.decisions.map((decision) => ({ ...decision, count: null })),
+    });
+    expect(withoutCounts(upgraded)).toEqual(withoutCounts(v1));
+  });
+
+  it("changes nothing in a Session whose Hi-Lo counts all had decks remaining", () => {
+    const session = JSON.parse(JSON.stringify(buildSession({ rounds: 20, seed: 3 })));
+    expect(upgrade(session)).toEqual(session);
+  });
+
+  it("is a no-op on data already in the version 2 shape", () => {
+    const v2 = upgrade(buildV1Session());
+    expect(TRUE_COUNT_NULLABLE.migrate(v2)).toEqual(v2);
+  });
+
+  it("passes a mangled record through for `isSession` to reject, rather than throwing", () => {
+    for (const data of [null, 7, "x", {}, { decisions: "no" }, { decisions: [null, 3, {}] }]) {
+      expect(() => TRUE_COUNT_NULLABLE.migrate(data)).not.toThrow();
+    }
+    expect(TRUE_COUNT_NULLABLE.migrate({ decisions: [{ count: null }] })).toEqual({
+      decisions: [{ count: null }],
+    });
+  });
+
+  it("freezes names that really are unbalanced systems, spelled as a snapshot stores them", () => {
+    // Frozen in the migration on purpose, so a later engine change cannot alter what an old
+    // record means. This pins that the freeze was not a typo — a misspelt name would quietly
+    // leave every KO stand-in 0 in place — and that no balanced system is caught by it.
+    for (const name of V1_UNBALANCED_SYSTEMS) {
+      const system = COUNTING_SYSTEMS.find((candidate) => candidate.name === name);
+      expect(system, `${name} is not a Counting System name`).toBeDefined();
+      expect(system?.balanced).toBe(false);
+    }
+    expect(V1_UNBALANCED_SYSTEMS.size).toBe(2);
+  });
+
+  it("upgrades a stored v1 record through decodeSession with the shipped chain", () => {
+    const raw = JSON.stringify({ schemaVersion: 1, kind: "session", data: buildV1Session() });
+    const outcome = decodeSession(raw);
+
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(outcome.applied).toEqual([TRUE_COUNT_NULLABLE.describe]);
+    expect(outcome.session.decisions.map((decision) => decision.count.trueCount)).toEqual([
+      null,
+      null,
+      null,
+      0,
+      0,
+      -1.5,
+    ]);
   });
 });
 

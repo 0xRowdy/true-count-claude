@@ -194,12 +194,9 @@ function describeDecision(
     count: {
       system: table.system.name,
       runningCount: readout.running,
-      // `countReadout` returns null when there is no True Count — an unbalanced system does
-      // not convert, and the conversion is undefined with no decks left. `CountSnapshot`
-      // types this as a plain number, so the neutral 0 is stored and `system` plus
-      // `decksRemaining` tell a reader that the conversion did not apply. See the report
-      // note: this field wants to be `number | null`.
-      trueCount: readout.trueCount ?? 0,
+      // Null when there is no True Count — an unbalanced system does not convert, and the
+      // conversion is undefined with no decks left. Stored as null, never as a stand-in 0.
+      trueCount: readout.trueCount,
       decksRemaining: readout.decksRemaining,
     },
     at,

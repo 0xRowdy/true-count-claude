@@ -149,9 +149,57 @@ function snapshot(runningCount: number, shoe: Shoe): CountSnapshot {
   return {
     system: "Hi-Lo",
     runningCount,
-    trueCount: decksRemaining === 0 ? 0 : runningCount / decksRemaining,
+    trueCount: decksRemaining === 0 ? null : runningCount / decksRemaining,
     decksRemaining,
   };
+}
+
+/** A `CountSnapshot` as a version 1 build typed it: `trueCount` was never null. */
+export interface V1CountSnapshot {
+  readonly system: string;
+  readonly runningCount: number;
+  readonly trueCount: number;
+  readonly decksRemaining: number;
+}
+
+/**
+ * A dealt Session with its first Decisions' counts overwritten by `counts`, in order — how a
+ * test builds the record a version 1 build would have persisted, stand-in zeros and all,
+ * without hand-writing the rest of the log.
+ */
+export function withV1Counts(session: Session, counts: readonly V1CountSnapshot[]): Session {
+  if (counts.length > session.decisions.length) {
+    throw new Error(
+      `Session has ${session.decisions.length} Decisions; cannot restamp ${counts.length}.`,
+    );
+  }
+  return {
+    ...session,
+    decisions: session.decisions.map((decision, index) => {
+      const count = counts[index];
+      return count ? { ...decision, count } : decision;
+    }),
+  };
+}
+
+/**
+ * Every case the 1→2 migration has to decide, as a v1 build would have stored it. The first
+ * three are stand-in zeros that mean "no True Count"; the last three are real numbers —
+ * including two genuine True Counts of 0 — that must survive exactly as written.
+ */
+export const V1_COUNT_CASES = {
+  koStandIn: { system: "KO", runningCount: 3, trueCount: 0, decksRemaining: 4.5 },
+  red7StandIn: { system: "Red 7", runningCount: -2, trueCount: 0, decksRemaining: 5 },
+  exhaustedStandIn: { system: "Hi-Lo", runningCount: 2, trueCount: 0, decksRemaining: 0 },
+  hiLoRealZero: { system: "Hi-Lo", runningCount: 0, trueCount: 0, decksRemaining: 4 },
+  zenRealZero: { system: "Zen Count", runningCount: 0, trueCount: 0, decksRemaining: 1.5 },
+  omegaNonZero: { system: "Omega II", runningCount: -6, trueCount: -1.5, decksRemaining: 4 },
+} as const satisfies Record<string, V1CountSnapshot>;
+
+/** A Session payload as a version 1 build persisted it, carrying `V1_COUNT_CASES` in order. */
+export function buildV1Session(options: BuildSessionOptions = {}): Session {
+  const cases = Object.values(V1_COUNT_CASES);
+  return withV1Counts(buildSession({ rounds: cases.length, ...options }), cases);
 }
 
 function settle(
