@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { RANKS } from "@/engine/cards";
 import { DEFAULT_RULES, describeRules } from "@/engine/rules";
@@ -46,6 +47,10 @@ export default function Home() {
           value={intact ? "verified" : "FAILED"}
           tone={intact ? "good" : "bad"}
         />
+        {/* Invariant 1: the proof that the Shoe is honest is never behind a purchase. */}
+        <Link href="/shoe-integrity" style={styles.link}>
+          Open the Shoe Integrity Panel →
+        </Link>
       </View>
 
       <View style={styles.card}>
@@ -121,6 +126,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   heading: { ...type.heading, color: colors.text, marginBottom: spacing.xs },
+  link: { ...type.body, color: colors.accent, marginTop: spacing.sm, minHeight: 44, paddingTop: spacing.sm },
   mono: { ...type.mono, ...type.caption, color: colors.text },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   rowLabel: { ...type.caption, color: colors.textMuted },
