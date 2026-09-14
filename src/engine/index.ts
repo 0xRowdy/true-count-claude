@@ -10,3 +10,4 @@ export * from "./rng";
 export * from "./rules";
 export * from "./hand";
 export * from "./shoe";
+export * from "./counting";
