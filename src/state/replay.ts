@@ -128,30 +128,27 @@ export function verifyReplay(session: Session): ReplayVerification {
  * Confirms that every card the log says was on the table during a round really does come
  * out of the seeded Shoe within that round's span. A mismatch means the log and the seed
  * describe different games, which is exactly the "rigged shoe" accusation made checkable.
+ *
+ * The count is of *distinct* cards, not of recorded views. A card can appear in several
+ * Decisions — a hand is re-recorded every time it acts — and the same card can appear under
+ * two different hand indices once a pair is split, because the two cards of the pair go on
+ * to be the first card of the two hands the split produces. Demanding one card per recorded
+ * view would report a shortage on every split round that the Shoe never actually had (#21).
  */
 function verifyRoundCards(session: Session, roundIndex: number): string[] {
   const round = session.rounds[roundIndex];
   if (!round) return [];
 
+  const problems: string[] = [];
   const shoe = rebuildShoe(session, round.shoeIndex, round.shoeEndIndex);
   const available = tally(shoe.cards.slice(round.shoeStartIndex, round.shoeEndIndex));
 
   const required = tally(round.dealerCards);
-  // The longest recorded view of each hand is its most complete one; earlier Decisions on
-  // the same hand are prefixes of it.
-  const fullest = new Map<number, readonly Card[]>();
-  for (const decision of session.decisions) {
-    if (decision.roundIndex !== roundIndex) continue;
-    const current = fullest.get(decision.hand.handIndex);
-    if (!current || decision.hand.playerCards.length > current.length) {
-      fullest.set(decision.hand.handIndex, decision.hand.playerCards);
-    }
-  }
-  for (const cards of fullest.values()) {
-    for (const card of cards) required.set(cardId(card), (required.get(cardId(card)) ?? 0) + 1);
+  for (const card of playerCardsDealt(session, roundIndex, problems)) {
+    const id = cardId(card);
+    required.set(id, (required.get(id) ?? 0) + 1);
   }
 
-  const problems: string[] = [];
   for (const [id, needed] of required) {
     const have = available.get(id) ?? 0;
     if (have < needed) {
@@ -162,6 +159,75 @@ function verifyRoundCards(session: Session, roundIndex: number): string[] {
     }
   }
   return problems;
+}
+
+/**
+ * Every card the Decision log shows in the player's hands during a round, each counted once
+ * however many Decisions it appears in.
+ *
+ * The log is walked in order, carrying the cards already counted for each hand position. A
+ * Decision on a hand can only extend what is known of it, so only the cards it adds are
+ * new. A `split` is the one Decision that does not extend a hand — it *replaces* it with
+ * the two the table deals, each keeping one card of the pair (already counted) and drawing
+ * a card that stays unknown until a later Decision records it. The second hand is inserted
+ * immediately after the hand it came from, which is where `src/engine/round` puts it, so
+ * resplits into three and four hands line up as well as a single split does.
+ *
+ * Split aces need no special case: they are frozen after one card, so they simply produce
+ * no further Decision and the card drawn onto them is never recorded here. A card the log
+ * does not mention is not a card the log has to account for.
+ *
+ * A Decision that contradicts what its hand already held is reported and then counted in
+ * full, so a substituted card is still demanded from the Shoe rather than quietly dropped.
+ */
+function playerCardsDealt(session: Session, roundIndex: number, problems: string[]): Card[] {
+  const dealt: Card[] = [];
+  /** Cards already counted, per hand position, left to right across the table. */
+  const counted: Card[][] = [];
+
+  for (const decision of session.decisions) {
+    if (decision.roundIndex !== roundIndex) continue;
+    const { handIndex, playerCards } = decision.hand;
+    while (counted.length <= handIndex) counted.push([]);
+    const known = counted[handIndex] as Card[];
+
+    if (startsWith(playerCards, known)) {
+      dealt.push(...playerCards.slice(known.length));
+      counted[handIndex] = [...playerCards];
+    } else if (!startsWith(known, playerCards)) {
+      problems.push(
+        `Round ${roundIndex}: Decision ${decision.index} shows hand ${handIndex} holding ` +
+          `${describe(playerCards)}, which does not continue the ${describe(known)} ` +
+          `already recorded`,
+      );
+      dealt.push(...playerCards);
+      counted[handIndex] = [...playerCards];
+    }
+
+    if (decision.actionTaken !== "split") continue;
+    const [first, second] = playerCards;
+    if (playerCards.length !== 2 || !first || !second) {
+      problems.push(
+        `Round ${roundIndex}: Decision ${decision.index} splits hand ${handIndex}, which ` +
+          `holds ${playerCards.length} cards rather than a pair`,
+      );
+      continue;
+    }
+    counted[handIndex] = [first];
+    counted.splice(handIndex + 1, 0, [second]);
+  }
+
+  return dealt;
+}
+
+/** True when `cards` opens with every card of `prefix`, in order. */
+function startsWith(cards: readonly Card[], prefix: readonly Card[]): boolean {
+  if (cards.length < prefix.length) return false;
+  return prefix.every((card, index) => cardId(card) === cardId(cards[index] as Card));
+}
+
+function describe(cards: readonly Card[]): string {
+  return cards.length === 0 ? "no cards" : cards.map(cardId).join(" ");
 }
 
 function tally(cards: readonly Card[]): Map<string, number> {
