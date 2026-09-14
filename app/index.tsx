@@ -37,6 +37,11 @@ export default function Home() {
         </Pressable>
       </Link>
 
+      {/* Invariant 8: your own training record is local and never behind an account. */}
+      <Link href="/session" style={styles.link}>
+        Session statistics →
+      </Link>
+
       <View style={styles.card}>
         <Text style={styles.heading}>Table</Text>
         <Text style={styles.mono}>{describeRules(DEFAULT_RULES)}</Text>

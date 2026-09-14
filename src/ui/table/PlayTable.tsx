@@ -23,6 +23,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { Link } from "expo-router";
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import type { Action } from "@/engine/hand";
 import { describeRules } from "@/engine/rules";
@@ -43,6 +44,12 @@ import {
   StatRow,
   type Tone,
 } from "@/ui/primitives";
+import {
+  SessionControlBar,
+  SessionEndedPanel,
+  SessionStatsPanel,
+} from "@/ui/session/SessionPanels";
+import { usePlaySession } from "@/ui/session/usePlaySession";
 import { colors, spacing, type } from "@/ui/theme";
 import type { CardSize } from "./CardView";
 import { CountPanel, type CountVisibility, SystemPanel } from "./CountPanel";
@@ -55,18 +62,10 @@ import {
   affordableChips,
   amountAtRisk,
   availableBankroll,
-  chooseBet,
-  chooseSystem,
   countReadout,
   currentShoe,
-  dealRound,
   insuranceWithheld,
   isBroke,
-  nextRound,
-  playAction,
-  resetBankroll,
-  shuffleShoe,
-  takeInsurance,
   usePlayTable,
 } from "./usePlayTable";
 
@@ -104,7 +103,11 @@ const ACTION_HINT: Record<Action, string> = {
 };
 
 export function PlayTable() {
-  const { table, update } = usePlayTable();
+  const controller = usePlayTable();
+  const { table } = controller;
+  // Every transition goes through the Session controller, so a Decision cannot be made
+  // without being recorded and a round cannot settle without its result being written.
+  const play = usePlaySession(controller);
   const { width } = useWindowDimensions();
   const [visibility, setVisibility] = useState<CountVisibility>("shown");
   const feedback = useTableFeedback();
@@ -121,7 +124,7 @@ export function PlayTable() {
   const onAction = (action: Action) => {
     // Doubling and splitting push chips out; everything else is a card off the shoe.
     feedback.play(action === "double" || action === "split" ? "chips" : "card");
-    update((current) => playAction(current, action));
+    play.act(action);
   };
 
   const tableColumn = (
@@ -155,19 +158,20 @@ export function PlayTable() {
       {round === null ? (
         <BetBar
           table={table}
-          onChooseBet={(amount) => update((current) => chooseBet(current, amount))}
+          onChooseBet={play.setBet}
           onDeal={() => {
             feedback.play("deal");
-            update(dealRound);
+            play.deal();
           }}
-          onReset={() => update(resetBankroll)}
+          onReset={play.resetBankroll}
+          {...(play.recording ? { onEndSession: () => play.end("bankroll-exhausted") } : {})}
         />
       ) : round.phase === "insurance" ? (
         <InsuranceBar
           round={round}
           onDecide={(take) => {
             if (take) feedback.play("chips");
-            update((current) => takeInsurance(current, take));
+            play.insurance(take);
           }}
         />
       ) : isRoundOver(round) ? (
@@ -177,7 +181,7 @@ export function PlayTable() {
           onNext={() => {
             const net = round.settlement?.net ?? 0;
             feedback.play(net > 0 ? "win" : net < 0 ? "lose" : "push");
-            update(nextRound);
+            play.next();
           }}
         />
       ) : (
@@ -200,15 +204,16 @@ export function PlayTable() {
         visibility={visibility}
         onChangeVisibility={setVisibility}
       />
-      <SystemPanel table={table} onChange={(id) => update((current) => chooseSystem(current, id))} />
+      <SystemPanel table={table} onChange={play.setSystem} />
       <ShoePanel
         table={table}
         cutCardOut={cutCardOut}
         onShuffle={() => {
           feedback.play("shuffle");
-          update(shuffleShoe);
+          play.shuffle();
         }}
       />
+      <SessionStatsPanel session={play.session} stats={play.stats} />
     </View>
   );
 
@@ -219,6 +224,28 @@ export function PlayTable() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* The Session bar sits above the felt, so the one control that ends a Session is on
+            screen at every moment of it — mid-round included. */}
+        <SessionControlBar
+          session={play.session}
+          recording={play.recording}
+          error={play.error}
+          onEnd={() => play.end()}
+          onStartNew={play.startNew}
+        >
+          <Link href="/session" style={styles.statsLink}>
+            Statistics →
+          </Link>
+        </SessionControlBar>
+
+        {play.ended ? (
+          <SessionEndedPanel
+            session={play.ended}
+            stats={play.stats}
+            onStartNew={play.startNew}
+          />
+        ) : null}
+
         {table.justShuffled ? (
           <Badge label="Cut card reached — new shoe, count reset" tone="info" />
         ) : cutCardOut && round !== null ? (
@@ -325,11 +352,18 @@ function BetBar({
   onChooseBet,
   onDeal,
   onReset,
+  onEndSession,
 }: {
   table: PlayTableState;
   onChooseBet: (amount: number) => void;
   onDeal: () => void;
   onReset: () => void;
+  /**
+   * Stopping here is a *choice*, offered alongside the reset — never inferred. A bankroll at
+   * zero does not end a Session (`src/state/session.test.ts` asserts it), and the reset is
+   * the primary action because invariant 6 forbids the dead end.
+   */
+  onEndSession?: () => void;
 }) {
   if (isBroke(table)) {
     return (
@@ -337,6 +371,8 @@ function BetBar({
         <Text style={styles.note}>
           The bankroll is {formatChips(table.bankroll)}, below the {formatChips(table.rules.minBet)}{" "}
           table minimum. Reset it here and keep playing — you never have to leave this screen.
+          Going broke stays in your statistics either way; it is the most instructive thing in
+          a training log.
         </Text>
         <View style={styles.actions}>
           <ActionButton
@@ -345,6 +381,14 @@ function BetBar({
             accessibilityHint="Restore the practice bankroll and carry on from this hand."
             onPress={onReset}
           />
+          {onEndSession ? (
+            <ActionButton
+              label="End session instead"
+              tone="warn"
+              accessibilityHint="Close this Session here and keep its statistics."
+              onPress={onEndSession}
+            />
+          ) : null}
         </View>
       </Panel>
     );
@@ -428,7 +472,9 @@ function BankrollPanel({ table }: { table: PlayTableState }) {
     <Panel title="Bankroll">
       <StatRow label="Available" value={formatChips(availableBankroll(table))} />
       {atRisk > 0 ? <StatRow label="On the felt" value={formatChips(atRisk)} tone="warn" /> : null}
-      <StatRow label="Hands played" value={table.handsPlayed} />
+      {/* Rounds, not hands: a split resolves two hands in one round, and the Session panel
+          counts those separately. Two different numbers with one label would be a small lie. */}
+      <StatRow label="Rounds played" value={table.handsPlayed} />
       <StatRow
         label="Session"
         value={formatNet(table.sessionNet)}
@@ -502,5 +548,6 @@ const styles = StyleSheet.create({
   betAmount: { ...type.mono, fontSize: 26, fontWeight: "700", color: colors.text },
   note: { ...type.caption, color: colors.textMuted, flexShrink: 1 },
   shuffle: { marginTop: spacing.xs, alignSelf: "flex-start" },
+  statsLink: { ...type.body, color: colors.accent, minHeight: 44, paddingTop: spacing.sm },
   rules: { ...type.caption, color: colors.textMuted, textAlign: "center" },
 });
