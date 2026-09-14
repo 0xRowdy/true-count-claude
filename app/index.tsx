@@ -1,3 +1,4 @@
+import { Link } from "expo-router";
 import { useMemo, useState } from "react";
 import { Link } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -30,6 +31,12 @@ export default function Home() {
       <Text style={styles.subtitle}>
         The card-counting trainer that shows you why, and proves its own math.
       </Text>
+
+      <Link href="/play" asChild>
+        <Pressable style={styles.button}>
+          <Text style={styles.buttonLabel}>Play blackjack</Text>
+        </Pressable>
+      </Link>
 
       <View style={styles.card}>
         <Text style={styles.heading}>Table</Text>

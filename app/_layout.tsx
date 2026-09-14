@@ -15,6 +15,7 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="index" options={{ title: "True Count" }} />
+        <Stack.Screen name="play" options={{ title: "Play" }} />
       </Stack>
     </SafeAreaProvider>
   );
