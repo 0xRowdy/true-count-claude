@@ -11,3 +11,4 @@ export * from "./rules";
 export * from "./hand";
 export * from "./shoe";
 export * from "./counting";
+export * from "./round";
