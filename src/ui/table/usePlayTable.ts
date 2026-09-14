@@ -100,6 +100,46 @@ export function createPlayTable(rules: RuleSet, sessionSeed: number): PlayTable 
   };
 }
 
+/** Everything a resumed table needs that a fresh one derives from its seed. */
+export interface RestorePlayTableInput {
+  readonly rules: RuleSet;
+  readonly system: CountingSystem;
+  readonly sessionSeed: number;
+  readonly shoeIndex: number;
+  /** Rebuilt from its recorded seed and dealt to where it stood (see `@/state`'s `rebuildShoe`). */
+  readonly shoe: Shoe;
+  readonly bankroll: number;
+  readonly handsPlayed: number;
+  readonly sessionNet: number;
+}
+
+/**
+ * Rebuilds a table from a Session that was still running when the app closed.
+ *
+ * The table is restored *between* rounds, never inside one: a round that never settled was
+ * never recorded, so resuming into the middle of it would deal cards the log does not know
+ * about. The shoe comes back exactly where the last settled round left it, which is what
+ * makes the resumed Running Count the same number the user was holding.
+ */
+export function restorePlayTable(input: RestorePlayTableInput): PlayTable {
+  return chooseBet(
+    {
+      rules: input.rules,
+      system: input.system,
+      sessionSeed: input.sessionSeed,
+      shoeIndex: input.shoeIndex,
+      shoe: input.shoe,
+      bankroll: input.bankroll,
+      bet: input.rules.minBet,
+      round: null,
+      justShuffled: false,
+      handsPlayed: input.handsPlayed,
+      sessionNet: input.sessionNet,
+    },
+    input.rules.minBet,
+  );
+}
+
 /**
  * Each shoe's seed is derived from the session seed and the shoe's index, so a whole session
  * reproduces from one number (ADR-0004) while no two shoes in it are the same deal.
