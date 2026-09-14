@@ -94,6 +94,12 @@ function rulesFor(entry: IndexEntry): RuleSet {
  *
  * Written in published order, which is order of expected gain, so a reader with the table in
  * the other hand can walk this block top to bottom.
+ *
+ * Transcription is not the only check on these numbers. `deviations.ev.test.ts` takes each
+ * index back to the EV engine — it builds a shoe standing at the index's own true count and
+ * measures whether the deviation really is worth more there than the play it departs from.
+ * Three sources copied from the same book would agree on a digit transposed in all three;
+ * `ev.ts` would not. All 22 survive that cross-check, with the measured margins recorded.
  */
 describe("the Illustrious 18, asserted against published values", () => {
   const published: ReadonlyArray<readonly [number, string, number, string]> = [
