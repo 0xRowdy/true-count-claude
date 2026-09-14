@@ -1,0 +1,54 @@
+name: CI
+
+# Product invariants 4 and 5 — "the strategy engine is auditable" and "the shoe is
+# provable" — are promises we make to users. This workflow is what makes them true
+# rather than aspirational (ADR-0002, ADR-0004).
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+# A newer push to the same branch makes the in-flight run obsolete.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: test · typecheck · lint · web build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          # Caches the pnpm store, keyed on pnpm-lock.yaml.
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The engine boundary (ADR-0002) and the ban on Math.random()/Date.now() in
+      # src/engine (ADR-0004) are enforced here. A violating import fails the build.
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build web
+        run: pnpm build:web
