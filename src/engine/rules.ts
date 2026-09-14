@@ -71,7 +71,14 @@ export function validateRules(rules: RuleSet): string[] {
   return problems;
 }
 
-/** The house edge contribution of each rule, used to explain a table's quality to the user. */
+/**
+ * A one-line summary of the table, in the shorthand a player would recognise.
+ *
+ * Every rule that moves a Basic Strategy cell appears here, because two tables that play
+ * differently must not read identically — a no-hole-card game and a peeked one shift four
+ * cells between them. Rules at their common value are left out to keep the line short:
+ * their absence is the information.
+ */
 export function describeRules(rules: RuleSet): string {
   const parts = [
     `${rules.decks}D`,
@@ -79,8 +86,14 @@ export function describeRules(rules: RuleSet): string {
     rules.blackjackPayout,
     rules.doubleAfterSplit ? "DAS" : "NDAS",
   ];
+
+  if (rules.doubleRule !== "any") parts.push(`D${rules.doubleRule}`);
   if (rules.surrender !== "none") parts.push(rules.surrender === "early" ? "ES" : "LS");
+  if (!rules.dealerPeek) parts.push("NHC");
   if (rules.resplitAces) parts.push("RSA");
+  if (!rules.oneCardToSplitAces) parts.push("DSA");
+  if (rules.maxSplitHands !== 4) parts.push(`SP${rules.maxSplitHands}`);
+
   parts.push(`${Math.round(rules.penetration * 100)}% pen`);
   return parts.join(" · ");
 }
