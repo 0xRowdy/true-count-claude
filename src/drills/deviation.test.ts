@@ -351,3 +351,71 @@ describe("the run", () => {
     expect(drill.current.lastResult).toBeNull();
   });
 });
+
+describe("benchmark", () => {
+  /**
+   * #28: the Deviation drill felt slow in a browser, so the two engine stages a tap waits on
+   * are timed here — producing a question (a search of seeded shoes for a position at the
+   * target True Count) and grading an answer (a full Explanation, `actionEvs` included).
+   *
+   * Profiling put both under a millisecond in Node. The visible cost in a production web build
+   * was React re-rendering the screen, which a Node test cannot see. The budgets are loose on
+   * purpose so a slow CI runner does not flake; they exist to make an order-of-magnitude
+   * regression fail loudly — a shoe search that stops finding its cut early, or EVs computed
+   * several times per answer. The numbers that matter are the ones printed.
+   */
+  const clock = () => globalThis.performance.now();
+
+  const TABLES: readonly { label: string; rules: RuleSet }[] = [
+    { label: "6D H17 LS", rules: DEFAULT_RULES },
+    { label: "1D S17", rules: { ...S17_NO_SURRENDER, decks: 1 } },
+    { label: "8D S17", rules: { ...S17_NO_SURRENDER, decks: 8 } },
+  ];
+
+  it("produces a question and grades an answer fast enough for a tap", () => {
+    const QUESTIONS = 60;
+    const report: string[] = [];
+    let slowestQuestion = 0;
+    let slowestGrade = 0;
+
+    for (const { label, rules } of TABLES) {
+      const cfg = config({ rules, bet: rules.minBet });
+      // Warm the JIT on a different seed from the one timed.
+      let warm = startDeviationDrill(cfg, 99);
+      for (let i = 0; i < 10; i++) warm = nextDeviationQuestion(submitDeviation(warm, "stand", i));
+
+      let drill = startDeviationDrill(cfg, 3);
+      let questionMs = 0;
+      let gradeMs = 0;
+      for (let i = 0; i < QUESTIONS; i++) {
+        const graded = clock();
+        drill = submitDeviation(drill, "stand", i);
+        const gradeElapsed = clock() - graded;
+
+        const asked = clock();
+        drill = nextDeviationQuestion(drill);
+        const questionElapsed = clock() - asked;
+
+        gradeMs += gradeElapsed;
+        questionMs += questionElapsed;
+        slowestGrade = Math.max(slowestGrade, gradeElapsed);
+        slowestQuestion = Math.max(slowestQuestion, questionElapsed);
+      }
+      report.push(
+        `${label}: question ${(questionMs / QUESTIONS).toFixed(3)}ms, grade ${(gradeMs / QUESTIONS).toFixed(3)}ms`,
+      );
+    }
+
+    console.log(
+      `Deviation drill per tap — ${report.join("; ")}; ` +
+        `slowest question ${slowestQuestion.toFixed(2)}ms, slowest grade ${slowestGrade.toFixed(2)}ms`,
+    );
+
+    // A frame is 16ms, and a mid-range phone runs JavaScript several times slower than Node on
+    // a laptop, so one stage taking 50ms here would be unusable on a device.
+    expect(`slowest question under 50ms: ${slowestQuestion < 50}`).toBe(
+      "slowest question under 50ms: true",
+    );
+    expect(`slowest grade under 50ms: ${slowestGrade < 50}`).toBe("slowest grade under 50ms: true");
+  });
+});

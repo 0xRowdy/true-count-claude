@@ -22,12 +22,13 @@
  * shoe seed and cut position that reproduce the question (ADR-0004).
  */
 
-import { useCallback, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import { type CountingSystem, getCountingSystem, getIndexSet, signed } from "@/engine";
+import { type CountingSystem, type RuleSet, getCountingSystem, getIndexSet, signed } from "@/engine";
 import { type Action, legalActions } from "@/engine/hand";
 import {
   DEFAULT_DEVIATION_CONFIG,
+  type DeviationDrill,
   type DeviationDrillAvailability,
   type DeviationDrillState,
   deviationDrillAvailability,
@@ -88,6 +89,14 @@ function start(config: RunConfig) {
   );
 }
 
+/**
+ * The screen re-renders more often than the drill changes. Saving an answer publishes the drill
+ * Session store twice — once when the Session is handed over, once when the write lands — and
+ * each publish re-renders this screen with the same run. Profiling a production web build (#28)
+ * showed those two follow-up renders costing as much as the render that shows the Explanation.
+ * So the two columns are memoised on the run and on stable callbacks: a publish that changes
+ * nothing they show leaves them alone, and the recording panel above still updates.
+ */
 export function DeviationDrillScreen() {
   const recorded = useRecordedDrill<DeviationDrillState>({
     drillId: "deviation",
@@ -96,7 +105,7 @@ export function DeviationDrillScreen() {
     systemBindsSession: false,
     startingBankroll: 0,
   });
-  const { run, config, update } = recorded;
+  const { run, config, update, changeSystem, undo } = recorded;
   /** A system the user picked that publishes no indices. Shown, never recorded. */
   const [declined, setDeclined] = useState<CountingSystem | null>(null);
   const [showExcluded, setShowExcluded] = useState(true);
@@ -110,9 +119,9 @@ export function DeviationDrillScreen() {
         return;
       }
       setDeclined(null);
-      recorded.changeSystem(system);
+      changeSystem(system);
     },
-    [recorded],
+    [changeSystem],
   );
 
   const answer = useCallback(
@@ -129,7 +138,20 @@ export function DeviationDrillScreen() {
     [update],
   );
 
-  if (!config) {
+  const nextQuestion = useCallback(
+    () => update((current) => replaceRun(current, nextDeviationQuestion(current.drill))),
+    [update],
+  );
+  const toggleExcluded = useCallback(() => setShowExcluded((open) => !open), []);
+
+  const rules = config?.rules ?? null;
+  const system = config ? (declined ?? config.system) : null;
+  const availability = useMemo(
+    () => (rules && system ? deviationDrillAvailability(rules, system) : null),
+    [rules, system],
+  );
+
+  if (!config || !rules || !system || !availability) {
     return (
       <ScrollView style={drillStyles.scroll} contentContainerStyle={drillStyles.scrollContent}>
         <Screen width="wide">
@@ -139,10 +161,6 @@ export function DeviationDrillScreen() {
       </ScrollView>
     );
   }
-
-  const rules = config.rules;
-  const system = declined ?? config.system;
-  const availability = deviationDrillAvailability(rules, system);
 
   const header = (
     <>
@@ -174,19 +192,6 @@ export function DeviationDrillScreen() {
     </>
   );
 
-  const setup = (
-    <Panel title="Setup">
-      <TableLine rules={rules} />
-      <SystemPicker
-        value={system}
-        onChange={pickSystem}
-        note={availability.indexSet ? `${availability.indexSet}` : "publishes no index set"}
-      />
-    </Panel>
-  );
-
-  const poolPanel = availability.indexSet ? <PoolPanel availability={availability} showExcluded={showExcluded} onToggle={() => setShowExcluded((open) => !open)} /> : null;
-
   if (declined || !run || !availability.available) {
     return (
       <ScrollView style={drillStyles.scroll} contentContainerStyle={drillStyles.scrollContent}>
@@ -211,17 +216,63 @@ export function DeviationDrillScreen() {
                 : null}
             </View>
           </Panel>
-          {poolPanel}
-          {setup}
+          {availability.indexSet ? (
+            <PoolPanel availability={availability} showExcluded={showExcluded} onToggle={toggleExcluded} />
+          ) : null}
+          <SetupPanel rules={rules} system={system} availability={availability} onPickSystem={pickSystem} />
         </Screen>
       </ScrollView>
     );
   }
 
-  const state = run.drill.current;
+  return (
+    <ScrollView style={drillStyles.scroll} contentContainerStyle={drillStyles.scrollContent}>
+      <Screen width="wide">
+        {header}
+        <View style={twoColumn ? styles.wide : styles.narrow}>
+          <QuestionColumn
+            drill={run.drill}
+            twoColumn={twoColumn}
+            canUndo={recorded.canUndo}
+            onUndo={undo}
+            onAnswer={answer}
+            onNext={nextQuestion}
+          />
+          <RailColumn
+            drill={run.drill}
+            twoColumn={twoColumn}
+            rules={rules}
+            system={system}
+            availability={availability}
+            showExcluded={showExcluded}
+            onToggleExcluded={toggleExcluded}
+            onPickSystem={pickSystem}
+          />
+        </View>
+      </Screen>
+    </ScrollView>
+  );
+}
+
+/** The question on the table, its answer buttons, undo, and — once answered — the Explanation. */
+const QuestionColumn = memo(function QuestionColumn({
+  drill,
+  twoColumn,
+  canUndo,
+  onUndo,
+  onAnswer,
+  onNext,
+}: {
+  drill: DeviationDrill;
+  twoColumn: boolean;
+  canUndo: boolean;
+  onUndo: () => void;
+  onAnswer: (action: DrillAction) => void;
+  onNext: () => void;
+}) {
+  const state = drill.current;
   const question = state.question;
   const result = state.lastResult;
-  const report = deviationReport(run.drill);
   const count = question.count;
   const actions =
     question.kind === "hand"
@@ -230,7 +281,7 @@ export function DeviationDrillScreen() {
         )
       : [];
 
-  const questionColumn = (
+  return (
     <View style={twoColumn ? styles.columnWide : styles.columnNarrow}>
       <Panel title={`Question ${question.index + 1}`}>
         <View style={styles.hands}>
@@ -259,8 +310,8 @@ export function DeviationDrillScreen() {
       {result ? null : question.kind === "insurance" ? (
         <Panel title={`Insurance against a dealer ${upcardName(11)}?`}>
           <View style={drillStyles.actions}>
-            <ActionButton label="Take insurance" tone="info" onPress={() => answer("insurance")} />
-            <ActionButton label="Decline insurance" onPress={() => answer("decline-insurance")} />
+            <ActionButton label="Take insurance" tone="info" onPress={() => onAnswer("insurance")} />
+            <ActionButton label="Decline insurance" onPress={() => onAnswer("decline-insurance")} />
           </View>
         </Panel>
       ) : (
@@ -271,14 +322,14 @@ export function DeviationDrillScreen() {
                 key={action}
                 label={ACTION_LABEL[action]}
                 tone={ACTION_TONE[action]}
-                onPress={() => answer(action)}
+                onPress={() => onAnswer(action)}
               />
             ))}
           </View>
         </Panel>
       )}
 
-      <UndoControl canUndo={recorded.canUndo} onUndo={recorded.undo} undone={run.drill.undone} />
+      <UndoControl canUndo={canUndo} onUndo={onUndo} undone={drill.undone} />
 
       {result ? (
         <ExplanationPanel
@@ -291,11 +342,7 @@ export function DeviationDrillScreen() {
                 {signed(question.trueCount)} — {question.firing ? "the index has fired" : "the chart holds"}.
               </Text>
               <View style={drillStyles.actions}>
-                <ActionButton
-                  label="Next question"
-                  tone="good"
-                  onPress={() => update((current) => replaceRun(current, nextDeviationQuestion(current.drill)))}
-                />
+                <ActionButton label="Next question" tone="good" onPress={onNext} />
               </View>
             </View>
           }
@@ -303,8 +350,31 @@ export function DeviationDrillScreen() {
       ) : null}
     </View>
   );
+});
 
-  const railColumn = (
+/** This run's tallies, the index pool at this table, and the setup. */
+const RailColumn = memo(function RailColumn({
+  drill,
+  twoColumn,
+  rules,
+  system,
+  availability,
+  showExcluded,
+  onToggleExcluded,
+  onPickSystem,
+}: {
+  drill: DeviationDrill;
+  twoColumn: boolean;
+  rules: RuleSet;
+  system: CountingSystem;
+  availability: DeviationDrillAvailability;
+  showExcluded: boolean;
+  onToggleExcluded: () => void;
+  onPickSystem: (system: CountingSystem) => void;
+}) {
+  const report = deviationReport(drill);
+
+  return (
     <View style={twoColumn ? styles.columnWide : styles.columnNarrow}>
       <Panel title="This run">
         <StatRow
@@ -335,21 +405,34 @@ export function DeviationDrillScreen() {
           </Section>
         ) : null}
       </Panel>
-      {poolPanel}
-      {setup}
+      {availability.indexSet ? (
+        <PoolPanel availability={availability} showExcluded={showExcluded} onToggle={onToggleExcluded} />
+      ) : null}
+      <SetupPanel rules={rules} system={system} availability={availability} onPickSystem={onPickSystem} />
     </View>
   );
+});
 
+function SetupPanel({
+  rules,
+  system,
+  availability,
+  onPickSystem,
+}: {
+  rules: RuleSet;
+  system: CountingSystem;
+  availability: DeviationDrillAvailability;
+  onPickSystem: (system: CountingSystem) => void;
+}) {
   return (
-    <ScrollView style={drillStyles.scroll} contentContainerStyle={drillStyles.scrollContent}>
-      <Screen width="wide">
-        {header}
-        <View style={twoColumn ? styles.wide : styles.narrow}>
-          {questionColumn}
-          {railColumn}
-        </View>
-      </Screen>
-    </ScrollView>
+    <Panel title="Setup">
+      <TableLine rules={rules} />
+      <SystemPicker
+        value={system}
+        onChange={onPickSystem}
+        note={availability.indexSet ? `${availability.indexSet}` : "publishes no index set"}
+      />
+    </Panel>
   );
 }
 
