@@ -28,11 +28,19 @@ import {
   SegmentedControl,
   StatRow,
 } from "@/ui/primitives";
+import { ReportBugButton, type ReportBugButtonProps } from "@/ui/bug-report/ReportBugButton";
 import { matchingPreset } from "@/ui/rules/presets";
 import { colors, spacing, type } from "@/ui/theme";
 import { formatRate } from "./drillFormat";
 
-export function DrillHeader({ drill }: { drill: DrillDefinition }) {
+/**
+ * What a drill knows about the situation on screen, for its bug report: the shoe it deals
+ * from, its run seed, the rules and system. The more a screen passes, the closer the report
+ * comes to a reproduction rather than a description.
+ */
+export type DrillReport = Omit<ReportBugButtonProps, "screen" | "includeSession" | "label">;
+
+export function DrillHeader({ drill, report }: { drill: DrillDefinition; report?: DrillReport }) {
   return (
     <Panel>
       <View style={styles.headerRow}>
@@ -40,7 +48,14 @@ export function DrillHeader({ drill }: { drill: DrillDefinition }) {
           {drill.name}
         </Text>
         <View style={styles.headerActions}>
-          {/* ReportBugButton: added after #14 merges */}
+          {/* Drill Sessions never hold the active pointer, so the open Session in the store is
+              the Play table's and does not belong in a drill's report. */}
+          <ReportBugButton
+            screen={`${drill.name} drill`}
+            includeSession={false}
+            {...report}
+            details={{ drill: drill.id, ...report?.details }}
+          />
           <Link href="/drills" style={styles.link}>
             All drills
           </Link>

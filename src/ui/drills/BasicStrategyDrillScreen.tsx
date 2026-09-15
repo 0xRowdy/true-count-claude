@@ -282,7 +282,20 @@ export function BasicStrategyDrillScreen() {
   return (
     <ScrollView style={drillStyles.scroll} contentContainerStyle={drillStyles.scrollContent}>
       <Screen width="wide">
-        <DrillHeader drill={DRILL} />
+        <DrillHeader
+          drill={DRILL}
+          report={{
+            table: {
+              shoe: state.shoe,
+              round: state.round,
+              bankroll: state.config.bankroll,
+              shoeIndex: state.shoeIndex,
+            },
+            rules: state.config.rules,
+            countingSystem: state.config.system.name,
+            details: { runSeed: state.seed, roundsDealt: state.roundsDealt },
+          }}
+        />
         <RecordingPanel
           session={recorded.session}
           ended={recorded.ended}

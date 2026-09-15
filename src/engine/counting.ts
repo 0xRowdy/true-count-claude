@@ -45,10 +45,13 @@ export interface CountingSystem {
    */
   readonly usesAceSideCount: boolean;
   /**
-   * The Running Count at which the remaining shoe is exactly neutral, given the system's
-   * initial running count. Zero for every balanced system; an unbalanced system's whole
-   * design is that this number is the same at any deck count, which is what lets it skip
-   * the true-count conversion.
+   * The one Running Count that signals the same edge at every depth of the shoe, given the
+   * system's initial running count. That is what lets an unbalanced system skip the
+   * true-count conversion at this point.
+   *
+   * It is *not* in general where the remaining shoe is neutral. For a balanced system the
+   * pivot is 0 and the two coincide; KO's pivot is +4, and a KO Running Count of +4 means a
+   * remaining shoe worth roughly a true count of +4 — favourable, not neutral — at any depth.
    */
   readonly pivot: number;
   /**

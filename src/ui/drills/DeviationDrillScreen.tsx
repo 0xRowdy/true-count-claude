@@ -94,7 +94,15 @@ export function DeviationDrillScreen() {
 
   const header = (
     <>
-      <DrillHeader drill={DRILL} />
+      <DrillHeader
+        drill={DRILL}
+        report={{
+          countingSystem: system.name,
+          details: drill
+            ? { runSeed: drill.current.seed, questionIndex: drill.current.attempts.length }
+            : {},
+        }}
+      />
       <NotRecordedPanel reason="These hands are placed at a real shoe position rather than dealt from it, and a Session's Decision log claims every card it shows came off its shoe. Recording them would invent a dealing history the Shoe Integrity Panel could not verify (ADR-0004), so your score stays on this screen. A Session will need an index-play record of its own." />
     </>
   );

@@ -93,7 +93,15 @@ export function TrueCountDrillScreen() {
 
   const header = (
     <>
-      <DrillHeader drill={DRILL} />
+      <DrillHeader
+        drill={DRILL}
+        report={{
+          countingSystem: system.name,
+          details: drill
+            ? { runSeed: drill.current.seed, questionIndex: drill.current.attempts.length }
+            : {},
+        }}
+      />
       <NotRecordedPanel reason="A Session keeps a Decision log and a count-check log, and a True Count conversion is neither, so there is nowhere honest to write these answers yet. Your score stays on this screen; counting accuracy on the Statistics screen comes from the Counting drill." />
     </>
   );

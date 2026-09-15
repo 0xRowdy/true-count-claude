@@ -13,6 +13,7 @@
  *   shown, each labelled with what it is (#25).
  */
 
+import { DEFAULT_RULES } from "@/engine/rules";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { RANKS } from "@/engine/cards";
@@ -353,7 +354,15 @@ export function CountingDrillScreen() {
       keyboardShouldPersistTaps="handled"
     >
       <Screen width="wide">
-        <DrillHeader drill={DRILL} />
+        <DrillHeader
+          drill={DRILL}
+          report={{
+            table: { shoe: state.shoe },
+            rules: { ...DEFAULT_RULES, decks: state.config.decks, penetration: state.config.penetration },
+            countingSystem: state.config.system.name,
+            details: { runSeed: state.seed },
+          }}
+        />
         <RecordingPanel
           session={recorded.session}
           ended={recorded.ended}
