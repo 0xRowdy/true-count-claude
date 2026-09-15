@@ -12,10 +12,10 @@
  * and a Repository can be pointed at a different chain in a test.
  */
 
-import type { Session } from "./types";
+import type { CountingSystemChange, Decision, Session } from "./types";
 
 /** The version this build writes. Bump on every change to the persisted shape. */
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
 
 /**
  * What a stored value looks like on disk. The version travels with the data, not beside it,
@@ -97,9 +97,95 @@ function nullAbsentTrueCount(decision: unknown): unknown {
 }
 
 /**
+ * 2→3: drill answers a Session could not hold, and Counting System changes it did not record
+ * (#26, #27).
+ *
+ * - `conversionChecks` and `indexPlays` arrive empty. No version 2 build recorded either — the
+ *   True Count and Deviation drills said NOT RECORDED — so there is nothing to recover.
+ * - `countingSystem` meant "the system the Session opened with" and went stale the moment a
+ *   user switched systems mid-Session. Version 3 means "the system in force now", with a log
+ *   of changes. A version 2 build never wrote the moment of a change, but every Decision
+ *   names the system it was taken under, so each change is inferred from the first Decision
+ *   under the new system: it happened no later than that Decision, and the inferred change
+ *   says which Decision it came from (`inferredFromDecision`). The Session's system becomes
+ *   the last Decision's — the same answer the version 2 build itself resumed a table with.
+ *
+ * A change made after the last Decision, or in a Session with no Decisions at all, left no
+ * trace in a version 2 record and cannot be recovered; the migration does not guess at one.
+ *
+ * Defensive about shape for the same reason as the 1→2 step.
+ */
+export const SESSION_RECORDS_V3: Migration = {
+  from: 2,
+  to: 3,
+  describe:
+    "2→3: add True Count and index-play records, and record Counting System changes",
+  migrate: (data) => {
+    if (typeof data !== "object" || data === null) return data;
+    const session = data as {
+      countingSystem?: unknown;
+      decisions?: unknown;
+      conversionChecks?: unknown;
+      indexPlays?: unknown;
+      countingSystemChanges?: unknown;
+    };
+
+    const base = {
+      ...session,
+      conversionChecks: Array.isArray(session.conversionChecks) ? session.conversionChecks : [],
+      indexPlays: Array.isArray(session.indexPlays) ? session.indexPlays : [],
+    };
+    // Already carrying a change log: this record needs nothing inferred, and inferring would
+    // overwrite a system switched to after its last Decision.
+    if (Array.isArray(session.countingSystemChanges)) return base;
+    if (typeof session.countingSystem !== "string" || !Array.isArray(session.decisions)) {
+      return { ...base, countingSystemChanges: [] };
+    }
+
+    const inferred = inferSystemChanges(session.countingSystem, session.decisions);
+    return { ...base, countingSystem: inferred.system, countingSystemChanges: inferred.changes };
+  },
+};
+
+function inferSystemChanges(
+  opened: string,
+  decisions: readonly unknown[],
+): { system: string; changes: CountingSystemChange[] } {
+  let system = opened;
+  const changes: CountingSystemChange[] = [];
+
+  decisions.forEach((decision, position) => {
+    if (typeof decision !== "object" || decision === null) return;
+    const entry = decision as Partial<Decision>;
+    const count: unknown = entry.count;
+    const named =
+      typeof count === "object" && count !== null ? (count as { system?: unknown }).system : null;
+    if (typeof named !== "string" || named === system) return;
+
+    changes.push({
+      index: changes.length,
+      from: system,
+      to: named,
+      roundIndex: numberOr(entry.roundIndex, 0),
+      shoeIndex: typeof entry.shoeIndex === "number" ? entry.shoeIndex : null,
+      shoeDealtCount: typeof entry.shoeDealtCount === "number" ? entry.shoeDealtCount : null,
+      at: numberOr(entry.at, 0),
+      inferredFromDecision: numberOr(entry.index, position),
+    });
+    system = named;
+  });
+
+  return { system, changes };
+}
+
+function numberOr(value: unknown, fallback: number): number {
+  return typeof value === "number" ? value : fallback;
+}
+
+/**
  * The shipped upgrade path for Session records, one single-version hop per entry, in order.
  */
-export const SESSION_MIGRATIONS: readonly Migration[] = [TRUE_COUNT_NULLABLE];
+export const SESSION_MIGRATIONS: readonly Migration[] = [TRUE_COUNT_NULLABLE, SESSION_RECORDS_V3];
 
 export type MigrationOutcome<T> =
   | { readonly ok: true; readonly data: T; readonly applied: readonly string[] }
@@ -215,6 +301,9 @@ export function isSession(value: unknown): value is Session {
     Array.isArray(s.shoes) &&
     Array.isArray(s.decisions) &&
     Array.isArray(s.countChecks) &&
-    Array.isArray(s.rounds)
+    Array.isArray(s.rounds) &&
+    Array.isArray(s.conversionChecks) &&
+    Array.isArray(s.indexPlays) &&
+    Array.isArray(s.countingSystemChanges)
   );
 }

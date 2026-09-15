@@ -15,9 +15,12 @@
 
 import { type RuleSet, type Shoe, createShoe } from "@/engine";
 import type {
+  ConversionCheck,
   CountCheck,
+  CountingSystemChange,
   Decision,
   HandResult,
+  IndexPlay,
   RoundResult,
   Session,
   SessionEndReason,
@@ -59,6 +62,9 @@ export function startSession(input: StartSessionInput): Session {
     decisions: [],
     countChecks: [],
     rounds: [],
+    conversionChecks: [],
+    indexPlays: [],
+    countingSystemChanges: [],
   };
 }
 
@@ -171,6 +177,93 @@ export function recordCountCheck(session: Session, check: CountCheckInput): Sess
     verdict: check.statedRunningCount === check.actualRunningCount ? "correct" : "incorrect",
   };
   return { ...session, countChecks: [...session.countChecks, entry] };
+}
+
+export type ConversionCheckInput = Omit<ConversionCheck, "index" | "verdict">;
+
+/**
+ * Appends a True Count conversion check. As with a count check, the verdict is derived here
+ * from the two numbers, so a stored verdict can never disagree with them.
+ */
+export function recordConversionCheck(session: Session, check: ConversionCheckInput): Session {
+  assertActive(session, "record a conversion check");
+  const entry: ConversionCheck = {
+    ...check,
+    index: session.conversionChecks.length,
+    verdict: check.statedTrueCount === check.actualTrueCount ? "correct" : "incorrect",
+  };
+  return { ...session, conversionChecks: [...session.conversionChecks, entry] };
+}
+
+export type IndexPlayInput = Omit<IndexPlay, "index" | "verdict">;
+
+/**
+ * Appends an index play. It touches no Shoe: its cards were placed at a shoe position, never
+ * dealt from one, so no Shoe's progress moves and no round is opened (see `IndexPlay`). The
+ * verdict is derived from the two actions, for the same reason a count check's is.
+ */
+export function recordIndexPlay(session: Session, play: IndexPlayInput): Session {
+  assertActive(session, "record an index play");
+  const entry: IndexPlay = {
+    ...play,
+    index: session.indexPlays.length,
+    verdict: play.actionTaken === play.correctAction ? "correct" : "incorrect",
+  };
+  return { ...session, indexPlays: [...session.indexPlays, entry] };
+}
+
+export interface CountingSystemChangeInput {
+  /** The system taking over, by published name. */
+  readonly to: string;
+  readonly at: number;
+  /**
+   * How far the current Shoe had been dealt at the change. Defaults to the Session's record of
+   * it; the Play table passes the live position, which runs ahead of the record mid-round.
+   */
+  readonly shoeDealtCount?: number;
+}
+
+/**
+ * Switches the Session to another Counting System and records when (#26).
+ *
+ * Allowed at any moment, mid-round included, because a Counting System changes no card that
+ * is dealt: every Shoe still rebuilds from its seed and every Decision still names the system
+ * it was taken under. A switch to the system already in force records nothing, so a caller
+ * can pass the table's system on every transition without littering the log.
+ */
+export function changeCountingSystem(
+  session: Session,
+  change: CountingSystemChangeInput,
+): Session {
+  if (change.to === session.countingSystem) return session;
+  assertActive(session, "change the Counting System");
+
+  const shoe = currentShoe(session);
+  const entry: CountingSystemChange = {
+    index: session.countingSystemChanges.length,
+    from: session.countingSystem,
+    to: change.to,
+    roundIndex: session.rounds.length,
+    shoeIndex: shoe?.index ?? null,
+    shoeDealtCount: shoe ? (change.shoeDealtCount ?? shoe.dealtCount) : null,
+    at: change.at,
+    inferredFromDecision: null,
+  };
+  return {
+    ...session,
+    countingSystem: change.to,
+    countingSystemChanges: [...session.countingSystemChanges, entry],
+  };
+}
+
+/**
+ * Every Counting System the Session has been kept in, each once, in the order each first took
+ * over. The first is the one it opened with.
+ */
+export function countingSystemsUsed(session: Session): readonly string[] {
+  const first = session.countingSystemChanges[0]?.from ?? session.countingSystem;
+  const names = [first, ...session.countingSystemChanges.map((change) => change.to)];
+  return names.filter((name, position) => names.indexOf(name) === position);
 }
 
 /** A round as the caller supplies it; the log assigns `index` and sums `net`. */

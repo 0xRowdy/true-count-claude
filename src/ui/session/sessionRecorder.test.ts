@@ -15,6 +15,7 @@ import { DEFAULT_RULES, type RuleSet } from "@/engine/rules";
 import { currentLegalActions, isRoundOver } from "@/engine/round";
 import {
   computeStats,
+  countingSystemsUsed,
   endSession,
   handsPlayed,
   isActive,
@@ -42,6 +43,7 @@ import {
   observeDecision,
   openRound,
   sessionCountingSystem,
+  syncCountingSystem,
 } from "./sessionRecorder";
 
 const AT = 1_700_000_000_000;
@@ -348,20 +350,111 @@ describe("resuming", () => {
     expect(countingSystemByName("Nonesuch").id).toBe("hi-lo");
   });
 
-  it("prefers the system the last Decision was taken under, not the one at the start", () => {
-    const { session } = play(3);
+  it("resumes in the system in force, including one switched to after the last Decision", () => {
+    let { session, table } = play(3);
     expect(sessionCountingSystem(session).id).toBe("hi-lo");
 
-    const drifted: Session = {
-      ...session,
-      countingSystem: "Hi-Lo",
-      decisions: session.decisions.map((decision, index) =>
-        index === session.decisions.length - 1
-          ? { ...decision, count: { ...decision.count, system: "Zen Count" } }
-          : decision,
-      ),
-    };
-    expect(sessionCountingSystem(drifted).id).toBe("zen");
+    // Switched between rounds, with no Decision taken since: the old rule of reading the last
+    // Decision's system would resume this table in Hi-Lo.
+    table = chooseSystem(table, "zen");
+    session = syncCountingSystem(session, table, AT + 1);
+    expect(sessionCountingSystem(session).id).toBe("zen");
+  });
+});
+
+/**
+ * #26: the table let a user switch Counting Systems mid-Session, and the Session went on naming
+ * the old one — a bug report showed the table dealing KO while the Session said Hi-Lo. The
+ * change is recorded, not deferred (see `syncCountingSystem`), and these walk a real run to
+ * show the two never disagree at any point a Session is read.
+ */
+describe("changing the Counting System mid-Session (#26)", () => {
+  /** Deals one round through the table's own transitions, syncing the system as the hook does. */
+  function playRound(
+    run: Run,
+    at: number,
+    midRound?: CountingSystemId,
+  ): Run {
+    let { session, table } = run;
+    session = syncCountingSystem(session, table, at);
+    const opened = openRound(session, table);
+    session = opened.session;
+    let pending = opened.pending;
+    table = dealRound(table);
+
+    let switched = false;
+    while (table.round && !isRoundOver(table.round)) {
+      if (table.round.phase === "insurance") {
+        pending = observeDecision(pending, table, { kind: "insurance", take: false }, at);
+        table = takeInsurance(table, false);
+        continue;
+      }
+      if (midRound && !switched) {
+        table = chooseSystem(table, midRound);
+        session = syncCountingSystem(session, table, at);
+        switched = true;
+        expect(session.countingSystem).toBe(table.system.name);
+      }
+      const legal = table.round ? currentLegalActions(table.round) : [];
+      const action = legal.includes("stand") ? "stand" : (legal[0] ?? "stand");
+      pending = observeDecision(pending, table, { kind: "play", action }, at);
+      table = playAction(table, action);
+    }
+    if (midRound) expect(switched, "the round settled on the deal").toBe(true);
+    session = closeRound(session, pending, table, at);
+    return { session, table: nextRound(table) };
+  }
+
+  it("keeps the Session's system equal to the table's through switches mid-round and between rounds", () => {
+    let run = play(2);
+    let at = AT + 100_000;
+
+    run = playRound(run, at++, "ko");
+    expect(run.session.countingSystem).toBe("KO");
+
+    // Between rounds, after a reshuffle the Session has not yet seen.
+    run = { ...run, table: chooseSystem(shuffleShoe(run.table), "omega-ii") };
+    run = { ...run, session: syncCountingSystem(run.session, run.table, at++) };
+    expect(run.session.countingSystem).toBe(run.table.system.name);
+    expect(run.session.shoes.at(-1)?.seed).toBe(run.table.shoe.seed);
+
+    for (let round = 0; round < 4; round++) run = playRound(run, at++);
+
+    const { session, table } = run;
+    expect(session.countingSystem).toBe(table.system.name);
+    expect(countingSystemsUsed(session)).toEqual(["Hi-Lo", "KO", "Omega II"]);
+    // Every Decision names the system the table was counting in when it was taken, and the
+    // changes chain from Hi-Lo to the Session's current system.
+    const systems = session.decisions.map((decision) => decision.count.system);
+    expect(new Set(systems)).toEqual(new Set(["Hi-Lo", "KO", "Omega II"]));
+    expect(systems.at(-1)).toBe("Omega II");
+    // A system reads the cards and deals none, so the whole run still replays.
+    expect(verifyReplay(session)).toEqual({ ok: true, problems: [] });
+  });
+
+  it("places a mid-round change at the live Shoe position, inside the round it happened in", () => {
+    const run = playRound(play(1), AT + 5, "red-7");
+    const [change] = run.session.countingSystemChanges;
+
+    expect(change).toMatchObject({ from: "Hi-Lo", to: "Red 7", roundIndex: 1, shoeIndex: 0 });
+    const round = run.session.rounds[1]!;
+    expect(change!.shoeDealtCount).toBeGreaterThan(round.shoeStartIndex);
+    expect(change!.shoeDealtCount).toBeLessThanOrEqual(round.shoeEndIndex);
+  });
+
+  it("records nothing when the table's system has not changed, or the Session is closed", () => {
+    const { session, table } = play(2);
+    expect(syncCountingSystem(session, table, AT)).toBe(session);
+
+    const ended = endSession(session, "user", AT + 1);
+    expect(syncCountingSystem(ended, chooseSystem(table, "ko"), AT + 2)).toBe(ended);
+  });
+
+  it("opens a Session in the system the table is counting in", () => {
+    const table = chooseSystem(createPlayTable(DEFAULT_RULES, 3), "wong-halves");
+    const session = beginSession({ table, id: "run", startedAt: AT });
+    expect(session.countingSystem).toBe("Wong Halves");
+    expect(session.countingSystemChanges).toEqual([]);
   });
 });
 

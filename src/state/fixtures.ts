@@ -199,7 +199,48 @@ export const V1_COUNT_CASES = {
 /** A Session payload as a version 1 build persisted it, carrying `V1_COUNT_CASES` in order. */
 export function buildV1Session(options: BuildSessionOptions = {}): Session {
   const cases = Object.values(V1_COUNT_CASES);
-  return withV1Counts(buildSession({ rounds: cases.length, ...options }), cases);
+  return asV2Payload(withV1Counts(buildSession({ rounds: cases.length, ...options }), cases));
+}
+
+/**
+ * A Session as a version 1 or 2 build persisted it: no conversion-check log, no index-play
+ * log, no Counting System change log, and `countingSystem` naming the system it opened with.
+ *
+ * Typed as a `Session` only so it can be saved through a repository configured the way an old
+ * build configured one. It is not a version 3 Session — those three arrays are absent — which
+ * is exactly what the 2→3 migration has to cope with.
+ */
+export function asV2Payload(session: Session): Session {
+  const { conversionChecks, indexPlays, countingSystemChanges, ...rest } = session;
+  void conversionChecks;
+  void indexPlays;
+  const opened = countingSystemChanges[0]?.from ?? session.countingSystem;
+  return { ...rest, countingSystem: opened } as unknown as Session;
+}
+
+/**
+ * The Counting System each Decision of `buildV2DriftedSession` names, in order — a Session a
+ * version 2 build kept in Hi-Lo, switched to KO, back to Hi-Lo, and then to Zen Count, while
+ * its `countingSystem` went on saying Hi-Lo (#26).
+ */
+export const V2_DRIFTED_SYSTEMS = ["Hi-Lo", "KO", "KO", "Hi-Lo", "Zen Count"] as const;
+
+export function buildV2DriftedSession(options: BuildSessionOptions = {}): Session {
+  const dealt = buildSession({ rounds: V2_DRIFTED_SYSTEMS.length, ...options });
+  return asV2Payload({
+    ...dealt,
+    decisions: dealt.decisions.map((decision, index) => {
+      const system = V2_DRIFTED_SYSTEMS[index] ?? "Hi-Lo";
+      return {
+        ...decision,
+        count: {
+          ...decision.count,
+          system,
+          trueCount: system === "KO" ? null : decision.count.trueCount,
+        },
+      };
+    }),
+  });
 }
 
 function settle(

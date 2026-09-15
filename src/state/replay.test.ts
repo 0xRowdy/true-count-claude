@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_RULES, type Card, cardId, remainingComposition } from "@/engine";
 import { buildSession, buildSplitSession } from "./fixtures";
 import { rebuildShoe, replaySession, verifyReplay } from "./replay";
+import { changeCountingSystem, recordConversionCheck, recordIndexPlay } from "./session";
 import type { Decision, RoundResult, Session } from "./types";
 
 /** A Session as it comes back off disk: through JSON, with no live objects surviving. */
@@ -102,6 +103,121 @@ describe("verifyReplay", () => {
 
     expect(verification.ok).toBe(false);
     expect(verification.problems.join(" ")).toMatch(/carries index|rewinds Shoe/);
+  });
+});
+
+/**
+ * The version 3 records (#26, #27). Conversion checks and index plays have no dealt cards to
+ * check, so what `verifyReplay` checks for them is their arithmetic and their verdicts — and,
+ * for index plays, deliberately *not* their cards, which were placed rather than dealt.
+ */
+describe("verifyReplay on drill records and system changes", () => {
+  const conversion = {
+    system: "Hi-Lo",
+    decks: 6,
+    runningCount: -7,
+    cardsRemaining: 104,
+    decksRemaining: 2,
+    rounding: "truncate",
+    statedTrueCount: -4,
+    actualTrueCount: -3,
+    runSeed: 5,
+    questionIndex: 0,
+    at: 1,
+  } as const;
+
+  // A pair of aces of spades against an ace of spades: three identical cards, which a six-deck
+  // Shoe could hold but which no card of this Session's Shoe was ever dealt as.
+  const placed = {
+    entryId: "fab4-ace-pair",
+    entryLabel: "made up for the test",
+    indexNumber: 1,
+    system: "Hi-Lo",
+    kind: "hand",
+    placedCards: [
+      { rank: "A", suit: "s" },
+      { rank: "A", suit: "s" },
+    ],
+    dealerUpcard: { rank: "A", suit: "s" },
+    runningCount: 5,
+    cardsRemaining: 130,
+    rounding: "floor",
+    trueCount: 2,
+    firing: true,
+    actionTaken: "split",
+    correctAction: "split",
+    basicStrategyAction: "split",
+    runSeed: 5,
+    questionIndex: 0,
+    cutShoeSeed: 77,
+    cutPosition: 180,
+    at: 2,
+  } as const;
+
+  const withDrillRecords = (): Session => {
+    let session = buildSession({ rounds: 6, seed: 3 });
+    session = recordConversionCheck(session, conversion);
+    session = recordIndexPlay(session, placed);
+    session = changeCountingSystem(session, { to: "KO", at: 3 });
+    return changeCountingSystem(session, { to: "Omega II", at: 4 });
+  };
+
+  it("passes a Session holding every kind of record, through storage and back", () => {
+    expect(verifyReplay(withDrillRecords())).toEqual({ ok: true, problems: [] });
+    expect(verifyReplay(roundTrip(withDrillRecords()))).toEqual({ ok: true, problems: [] });
+  });
+
+  it("never looks for an index play's placed cards in a Shoe", () => {
+    // 2.5 decks left at a Running Count of 5 floors to 2, so the count is right; the cards are
+    // not in this Session's dealing history at all, and must not be demanded from it.
+    const session = withDrillRecords();
+    expect(verifyReplay(session).problems.join(" ")).not.toMatch(/Shoe|holds only/);
+
+    // A Deviation drill Session has no Shoes at all. Any attempt to find the cards in one would
+    // throw from `rebuildShoe`, so passing here is the proof that none is made.
+    const deviationOnly: Session = {
+      ...session,
+      shoes: [],
+      decisions: [],
+      countChecks: [],
+      rounds: [],
+      conversionChecks: [],
+    };
+    expect(() => verifyReplay(deviationOnly)).not.toThrow();
+    expect(verifyReplay(deviationOnly)).toEqual({ ok: true, problems: [] });
+  });
+
+  it("redoes a conversion check's division and catches a stored answer that is wrong", () => {
+    const session = withDrillRecords();
+    const tampered: Session = {
+      ...session,
+      conversionChecks: [{ ...session.conversionChecks[0]!, actualTrueCount: -4 }],
+    };
+    const verification = verifyReplay(tampered);
+
+    expect(verification.ok).toBe(false);
+    expect(verification.problems.join(" ")).toMatch(/Conversion check 0 stores -4 .* which is -3/);
+    expect(verification.problems.join(" ")).toMatch(/marked incorrect but is correct/);
+  });
+
+  it("catches an index play posed at a True Count its own numbers do not give", () => {
+    const session = withDrillRecords();
+    const tampered: Session = {
+      ...session,
+      indexPlays: [{ ...session.indexPlays[0]!, runningCount: 9 }],
+    };
+    expect(verifyReplay(tampered).problems.join(" ")).toMatch(/posed at a True Count of 2/);
+  });
+
+  it("catches a system log that does not chain, or does not land on the Session's system", () => {
+    const session = withDrillRecords();
+    const [first, second] = session.countingSystemChanges;
+
+    const broken = verifyReplay({ ...session, countingSystemChanges: [first!, { ...second!, from: "Zen Count" }] });
+    expect(broken.problems.join(" ")).toMatch(/switches from Zen Count, but the Session was in KO/);
+
+    const stale = verifyReplay({ ...session, countingSystem: "Hi-Lo" });
+    expect(stale.problems.join(" ")).toMatch(/switched to Omega II, but the Session says Hi-Lo/);
   });
 });
 

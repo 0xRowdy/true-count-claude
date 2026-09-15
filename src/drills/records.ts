@@ -25,16 +25,20 @@
 import type { HandOutcome as EngineHandOutcome, RoundState } from "@/engine";
 import { evaluate, isBlackjack } from "@/engine";
 import type {
+  ConversionCheck,
   CountCheck,
   Decision,
   DecisionHand,
   HandOutcome,
   HandResult,
+  IndexPlay,
   RoundResult,
 } from "@/state/types";
 import type { CountCheckResult } from "./counting";
+import type { DeviationResult } from "./deviation";
 import type { HandSnapshot } from "./explanation";
 import type { DrillDecisionResult } from "./scoring";
+import type { TrueCountResult } from "./trueCount";
 
 /** Where in a Session a record belongs. Supplied by the caller; drills do not track Sessions. */
 export interface RecordContext {
@@ -112,6 +116,69 @@ export function toCountCheckInput(
     shoeDealtCount: context.shoeDealtCount,
     statedRunningCount: result.statedRunningCount,
     actualRunningCount: result.actualRunningCount,
+    at: result.at,
+  };
+}
+
+export type ConversionCheckInput = Omit<ConversionCheck, "index" | "verdict">;
+export type IndexPlayInput = Omit<IndexPlay, "index" | "verdict">;
+
+/**
+ * A graded True Count answer as a Session `ConversionCheck` (#27).
+ *
+ * Takes the run's seed because the result does not carry it, and the seed with the question's
+ * index is what regenerates the question. No Shoe position: the question was generated, not
+ * dealt, and a record that named a Shoe would be claiming otherwise.
+ */
+export function toConversionCheckInput(result: TrueCountResult, runSeed: number): ConversionCheckInput {
+  const { question } = result;
+  return {
+    system: question.systemName,
+    decks: question.decks,
+    runningCount: question.runningCount,
+    cardsRemaining: question.cardsRemaining,
+    decksRemaining: question.decksRemaining,
+    rounding: question.rounding,
+    statedTrueCount: result.stated,
+    actualTrueCount: result.answer,
+    runSeed,
+    questionIndex: question.index,
+    at: result.at,
+  };
+}
+
+/**
+ * A graded Deviation answer as a Session `IndexPlay` (#27).
+ *
+ * Deliberately not a `Decision`. A Deviation question's hand is *placed* at a shoe position
+ * whose True Count is the one being drilled — its cards never came off that shoe — and a
+ * Decision asserts a dealing history that `verifyReplay` then checks against the seed
+ * (ADR-0004). So the cards are recorded as placed, and the provenance recorded is the one that
+ * is true: the run seed and question index that regenerate the question, and the seed and
+ * position of the shoe its count was cut from.
+ */
+export function toIndexPlayInput(result: DeviationResult, runSeed: number): IndexPlayInput {
+  const { question, decision } = result;
+  return {
+    entryId: question.entry.id,
+    entryLabel: question.entry.label,
+    indexNumber: question.entry.index,
+    system: question.count.systemName,
+    kind: question.kind,
+    placedCards: question.kind === "hand" ? [...question.hand.cards] : [],
+    dealerUpcard: question.dealerUpcard,
+    runningCount: question.count.runningCount,
+    cardsRemaining: question.count.cardsRemaining,
+    rounding: question.rounding,
+    trueCount: question.trueCount,
+    firing: question.firing,
+    actionTaken: decision.actionTaken,
+    correctAction: decision.correctAction,
+    basicStrategyAction: decision.basicStrategyAction,
+    runSeed,
+    questionIndex: question.index,
+    cutShoeSeed: question.shoeSeed,
+    cutPosition: question.cutPosition,
     at: result.at,
   };
 }

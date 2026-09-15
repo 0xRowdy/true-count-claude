@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { ARCHIVE_FORMAT, createArchive, parseArchive, serializeArchive } from "./archive";
-import { V1_COUNT_CASES, buildSession, buildV1Session } from "./fixtures";
-import { CURRENT_SCHEMA_VERSION, type Migration, SESSION_MIGRATIONS } from "./schema";
+import { V1_COUNT_CASES, buildSession, buildV1Session, buildV2DriftedSession } from "./fixtures";
+import {
+  CURRENT_SCHEMA_VERSION,
+  type Migration,
+  SESSION_MIGRATIONS,
+  SESSION_RECORDS_V3,
+} from "./schema";
 import { endSession } from "./session";
 import { verifyReplay } from "./replay";
 
@@ -58,11 +63,32 @@ describe("the session archive", () => {
     ]);
   });
 
+  it("upgrades an archive exported by a version 2 build, repairing its Counting System", () => {
+    const raw = JSON.stringify({
+      format: ARCHIVE_FORMAT,
+      schemaVersion: 2,
+      exportedAt: 5,
+      sessions: [buildV2DriftedSession({ id: "drifted" })],
+    });
+
+    const parsed = parseArchive(raw);
+
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.applied).toEqual([SESSION_RECORDS_V3.describe]);
+    const [session] = parsed.sessions;
+    expect(session!.countingSystem).toBe("Zen Count");
+    expect(session!.countingSystemChanges).toHaveLength(3);
+    expect(session!.conversionChecks).toEqual([]);
+    expect(session!.indexPlays).toEqual([]);
+    expect(verifyReplay(session!).ok).toBe(true);
+  });
+
   it("upgrades an archive through every step of a longer chain", () => {
     const step: Migration = {
-      from: 2,
-      to: 3,
-      describe: "2→3: add a per-Session note",
+      from: 3,
+      to: 4,
+      describe: "3→4: add a per-Session note",
       migrate: (data) => ({ ...(data as object), note: "" }),
     };
     const raw = JSON.stringify({
@@ -72,7 +98,7 @@ describe("the session archive", () => {
       sessions: [buildSession({ id: "old", rounds: 2 })],
     });
 
-    const parsed = parseArchive(raw, [...SESSION_MIGRATIONS, step], 3);
+    const parsed = parseArchive(raw, [...SESSION_MIGRATIONS, step], 4);
 
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;

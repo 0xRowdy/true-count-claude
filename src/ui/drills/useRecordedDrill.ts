@@ -1,8 +1,9 @@
 /**
  * A drill run that records into a Session: the configured Rule Set, the open Session, undo.
  *
- * The Basic Strategy and Counting drills both produce records a Session can hold, and both
- * face the same three questions the Play table answers in `usePlaySession`:
+ * All four drills produce records a Session can hold — Decisions and rounds, count checks,
+ * conversion checks, index plays (#27) — and all four face the same three questions the Play
+ * table answers in `usePlaySession`:
  *
  *  1. **Which table?** The configured Rule Set (#19) — except that a Session records one table
  *     for its whole length, so a run that is recording keeps its Session's table, and a table
@@ -32,6 +33,7 @@ import {
   type RecordedRun,
   beginRun,
   drillSessionFrom,
+  systemChangeRecord,
   undoRun,
 } from "./drillRecorder";
 import {
@@ -48,7 +50,8 @@ export interface RunConfig {
 }
 
 interface RunState<S> {
-  readonly run: RecordedRun<S>;
+  /** `null` when `start` declined this configuration — see `RecordedDrillOptions.start`. */
+  readonly run: RecordedRun<S> | null;
   readonly config: RunConfig;
   /** The Session this run adds to — a resumed open one, or `null` until the first record. */
   readonly base: Session | null;
@@ -84,7 +87,12 @@ export interface RecordedDrill<S> {
 
 export interface RecordedDrillOptions<S> {
   readonly drillId: DrillId;
-  readonly start: (config: RunConfig) => Undoable<S>;
+  /**
+   * Opens the drill at a configuration, or returns `null` when the drill declines it — the True
+   * Count drill for an unbalanced system, the Deviation drill for a table no index applies at.
+   * A declined run records nothing, and the Session it would have added to is left as it was.
+   */
+  readonly start: (config: RunConfig) => Undoable<S> | null;
   /**
    * True when a Session's records do not name their Counting System — a count check does not —
    * so a system change needs a Session of its own.
@@ -106,19 +114,25 @@ export function useRecordedDrill<S>(options: RecordedDrillOptions<S>): RecordedD
   const [ended, setEnded] = useState<Session | null>(null);
 
   const newState = useCallback(
-    (config: RunConfig, base: Session | null): RunState<S> => ({
-      run: beginRun(startRef.current(config)),
-      config,
-      base,
-      meta: {
-        id: base?.id ?? newSessionId(),
-        drillId,
-        rules: config.rules,
-        countingSystem: config.system.name,
-        seed: config.seed,
-        startingBankroll,
-      },
-    }),
+    (config: RunConfig, base: Session | null): RunState<S> => {
+      const drill = startRef.current(config);
+      // A run that carries a Session on under another system starts by saying so (#26), so the
+      // Session never names a system the drill is not showing. A declined run records nothing.
+      const change = drill ? systemChangeRecord(base, config.system.name, Date.now()) : null;
+      return {
+        run: drill ? beginRun(drill, change ? [change] : []) : null,
+        config,
+        base,
+        meta: {
+          id: base?.id ?? newSessionId(),
+          drillId,
+          rules: config.rules,
+          countingSystem: config.system.name,
+          seed: config.seed,
+          startingBankroll,
+        },
+      };
+    },
     [drillId, startingBankroll],
   );
 
@@ -135,11 +149,12 @@ export function useRecordedDrill<S>(options: RecordedDrillOptions<S>): RecordedD
 
   // Derived from the records alone — not from the whole run — so the clock ticking a Counting
   // drill forward, which replaces the drill but not its records, derives and writes nothing.
-  const records = state?.run.log.current ?? null;
+  // A declined run has no records, and its Session is the one it would have added to, untouched.
+  const records = state?.run?.log.current ?? null;
   const base = state?.base ?? null;
   const meta = state?.meta ?? null;
   const session = useMemo(
-    () => (meta && records ? drillSessionFrom(base, meta, records) : null),
+    () => (meta && records ? drillSessionFrom(base, meta, records) : base),
     [base, meta, records],
   );
 
@@ -159,7 +174,7 @@ export function useRecordedDrill<S>(options: RecordedDrillOptions<S>): RecordedD
     }
   }, [session, base, metaId, drillId]);
 
-  const hasRecords = (state?.run.log.current.length ?? 0) > 0;
+  const hasRecords = (state?.run?.log.current.length ?? 0) > 0;
   const rulesDiffer = state !== null && configured.ready && !sameRules(state.config.rules, configured.rules);
 
   // A run that has recorded nothing takes a new table up immediately: nothing is in the way.
@@ -169,11 +184,13 @@ export function useRecordedDrill<S>(options: RecordedDrillOptions<S>): RecordedD
   }, [state, rulesDiffer, session, hasRecords, configured.rules, newState]);
 
   const update = useCallback((transition: (run: RecordedRun<S>) => RecordedRun<S>) => {
-    setState((current) => (current ? { ...current, run: transition(current.run) } : current));
+    setState((current) =>
+      current?.run ? { ...current, run: transition(current.run) } : current,
+    );
   }, []);
 
   const undo = useCallback(() => {
-    setState((current) => (current ? { ...current, run: undoRun(current.run) } : current));
+    setState((current) => (current?.run ? { ...current, run: undoRun(current.run) } : current));
   }, []);
 
   const close = useCallback((): void => {
@@ -221,7 +238,7 @@ export function useRecordedDrill<S>(options: RecordedDrillOptions<S>): RecordedD
     ended,
     pendingRules: rulesDiffer && (session !== null || hasRecords) ? configured.rules : null,
     storageError: sessions.error,
-    canUndo: state ? canUndo(state.run.drill) : false,
+    canUndo: state?.run ? canUndo(state.run.drill) : false,
     update,
     undo,
     endSession: endCurrent,
@@ -231,10 +248,9 @@ export function useRecordedDrill<S>(options: RecordedDrillOptions<S>): RecordedD
   };
 }
 
-/** The system a Session was last recording in: a Decision names its own, a Session its first. */
+/** The system a Session is recording in — always its own field since schema version 3 (#26). */
 function systemNamed(session: Session): CountingSystem {
-  const last = session.decisions[session.decisions.length - 1];
-  const name = last?.count.system ?? session.countingSystem;
+  const name = session.countingSystem;
   return COUNTING_SYSTEMS.find((system) => system.name === name) ?? DEFAULT_COUNTING_SYSTEM;
 }
 

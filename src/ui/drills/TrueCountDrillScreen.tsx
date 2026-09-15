@@ -7,23 +7,27 @@
  * keypad takes "−3" and "+14" without ceremony, and the Explanation shows the division and every
  * rounding of it.
  *
+ * Every answer is recorded into the drill's Session as a conversion check (#27): the question's
+ * numbers, the rounding it was graded under, and the run seed and question index that regenerate
+ * it. No Shoe is named, because none was dealt. Undo takes an answer back out of the Session.
+ *
  * KO and Red 7 never convert to a True Count, so the drill declines them. The refusal is shown,
  * with the reason and a one-tap way to a system that does convert — the drill is never hidden.
+ * A declined system is never handed to the Session: nothing can be recorded under it, so the
+ * Session stays in the system its answers were given in.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import {
   type CountingSystem,
   type TrueCountRounding,
-  DEFAULT_COUNTING_SYSTEM,
   DEFAULT_TRUE_COUNT_ROUNDING,
   getCountingSystem,
 } from "@/engine/counting";
-import { canUndo, undo } from "@/drills/progress";
 import {
   DEFAULT_TRUE_COUNT_CONFIG,
-  type TrueCountDrill,
+  type TrueCountDrillState,
   TRUE_COUNT_FOCUSES,
   nextTrueCountQuestion,
   startTrueCountDrill,
@@ -33,12 +37,12 @@ import {
 } from "@/drills/trueCount";
 import { getDrill } from "@/drills/types";
 import { ActionButton, Badge, Panel, Screen, SegmentedControl, StatRow } from "@/ui/primitives";
-import { useConfiguredRules } from "@/ui/rules/rulesStore";
 import { colors, spacing, type } from "@/ui/theme";
 import { CountEntryPad } from "./CountEntryPad";
 import {
   DrillHeader,
-  NotRecordedPanel,
+  PendingTablePanel,
+  RecordingPanel,
   Section,
   SystemPicker,
   TableLine,
@@ -46,73 +50,159 @@ import {
   drillStyles,
 } from "./DrillChrome";
 import { TrueCountExplanationPanel } from "./DrillExplanations";
+import { replaceRun, stepRun, trueCountRecords } from "./drillRecorder";
 import { FOCUS_LABEL, ROUNDING_NAME, ROUNDING_SHORT, decksText, formatCountValue, formatRate } from "./drillFormat";
-import { freshSeed } from "./useRecordedDrill";
+import { type RunConfig, useRecordedDrill } from "./useRecordedDrill";
 import { NONE_PUBLISHED, unbalancedCountRows } from "./unbalancedCount";
 
 const DRILL = getDrill("true-count");
 const TWO_COLUMN_WIDTH = 900;
 const ROUNDINGS: readonly TrueCountRounding[] = ["truncate", "floor", "round"];
 
+const TABLE_REASON =
+  "This drill's Session records one table for its whole length, and its conversions were posed at that table's deck count. Drilling another table inside it would leave the Session naming a table some of its answers were never posed at.";
+
 export function TrueCountDrillScreen() {
-  const configured = useConfiguredRules();
-  const decks = configured.rules.decks;
-  const [system, setSystem] = useState<CountingSystem>(DEFAULT_COUNTING_SYSTEM);
   const [rounding, setRounding] = useState<TrueCountRounding>(DEFAULT_TRUE_COUNT_ROUNDING);
-  const [drill, setDrill] = useState<TrueCountDrill | null>(null);
+  const roundingRef = useRef(rounding);
+  roundingRef.current = rounding;
+  /** A system the user picked that this drill declines. Shown, never recorded. */
+  const [declined, setDeclined] = useState<CountingSystem | null>(null);
   const { width } = useWindowDimensions();
   const twoColumn = width >= TWO_COLUMN_WIDTH;
 
-  const availability = useMemo(() => trueCountDrillAvailability(system), [system]);
+  const start = useCallback((config: RunConfig) => {
+    if (!trueCountDrillAvailability(config.system).available) return null;
+    return startTrueCountDrill(
+      {
+        ...DEFAULT_TRUE_COUNT_CONFIG,
+        system: config.system,
+        decks: config.rules.decks,
+        rounding: roundingRef.current,
+      },
+      config.seed,
+    );
+  }, []);
 
-  // A new drill whenever what it drills changes: the system, the rounding, or the deck count.
-  useEffect(() => {
-    if (!configured.ready || !availability.available) {
-      setDrill(null);
-      return;
-    }
-    setDrill(startTrueCountDrill({ ...DEFAULT_TRUE_COUNT_CONFIG, system, decks, rounding }, freshSeed()));
-  }, [configured.ready, availability.available, system, decks, rounding]);
+  const recorded = useRecordedDrill<TrueCountDrillState>({
+    drillId: "true-count",
+    start,
+    // A conversion check names its own system, so a Session carries on across a switch.
+    systemBindsSession: false,
+    startingBankroll: 0,
+  });
+  const { run, config, update } = recorded;
 
-  const setup = (
-    <Panel title="Setup">
-      <TableLine rules={configured.rules} />
-      <SystemPicker value={system} onChange={setSystem} note="changing it starts a new set of questions." />
-      <Text style={styles.label}>Rounding</Text>
-      <SegmentedControl
-        options={ROUNDINGS.map((mode) => ({ value: mode, label: ROUNDING_SHORT[mode] }))}
-        value={rounding}
-        onChange={setRounding}
-      />
-      <Text style={drillStyles.note}>
-        Graded {ROUNDING_NAME[rounding]}. Practise the convention you actually play with; the app's
-        own index lookups truncate by default.
-      </Text>
-    </Panel>
+  const pickSystem = useCallback(
+    (system: CountingSystem) => {
+      if (!trueCountDrillAvailability(system).available) {
+        setDeclined(system);
+        return;
+      }
+      setDeclined(null);
+      recorded.changeSystem(system);
+    },
+    [recorded],
   );
 
+  const answer = useCallback(
+    (value: number) => {
+      const at = Date.now();
+      update((current) => {
+        const before = current.drill.current;
+        // A second submission for the same question is a no-op in the drill, so it must not
+        // become an undo point on the log either — the two stacks move in lockstep.
+        if (before.lastResult !== null) return current;
+        const next = submitTrueCount(current.drill, value, at);
+        return stepRun(current, next, trueCountRecords(before, next.current));
+      });
+    },
+    [update],
+  );
+
+  const shownSystem = declined ?? config?.system ?? null;
   const header = (
     <>
       <DrillHeader
         drill={DRILL}
         report={{
-          countingSystem: system.name,
-          details: drill
-            ? { runSeed: drill.current.seed, questionIndex: drill.current.attempts.length }
+          ...(shownSystem ? { countingSystem: shownSystem.name } : {}),
+          details: run
+            ? { runSeed: run.drill.current.seed, questionIndex: run.drill.current.question.index }
             : {},
         }}
       />
-      <NotRecordedPanel reason="A Session keeps a Decision log and a count-check log, and a True Count conversion is neither, so there is nowhere honest to write these answers yet. Your score stays on this screen; counting accuracy on the Statistics screen comes from the Counting drill." />
+      <RecordingPanel
+        session={recorded.session}
+        ended={recorded.ended}
+        unit="conversions"
+        error={recorded.storageError}
+        onEnd={recorded.endSession}
+      />
+      {recorded.pendingRules && config ? (
+        <PendingTablePanel
+          current={config.rules}
+          pending={recorded.pendingRules}
+          onTakeUp={recorded.takeUpRules}
+          reason={TABLE_REASON}
+        />
+      ) : null}
     </>
   );
 
-  if (!availability.available) {
-    const references = unbalancedCountRows(system, decks);
+  if (!config || !shownSystem) {
+    return (
+      <ScrollView style={drillStyles.scroll} contentContainerStyle={drillStyles.scrollContent}>
+        <Screen width="wide">
+          <DrillHeader drill={DRILL} />
+          <Text style={drillStyles.loading}>Loading your table…</Text>
+        </Screen>
+      </ScrollView>
+    );
+  }
+
+  const decks = config.rules.decks;
+  const setup = (
+    <Panel title="Setup">
+      <TableLine rules={config.rules} />
+      <SystemPicker
+        value={shownSystem}
+        onChange={pickSystem}
+        note={
+          recorded.session
+            ? "a conversion check names its system, so switching carries this Session on with a new set of questions."
+            : "changing it starts a new set of questions."
+        }
+      />
+      <Text style={styles.label}>Rounding</Text>
+      <SegmentedControl
+        options={ROUNDINGS.map((mode) => ({ value: mode, label: ROUNDING_SHORT[mode] }))}
+        value={rounding}
+        onChange={(mode) => {
+          if (mode === rounding) return;
+          setRounding(mode);
+          // Read by `start` synchronously inside `restart`, so it is set before the call.
+          roundingRef.current = mode;
+          recorded.restart();
+        }}
+      />
+      <Text style={drillStyles.note}>
+        Graded {ROUNDING_NAME[rounding]}. Practise the convention you actually play with; the app's
+        own index lookups truncate by default. Each recorded answer keeps the rounding it was graded
+        under, so switching carries your Session on.
+      </Text>
+    </Panel>
+  );
+
+  if (declined || !run) {
+    const refused = declined ?? config.system;
+    const availability = trueCountDrillAvailability(refused);
+    const references = unbalancedCountRows(refused, decks);
     return (
       <ScrollView style={drillStyles.scroll} contentContainerStyle={drillStyles.scrollContent}>
         <Screen width="wide">
           {header}
-          <Panel title={`Not for ${system.name}`}>
+          <Panel title={`Not for ${refused.name}`}>
             <Badge label="DECLINED" tone="info" />
             <Text style={drillStyles.refusal}>{availability.note}</Text>
             {references.map((row) => (
@@ -132,7 +222,7 @@ export function TrueCountDrillScreen() {
                     key={id}
                     label={`Drill ${supported.name}`}
                     tone="good"
-                    onPress={() => setSystem(supported)}
+                    onPress={() => pickSystem(supported)}
                   />
                 );
               })}
@@ -144,21 +234,10 @@ export function TrueCountDrillScreen() {
     );
   }
 
-  if (!drill) {
-    return (
-      <ScrollView style={drillStyles.scroll} contentContainerStyle={drillStyles.scrollContent}>
-        <Screen width="wide">
-          {header}
-          <Text style={drillStyles.loading}>Loading your table…</Text>
-        </Screen>
-      </ScrollView>
-    );
-  }
-
-  const state = drill.current;
+  const state = run.drill.current;
   const question = state.question;
   const result = state.lastResult;
-  const report = trueCountReport(drill);
+  const report = trueCountReport(run.drill);
 
   const questionColumn = (
     <View style={twoColumn ? styles.columnWide : styles.columnNarrow}>
@@ -181,16 +260,12 @@ export function TrueCountDrillScreen() {
           <CountEntryPad
             prompt={`True Count, ${ROUNDING_NAME[state.config.rounding]}`}
             submitLabel="Answer"
-            onSubmit={(value) => setDrill((current) => (current ? submitTrueCount(current, value, Date.now()) : current))}
+            onSubmit={answer}
           />
         </Panel>
       )}
 
-      <UndoControl
-        canUndo={canUndo(drill)}
-        onUndo={() => setDrill((current) => (current ? undo(current) : current))}
-        undone={drill.undone}
-      />
+      <UndoControl canUndo={recorded.canUndo} onUndo={recorded.undo} undone={run.drill.undone} />
 
       {result ? (
         <TrueCountExplanationPanel
@@ -200,7 +275,7 @@ export function TrueCountDrillScreen() {
               <ActionButton
                 label="Next question"
                 tone="good"
-                onPress={() => setDrill((current) => (current ? nextTrueCountQuestion(current) : current))}
+                onPress={() => update((current) => replaceRun(current, nextTrueCountQuestion(current.drill)))}
               />
             </View>
           }
@@ -255,7 +330,11 @@ export function TrueCountDrillScreen() {
   );
 
   return (
-    <ScrollView style={drillStyles.scroll} contentContainerStyle={drillStyles.scrollContent}>
+    <ScrollView
+      style={drillStyles.scroll}
+      contentContainerStyle={drillStyles.scrollContent}
+      keyboardShouldPersistTaps="handled"
+    >
       <Screen width="wide">
         {header}
         <View style={twoColumn ? styles.wide : styles.narrow}>

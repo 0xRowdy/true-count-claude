@@ -29,23 +29,30 @@
 import type { RoundState } from "@/engine/round";
 import { type RuleSet } from "@/engine/rules";
 import {
+  type ConversionCheckInput,
   type CountCheckInput,
   type DecisionInput,
+  type IndexPlayInput,
   type RoundInput,
   type Session,
   DEFAULT_KEY_PREFIX,
   type KeyValueStore,
+  changeCountingSystem,
   currentShoe as currentSessionShoe,
   isActive,
   openShoe,
+  recordConversionCheck,
   recordCountCheck,
   recordDecision,
+  recordIndexPlay,
   recordRound,
   startSession,
   syncShoeProgress,
 } from "@/state";
 import type { BasicStrategyDrillState } from "@/drills/basicStrategy";
 import type { CountCheckResult, CountingDrillState } from "@/drills/counting";
+import type { DeviationDrillState, DeviationResult } from "@/drills/deviation";
+import type { TrueCountDrillState, TrueCountResult } from "@/drills/trueCount";
 import {
   type Undoable,
   beginUndoable,
@@ -53,7 +60,13 @@ import {
   replace as replaceUndoable,
   undo as undoUndoable,
 } from "@/drills/progress";
-import { toCountCheckInput, toDecisionInput, toRoundInput } from "@/drills/records";
+import {
+  toConversionCheckInput,
+  toCountCheckInput,
+  toDecisionInput,
+  toIndexPlayInput,
+  toRoundInput,
+} from "@/drills/records";
 import type { DrillDecisionResult } from "@/drills/scoring";
 import type { DrillId } from "@/drills/types";
 import { sameRules } from "@/ui/rules/presets";
@@ -73,7 +86,14 @@ import { sameRules } from "@/ui/rules/presets";
 export type DrillRecord =
   | { readonly kind: "decision"; readonly shoeSeed: number; readonly input: DecisionInput }
   | { readonly kind: "round"; readonly shoeSeed: number; readonly input: RoundInput }
-  | { readonly kind: "count-check"; readonly shoeSeed: number; readonly input: CountCheckInput };
+  | { readonly kind: "count-check"; readonly shoeSeed: number; readonly input: CountCheckInput }
+  // The two below name no Shoe, on purpose: a conversion question is generated rather than
+  // dealt, and a Deviation hand is placed at a shoe position rather than dealt from it. Neither
+  // opens a Shoe on the Session, so neither claims a card came off one (ADR-0004).
+  | { readonly kind: "conversion-check"; readonly input: ConversionCheckInput }
+  | { readonly kind: "index-play"; readonly input: IndexPlayInput }
+  /** A run that carries on its Session under another Counting System (#26). */
+  | { readonly kind: "system-change"; readonly input: { readonly to: string; readonly at: number } };
 
 const PLACEHOLDER = { roundIndex: 0, shoeIndex: 0 };
 
@@ -112,6 +132,30 @@ export function countCheckRecord(
     shoeSeed: shoe.seed,
     input: toCountCheckInput(result, { ...PLACEHOLDER, shoeDealtCount: shoe.dealtCount }),
   };
+}
+
+export function conversionCheckRecord(result: TrueCountResult, runSeed: number): DrillRecord {
+  return { kind: "conversion-check", input: toConversionCheckInput(result, runSeed) };
+}
+
+export function indexPlayRecord(result: DeviationResult, runSeed: number): DrillRecord {
+  return { kind: "index-play", input: toIndexPlayInput(result, runSeed) };
+}
+
+/**
+ * The first record of a run that carries an open Session on under another Counting System.
+ *
+ * `null` when there is nothing to record: no Session to carry on, or no change of system. It
+ * sits at the bottom of the new run's log, below every undo point, so taking back every answer
+ * of the run still leaves the Session in the system the drill is now showing.
+ */
+export function systemChangeRecord(
+  session: Session | null,
+  system: string,
+  at: number,
+): DrillRecord | null {
+  if (!session || session.countingSystem === system) return null;
+  return { kind: "system-change", input: { to: system, at } };
 }
 
 /** When a record happened. Used only to date a Session that opens on its first record. */
@@ -182,6 +226,26 @@ export function countingRecords(
   return [countCheckRecord(result, before.shoe)];
 }
 
+/** What the True Count drill just did, as records: one conversion check per graded answer. */
+export function trueCountRecords(
+  before: TrueCountDrillState,
+  after: TrueCountDrillState,
+): readonly DrillRecord[] {
+  const result = after.lastResult;
+  if (!result || result === before.lastResult) return [];
+  return [conversionCheckRecord(result, after.seed)];
+}
+
+/** What the Deviation drill just did, as records: one index play per graded answer. */
+export function deviationRecords(
+  before: DeviationDrillState,
+  after: DeviationDrillState,
+): readonly DrillRecord[] {
+  const result = after.lastResult;
+  if (!result || result === before.lastResult) return [];
+  return [indexPlayRecord(result, after.seed)];
+}
+
 // ---------------------------------------------------------------------------
 // Folding records onto a Session
 // ---------------------------------------------------------------------------
@@ -232,27 +296,33 @@ function isEmptyLog(session: Session): boolean {
   return (
     session.decisions.length === 0 &&
     session.countChecks.length === 0 &&
-    session.rounds.length === 0
+    session.rounds.length === 0 &&
+    session.conversionChecks.length === 0 &&
+    session.indexPlays.length === 0
   );
 }
 
 /**
  * Folds a run's records onto a Session, opening a Shoe whenever the run moves to a new one and
- * flushing a round's buffered Decisions when the round itself arrives.
+ * flushing a round's buffered Decisions when the round itself arrives. Records that name no
+ * Shoe — conversion checks, index plays, system changes — open none.
  */
 export function applyRecords(session: Session, records: readonly DrillRecord[]): Session {
   let current = session;
   let pending: DecisionInput[] = [];
 
-  for (const record of records) {
-    current = withShoe(current, record.shoeSeed);
-    const shoeIndex = Math.max(0, current.shoes.length - 1);
+  const onShoe = (seed: number): number => {
+    current = withShoe(current, seed);
+    return Math.max(0, current.shoes.length - 1);
+  };
 
+  for (const record of records) {
     switch (record.kind) {
       case "decision":
-        pending.push({ ...record.input, shoeIndex });
+        pending.push({ ...record.input, shoeIndex: onShoe(record.shoeSeed) });
         break;
       case "round": {
+        const shoeIndex = onShoe(record.shoeSeed);
         const roundIndex = current.rounds.length;
         for (const decision of pending) {
           current = recordDecision(current, { ...decision, roundIndex });
@@ -261,13 +331,25 @@ export function applyRecords(session: Session, records: readonly DrillRecord[]):
         current = recordRound(current, { ...record.input, shoeIndex });
         break;
       }
-      case "count-check":
+      case "count-check": {
+        // Opened first: `onShoe` replaces `current`, so it must not run inside the call below.
+        const shoeIndex = onShoe(record.shoeSeed);
         current = recordCountCheck(current, {
           ...record.input,
           shoeIndex,
           roundIndex: current.rounds.length,
         });
         current = syncShoeProgress(current, record.input.shoeDealtCount);
+        break;
+      }
+      case "conversion-check":
+        current = recordConversionCheck(current, record.input);
+        break;
+      case "index-play":
+        current = recordIndexPlay(current, record.input);
+        break;
+      case "system-change":
+        current = changeCountingSystem(current, record.input);
         break;
     }
   }
@@ -317,8 +399,12 @@ export interface RecordedRun<S> {
   readonly log: Undoable<readonly DrillRecord[]>;
 }
 
-export function beginRun<S>(drill: Undoable<S>): RecordedRun<S> {
-  return { drill, log: beginUndoable<readonly DrillRecord[]>([]) };
+/**
+ * Starts a run. `records` seed the bottom of its log — below every undo point, so no undo can
+ * take them back. The one use is a `systemChangeRecord` for a run that carries its Session on.
+ */
+export function beginRun<S>(drill: Undoable<S>, records: readonly DrillRecord[] = []): RecordedRun<S> {
+  return { drill, log: beginUndoable<readonly DrillRecord[]>(records) };
 }
 
 /** An answer: an undo point on both stacks. */

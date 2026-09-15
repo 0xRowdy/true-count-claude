@@ -120,6 +120,13 @@ export function SystemPanel({
         {table.system.usesAceSideCount ? " · needs an ace side count" : ""}
       </Text>
       <Text style={styles.source}>{table.system.source}</Text>
+      {/* #26: a switch is recorded on the Session, not deferred like a Rule Set change — a
+          system reads the cards and deals none, so the Shoe still replays from its seed. */}
+      <Text style={styles.note}>
+        Switch whenever you like, mid-hand included: the count is recomputed from every card you
+        have seen, the change is written to your Session, and each decision keeps the system it
+        was made in.
+      </Text>
     </Panel>
   );
 }

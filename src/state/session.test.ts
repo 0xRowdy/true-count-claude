@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_RULES } from "@/engine";
 import { buildSession } from "./fixtures";
 import {
+  changeCountingSystem,
+  countingSystemsUsed,
+  recordConversionCheck,
+  recordIndexPlay,
   currentShoe,
   deriveShoeSeed,
   endSession,
@@ -263,5 +267,142 @@ describe("Shoe bookkeeping", () => {
     });
 
     expect(currentShoe(session)?.dealtCount).toBe(30);
+  });
+});
+
+const CONVERSION = {
+  system: "Hi-Lo",
+  decks: 6,
+  runningCount: -7,
+  cardsRemaining: 104,
+  decksRemaining: 2,
+  rounding: "truncate",
+  actualTrueCount: -3,
+  runSeed: 11,
+  questionIndex: 0,
+  at: 5,
+} as const;
+
+const INDEX_PLAY = {
+  entryId: "i18-16v10",
+  entryLabel: "16 vs 10",
+  indexNumber: 0,
+  system: "Hi-Lo",
+  kind: "hand",
+  placedCards: [
+    { rank: "10", suit: "s" },
+    { rank: "6", suit: "h" },
+  ],
+  dealerUpcard: { rank: "K", suit: "d" },
+  runningCount: 2,
+  cardsRemaining: 104,
+  rounding: "truncate",
+  trueCount: 1,
+  firing: true,
+  correctAction: "stand",
+  basicStrategyAction: "hit",
+  runSeed: 3,
+  questionIndex: 4,
+  cutShoeSeed: 99,
+  cutPosition: 120,
+  at: 6,
+} as const;
+
+describe("the drill logs a Session gained in version 3 (#27)", () => {
+  it("derives a conversion check's verdict from the two True Counts", () => {
+    let session = freshSession();
+    session = recordConversionCheck(session, { ...CONVERSION, statedTrueCount: -3 });
+    // -4 is what flooring gives. Right arithmetic, wrong rounding — still not this drill's answer.
+    session = recordConversionCheck(session, { ...CONVERSION, statedTrueCount: -4, at: 6 });
+
+    expect(session.conversionChecks.map((check) => [check.index, check.verdict])).toEqual([
+      [0, "correct"],
+      [1, "incorrect"],
+    ]);
+  });
+
+  it("derives an index play's verdict from the two actions, and touches no Shoe or round", () => {
+    let session = openShoe(freshSession()).session;
+    const before = session;
+    session = recordIndexPlay(session, { ...INDEX_PLAY, actionTaken: "stand" });
+    session = recordIndexPlay(session, { ...INDEX_PLAY, actionTaken: "hit" });
+
+    expect(session.indexPlays.map((play) => [play.index, play.verdict])).toEqual([
+      [0, "correct"],
+      [1, "incorrect"],
+    ]);
+    // Placed cards are not dealt cards: nothing about the Shoe or the rounds moves.
+    expect(session.shoes).toEqual(before.shoes);
+    expect(session.rounds).toEqual([]);
+    expect(session.decisions).toEqual([]);
+  });
+
+  it("refuses both on a closed Session", () => {
+    const closed = endSession(freshSession(), "user", 2_000);
+    expect(() => recordConversionCheck(closed, { ...CONVERSION, statedTrueCount: 0 })).toThrow(
+      /Cannot record a conversion check/,
+    );
+    expect(() => recordIndexPlay(closed, { ...INDEX_PLAY, actionTaken: "hit" })).toThrow(
+      /Cannot record an index play/,
+    );
+  });
+});
+
+describe("changing the Counting System mid-Session (#26)", () => {
+  it("moves the Session to the new system and logs where the change happened", () => {
+    let session = buildSession({ rounds: 3 });
+    const shoe = currentShoe(session)!;
+    session = changeCountingSystem(session, {
+      to: "KO",
+      at: 9_000,
+      shoeDealtCount: shoe.dealtCount + 4,
+    });
+
+    expect(session.countingSystem).toBe("KO");
+    expect(session.countingSystemChanges).toEqual([
+      {
+        index: 0,
+        from: "Hi-Lo",
+        to: "KO",
+        roundIndex: 3,
+        shoeIndex: shoe.index,
+        shoeDealtCount: shoe.dealtCount + 4,
+        at: 9_000,
+        inferredFromDecision: null,
+      },
+    ]);
+  });
+
+  it("records nothing when the system is already the one in force", () => {
+    const session = buildSession({ rounds: 1 });
+    expect(changeCountingSystem(session, { to: "Hi-Lo", at: 1 })).toBe(session);
+  });
+
+  it("defaults the position to the Shoe as recorded, and has none before the first Shoe", () => {
+    const recorded = changeCountingSystem(buildSession({ rounds: 2 }), { to: "Zen Count", at: 1 });
+    expect(recorded.countingSystemChanges[0]!.shoeDealtCount).toBe(
+      currentShoe(recorded)!.dealtCount,
+    );
+
+    const unopened = changeCountingSystem(freshSession(), { to: "Zen Count", at: 1 });
+    expect(unopened.countingSystemChanges[0]).toMatchObject({
+      shoeIndex: null,
+      shoeDealtCount: null,
+    });
+  });
+
+  it("lists every system used, once each, in the order each took over", () => {
+    let session = freshSession();
+    expect(countingSystemsUsed(session)).toEqual(["Hi-Lo"]);
+    for (const to of ["KO", "Hi-Lo", "Omega II", "KO"]) {
+      session = changeCountingSystem(session, { to, at: 1 });
+    }
+    expect(countingSystemsUsed(session)).toEqual(["Hi-Lo", "KO", "Omega II"]);
+    expect(session.countingSystem).toBe("KO");
+  });
+
+  it("does not change a closed Session", () => {
+    const closed = endSession(freshSession(), "user", 2_000);
+    expect(() => changeCountingSystem(closed, { to: "KO", at: 1 })).toThrow(/Cannot change/);
   });
 });

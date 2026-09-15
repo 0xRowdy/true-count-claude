@@ -14,8 +14,11 @@
  */
 
 import type { ReactNode } from "react";
+import { Link } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
+import type { DrillId } from "@/drills/types";
 import type { Session, SessionStats, SessionSummary } from "@/state";
+import { DRILL_HREF } from "@/ui/drills/DrillsHub";
 import { ActionButton, Badge, Panel, StatRow } from "@/ui/primitives";
 import { formatChips, formatNet } from "@/ui/table/format";
 import { colors, spacing, type } from "@/ui/theme";
@@ -23,11 +26,14 @@ import {
   NO_VALUE,
   bankrollTopUp,
   bankrollWasReset,
+  countingSystemsLine,
   describeEndReason,
   formatDuration,
   formatPerHand,
   formatRate,
   formatRatio,
+  recordedAccuracies,
+  sessionKindLabel,
 } from "./sessionFormat";
 
 /**
@@ -109,10 +115,16 @@ export function SessionStatsPanel({
   session,
   stats,
   title = "This session",
+  showDrillRecords = false,
 }: {
   session: Session | null;
   stats: SessionStats;
   title?: string;
+  /**
+   * Show the True Count and Deviation drill tallies. Off for a Play Session, which never
+   * records either; on for totals that include drill Sessions.
+   */
+  showDrillRecords?: boolean;
 }) {
   const topUp = session ? bankrollTopUp(session, stats) : 0;
   const reset = session ? bankrollWasReset(session, stats) : false;
@@ -134,6 +146,20 @@ export function SessionStatsPanel({
         label="Count checks correct"
         value={formatRatio(stats.correctCountChecks, stats.countChecks)}
       />
+      {showDrillRecords ? (
+        <>
+          <StatRow label="True Count accuracy" value={formatRate(stats.trueCountAccuracy)} />
+          <StatRow
+            label="Conversions correct"
+            value={formatRatio(stats.correctConversionChecks, stats.conversionChecks)}
+          />
+          <StatRow label="Index play accuracy" value={formatRate(stats.indexPlayAccuracy)} />
+          <StatRow
+            label="Index plays correct"
+            value={formatRatio(stats.correctIndexPlays, stats.indexPlays)}
+          />
+        </>
+      ) : null}
 
       <View style={styles.divider} />
 
@@ -215,27 +241,102 @@ export function SessionEndedPanel({
   );
 }
 
-/** One row of the history list. Enough to recognise a run without opening its log. */
+/**
+ * One row of the history list. Enough to recognise a run without opening its log: what kind of
+ * Session it was (#27), every Counting System it was kept in (#26), and the accuracy it measured.
+ */
 export function SessionHistoryRow({ summary }: { summary: SessionSummary }) {
   const { stats } = summary;
+  const dealt = summary.mode === "play" || stats.roundsPlayed > 0;
   return (
     <View style={styles.historyRow}>
       <View style={styles.historyHead}>
+        <Badge label={sessionKindLabel(summary).toUpperCase()} tone={summary.mode === "play" ? "info" : "neutral"} />
         <Text style={styles.historyTitle}>{formatStartedAt(summary.startedAt)}</Text>
         {summary.active ? <Badge label="OPEN" tone="good" /> : null}
       </View>
       <Text style={styles.note}>
-        {summary.countingSystem} · seed {summary.seed} · {formatDuration(summary.durationMs)}
+        {countingSystemsLine(summary.countingSystems)} · seed {summary.seed} ·{" "}
+        {formatDuration(summary.durationMs)}
       </Text>
-      <StatRow label="Hands" value={stats.handsPlayed} />
-      <StatRow label="Basic Strategy accuracy" value={formatRate(stats.basicStrategyAccuracy)} />
-      <StatRow label="Win rate" value={formatRate(stats.winRate)} />
-      <StatRow
-        label="Net"
-        value={formatNet(stats.netResult)}
-        tone={stats.netResult > 0 ? "good" : stats.netResult < 0 ? "bad" : "neutral"}
-      />
+      <AccuracyRows stats={stats} drillId={summary.drillId} />
+      {dealt ? (
+        <>
+          <StatRow label="Hands" value={stats.handsPlayed} />
+          <StatRow label="Win rate" value={formatRate(stats.winRate)} />
+          <StatRow
+            label="Net"
+            value={formatNet(stats.netResult)}
+            tone={stats.netResult > 0 ? "good" : stats.netResult < 0 ? "bad" : "neutral"}
+          />
+        </>
+      ) : null}
     </View>
+  );
+}
+
+/** Each accuracy the Session holds records for, as a rate beside the counts behind it. */
+function AccuracyRows({ stats, drillId }: { stats: SessionStats; drillId: string | null }) {
+  return (
+    <>
+      {recordedAccuracies(stats, drillId).map((line) => (
+        <StatRow
+          key={line.label}
+          label={line.label}
+          value={
+            line.total === 0
+              ? NO_VALUE
+              : `${formatRate(line.rate)} (${formatRatio(line.correct, line.total)})`
+          }
+        />
+      ))}
+    </>
+  );
+}
+
+/**
+ * The drill Session drilled in most recently (#27). The "This Play session" panel above it only
+ * ever holds the Play table's Session, because drill Sessions never take the active pointer —
+ * so without this, drill results would reach the screen only as part of the lifetime totals.
+ */
+export function LatestDrillPanel({ summary }: { summary: SessionSummary | null }) {
+  if (!summary) {
+    return (
+      <Panel title="Latest drill session">
+        <Text style={styles.note}>
+          No drill Session yet. Every drill records its answers — the first one opens a Session.
+        </Text>
+        <Link href="/drills" style={styles.link}>
+          Go to the drills →
+        </Link>
+      </Panel>
+    );
+  }
+
+  const href = DRILL_HREF[summary.drillId as DrillId] ?? "/drills";
+  return (
+    <Panel title="Latest drill session">
+      <View style={styles.historyHead}>
+        <Badge label={sessionKindLabel(summary).toUpperCase()} tone="neutral" />
+        {summary.active ? <Badge label="OPEN" tone="good" /> : <Badge label="ENDED" tone="warn" />}
+      </View>
+      <Text style={styles.note}>
+        {countingSystemsLine(summary.countingSystems)} · last answer{" "}
+        {formatStartedAt(summary.lastActivityAt)} · seed {summary.seed}
+      </Text>
+      <AccuracyRows stats={summary.stats} drillId={summary.drillId} />
+      {summary.stats.roundsPlayed > 0 ? (
+        <StatRow label="Hands dealt" value={summary.stats.handsPlayed} />
+      ) : null}
+      <Text style={styles.note}>
+        {summary.active
+          ? "Still open: it picks up where you left off, and only its own End session button closes it."
+          : `${describeEndReason({ endReason: summary.endReason })}. It is kept in your history.`}
+      </Text>
+      <Link href={href} style={styles.link}>
+        {summary.active ? "Carry on drilling →" : "Drill again →"}
+      </Link>
+    </Panel>
   );
 }
 
@@ -268,4 +369,5 @@ const styles = StyleSheet.create({
   },
   historyHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm, flexWrap: "wrap" },
   historyTitle: { ...type.body, color: colors.text, fontWeight: "600" },
+  link: { ...type.body, color: colors.accent, minHeight: 44, paddingTop: spacing.sm },
 });

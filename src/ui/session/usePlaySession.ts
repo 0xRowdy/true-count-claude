@@ -59,6 +59,7 @@ import {
   observeDecision,
   openRound,
   sessionCountingSystem,
+  syncCountingSystem,
 } from "./sessionRecorder";
 import { EMPTY_SESSION } from "./sessionFormat";
 import {
@@ -188,9 +189,11 @@ export function usePlaySession(
     // flight must not arrive later and rebuild the table underneath the hand.
     restored.current = true;
     const existing = currentSession();
+    // A resumed Session and a table whose system was picked while it loaded are brought into
+    // line before anything is dealt, so no round is ever recorded under the wrong system.
     const session =
       existing && isActive(existing)
-        ? existing
+        ? syncCountingSystem(existing, table, at)
         : beginSession({ table, id: newSessionId(at), startedAt: at });
 
     const opened = openRound(session, table);
@@ -233,8 +236,17 @@ export function usePlaySession(
     (amount: number) => advance((current) => chooseBet(current, amount)),
     [advance],
   );
+  // A system change is recorded on the open Session in the same breath as the table takes it
+  // (#26), so the Session, the Statistics screen and a bug report never name a system the
+  // table is not counting in. See `syncCountingSystem` for why it is recorded, not deferred.
   const setSystem = useCallback(
-    (id: CountingSystemId) => advance((current) => chooseSystem(current, id)),
+    (id: CountingSystemId) => {
+      const next = advance((current) => chooseSystem(current, id));
+      const session = currentSession();
+      if (!session || !isActive(session)) return;
+      const synced = syncCountingSystem(session, next, Date.now());
+      if (synced !== session) putSession(synced);
+    },
     [advance],
   );
 

@@ -10,6 +10,7 @@
  * accuracy, not 0% accuracy.
  */
 
+import { countingSystemsUsed } from "./session";
 import type { HandResult, Session } from "./types";
 
 export interface SessionStats {
@@ -26,6 +27,18 @@ export interface SessionStats {
   readonly correctCountChecks: number;
   /** correctCountChecks / countChecks. */
   readonly countingAccuracy: number | null;
+
+  /** True Count conversions answered in the True Count drill. */
+  readonly conversionChecks: number;
+  readonly correctConversionChecks: number;
+  /** correctConversionChecks / conversionChecks. */
+  readonly trueCountAccuracy: number | null;
+
+  /** Deviation drill answers. Placed hands, so never part of `handsPlayed` or the win rate. */
+  readonly indexPlays: number;
+  readonly correctIndexPlays: number;
+  /** correctIndexPlays / indexPlays. Index-aware: holding the chart below the index is correct. */
+  readonly indexPlayAccuracy: number | null;
 
   readonly wins: number;
   readonly blackjacks: number;
@@ -55,6 +68,10 @@ interface Counters {
   correctDecisions: number;
   countChecks: number;
   correctCountChecks: number;
+  conversionChecks: number;
+  correctConversionChecks: number;
+  indexPlays: number;
+  correctIndexPlays: number;
   wins: number;
   blackjacks: number;
   pushes: number;
@@ -86,7 +103,10 @@ export interface SessionSummary {
   readonly id: string;
   readonly mode: Session["mode"];
   readonly drillId: string | null;
+  /** The system in force now (#26). */
   readonly countingSystem: string;
+  /** Every system the Session was kept in, in order of first use. One entry when it never changed. */
+  readonly countingSystems: readonly string[];
   readonly seed: number;
   readonly startedAt: number;
   readonly endedAt: number | null;
@@ -94,6 +114,11 @@ export interface SessionSummary {
   /** Null while the Session is still running. */
   readonly durationMs: number | null;
   readonly active: boolean;
+  /**
+   * The time of the Session's latest record, or its start or end when later. A drill Session
+   * stays open across visits, so its start time says little about when it was last drilled.
+   */
+  readonly lastActivityAt: number;
   readonly stats: SessionStats;
 }
 
@@ -103,14 +128,33 @@ export function summarize(session: Session): SessionSummary {
     mode: session.mode,
     drillId: session.drillId,
     countingSystem: session.countingSystem,
+    countingSystems: countingSystemsUsed(session),
     seed: session.seed,
     startedAt: session.startedAt,
     endedAt: session.endedAt,
     endReason: session.endReason,
     durationMs: session.endedAt === null ? null : session.endedAt - session.startedAt,
     active: session.endedAt === null,
+    lastActivityAt: lastActivityAt(session),
     stats: computeStats(session),
   };
+}
+
+/** The latest moment anything was recorded on a Session. See `SessionSummary.lastActivityAt`. */
+export function lastActivityAt(session: Session): number {
+  let latest = Math.max(session.startedAt, session.endedAt ?? 0);
+  const logs = [
+    session.decisions,
+    session.countChecks,
+    session.rounds,
+    session.conversionChecks,
+    session.indexPlays,
+    session.countingSystemChanges,
+  ];
+  for (const log of logs) {
+    for (const entry of log) latest = Math.max(latest, entry.at);
+  }
+  return latest;
 }
 
 function emptyCounters(): Counters {
@@ -121,6 +165,10 @@ function emptyCounters(): Counters {
     correctDecisions: 0,
     countChecks: 0,
     correctCountChecks: 0,
+    conversionChecks: 0,
+    correctConversionChecks: 0,
+    indexPlays: 0,
+    correctIndexPlays: 0,
     wins: 0,
     blackjacks: 0,
     pushes: 0,
@@ -141,6 +189,16 @@ function accumulate(counters: Counters, session: Session): void {
   counters.countChecks += session.countChecks.length;
   for (const check of session.countChecks) {
     if (check.verdict === "correct") counters.correctCountChecks++;
+  }
+
+  counters.conversionChecks += session.conversionChecks.length;
+  for (const check of session.conversionChecks) {
+    if (check.verdict === "correct") counters.correctConversionChecks++;
+  }
+
+  counters.indexPlays += session.indexPlays.length;
+  for (const play of session.indexPlays) {
+    if (play.verdict === "correct") counters.correctIndexPlays++;
   }
 
   counters.rounds += session.rounds.length;
@@ -184,6 +242,12 @@ function derive(c: Counters): SessionStats {
     countChecks: c.countChecks,
     correctCountChecks: c.correctCountChecks,
     countingAccuracy: rate(c.correctCountChecks, c.countChecks),
+    conversionChecks: c.conversionChecks,
+    correctConversionChecks: c.correctConversionChecks,
+    trueCountAccuracy: rate(c.correctConversionChecks, c.conversionChecks),
+    indexPlays: c.indexPlays,
+    correctIndexPlays: c.correctIndexPlays,
+    indexPlayAccuracy: rate(c.correctIndexPlays, c.indexPlays),
     wins: c.wins,
     blackjacks: c.blackjacks,
     pushes: c.pushes,

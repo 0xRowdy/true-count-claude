@@ -42,16 +42,36 @@ import {
   submitCountCheck,
 } from "@/drills/counting";
 import {
+  DEFAULT_DEVIATION_CONFIG,
+  type DeviationDrill,
+  deviationReport,
+  nextDeviationQuestion,
+  startDeviationDrill,
+  submitDeviation,
+} from "@/drills/deviation";
+import { canUndo } from "@/drills/progress";
+import {
+  DEFAULT_TRUE_COUNT_CONFIG,
+  type TrueCountDrill,
+  nextTrueCountQuestion,
+  startTrueCountDrill,
+  submitTrueCount,
+  trueCountReport,
+} from "@/drills/trueCount";
+import {
   type RecordedRun,
   basicStrategyRecords,
   beginRun,
   countingRecords,
   dealtRoundRecords,
+  deviationRecords,
   drillSessionFrom,
   openDrillSessions,
   replaceRun,
   sessionAccepts,
   stepRun,
+  systemChangeRecord,
+  trueCountRecords,
   undoRun,
   withoutActivePointer,
 } from "./drillRecorder";
@@ -237,6 +257,200 @@ describe("a Counting drill, recorded", () => {
     const undone = undoRun(run);
     const session = drillSessionFrom(null, META, undone.log.current) as Session;
     expect(session.countChecks).toHaveLength(5);
+  });
+});
+
+/**
+ * #27: the two drills that said NOT RECORDED. Both are played through their real engines, and
+ * both Sessions go through the same fold, the same replay check and the same repository as the
+ * other two drills' — with the difference that neither may open a Shoe, because neither dealt.
+ */
+describe("a True Count drill, recorded", () => {
+  const META = { ...BS_META, id: "tc-1", drillId: "true-count" as const, startingBankroll: 0 };
+  type TcRun = RecordedRun<TrueCountDrill["current"]>;
+
+  /** Answers `count` questions: right on even ones, one point high on odd ones. */
+  function answers(count: number, seed = 17): TcRun {
+    let run: TcRun = beginRun(startTrueCountDrill(DEFAULT_TRUE_COUNT_CONFIG, seed));
+    for (let i = 0; i < count; i++) {
+      if (i > 0) run = replaceRun(run, nextTrueCountQuestion(run.drill));
+      const before = run.drill.current;
+      const stated = before.question.answer + (i % 2 === 0 ? 0 : 1);
+      const next = submitTrueCount(run.drill, stated, AT + i);
+      run = stepRun(run, next, trueCountRecords(before, next.current));
+    }
+    return run;
+  }
+
+  it("puts every answer in the Session as a conversion check, scored as the drill scored it", () => {
+    const run = answers(7);
+    const session = drillSessionFrom(null, META, run.log.current) as Session;
+    const report = trueCountReport(run.drill);
+
+    expect(session.mode).toBe("drill");
+    expect(session.drillId).toBe("true-count");
+    expect(session.conversionChecks).toHaveLength(7);
+    const stats = computeStats(session);
+    expect(stats.conversionChecks).toBe(report.tally.attempts);
+    expect(stats.correctConversionChecks).toBe(report.tally.correct);
+    expect(stats.trueCountAccuracy).toBeCloseTo(4 / 7);
+    expect(session.conversionChecks.map((check) => check.questionIndex)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  });
+
+  it("opens no Shoe and claims no cards, and still passes replay verification", () => {
+    const session = drillSessionFrom(null, META, answers(5).log.current) as Session;
+
+    expect(session.shoes).toEqual([]);
+    expect(session.decisions).toEqual([]);
+    expect(session.rounds).toEqual([]);
+    expect(verifyReplay(session)).toEqual({ ok: true, problems: [] });
+  });
+
+  it("takes an undone answer back out of the Session, and records a re-answer once", () => {
+    const run = answers(4);
+    const undone = undoRun(run);
+    const after = drillSessionFrom(null, META, undone.log.current) as Session;
+
+    expect(after.conversionChecks).toHaveLength(3);
+    expect(undone.drill.current.lastResult).toBeNull();
+
+    const before = undone.drill.current;
+    const next = submitTrueCount(undone.drill, before.question.answer, AT + 99);
+    const again = stepRun(undone, next, trueCountRecords(before, next.current));
+    const reanswered = drillSessionFrom(null, META, again.log.current) as Session;
+    expect(reanswered.conversionChecks).toHaveLength(4);
+    expect(reanswered.conversionChecks[3]!.verdict).toBe("correct");
+    expect(verifyReplay(reanswered).ok).toBe(true);
+  });
+
+  it("forgets the Session entirely when every answer is undone", () => {
+    const run = undoRun(answers(1));
+    expect(drillSessionFrom(null, META, run.log.current)).toBeNull();
+  });
+
+  it("records nothing for a move to the next question", () => {
+    const run = answers(2);
+    const moved = replaceRun(run, nextTrueCountQuestion(run.drill));
+    expect(moved.log).toBe(run.log);
+  });
+});
+
+describe("a Deviation drill, recorded", () => {
+  const META = { ...BS_META, id: "dev-1", drillId: "deviation" as const, startingBankroll: 0 };
+  type DevRun = RecordedRun<DeviationDrill["current"]>;
+
+  /** Answers `count` questions, standing on every hand and taking every insurance. */
+  function answers(count: number, seed = 23): DevRun {
+    let run: DevRun = beginRun(startDeviationDrill(DEFAULT_DEVIATION_CONFIG, seed));
+    for (let i = 0; i < count; i++) {
+      if (i > 0) run = replaceRun(run, nextDeviationQuestion(run.drill));
+      const before = run.drill.current;
+      const action = before.question.kind === "insurance" ? "insurance" : "stand";
+      const next = submitDeviation(run.drill, action, AT + i);
+      run = stepRun(run, next, deviationRecords(before, next.current));
+    }
+    return run;
+  }
+
+  it.each([23, 5, 77])("records every answer as an index play, scored as the drill scored it (seed %i)", (seed) => {
+    const run = answers(12, seed);
+    const session = drillSessionFrom(null, META, run.log.current) as Session;
+    const report = deviationReport(run.drill);
+
+    expect(session.indexPlays).toHaveLength(12);
+    const stats = computeStats(session);
+    expect(stats.indexPlays).toBe(report.tally.attempts);
+    expect(stats.correctIndexPlays).toBe(report.tally.correct);
+    expect(stats.indexPlayAccuracy).toBe(report.tally.accuracy);
+  });
+
+  it("never logs a placed hand as a Decision, and never opens a Shoe for one", () => {
+    const session = drillSessionFrom(null, META, answers(12).log.current) as Session;
+
+    // The Decision log asserts its cards were dealt; these were placed (ADR-0004).
+    expect(session.decisions).toEqual([]);
+    expect(session.shoes).toEqual([]);
+    expect(session.rounds).toEqual([]);
+    expect(computeStats(session).handsPlayed).toBe(0);
+    // A replay check that tried to find these cards in a Shoe would throw on a Session with
+    // no Shoes; it passes instead, having checked each play's count and verdict.
+    expect(verifyReplay(session)).toEqual({ ok: true, problems: [] });
+  });
+
+  it("keeps each question's provenance: the cut it came from reproduces from the record", () => {
+    const run = answers(8);
+    const session = drillSessionFrom(null, META, run.log.current) as Session;
+    const cut = session.indexPlays.filter((play) => play.cutShoeSeed !== null);
+    expect(cut.length).toBeGreaterThan(0);
+    for (const play of session.indexPlays) {
+      expect(play.runSeed).toBe(23);
+      if (play.cutShoeSeed === null) expect(play.cutPosition).toBeNull();
+    }
+  });
+
+  it("takes an undone answer back out of the Session", () => {
+    const run = answers(5);
+    const undone = undoRun(run);
+    const after = drillSessionFrom(null, META, undone.log.current) as Session;
+    expect(after.indexPlays).toHaveLength(4);
+    expect(computeStats(after).indexPlays).toBe(undone.drill.current.tally.attempts);
+  });
+
+  it("survives the repository and a reload, and stays out of the Play table's pointer", async () => {
+    const store = createMemoryStore();
+    const drills = createSessionRepository({ store: withoutActivePointer(store) });
+    const session = drillSessionFrom(null, META, answers(6).log.current) as Session;
+    await drills.save(session);
+
+    const reloaded = createSessionRepository({ store });
+    expect(await reloaded.load("dev-1")).toEqual(JSON.parse(JSON.stringify(session)));
+    expect(await reloaded.loadActiveSession()).toBeNull();
+    const [summary] = await reloaded.listSummaries();
+    expect(summary!.drillId).toBe("deviation");
+    expect(summary!.stats.indexPlays).toBe(6);
+    expect(openDrillSessions((await reloaded.loadAll()).sessions).deviation?.id).toBe("dev-1");
+  });
+});
+
+/**
+ * #26 for drills: a drill whose records name their system carries its Session on across a
+ * switch, and the Session must then name the new system — not the one it opened with.
+ */
+describe("a drill Session carried on under another Counting System", () => {
+  it("names the new system from the moment the run starts, and keeps it through every undo", () => {
+    const first = drillSessionFrom(null, BS_META, playRounds(3, 10).log.current) as Session;
+    const change = systemChangeRecord(first, "KO", AT + 500);
+    expect(change).not.toBeNull();
+
+    let run = beginRun(
+      startBasicStrategyDrill({ ...DEFAULT_BASIC_STRATEGY_CONFIG, system: KO }, 4),
+      [change!],
+    );
+    const meta = { ...BS_META, countingSystem: "KO" };
+
+    // Before a single answer, the carried-on Session already says KO.
+    const switched = drillSessionFrom(first, meta, run.log.current) as Session;
+    expect(switched.countingSystem).toBe("KO");
+    expect(switched.countingSystemChanges).toMatchObject([{ from: "Hi-Lo", to: "KO", at: AT + 500 }]);
+
+    run = deal(run, AT + 600);
+    while (!betweenRounds(run.drill.current)) run = answer(run, AT + 700, false);
+    const played = drillSessionFrom(first, meta, run.log.current) as Session;
+    expect(played.decisions.at(-1)!.count.system).toBe("KO");
+    expect(verifyReplay(played)).toEqual({ ok: true, problems: [] });
+
+    // Undo every answer of the new run: the change sits below every undo point.
+    let undone = run;
+    while (canUndo(undone.drill)) undone = undoRun(undone);
+    const back = drillSessionFrom(first, meta, undone.log.current) as Session;
+    expect(back.countingSystem).toBe("KO");
+    expect(back.decisions).toHaveLength(first.decisions.length);
+  });
+
+  it("records no change without a Session to carry on, or without a change of system", () => {
+    const session = drillSessionFrom(null, BS_META, playRounds(1, 2).log.current) as Session;
+    expect(systemChangeRecord(null, "KO", AT)).toBeNull();
+    expect(systemChangeRecord(session, "Hi-Lo", AT)).toBeNull();
   });
 });
 

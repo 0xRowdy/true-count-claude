@@ -5,6 +5,7 @@ import {
   DEFAULT_RULES,
   HI_LO,
   KO,
+  ZEN,
   basicStrategy,
   compositionWithout,
   createHand,
@@ -32,8 +33,30 @@ import {
   startCountingDrill,
   DEFAULT_COUNTING_CONFIG,
 } from "./counting";
+import {
+  DEFAULT_DEVIATION_CONFIG,
+  deviationQuestion,
+  nextDeviationQuestion,
+  startDeviationDrill,
+  submitDeviation,
+} from "./deviation";
 import { buildCountContext } from "./explanation";
-import { toCountCheckInput, toDecisionInput, toRoundInput } from "./records";
+import {
+  toConversionCheckInput,
+  toCountCheckInput,
+  toDecisionInput,
+  toIndexPlayInput,
+  toRoundInput,
+} from "./records";
+import {
+  DEFAULT_TRUE_COUNT_CONFIG,
+  nextTrueCountQuestion,
+  scoreTrueCount,
+  startTrueCountDrill,
+  submitTrueCount,
+  trueCountQuestion,
+  trueCountQuestionFrom,
+} from "./trueCount";
 import { scoreAgainstBasicStrategy, scoreInsuranceAgainstBasicStrategy } from "./scoring";
 
 const S17_NO_SURRENDER: RuleSet = { ...DEFAULT_RULES, dealerSoft17: "stand", surrender: "none" };
@@ -198,6 +221,102 @@ describe("a CountCheck for the Session log", () => {
     expect(record.shoeDealtCount).toBe(42);
     expect(countedCards(drill.current)).toHaveLength(12);
     expect("verdict" in record).toBe(false);
+  });
+});
+
+describe("a ConversionCheck for the Session log (#27)", () => {
+  it("carries the question's numbers, the rounding, and what regenerates the question", () => {
+    // -7 over two decks is -3.5: truncation says -3, and a user who floors says -4.
+    const config = { ...DEFAULT_TRUE_COUNT_CONFIG, decks: 6 };
+    const question = trueCountQuestionFrom(config, { runningCount: -7, cardsRemaining: 104, index: 4 });
+    const record = toConversionCheckInput(scoreTrueCount(question, -4, 77), 31);
+
+    expect(record).toEqual({
+      system: "Hi-Lo",
+      decks: 6,
+      runningCount: -7,
+      cardsRemaining: 104,
+      decksRemaining: 2,
+      rounding: "truncate",
+      statedTrueCount: -4,
+      actualTrueCount: -3,
+      runSeed: 31,
+      questionIndex: 4,
+      at: 77,
+    });
+    // The log derives the verdict; and no Shoe is named, because none was dealt.
+    expect("verdict" in record).toBe(false);
+    expect(record).not.toHaveProperty("shoeIndex");
+  });
+
+  it("regenerates the very question it was answered from, given the run seed and index", () => {
+    let drill = startTrueCountDrill({ ...DEFAULT_TRUE_COUNT_CONFIG, system: ZEN }, 2_024);
+    for (let i = 0; i < 3; i++) drill = nextTrueCountQuestion(drill);
+    drill = submitTrueCount(drill, 1, 5);
+    const record = toConversionCheckInput(drill.current.lastResult!, drill.current.seed);
+
+    const again = trueCountQuestion(
+      { ...DEFAULT_TRUE_COUNT_CONFIG, system: ZEN, decks: record.decks, rounding: record.rounding },
+      record.runSeed,
+      record.questionIndex,
+    );
+    expect(again.runningCount).toBe(record.runningCount);
+    expect(again.cardsRemaining).toBe(record.cardsRemaining);
+    expect(again.answer).toBe(record.actualTrueCount);
+    expect(record.system).toBe("Zen Count");
+  });
+});
+
+describe("an IndexPlay for the Session log (#27)", () => {
+  function answered(seed: number, questions: number) {
+    let drill = startDeviationDrill(DEFAULT_DEVIATION_CONFIG, seed);
+    for (let i = 0; i < questions; i++) drill = nextDeviationQuestion(drill);
+    const action = drill.current.question.kind === "insurance" ? "insurance" : "stand";
+    return submitDeviation(drill, action, 900);
+  }
+
+  it("records the placed cards and where the question came from — never a dealt position", () => {
+    const drill = answered(8, 2);
+    const result = drill.current.lastResult!;
+    const question = result.question;
+    const record = toIndexPlayInput(result, drill.current.seed);
+
+    expect(record.entryId).toBe(question.entry.id);
+    expect(record.indexNumber).toBe(question.entry.index);
+    expect(record.dealerUpcard).toEqual(question.dealerUpcard);
+    expect(record.placedCards).toEqual(question.kind === "hand" ? question.hand.cards : []);
+    expect(record.trueCount).toBe(question.trueCount);
+    expect(record.firing).toBe(question.firing);
+    expect(record.actionTaken).toBe(result.decision.actionTaken);
+    expect(record.correctAction).toBe(result.decision.correctAction);
+    expect(record.basicStrategyAction).toBe(result.decision.basicStrategyAction);
+    expect(record.runSeed).toBe(8);
+    expect(record.questionIndex).toBe(2);
+    expect(record.cutShoeSeed).toBe(question.shoeSeed);
+    expect(record.cutPosition).toBe(question.cutPosition);
+    // Nothing that would let a reader take these cards for dealt ones: no Shoe index, no
+    // dealt count, no round, and no `hand` shaped like a Decision's.
+    for (const key of ["shoeIndex", "shoeDealtCount", "roundIndex", "hand", "verdict"]) {
+      expect(record).not.toHaveProperty(key);
+    }
+  });
+
+  it("regenerates the question from its run seed and index, shoe cut and all", () => {
+    for (let questions = 0; questions < 6; questions++) {
+      const drill = answered(41, questions);
+      const record = toIndexPlayInput(drill.current.lastResult!, drill.current.seed);
+      const again = deviationQuestion(
+        DEFAULT_DEVIATION_CONFIG,
+        drill.current.availability,
+        record.runSeed,
+        record.questionIndex,
+      );
+      expect(again.entry.id).toBe(record.entryId);
+      expect(again.shoeSeed).toBe(record.cutShoeSeed);
+      expect(again.cutPosition).toBe(record.cutPosition);
+      expect(again.count.runningCount).toBe(record.runningCount);
+      expect(again.dealerUpcard).toEqual(record.dealerUpcard);
+    }
   });
 });
 

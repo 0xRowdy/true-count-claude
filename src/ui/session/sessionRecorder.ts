@@ -42,14 +42,20 @@ import type {
   Session,
 } from "@/state";
 import {
+  changeCountingSystem,
   currentShoe as currentSessionShoe,
+  isActive,
   nextRoundIndex,
   openShoe,
   recordDecision,
   recordRound,
   startSession,
 } from "@/state";
-import { type PlayTable, countReadout } from "@/ui/table/usePlayTable";
+import {
+  type PlayTable,
+  countReadout,
+  currentShoe as currentTableShoe,
+} from "@/ui/table/usePlayTable";
 
 // ---------------------------------------------------------------------------
 // Opening a Session and a round
@@ -125,6 +131,35 @@ function syncShoe(session: Session, table: PlayTable): Session {
   const recorded = currentSessionShoe(session);
   if (recorded && recorded.seed === table.shoe.seed) return session;
   return openShoe(session, table.shoe.seed).session;
+}
+
+// ---------------------------------------------------------------------------
+// The Counting System
+// ---------------------------------------------------------------------------
+
+/**
+ * Brings the Session's Counting System into line with the table's, recording the change (#26).
+ *
+ * A switch is recorded rather than deferred to the next Session, as a Rule Set change is (#19),
+ * because the two are not the same kind of change. A Rule Set builds the Shoe, so a second one
+ * inside a Session would make its earlier Shoes replay as cards that were never dealt. A
+ * Counting System only reads the cards: every Shoe still rebuilds from its seed, and every
+ * Decision already names the system it was taken under. Deferring it would buy no integrity,
+ * and would cost either a table that counts in a system the user did not pick or a selector
+ * that refuses a legal choice (invariant 7).
+ *
+ * The change is placed in the Shoe the table is dealing from — opened on the Session first if
+ * a reshuffle has not reached the log yet — at the live position, mid-round included. Called
+ * on every system change and again before every deal, so the two can never be seen apart.
+ * A no-op when they already agree, or when the Session is closed.
+ */
+export function syncCountingSystem(session: Session, table: PlayTable, at: number): Session {
+  if (!isActive(session) || session.countingSystem === table.system.name) return session;
+  return changeCountingSystem(syncShoe(session, table), {
+    to: table.system.name,
+    at,
+    shoeDealtCount: currentTableShoe(table).dealtCount,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -329,14 +364,14 @@ export function closeRound(
 /**
  * The Counting System a Session was last played with.
  *
- * `Session.countingSystem` is the name in force when the Session opened, and the table lets
- * a user switch systems mid-run. Every Decision stores the system that was actually showing,
- * so the latest of those is the honest answer, and the Session's own field is the fallback
- * for a Session with no Decisions yet.
+ * Since schema version 3 this is simply `Session.countingSystem`: `syncCountingSystem` moves it
+ * the moment the table's system changes, so it is never behind the table (#26). Before that it
+ * was the system the Session opened with and went stale on the first switch — which is why this
+ * once read the last Decision's system instead, and why a version 2 record has its system
+ * repaired by the 2→3 migration rather than here.
  */
 export function sessionCountingSystem(session: Session): CountingSystem {
-  const last = session.decisions[session.decisions.length - 1];
-  return countingSystemByName(last?.count.system ?? session.countingSystem);
+  return countingSystemByName(session.countingSystem);
 }
 
 /** Systems are recorded by published name (CONTEXT.md's glossary), so resume reads them back. */

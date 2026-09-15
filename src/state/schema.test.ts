@@ -1,10 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { COUNTING_SYSTEMS } from "@/engine";
-import { V1_COUNT_CASES, buildSession, buildV1Session } from "./fixtures";
+import {
+  V1_COUNT_CASES,
+  asV2Payload,
+  buildSession,
+  buildV1Session,
+  buildV2DriftedSession,
+} from "./fixtures";
+import { verifyReplay } from "./replay";
 import {
   CURRENT_SCHEMA_VERSION,
   type Migration,
   SESSION_MIGRATIONS,
+  SESSION_RECORDS_V3,
   TRUE_COUNT_NULLABLE,
   V1_UNBALANCED_SYSTEMS,
   decodeSession,
@@ -12,6 +20,7 @@ import {
   isSession,
   migrateRecord,
 } from "./schema";
+import { changeCountingSystem, countingSystemsUsed } from "./session";
 import type { Session } from "./types";
 
 /**
@@ -78,8 +87,11 @@ describe("the persisted record carries its schema version", () => {
   });
 
   it("ships an unbroken upgrade path from version 1 to the current version", () => {
-    expect(CURRENT_SCHEMA_VERSION).toBe(2);
-    expect(SESSION_MIGRATIONS.map((step) => [step.from, step.to])).toEqual([[1, 2]]);
+    expect(CURRENT_SCHEMA_VERSION).toBe(3);
+    expect(SESSION_MIGRATIONS.map((step) => [step.from, step.to])).toEqual([
+      [1, 2],
+      [2, 3],
+    ]);
   });
 });
 
@@ -89,10 +101,12 @@ describe("the persisted record carries its schema version", () => {
  * which is the most common count in any shoe — using only what the snapshot itself says.
  */
 describe("1→2: an absent True Count becomes null, and a real 0 stays 0", () => {
+  // Stops at version 2, so this step is tested on its own; the walk onward is tested below.
   const upgrade = (session: Session): Session => {
     const outcome = migrateRecord<Session>(
       { schemaVersion: 1, kind: "session", data: JSON.parse(JSON.stringify(session)) },
       SESSION_MIGRATIONS,
+      2,
     );
     if (!outcome.ok) throw new Error(outcome.reason);
     expect(outcome.applied).toEqual([TRUE_COUNT_NULLABLE.describe]);
@@ -171,7 +185,7 @@ describe("1→2: an absent True Count becomes null, and a real 0 stays 0", () =>
 
     expect(outcome.ok).toBe(true);
     if (!outcome.ok) return;
-    expect(outcome.applied).toEqual([TRUE_COUNT_NULLABLE.describe]);
+    expect(outcome.applied).toEqual([TRUE_COUNT_NULLABLE.describe, SESSION_RECORDS_V3.describe]);
     expect(outcome.session.decisions.map((decision) => decision.count.trueCount)).toEqual([
       null,
       null,
@@ -180,6 +194,130 @@ describe("1→2: an absent True Count becomes null, and a real 0 stays 0", () =>
       0,
       -1.5,
     ]);
+  });
+});
+
+/**
+ * #26 and #27: version 3 adds two drill logs no older build wrote, and a Counting System change
+ * log whose changes an older build made without recording.
+ */
+describe("2→3: new drill logs arrive empty, and a stale Counting System is repaired", () => {
+  const upgradeV2 = (session: Session): Session => {
+    const outcome = migrateRecord<Session>(
+      { schemaVersion: 2, kind: "session", data: JSON.parse(JSON.stringify(session)) },
+      SESSION_MIGRATIONS,
+    );
+    if (!outcome.ok) throw new Error(outcome.reason);
+    expect(outcome.applied).toEqual([SESSION_RECORDS_V3.describe]);
+    return outcome.data;
+  };
+
+  it("gives a v2 Session empty conversion-check and index-play logs, and changes nothing else", () => {
+    const v2 = JSON.parse(JSON.stringify(asV2Payload(buildSession({ rounds: 8, seed: 12 }))));
+    expect(v2).not.toHaveProperty("conversionChecks");
+
+    const upgraded = upgradeV2(v2);
+
+    expect(upgraded).toEqual({
+      ...v2,
+      conversionChecks: [],
+      indexPlays: [],
+      countingSystemChanges: [],
+    });
+    expect(isSession(upgraded)).toBe(true);
+    expect(verifyReplay(upgraded)).toEqual({ ok: true, problems: [] });
+  });
+
+  it("infers each system change from the first Decision taken under the new system", () => {
+    const v2 = buildV2DriftedSession();
+    expect(v2.countingSystem).toBe("Hi-Lo");
+
+    const upgraded = upgradeV2(v2);
+    const decision = (index: number) => v2.decisions[index]!;
+    const inferred = (index: number, position: number, from: string, to: string) => ({
+      index: position,
+      from,
+      to,
+      roundIndex: decision(index).roundIndex,
+      shoeIndex: decision(index).shoeIndex,
+      shoeDealtCount: decision(index).shoeDealtCount,
+      at: decision(index).at,
+      inferredFromDecision: index,
+    });
+
+    expect(upgraded.countingSystemChanges).toEqual([
+      inferred(1, 0, "Hi-Lo", "KO"),
+      inferred(3, 1, "KO", "Hi-Lo"),
+      inferred(4, 2, "Hi-Lo", "Zen Count"),
+    ]);
+    // The system in force is the last one a Decision was taken under — what the table showed.
+    expect(upgraded.countingSystem).toBe("Zen Count");
+    expect(countingSystemsUsed(upgraded)).toEqual(["Hi-Lo", "KO", "Zen Count"]);
+    // The inferred log is a chain that lands on the Session's system, and the cards still replay.
+    expect(verifyReplay(upgraded)).toEqual({ ok: true, problems: [] });
+  });
+
+  it("is a no-op on a v3 Session, even one whose last change came after its last Decision", () => {
+    let session = buildSession({ rounds: 3, seed: 8 });
+    session = changeCountingSystem(session, { to: "Omega II", at: 9 });
+    const v3 = JSON.parse(JSON.stringify(session)) as Session;
+
+    expect(SESSION_RECORDS_V3.migrate(v3)).toEqual(v3);
+    expect((SESSION_RECORDS_V3.migrate(v3) as Session).countingSystem).toBe("Omega II");
+  });
+
+  it("keeps drill records a v3 Session already holds", () => {
+    const v3 = { ...buildSession({ rounds: 1 }), conversionChecks: ["kept"], indexPlays: ["kept"] };
+    const migrated = SESSION_RECORDS_V3.migrate(v3) as Record<string, unknown>;
+    expect(migrated.conversionChecks).toEqual(["kept"]);
+    expect(migrated.indexPlays).toEqual(["kept"]);
+  });
+
+  it("passes a mangled record through for `isSession` to reject, rather than throwing", () => {
+    const mangled = [null, 7, "x", {}, { decisions: "no" }, { countingSystem: 3, decisions: [] }];
+    const alsoMangled = [{ countingSystem: "Hi-Lo", decisions: [null, 3, {}, { count: 7 }] }];
+    for (const data of [...mangled, ...alsoMangled]) {
+      expect(() => SESSION_RECORDS_V3.migrate(data)).not.toThrow();
+      expect(isSession(SESSION_RECORDS_V3.migrate(data))).toBe(false);
+    }
+  });
+
+  it("upgrades a stored v2 record through decodeSession with the shipped chain", () => {
+    const raw = JSON.stringify({ schemaVersion: 2, kind: "session", data: buildV2DriftedSession() });
+    const outcome = decodeSession(raw);
+
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(outcome.applied).toEqual([SESSION_RECORDS_V3.describe]);
+    expect(outcome.session.countingSystem).toBe("Zen Count");
+    expect(outcome.session.conversionChecks).toEqual([]);
+    expect(outcome.session.indexPlays).toEqual([]);
+  });
+
+  it("walks a v1 record through both steps: stand-in zeros nulled, then systems repaired", () => {
+    const outcome = migrateRecord<Session>(
+      { schemaVersion: 1, kind: "session", data: JSON.parse(JSON.stringify(buildV1Session())) },
+      SESSION_MIGRATIONS,
+    );
+
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(outcome.applied).toEqual([TRUE_COUNT_NULLABLE.describe, SESSION_RECORDS_V3.describe]);
+    const session = outcome.data;
+    expect(session.decisions[0]!.count.trueCount).toBeNull();
+    expect(session.decisions[3]!.count.trueCount).toBe(0);
+    // V1_COUNT_CASES name KO, Red 7, Hi-Lo, Hi-Lo, Zen Count, Omega II in a Hi-Lo Session.
+    expect(session.countingSystemChanges.map((change) => change.to)).toEqual([
+      "KO",
+      "Red 7",
+      "Hi-Lo",
+      "Zen Count",
+      "Omega II",
+    ]);
+    expect(session.countingSystem).toBe("Omega II");
+    expect(session.conversionChecks).toEqual([]);
+    expect(session.indexPlays).toEqual([]);
+    expect(isSession(session)).toBe(true);
   });
 });
 

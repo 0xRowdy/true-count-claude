@@ -14,16 +14,22 @@
  *
  * Every answer — right or wrong — shows the full `ExplanationPanel` (#8), graded against the
  * chart as amended by the index numbers at this count.
+ *
+ * Every answer is also recorded into the drill's Session as an **index play** (#27), never as a
+ * Decision. These hands are placed at a real shoe position rather than dealt from it, and a
+ * Decision claims every card it shows came off its shoe — a claim `verifyReplay` checks. The
+ * index play records what is true instead: the cards as placed, and the run seed, question index,
+ * shoe seed and cut position that reproduce the question (ADR-0004).
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import { type CountingSystem, DEFAULT_COUNTING_SYSTEM, getCountingSystem, signed } from "@/engine";
+import { type CountingSystem, getCountingSystem, getIndexSet, signed } from "@/engine";
 import { type Action, legalActions } from "@/engine/hand";
-import { canUndo, undo } from "@/drills/progress";
 import {
   DEFAULT_DEVIATION_CONFIG,
-  type DeviationDrill,
+  type DeviationDrillAvailability,
+  type DeviationDrillState,
   deviationDrillAvailability,
   deviationReport,
   nextDeviationQuestion,
@@ -34,20 +40,21 @@ import type { DrillAction } from "@/drills/explanation";
 import { getDrill } from "@/drills/types";
 import { ExplanationPanel } from "@/ui/explanation/ExplanationPanel";
 import { ActionButton, Badge, Panel, Screen, SecondaryButton, StatRow, type Tone } from "@/ui/primitives";
-import { useConfiguredRules } from "@/ui/rules/rulesStore";
 import { CardRow } from "@/ui/table/CardView";
 import { colors, spacing, type } from "@/ui/theme";
 import {
   DrillHeader,
-  NotRecordedPanel,
+  PendingTablePanel,
+  RecordingPanel,
   Section,
   SystemPicker,
   TableLine,
   UndoControl,
   drillStyles,
 } from "./DrillChrome";
+import { deviationRecords, replaceRun, stepRun } from "./drillRecorder";
 import { EXCLUSION_REASON, ROUNDING_NAME, decksText, formatCountValue, formatRate, upcardName } from "./drillFormat";
-import { freshSeed } from "./useRecordedDrill";
+import { type RunConfig, useRecordedDrill } from "./useRecordedDrill";
 
 const DRILL = getDrill("deviation");
 const TWO_COLUMN_WIDTH = 900;
@@ -70,27 +77,72 @@ const ACTION_TONE: Record<Action, Tone> = {
   surrender: "bad",
 };
 
+const TABLE_REASON =
+  "This drill's Session records one table for its whole length, and every index play in it was graded against that table's chart. Drilling another table inside it would leave the Session naming rules some of its answers were never graded under.";
+
+function start(config: RunConfig) {
+  if (!deviationDrillAvailability(config.rules, config.system).available) return null;
+  return startDeviationDrill(
+    { ...DEFAULT_DEVIATION_CONFIG, rules: config.rules, system: config.system, bet: config.rules.minBet },
+    config.seed,
+  );
+}
+
 export function DeviationDrillScreen() {
-  const configured = useConfiguredRules();
-  const rules = configured.rules;
-  const [system, setSystem] = useState<CountingSystem>(DEFAULT_COUNTING_SYSTEM);
-  const [drill, setDrill] = useState<DeviationDrill | null>(null);
+  const recorded = useRecordedDrill<DeviationDrillState>({
+    drillId: "deviation",
+    start,
+    // An index play names its own system, so a Session carries on across a switch.
+    systemBindsSession: false,
+    startingBankroll: 0,
+  });
+  const { run, config, update } = recorded;
+  /** A system the user picked that publishes no indices. Shown, never recorded. */
+  const [declined, setDeclined] = useState<CountingSystem | null>(null);
   const [showExcluded, setShowExcluded] = useState(true);
   const { width } = useWindowDimensions();
   const twoColumn = width >= TWO_COLUMN_WIDTH;
 
-  const availability = useMemo(() => deviationDrillAvailability(rules, system), [rules, system]);
+  const pickSystem = useCallback(
+    (system: CountingSystem) => {
+      if (getIndexSet(system) === undefined) {
+        setDeclined(system);
+        return;
+      }
+      setDeclined(null);
+      recorded.changeSystem(system);
+    },
+    [recorded],
+  );
 
-  useEffect(() => {
-    if (!configured.ready || !availability.available) {
-      setDrill(null);
-      return;
-    }
-    setDrill(startDeviationDrill({ ...DEFAULT_DEVIATION_CONFIG, rules, system, bet: rules.minBet }, freshSeed()));
-  }, [configured.ready, availability.available, rules, system]);
+  const answer = useCallback(
+    (action: DrillAction) => {
+      const at = Date.now();
+      update((current) => {
+        const before = current.drill.current;
+        // A second submission is a no-op in the drill; it must not become an undo point either.
+        if (before.lastResult !== null) return current;
+        const next = submitDeviation(current.drill, action, at);
+        return stepRun(current, next, deviationRecords(before, next.current));
+      });
+    },
+    [update],
+  );
 
-  const answer = (action: DrillAction) =>
-    setDrill((current) => (current ? submitDeviation(current, action, Date.now()) : current));
+  if (!config) {
+    return (
+      <ScrollView style={drillStyles.scroll} contentContainerStyle={drillStyles.scrollContent}>
+        <Screen width="wide">
+          <DrillHeader drill={DRILL} />
+          <Text style={drillStyles.loading}>Loading your table…</Text>
+        </Screen>
+      </ScrollView>
+    );
+  }
+
+  const rules = config.rules;
+  const system = declined ?? config.system;
+  const availability = deviationDrillAvailability(rules, system);
 
   const header = (
     <>
@@ -98,12 +150,27 @@ export function DeviationDrillScreen() {
         drill={DRILL}
         report={{
           countingSystem: system.name,
-          details: drill
-            ? { runSeed: drill.current.seed, questionIndex: drill.current.attempts.length }
+          rules,
+          details: run
+            ? { runSeed: run.drill.current.seed, questionIndex: run.drill.current.question.index }
             : {},
         }}
       />
-      <NotRecordedPanel reason="These hands are placed at a real shoe position rather than dealt from it, and a Session's Decision log claims every card it shows came off its shoe. Recording them would invent a dealing history the Shoe Integrity Panel could not verify (ADR-0004), so your score stays on this screen. A Session will need an index-play record of its own." />
+      <RecordingPanel
+        session={recorded.session}
+        ended={recorded.ended}
+        unit="index plays"
+        error={recorded.storageError}
+        onEnd={recorded.endSession}
+      />
+      {recorded.pendingRules ? (
+        <PendingTablePanel
+          current={rules}
+          pending={recorded.pendingRules}
+          onTakeUp={recorded.takeUpRules}
+          reason={TABLE_REASON}
+        />
+      ) : null}
     </>
   );
 
@@ -112,48 +179,15 @@ export function DeviationDrillScreen() {
       <TableLine rules={rules} />
       <SystemPicker
         value={system}
-        onChange={setSystem}
+        onChange={pickSystem}
         note={availability.indexSet ? `${availability.indexSet}` : "publishes no index set"}
       />
     </Panel>
   );
 
-  const poolPanel = availability.indexSet ? (
-    <Panel title={availability.indexSet}>
-      <Text style={drillStyles.body}>
-        <Text style={drillStyles.strong}>{availability.playable.length}</Text> of{" "}
-        {availability.playable.length + availability.excluded.length} published indices apply at your
-        table and are drilled.
-        {availability.excluded.length > 0
-          ? ` Your Rule Set takes ${availability.excluded.length} off the board:`
-          : " None is taken off the board."}
-      </Text>
-      {availability.excluded.length > 0 ? (
-        <>
-          <View style={styles.toggle}>
-            <SecondaryButton
-              label={showExcluded ? "Hide the list" : `Show the ${availability.excluded.length} and why`}
-              onPress={() => setShowExcluded((open) => !open)}
-            />
-          </View>
-          {showExcluded
-            ? availability.excluded.map(({ entry, reason }) => (
-                <View key={entry.id} style={styles.excluded}>
-                  <Text style={drillStyles.body}>
-                    <Text style={drillStyles.strong}>{entry.label}</Text>{" "}
-                    <Text style={drillStyles.mono}>index {signed(entry.index)}</Text>
-                  </Text>
-                  <Text style={drillStyles.note}>{EXCLUSION_REASON[reason]}</Text>
-                </View>
-              ))
-            : null}
-        </>
-      ) : null}
-      {availability.note ? <Text style={drillStyles.refusal}>{availability.note}</Text> : null}
-    </Panel>
-  ) : null;
+  const poolPanel = availability.indexSet ? <PoolPanel availability={availability} showExcluded={showExcluded} onToggle={() => setShowExcluded((open) => !open)} /> : null;
 
-  if (!availability.available) {
+  if (declined || !run || !availability.available) {
     return (
       <ScrollView style={drillStyles.scroll} contentContainerStyle={drillStyles.scrollContent}>
         <Screen width="wide">
@@ -170,7 +204,7 @@ export function DeviationDrillScreen() {
                         key={id}
                         label={`Drill ${supported.name} indices`}
                         tone="good"
-                        onPress={() => setSystem(supported)}
+                        onPress={() => pickSystem(supported)}
                       />
                     );
                   })
@@ -184,21 +218,10 @@ export function DeviationDrillScreen() {
     );
   }
 
-  if (!drill) {
-    return (
-      <ScrollView style={drillStyles.scroll} contentContainerStyle={drillStyles.scrollContent}>
-        <Screen width="wide">
-          {header}
-          <Text style={drillStyles.loading}>Loading your table…</Text>
-        </Screen>
-      </ScrollView>
-    );
-  }
-
-  const state = drill.current;
+  const state = run.drill.current;
   const question = state.question;
   const result = state.lastResult;
-  const report = deviationReport(drill);
+  const report = deviationReport(run.drill);
   const count = question.count;
   const actions =
     question.kind === "hand"
@@ -255,11 +278,7 @@ export function DeviationDrillScreen() {
         </Panel>
       )}
 
-      <UndoControl
-        canUndo={canUndo(drill)}
-        onUndo={() => setDrill((current) => (current ? undo(current) : current))}
-        undone={drill.undone}
-      />
+      <UndoControl canUndo={recorded.canUndo} onUndo={recorded.undo} undone={run.drill.undone} />
 
       {result ? (
         <ExplanationPanel
@@ -275,7 +294,7 @@ export function DeviationDrillScreen() {
                 <ActionButton
                   label="Next question"
                   tone="good"
-                  onPress={() => setDrill((current) => (current ? nextDeviationQuestion(current) : current))}
+                  onPress={() => update((current) => replaceRun(current, nextDeviationQuestion(current.drill)))}
                 />
               </View>
             </View>
@@ -331,6 +350,52 @@ export function DeviationDrillScreen() {
         </View>
       </Screen>
     </ScrollView>
+  );
+}
+
+/** The published set at this table: how many indices are drilled, and the ones taken off the board. */
+function PoolPanel({
+  availability,
+  showExcluded,
+  onToggle,
+}: {
+  availability: DeviationDrillAvailability;
+  showExcluded: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <Panel title={availability.indexSet ?? undefined}>
+      <Text style={drillStyles.body}>
+        <Text style={drillStyles.strong}>{availability.playable.length}</Text> of{" "}
+        {availability.playable.length + availability.excluded.length} published indices apply at your
+        table and are drilled.
+        {availability.excluded.length > 0
+          ? ` Your Rule Set takes ${availability.excluded.length} off the board:`
+          : " None is taken off the board."}
+      </Text>
+      {availability.excluded.length > 0 ? (
+        <>
+          <View style={styles.toggle}>
+            <SecondaryButton
+              label={showExcluded ? "Hide the list" : `Show the ${availability.excluded.length} and why`}
+              onPress={onToggle}
+            />
+          </View>
+          {showExcluded
+            ? availability.excluded.map(({ entry, reason }) => (
+                <View key={entry.id} style={styles.excluded}>
+                  <Text style={drillStyles.body}>
+                    <Text style={drillStyles.strong}>{entry.label}</Text>{" "}
+                    <Text style={drillStyles.mono}>index {signed(entry.index)}</Text>
+                  </Text>
+                  <Text style={drillStyles.note}>{EXCLUSION_REASON[reason]}</Text>
+                </View>
+              ))
+            : null}
+        </>
+      ) : null}
+      {availability.note ? <Text style={drillStyles.refusal}>{availability.note}</Text> : null}
+    </Panel>
   );
 }
 

@@ -32,13 +32,19 @@ export interface DrillSessionState {
   readonly open: OpenDrillSessions;
   /** A storage failure, said out loud. Drilling carries on regardless. */
   readonly error: string | null;
+  /**
+   * Counts writes that have reached storage. A screen that reads drill Sessions back out of
+   * storage — the Statistics screen — reloads when it moves, so it never shows a history that
+   * is one answer behind the drill.
+   */
+  readonly revision: number;
 }
 
 const repository: SessionRepository = createSessionRepository({
   store: withoutActivePointer(createAsyncStorageStore()),
 });
 
-let state: DrillSessionState = { status: "idle", open: {}, error: null };
+let state: DrillSessionState = { status: "idle", open: {}, error: null, revision: 0 };
 const listeners = new Set<() => void>();
 let writes: Promise<unknown> = Promise.resolve();
 
@@ -73,9 +79,14 @@ export function loadOpenDrillSessions(): void {
   void repository.loadAll().then(
     (result) => {
       // Anything written while the read was in flight wins over what the read found.
-      publish({ status: "ready", open: { ...openDrillSessions(result.sessions), ...state.open }, error: null });
+      publish({
+        ...state,
+        status: "ready",
+        open: { ...openDrillSessions(result.sessions), ...state.open },
+        error: null,
+      });
     },
-    (error: unknown) => publish({ status: "failed", open: state.open, error: describe(error) }),
+    (error: unknown) => publish({ ...state, status: "failed", error: describe(error) }),
   );
 }
 
@@ -106,7 +117,10 @@ export function endDrillSession(drillId: DrillId, session: Session): Session {
 }
 
 function enqueue(work: () => Promise<void>): void {
-  writes = writes.then(work).catch((error: unknown) => publish({ ...state, error: describe(error) }));
+  writes = writes
+    .then(work)
+    .then(() => publish({ ...state, revision: state.revision + 1 }))
+    .catch((error: unknown) => publish({ ...state, error: describe(error) }));
 }
 
 function describe(error: unknown): string {

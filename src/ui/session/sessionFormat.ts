@@ -11,7 +11,8 @@
 
 import { DEFAULT_RULES } from "@/engine/rules";
 import type { SessionResult } from "@/ui/shoe-integrity/integrity";
-import { type Session, type SessionStats, computeStats } from "@/state";
+import { DRILLS } from "@/drills/types";
+import { type Session, type SessionStats, type SessionSummary, computeStats } from "@/state";
 
 /**
  * The Session that does not exist yet, and the statistics of nothing.
@@ -36,6 +37,9 @@ export const EMPTY_SESSION: Session = {
   decisions: [],
   countChecks: [],
   rounds: [],
+  conversionChecks: [],
+  indexPlays: [],
+  countingSystemChanges: [],
 };
 
 export const EMPTY_STATS: SessionStats = computeStats(EMPTY_SESSION);
@@ -112,8 +116,88 @@ export function bankrollTopUp(session: Session, stats: SessionStats): number {
   return session.bankroll - (session.startingBankroll + stats.netResult);
 }
 
+/**
+ * What kind of Session this is, in words: "Play", or the drill by name — "True Count drill".
+ * A drill id this build does not know (an import from a newer one) still reads as a drill.
+ */
+export function sessionKindLabel(session: Pick<Session, "mode" | "drillId">): string {
+  if (session.mode === "play") return "Play";
+  const drill = DRILLS.find((candidate) => candidate.id === session.drillId);
+  return drill ? `${drill.name} drill` : "Drill";
+}
+
+/** Every Counting System a Session was kept in, in order: "Hi-Lo → KO". */
+export function countingSystemsLine(systems: readonly string[]): string {
+  return systems.length === 0 ? NO_VALUE : systems.join(" → ");
+}
+
+/** One accuracy a Session actually has records for, with the counts it was divided from. */
+export interface AccuracyLine {
+  readonly label: string;
+  readonly rate: number | null;
+  readonly correct: number;
+  readonly total: number;
+}
+
+/**
+ * The accuracies a Session has something to show for, in a fixed order.
+ *
+ * A Play Session and each drill write different records, so a history row lists the ones this
+ * Session holds rather than four rows of which three are dashes. A Session with none — a Play
+ * Session before its first Decision, a drill Session whose answers were all undone — gets the
+ * one its kind measures, dashed, so the row still says what would be measured.
+ */
+export function recordedAccuracies(
+  stats: SessionStats,
+  drillId: string | null = null,
+): readonly AccuracyLine[] {
+  const lines: AccuracyLine[] = [
+    {
+      label: "Basic Strategy accuracy",
+      rate: stats.basicStrategyAccuracy,
+      correct: stats.correctDecisions,
+      total: stats.decisionsMade,
+    },
+    {
+      label: "Counting accuracy",
+      rate: stats.countingAccuracy,
+      correct: stats.correctCountChecks,
+      total: stats.countChecks,
+    },
+    {
+      label: "True Count accuracy",
+      rate: stats.trueCountAccuracy,
+      correct: stats.correctConversionChecks,
+      total: stats.conversionChecks,
+    },
+    {
+      label: "Index play accuracy",
+      rate: stats.indexPlayAccuracy,
+      correct: stats.correctIndexPlays,
+      total: stats.indexPlays,
+    },
+  ];
+  const held = lines.filter((line) => line.total > 0);
+  if (held.length > 0) return held;
+  const own = { counting: 1, "true-count": 2, deviation: 3 }[drillId ?? ""] ?? 0;
+  return lines.slice(own, own + 1);
+}
+
+/**
+ * The drill Session most recently drilled in, or `null`. By latest record rather than start
+ * time: a drill Session stays open across visits, so the one opened first can be the one used last.
+ */
+export function latestDrillSummary(summaries: readonly SessionSummary[]): SessionSummary | null {
+  let latest: SessionSummary | null = null;
+  for (const summary of summaries) {
+    if (summary.mode !== "drill") continue;
+    if (!latest || summary.lastActivityAt > latest.lastActivityAt) latest = summary;
+  }
+  return latest;
+}
+
 /** How a Session ended, in words. */
-export function describeEndReason(session: Session): string {
+export function describeEndReason(session: Pick<Session, "endReason">): string {
   switch (session.endReason) {
     case "user":
       return "Ended by you";

@@ -9,6 +9,8 @@ import {
   type Session,
   type SessionStats,
   computeStats,
+  recordConversionCheck,
+  summarize,
   recordRound,
   resetBankroll,
   startSession,
@@ -25,6 +27,10 @@ import {
   formatPerHand,
   formatRate,
   formatRatio,
+  countingSystemsLine,
+  latestDrillSummary,
+  recordedAccuracies,
+  sessionKindLabel,
   sessionResultFor,
 } from "./sessionFormat";
 
@@ -185,5 +191,64 @@ describe("the statistics a screen renders", () => {
     expect(formatRate(stats.winRate)).toBe("100.0%");
     expect(stats.netResult).toBe(100);
     expect(formatPerHand(stats.netPerHand)).toBe("+$20.00");
+  });
+});
+
+/** #27: history rows say what kind of Session they are, and show the accuracy it measured. */
+describe("labelling Play and drill Sessions", () => {
+  it("names Play, and each drill by name", () => {
+    expect(sessionKindLabel({ mode: "play", drillId: null })).toBe("Play");
+    expect(sessionKindLabel({ mode: "drill", drillId: "basic-strategy" })).toBe("Basic Strategy drill");
+    expect(sessionKindLabel({ mode: "drill", drillId: "counting" })).toBe("Counting drill");
+    expect(sessionKindLabel({ mode: "drill", drillId: "true-count" })).toBe("True Count drill");
+    expect(sessionKindLabel({ mode: "drill", drillId: "deviation" })).toBe("Deviations drill");
+    // An id from a newer build is still a drill, not a crash and not "Play".
+    expect(sessionKindLabel({ mode: "drill", drillId: "future-drill" })).toBe("Drill");
+  });
+
+  it("lists every Counting System a Session was kept in", () => {
+    expect(countingSystemsLine(["Hi-Lo"])).toBe("Hi-Lo");
+    expect(countingSystemsLine(["Hi-Lo", "KO"])).toBe("Hi-Lo → KO");
+  });
+
+  it("shows the accuracies a Session holds records for, with their counts", () => {
+    let session = fresh();
+    session = recordConversionCheck(session, {
+      system: "Hi-Lo",
+      decks: 6,
+      runningCount: 6,
+      cardsRemaining: 104,
+      decksRemaining: 2,
+      rounding: "truncate",
+      statedTrueCount: 3,
+      actualTrueCount: 3,
+      runSeed: 1,
+      questionIndex: 0,
+      at: 1,
+    });
+    expect(recordedAccuracies(computeStats(session), "true-count")).toEqual([
+      { label: "True Count accuracy", rate: 1, correct: 1, total: 1 },
+    ]);
+  });
+
+  it("falls back to the one accuracy the Session's kind measures, dashed", () => {
+    expect(recordedAccuracies(EMPTY_STATS).map((line) => line.label)).toEqual([
+      "Basic Strategy accuracy",
+    ]);
+    expect(recordedAccuracies(EMPTY_STATS, "deviation")).toEqual([
+      { label: "Index play accuracy", rate: null, correct: 0, total: 0 },
+    ]);
+    expect(recordedAccuracies(EMPTY_STATS, "counting")[0]!.label).toBe("Counting accuracy");
+  });
+
+  it("surfaces the drill Session drilled most recently, not the one opened most recently", () => {
+    const base = summarize(fresh());
+    const summaries = [
+      { ...base, id: "play", mode: "play" as const, lastActivityAt: 900 },
+      { ...base, id: "newer-start", mode: "drill" as const, startedAt: 500, lastActivityAt: 600 },
+      { ...base, id: "older-start", mode: "drill" as const, startedAt: 100, lastActivityAt: 800 },
+    ];
+    expect(latestDrillSummary(summaries)?.id).toBe("older-start");
+    expect(latestDrillSummary([summaries[0]!])).toBeNull();
   });
 });

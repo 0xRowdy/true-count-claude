@@ -8,9 +8,8 @@
  *   (`DrillDefinition.gradedAgainst`). "Scored against Basic Strategy" and "scored against the
  *   Illustrious 18" disagree on purpose, and a trainer that hides which it is using is the
  *   "wrong math" complaint waiting to happen.
- * - **Whether an answer is being recorded is never implicit.** A drill that records says which
- *   Session and offers the one control that ends it; a drill whose results a Session cannot
- *   hold yet says so rather than letting a user assume their practice was saved.
+ * - **Whether an answer is being recorded is never implicit.** Every drill records (#27), and
+ *   each says which Session, what it holds, and offers the one control that ends it.
  */
 
 import type { ReactNode } from "react";
@@ -18,7 +17,7 @@ import { Link } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { COUNTING_SYSTEMS, type CountingSystem } from "@/engine/counting";
 import { type RuleSet, describeRules } from "@/engine/rules";
-import { type Session, computeStats } from "@/state";
+import { type Session, type SessionStats, computeStats } from "@/state";
 import type { DrillDefinition } from "@/drills/types";
 import {
   ActionButton,
@@ -79,15 +78,14 @@ export function RecordingPanel({
 }: {
   session: Session | null;
   ended: Session | null;
-  /** "decisions" or "count checks" — what this drill writes. */
-  unit: "decisions" | "count checks";
+  /** What this drill writes: "decisions", "count checks", "conversions" or "index plays". */
+  unit: RecordedUnit;
   error: string | null;
   onEnd: () => void;
 }) {
-  const stats = session ? computeStats(session) : null;
-  const endedStats = ended ? computeStats(ended) : null;
-  const count = stats ? (unit === "decisions" ? stats.decisionsMade : stats.countChecks) : 0;
-  const rate = stats ? (unit === "decisions" ? stats.basicStrategyAccuracy : stats.countingAccuracy) : null;
+  const tally = session ? unitTally(computeStats(session), unit) : null;
+  const endedTally = ended ? unitTally(computeStats(ended), unit) : null;
+  const count = tally?.count ?? 0;
 
   return (
     <Panel>
@@ -96,7 +94,7 @@ export function RecordingPanel({
           {session ? <Badge label="RECORDING" tone="good" /> : <Badge label="NOT STARTED" tone="neutral" />}
           <Text style={styles.note}>
             {session
-              ? `This drill's Session holds ${count} ${count === 1 ? unit.replace(/s$/, "") : unit}${unit === "decisions" ? " (insurance calls included)" : ""}, ${formatRate(rate)} correct, saved on this device. An undone answer is taken back out of it.`
+              ? `This drill's Session holds ${count} ${count === 1 ? unit.replace(/s$/, "") : unit}${unit === "decisions" ? " (insurance calls included)" : ""}, ${formatRate(tally?.rate ?? null)} correct, saved on this device. An undone answer is taken back out of it.`
               : `A Session opens on your first answer and is saved on this device. Its ${unit} show on the Statistics screen.`}
           </Text>
         </View>
@@ -114,13 +112,11 @@ export function RecordingPanel({
           ) : null}
         </View>
       </View>
-      {ended && endedStats ? (
+      {ended && endedTally ? (
         <Text style={styles.note}>
-          Last Session closed with{" "}
-          {unit === "decisions"
-            ? `${endedStats.decisionsMade} decisions, ${formatRate(endedStats.basicStrategyAccuracy)} correct`
-            : `${endedStats.countChecks} count checks, ${formatRate(endedStats.countingAccuracy)} correct`}
-          . It is kept in your history.
+          Last Session closed with {endedTally.count}{" "}
+          {endedTally.count === 1 ? unit.replace(/s$/, "") : unit}, {formatRate(endedTally.rate)}{" "}
+          correct. It is kept in your history.
         </Text>
       ) : null}
       {error ? (
@@ -132,14 +128,24 @@ export function RecordingPanel({
   );
 }
 
-/** For a drill whose results no Session record can hold yet — said, not implied. */
-export function NotRecordedPanel({ reason }: { reason: string }) {
-  return (
-    <Panel>
-      <Badge label="NOT RECORDED" tone="info" />
-      <Text style={styles.note}>{reason}</Text>
-    </Panel>
-  );
+/** The record a drill writes into its Session, in the words the recording panel uses. */
+export type RecordedUnit = "decisions" | "count checks" | "conversions" | "index plays";
+
+/** How many of a drill's records a Session holds, and the share of them that were correct. */
+export function unitTally(
+  stats: SessionStats,
+  unit: RecordedUnit,
+): { readonly count: number; readonly rate: number | null } {
+  switch (unit) {
+    case "decisions":
+      return { count: stats.decisionsMade, rate: stats.basicStrategyAccuracy };
+    case "count checks":
+      return { count: stats.countChecks, rate: stats.countingAccuracy };
+    case "conversions":
+      return { count: stats.conversionChecks, rate: stats.trueCountAccuracy };
+    case "index plays":
+      return { count: stats.indexPlays, rate: stats.indexPlayAccuracy };
+  }
 }
 
 /** The table this drill is dealt at, named on the surface that deals it (#19). */
@@ -166,21 +172,20 @@ export function PendingTablePanel({
   current,
   pending,
   onTakeUp,
+  reason = "This drill's Session records one table for its whole length, and its shoes are rebuilt from that table to prove the log. Drilling a second game inside it would make the hands already recorded replay as cards that were never dealt.",
 }: {
   current: RuleSet;
   pending: RuleSet;
   onTakeUp: () => void;
+  /** Why this drill's Session cannot take a second table. Defaults to the dealt drills' reason. */
+  reason?: string;
 }) {
   return (
     <Panel>
       <Badge label="NEW TABLE WAITING" tone="warn" />
       <StatRow label="Drilling now" value={describeRules(current)} />
       <StatRow label="Configured" value={describeRules(pending)} tone="info" />
-      <Text style={styles.note}>
-        This drill's Session records one table for its whole length, and its shoes are rebuilt from
-        that table to prove the log. Drilling a second game inside it would make the hands already
-        recorded replay as cards that were never dealt.
-      </Text>
+      <Text style={styles.note}>{reason}</Text>
       <View style={styles.actions}>
         <ActionButton
           label="End session and drill the new table"

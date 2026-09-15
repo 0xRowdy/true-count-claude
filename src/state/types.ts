@@ -9,7 +9,7 @@
  * Vocabulary is CONTEXT.md's, used exactly: Session, Decision, Shoe, Drill, Play.
  */
 
-import type { Action, Card, RuleSet } from "@/engine";
+import type { Action, Card, RuleSet, TrueCountRounding } from "@/engine";
 
 /**
  * A Session is a bounded run of Play (unscored) or Drill (scored, per-decision feedback).
@@ -118,6 +118,118 @@ export interface CountCheck {
   readonly at: number;
 }
 
+/**
+ * A True Count conversion check: the user is given a Running Count and a shoe remnant, states
+ * the True Count, and the app compares it to the conversion under a named rounding mode (#27).
+ *
+ * Neither a Decision (it is not a play) nor a count check (the Running Count is given, not
+ * kept), so it has a log of its own. No Shoe is involved — the question is generated from a
+ * seed, not dealt — so it carries no Shoe index and no Shoe position, and claims no cards.
+ * Every number the verdict was divided from is stored, so `verifyReplay` can redo the division.
+ */
+export interface ConversionCheck {
+  readonly index: number;
+  /** Counting System name the Running Count is kept in. Always a balanced system. */
+  readonly system: string;
+  /** Decks the shoe was built from. The remnant below is a part of it. */
+  readonly decks: number;
+  readonly runningCount: number;
+  readonly cardsRemaining: number;
+  /** `cardsRemaining / 52`, the divisor, stored because showing the division is the proof. */
+  readonly decksRemaining: number;
+  /** The rounding mode the answer was graded under — "truncate", "floor", "round" or "exact". */
+  readonly rounding: TrueCountRounding;
+  readonly statedTrueCount: number;
+  /** The conversion under `rounding`. */
+  readonly actualTrueCount: number;
+  readonly verdict: Verdict;
+  /**
+   * The drill run's seed and the question's position in it. Together with the system, decks
+   * and rounding they regenerate the question exactly (`trueCountQuestion` in `src/drills`).
+   */
+  readonly runSeed: number;
+  readonly questionIndex: number;
+  readonly at: number;
+}
+
+/**
+ * An index play: one answer to a Deviation question, graded against the published index at
+ * the question's count (#27).
+ *
+ * **Its cards were placed, not dealt.** A Deviation question puts a hand on the table at a
+ * real shoe position whose True Count is the one being drilled; the cards never came off that
+ * shoe. A `Decision` asserts that every card it shows was dealt from its Shoe, and
+ * `verifyReplay` checks that assertion against the seed — so an index play is deliberately not
+ * a Decision, has no Shoe index or round, and is never checked against a Shoe's cards
+ * (ADR-0004). What it records instead is where the question came from: the run seed and
+ * question index that regenerate it, and the seed and position of the shoe it was cut from.
+ */
+export interface IndexPlay {
+  readonly index: number;
+  /** The published entry's id, label and index number — "I18 #1 16 vs 10", 0. */
+  readonly entryId: string;
+  readonly entryLabel: string;
+  readonly indexNumber: number;
+  readonly system: string;
+  /** `"insurance"` for the insurance index, which has no player hand. */
+  readonly kind: "hand" | "insurance";
+  /** The player's cards as placed on the table. Empty for insurance. Never dealt. */
+  readonly placedCards: readonly Card[];
+  /** The dealer's upcard as placed on the table. Never dealt. */
+  readonly dealerUpcard: Card;
+  readonly runningCount: number;
+  readonly cardsRemaining: number;
+  readonly rounding: TrueCountRounding;
+  /** The rounded True Count the question was posed at. */
+  readonly trueCount: number;
+  /** True when that count is on the departing side of the index. */
+  readonly firing: boolean;
+  readonly actionTaken: DecisionAction;
+  /** Index-aware: the departure when the index has fired, the chart play when it has not. */
+  readonly correctAction: DecisionAction;
+  readonly basicStrategyAction: DecisionAction;
+  readonly verdict: Verdict;
+  /** The drill run's seed and the question's position in it — the question's own repro. */
+  readonly runSeed: number;
+  readonly questionIndex: number;
+  /**
+   * The seed of the shoe the question's count was cut from, and the position it was cut at.
+   * Both `null` when no position in the shoes tried produced the count and the question was
+   * posed with a stated count alone. A position, not a dealt count: nothing was dealt.
+   */
+  readonly cutShoeSeed: number | null;
+  readonly cutPosition: number | null;
+  readonly at: number;
+}
+
+/**
+ * A change of Counting System during a Session (#26).
+ *
+ * The table lets a user switch systems at any moment, and a system does not change a single
+ * card that is dealt — so, unlike a Rule Set change, a switch cannot corrupt replay, and it is
+ * recorded rather than deferred. `Session.countingSystem` always names the system in force
+ * *now*, and this log says when each one took over.
+ */
+export interface CountingSystemChange {
+  readonly index: number;
+  readonly from: string;
+  readonly to: string;
+  /** The round in progress, or the next one to be dealt — `rounds.length` at the change. */
+  readonly roundIndex: number;
+  /** The Shoe in play at the change, or `null` when the Session had opened none. */
+  readonly shoeIndex: number | null;
+  /** That Shoe's `dealtCount` at the change, or `null` with no Shoe. */
+  readonly shoeDealtCount: number | null;
+  readonly at: number;
+  /**
+   * `null` for a change recorded as it happened. A version 2 build changed systems without
+   * recording the moment, so the 2→3 migration infers each change from the first Decision
+   * taken under the new system and names that Decision here: the change happened no later
+   * than it, and its position and time are that Decision's.
+   */
+  readonly inferredFromDecision: number | null;
+}
+
 /** How a single player hand finished. `blackjack` is a win, broken out for the payout. */
 export type HandOutcome = "win" | "blackjack" | "push" | "loss" | "surrender";
 
@@ -170,6 +282,10 @@ export interface ShoeRecord {
  *
  * Every field is serializable as-is: what you see here is what lands in AsyncStorage and
  * what an export contains. `endedAt === null` means the Session is still running.
+ *
+ * Schema version 3 (#26, #27) added `conversionChecks`, `indexPlays` and
+ * `countingSystemChanges`, and made `countingSystem` the system in force now rather than the
+ * one the Session opened with.
  */
 export interface Session {
   readonly id: string;
@@ -177,7 +293,11 @@ export interface Session {
   /** Set only for `mode: "drill"`. */
   readonly drillId: string | null;
   readonly rules: RuleSet;
-  /** Counting System name in force for the whole Session. */
+  /**
+   * Counting System name in force *now* — the table's, always. A change mid-Session updates it
+   * and appends to `countingSystemChanges`; the system the Session opened with is the first
+   * change's `from`, or this field when there has been no change.
+   */
   readonly countingSystem: string;
   /** Root seed. Every Shoe seed in `shoes` derives from it, and is also recorded outright. */
   readonly seed: number;
@@ -190,4 +310,9 @@ export interface Session {
   readonly decisions: readonly Decision[];
   readonly countChecks: readonly CountCheck[];
   readonly rounds: readonly RoundResult[];
+  /** True Count drill answers. Generated questions: no Shoe, no cards. */
+  readonly conversionChecks: readonly ConversionCheck[];
+  /** Deviation drill answers. Placed hands: never checked against a Shoe as dealt. */
+  readonly indexPlays: readonly IndexPlay[];
+  readonly countingSystemChanges: readonly CountingSystemChange[];
 }

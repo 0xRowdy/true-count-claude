@@ -11,7 +11,7 @@
  * remaining composition without having kept the card array in storage.
  */
 
-import { type Card, type Shoe, cardId, createShoe, deal } from "@/engine";
+import { type Card, type Shoe, cardId, createShoe, deal, trueCount } from "@/engine";
 import type { Decision, Session } from "./types";
 
 export interface ReplayFrame {
@@ -121,7 +121,103 @@ export function verifyReplay(session: Session): ReplayVerification {
     problems.push(...verifyRoundCards(session, round.index));
   }
 
+  problems.push(...verifyConversionChecks(session));
+  problems.push(...verifyIndexPlays(session));
+  problems.push(...verifyCountingSystemChanges(session));
+
   return { ok: problems.length === 0, problems };
+}
+
+/**
+ * A conversion check has no cards to check — its question is generated, not dealt — but it
+ * does have arithmetic, and arithmetic is checkable: the stored True Count is redone from the
+ * stored Running Count, remnant and rounding mode, and the verdict from the two numbers.
+ */
+function verifyConversionChecks(session: Session): string[] {
+  const problems: string[] = [];
+  session.conversionChecks.forEach((check, position) => {
+    if (check.index !== position) {
+      problems.push(`Conversion check at position ${position} carries index ${check.index}`);
+    }
+    if (check.cardsRemaining <= 0) {
+      problems.push(`Conversion check ${check.index} divides by ${check.cardsRemaining} cards`);
+      return;
+    }
+    const redone = trueCount(check.runningCount, check.cardsRemaining / 52, check.rounding);
+    if (redone !== check.actualTrueCount) {
+      problems.push(
+        `Conversion check ${check.index} stores ${check.actualTrueCount} for ` +
+          `${check.runningCount} over ${check.cardsRemaining} cards (${check.rounding}), which is ${redone}`,
+      );
+    }
+    problems.push(...verdictProblem("Conversion check", check.index, check.verdict, check.statedTrueCount === check.actualTrueCount));
+  });
+  return problems;
+}
+
+/**
+ * An index play is checked for what it claims, and only that.
+ *
+ * Its cards were *placed* at a shoe position, never dealt from one, so it names no Shoe of the
+ * Session and nothing here looks for its cards in one — doing so would test a dealing history
+ * the record deliberately does not assert (ADR-0004). What it does claim is a count and a
+ * verdict: the True Count it was posed at must be the conversion of its Running Count and
+ * remnant, and the verdict must follow from the two actions.
+ */
+function verifyIndexPlays(session: Session): string[] {
+  const problems: string[] = [];
+  session.indexPlays.forEach((play, position) => {
+    if (play.index !== position) {
+      problems.push(`Index play at position ${position} carries index ${play.index}`);
+    }
+    if (play.cardsRemaining <= 0) {
+      problems.push(`Index play ${play.index} divides by ${play.cardsRemaining} cards`);
+    } else {
+      const redone = trueCount(play.runningCount, play.cardsRemaining / 52, play.rounding);
+      if (redone !== play.trueCount) {
+        problems.push(
+          `Index play ${play.index} was posed at a True Count of ${play.trueCount}, but ` +
+            `${play.runningCount} over ${play.cardsRemaining} cards (${play.rounding}) is ${redone}`,
+        );
+      }
+    }
+    problems.push(...verdictProblem("Index play", play.index, play.verdict, play.actionTaken === play.correctAction));
+  });
+  return problems;
+}
+
+/**
+ * The system log must be a chain that ends where the Session says it is: each change starts
+ * from the system the previous one switched to, and the last one lands on
+ * `Session.countingSystem`. A break is a Session and a table that disagreed (#26).
+ */
+function verifyCountingSystemChanges(session: Session): string[] {
+  const problems: string[] = [];
+  let previous: string | null = null;
+  session.countingSystemChanges.forEach((change, position) => {
+    if (change.index !== position) {
+      problems.push(`Counting System change at position ${position} carries index ${change.index}`);
+    }
+    if (previous !== null && change.from !== previous) {
+      problems.push(
+        `Counting System change ${change.index} switches from ${change.from}, but the Session ` +
+          `was in ${previous}`,
+      );
+    }
+    previous = change.to;
+  });
+  if (previous !== null && previous !== session.countingSystem) {
+    problems.push(
+      `The last Counting System change switched to ${previous}, but the Session says ` +
+        `${session.countingSystem}`,
+    );
+  }
+  return problems;
+}
+
+function verdictProblem(what: string, index: number, verdict: string, correct: boolean): string[] {
+  const expected = correct ? "correct" : "incorrect";
+  return verdict === expected ? [] : [`${what} ${index} is marked ${verdict} but is ${expected}`];
 }
 
 /**

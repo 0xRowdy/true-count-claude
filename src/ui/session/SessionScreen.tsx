@@ -1,9 +1,9 @@
 /**
  * The Statistics screen.
  *
- * Four things, in the order a user asks for them: how the run in progress is going, how it
- * compares to what a fair Shoe produces, how every run so far adds up, and what the runs
- * were. Plus the control that closes the Session, repeated here so it is reachable from
+ * Five things, in the order a user asks for them: how the Play run in progress is going, how
+ * it compares to what a fair Shoe produces, the drill Session drilled most recently, how every
+ * run so far adds up, and what the runs were — each labelled Play or by its drill (#27). Plus the control that closes the Session, repeated here so it is reachable from
  * anywhere in the Session rather than only from the felt (ADR-0003).
  *
  * The expectation band on this screen is fed from the Session's own recorded results. It
@@ -22,17 +22,28 @@ import { ExpectationBandPanel } from "@/ui/shoe-integrity/ExpectationBandPanel";
 import { expectationBand } from "@/ui/shoe-integrity/integrity";
 import { formatChips } from "@/ui/table/format";
 import { colors, spacing, type } from "@/ui/theme";
+import { useDrillSessions } from "@/ui/drills/drillSessionStore";
 import {
+  LatestDrillPanel,
   SessionControlBar,
   SessionHistoryRow,
   SessionStatsPanel,
 } from "./SessionPanels";
-import { EMPTY_STATS, NO_VALUE, bettingUnit, sessionResultFor } from "./sessionFormat";
+import {
+  EMPTY_STATS,
+  NO_VALUE,
+  bettingUnit,
+  latestDrillSummary,
+  sessionResultFor,
+} from "./sessionFormat";
 import { listSessionSummaries, loadAllSessions } from "./sessionStore";
 import { useSessionOverview } from "./usePlaySession";
 
 export function SessionScreen() {
   const overview = useSessionOverview();
+  // Drill Sessions are written by the drill screens' own store. Its write counter is part of
+  // the reload signature, so a drill answer given a moment ago is never missing from here.
+  const drills = useDrillSessions();
   const [summaries, setSummaries] = useState<readonly SessionSummary[]>([]);
   const [unreadable, setUnreadable] = useState<LoadResult["unreadable"]>([]);
   const [lifetime, setLifetime] = useState(EMPTY_STATS);
@@ -41,7 +52,8 @@ export function SessionScreen() {
   // the history gains a row or an open run turns into a finished one.
   const signature = `${overview.session?.id ?? ""}:${overview.session?.endedAt ?? ""}:${
     overview.session?.rounds.length ?? 0
-  }`;
+  }:${overview.session?.countingSystem ?? ""}:${drills.revision}`;
+  const latestDrill = useMemo(() => latestDrillSummary(summaries), [summaries]);
 
   useEffect(() => {
     let cancelled = false;
@@ -87,11 +99,22 @@ export function SessionScreen() {
           onStartNew={overview.dismiss}
         />
 
-        <SessionStatsPanel session={overview.session} stats={overview.stats} />
+        <SessionStatsPanel
+          session={overview.session}
+          stats={overview.stats}
+          title="This Play session"
+        />
 
         <SessionExpectation stats={overview.stats} />
 
-        <SessionStatsPanel session={null} stats={lifetime} title="Every session on this device" />
+        <LatestDrillPanel summary={latestDrill} />
+
+        <SessionStatsPanel
+          session={null}
+          stats={lifetime}
+          title="Every session on this device"
+          showDrillRecords
+        />
 
         <Panel title="History">
           {summaries.length === 0 ? (
