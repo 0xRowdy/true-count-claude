@@ -50,6 +50,13 @@ export default function Home() {
         </Pressable>
       </Link>
 
+      {/* Invariant 1: every drill is included — the training is never a second purchase. */}
+      <Link href="/drills" asChild>
+        <Pressable style={styles.button}>
+          <Text style={styles.buttonLabel}>Drills — strategy, counting, true count, deviations</Text>
+        </Pressable>
+      </Link>
+
       {/* Invariant 8: your own training record is local and never behind an account. */}
       <Link href="/session" style={styles.link}>
         Session statistics →

@@ -114,6 +114,28 @@ describe("count context", () => {
     expect(count.runningCount).toBe(-12);
   });
 
+  // #25: under KO the play table shows the Key Count (-4 at six decks) beside this note. A bare
+  // "pivot of 4" next to "-4" read as one number stated twice, wrongly. The note explains a
+  // decision, so it names the pivot with what it means and carries no betting threshold.
+  it("names an unbalanced system's pivot with its meaning, and no betting threshold", () => {
+    for (const decks of [1, 2, 6, 8]) {
+      const note = buildCountContext({ system: KO, decks, runningCount: 0, cardsRemaining: 104 })
+        .trueCountNote as string;
+      expect(note).toContain("Its pivot, +4, is the one Running Count that signals the same edge");
+      expect(note).not.toMatch(/key count|raise|bet/i);
+      // No Key Count leaks in: -4, +2, +1 and -6 are KO's published Key Counts.
+      expect(note).not.toMatch(/-4|−4|\+2|\+1|-6/);
+    }
+  });
+
+  it("checks Red 7 the same way: pivot named and explained, nothing else", () => {
+    const note = buildCountContext({ system: RED_7, decks: 6, runningCount: -3, cardsRemaining: 208 })
+      .trueCountNote as string;
+    expect(note).toContain("Red 7 is unbalanced");
+    expect(note).toContain("Its pivot, +0, is the one Running Count that signals the same edge");
+    expect(note).not.toMatch(/key count|raise|bet/i);
+  });
+
   it("returns null rather than throwing with no cards left to divide by", () => {
     const count = buildCountContext({
       system: HI_LO,
