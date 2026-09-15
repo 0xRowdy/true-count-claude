@@ -29,7 +29,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { Link } from "expo-router";
+import { Link, Stack } from "expo-router";
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import type { Action } from "@/engine/hand";
 import { type RuleSet, describeRules } from "@/engine/rules";
@@ -259,6 +259,30 @@ export function PlayTable() {
 
   return (
     <Screen width="wide">
+      {/* Report a bug lives in the header, not on the page (invariant 10). The header never
+          scrolls away, so it is one tap at every moment of a round, and it costs the felt no
+          height — at 360pt the action bar has to stay inside the first screenful, and the
+          Session bar has no room left for a third control. The between-rounds Shoe, the live
+          round and the bankroll it was dealt from are what let the report replay this hand. */}
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <View style={styles.headerAction}>
+              <ReportBugButton
+                screen="Play table"
+                table={{
+                  shoe: table.shoe,
+                  round: table.round,
+                  bankroll: table.bankroll,
+                  shoeIndex: table.shoeIndex,
+                }}
+                rules={table.rules}
+                countingSystem={table.system.name}
+              />
+            </View>
+          ),
+        }}
+      />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -276,20 +300,6 @@ export function PlayTable() {
           <Link href="/session" style={styles.statsLink}>
             Statistics →
           </Link>
-          {/* In the bar that is on screen at every moment of a Session (invariant 10). The
-              between-rounds Shoe, the live round and the bankroll it was dealt from are what
-              let the report replay this exact hand. */}
-          <ReportBugButton
-            screen="Play table"
-            table={{
-              shoe: table.shoe,
-              round: table.round,
-              bankroll: table.bankroll,
-              shoeIndex: table.shoeIndex,
-            }}
-            rules={table.rules}
-            countingSystem={table.system.name}
-          />
         </SessionControlBar>
 
         {play.ended ? (
@@ -668,6 +678,7 @@ function ShoePanel({
 
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
+  headerAction: { marginRight: spacing.sm },
   scrollContent: { gap: spacing.md, paddingBottom: spacing.xl },
   // Two layouts, one set of children. Neither has a fixed width, so nothing letterboxes and
   // the page never gains a horizontal scrollbar.
