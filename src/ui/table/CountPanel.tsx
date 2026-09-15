@@ -13,6 +13,7 @@
 
 import { StyleSheet, Text, View } from "react-native";
 import { COUNTING_SYSTEMS, type CountingSystemId } from "@/engine/counting";
+import { NONE_PUBLISHED, unbalancedCountRowsFromReadout } from "@/ui/drills/unbalancedCount";
 import { Panel, SegmentedControl, StatRow, type Tone } from "@/ui/primitives";
 import { colors, spacing, type } from "@/ui/theme";
 import { formatCount } from "./format";
@@ -40,6 +41,9 @@ export function CountPanel({
 }) {
   const shown = visibility === "shown";
   const reveal = (value: string) => (shown ? value : HIDDEN);
+  const system = COUNTING_SYSTEMS.find((candidate) => candidate.name === systemName);
+  const referenceRows =
+    system && readout.pivot !== null ? unbalancedCountRowsFromReadout(system, readout.pivot) : [];
 
   return (
     <Panel title="Count">
@@ -63,9 +67,16 @@ export function CountPanel({
         }
         tone={shown && readout.trueCount !== null ? countTone(readout.trueCount) : "neutral"}
       />
-      {readout.pivot !== null ? (
-        <StatRow label="Raise bets from" value={reveal(formatCount(readout.pivot))} />
-      ) : null}
+      {/* #25: an unbalanced system carries a Key Count and a pivot, and they are different
+          numbers for different jobs. Each is labelled with what it is, so KO's "-4" and "+4"
+          never sit side by side looking like one number stated twice. */}
+      {referenceRows.map((row) => (
+        <StatRow
+          key={row.kind}
+          label={row.label}
+          value={row.value === null ? NONE_PUBLISHED : reveal(formatCount(row.value))}
+        />
+      ))}
       {readout.aceSurplusPerDeck !== null ? (
         <StatRow
           label="Ace surplus / deck"

@@ -59,6 +59,7 @@ import {
   isTen,
   legalActions,
   rankActions,
+  signed,
   trueCount,
 } from "@/engine";
 
@@ -108,8 +109,12 @@ export function buildCountContext(input: CountContextInput): CountContext {
   const rounding = input.rounding ?? DEFAULT_TRUE_COUNT_ROUNDING;
   const decksRemaining = cardsRemaining / 52;
 
+  // An unbalanced system's note names its pivot and says what the pivot *is*, and it
+  // deliberately carries no betting threshold (#25). This note explains a decision, not a bet,
+  // and KO's Key Count (-4 at six decks) printed beside a bare "pivot of 4" read as the app
+  // contradicting itself about one number. The betting surface labels the Key Count itself.
   const note = !system.balanced
-    ? `${system.name} is unbalanced — play the Running Count against its pivot of ${system.pivot} rather than converting.`
+    ? `${system.name} is unbalanced, so there is no True Count to convert to: its Running Count is used as it stands. Its pivot, ${signed(system.pivot)}, is the one Running Count that signals the same edge at every depth of the shoe.`
     : decksRemaining <= 0
       ? "No cards left to divide by; the shoe reshuffles at the cut card."
       : null;
