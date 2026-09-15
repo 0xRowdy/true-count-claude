@@ -81,7 +81,7 @@ export function RecordingPanel({
           {session ? <Badge label="RECORDING" tone="good" /> : <Badge label="NOT STARTED" tone="neutral" />}
           <Text style={styles.note}>
             {session
-              ? `This drill's Session holds ${count} ${unit} (${formatRate(rate)} correct), saved on this device. An undone answer is taken back out of it.`
+              ? `This drill's Session holds ${count} ${count === 1 ? unit.replace(/s$/, "") : unit}${unit === "decisions" ? " (insurance calls included)" : ""}, ${formatRate(rate)} correct, saved on this device. An undone answer is taken back out of it.`
               : `A Session opens on your first answer and is saved on this device. Its ${unit} show on the Statistics screen.`}
           </Text>
         </View>
