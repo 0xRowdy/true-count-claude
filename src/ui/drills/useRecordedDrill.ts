@@ -106,12 +106,19 @@ export function useRecordedDrill<S>(options: RecordedDrillOptions<S>): RecordedD
   const startRef = useRef(options.start);
   startRef.current = options.start;
 
-  const configured = useConfiguredRules();
-  const sessions = useDrillSessions();
-  const storesReady = configured.ready && (sessions.status === "ready" || sessions.status === "failed");
-
   const [state, setState] = useState<RunState<S> | null>(null);
   const [ended, setEnded] = useState<Session | null>(null);
+
+  // Only the slices this hook shows or decides on, so saving an answer — which publishes the
+  // store when the Session is handed over and again when the write lands — renders nothing more.
+  const configured = useConfiguredRules();
+  const status = useDrillSessions((sessions) => sessions.status);
+  const storageError = useDrillSessions((sessions) => sessions.error);
+  // The open Session matters only until the first run picks it up. After that it is this run's
+  // own Session coming back from every save, so it is no longer read.
+  const unstarted = state === null;
+  const open = useDrillSessions((sessions) => (unstarted ? (sessions.open[drillId] ?? null) : null));
+  const storesReady = configured.ready && (status === "ready" || status === "failed");
 
   const newState = useCallback(
     (config: RunConfig, base: Session | null): RunState<S> => {
@@ -139,13 +146,12 @@ export function useRecordedDrill<S>(options: RecordedDrillOptions<S>): RecordedD
   // First run: pick the open Session back up, at its own table, or start at the configured one.
   useEffect(() => {
     if (!storesReady || state !== null) return;
-    const open = sessions.open[drillId] ?? null;
     if (open) {
       setState(newState({ rules: open.rules, system: systemNamed(open), seed: freshSeed() }, open));
     } else {
       setState(newState({ rules: configured.rules, system: DEFAULT_COUNTING_SYSTEM, seed: freshSeed() }, null));
     }
-  }, [storesReady, state, sessions.open, drillId, configured.rules, newState]);
+  }, [storesReady, state, open, configured.rules, newState]);
 
   // Derived from the records alone — not from the whole run — so the clock ticking a Counting
   // drill forward, which replaces the drill but not its records, derives and writes nothing.
@@ -237,7 +243,7 @@ export function useRecordedDrill<S>(options: RecordedDrillOptions<S>): RecordedD
     session,
     ended,
     pendingRules: rulesDiffer && (session !== null || hasRecords) ? configured.rules : null,
-    storageError: sessions.error,
+    storageError,
     canUndo: state?.run ? canUndo(state.run.drill) : false,
     update,
     undo,

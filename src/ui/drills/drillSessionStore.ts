@@ -60,12 +60,21 @@ function subscribe(listener: () => void): () => void {
   };
 }
 
-function snapshot(): DrillSessionState {
-  return state;
-}
-
-export function useDrillSessions(): DrillSessionState {
-  const current = useSyncExternalStore(subscribe, snapshot, snapshot);
+/**
+ * Reads one slice of the store, and re-renders only when that slice changes.
+ *
+ * Saving an answer publishes twice — once when the Session is handed over, once when the write
+ * lands — and neither changes what a drill screen shows: the screen already holds the Session it
+ * derived, and only a failed write puts something new (`error`) in front of it. So a screen
+ * names what it reads, and a publish that leaves that alone does not render it again (#29). The
+ * Statistics screen reads `revision`, so it still reloads every time a write lands.
+ *
+ * `select` must return a primitive or a value already held in the state — never a new object or
+ * array — because the selected value is compared by identity after every publish.
+ */
+export function useDrillSessions<T>(select: (state: DrillSessionState) => T): T {
+  const read = () => select(state);
+  const current = useSyncExternalStore(subscribe, read, read);
   useEffect(() => {
     loadOpenDrillSessions();
   }, []);

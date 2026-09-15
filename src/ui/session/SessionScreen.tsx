@@ -43,7 +43,7 @@ export function SessionScreen() {
   const overview = useSessionOverview();
   // Drill Sessions are written by the drill screens' own store. Its write counter is part of
   // the reload signature, so a drill answer given a moment ago is never missing from here.
-  const drills = useDrillSessions();
+  const drillRevision = useDrillSessions((drills) => drills.revision);
   const [summaries, setSummaries] = useState<readonly SessionSummary[]>([]);
   const [unreadable, setUnreadable] = useState<LoadResult["unreadable"]>([]);
   const [lifetime, setLifetime] = useState(EMPTY_STATS);
@@ -52,7 +52,7 @@ export function SessionScreen() {
   // the history gains a row or an open run turns into a finished one.
   const signature = `${overview.session?.id ?? ""}:${overview.session?.endedAt ?? ""}:${
     overview.session?.rounds.length ?? 0
-  }:${overview.session?.countingSystem ?? ""}:${drills.revision}`;
+  }:${overview.session?.countingSystem ?? ""}:${drillRevision}`;
   const latestDrill = useMemo(() => latestDrillSummary(summaries), [summaries]);
 
   useEffect(() => {

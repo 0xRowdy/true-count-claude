@@ -90,12 +90,12 @@ function start(config: RunConfig) {
 }
 
 /**
- * The screen re-renders more often than the drill changes. Saving an answer publishes the drill
- * Session store twice — once when the Session is handed over, once when the write lands — and
- * each publish re-renders this screen with the same run. Profiling a production web build (#28)
- * showed those two follow-up renders costing as much as the render that shows the Explanation.
- * So the two columns are memoised on the run and on stable callbacks: a publish that changes
- * nothing they show leaves them alone, and the recording panel above still updates.
+ * The screen can re-render more often than the drill changes. Profiling a production web build
+ * (#28) found saving an answer re-rendering it twice more with the same run, each render costing
+ * as much as the one that shows the Explanation. That came from the drill Session store, which
+ * screens now read by slice so a save no longer renders them (#29). The two columns stay
+ * memoised on the run and on stable callbacks all the same: a render that changes nothing they
+ * show — the recording panel, a pending table — leaves them alone.
  */
 export function DeviationDrillScreen() {
   const recorded = useRecordedDrill<DeviationDrillState>({
