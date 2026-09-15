@@ -315,6 +315,13 @@ describe("rule sensitivity", () => {
 describe("basicStrategy never names an illegal action", () => {
   const ruleSets = rulePermutations();
 
+  // The sweep is exhaustive on purpose (#17 chose deduplication over sampling), so it is the
+  // one test in the suite that does real work for seconds rather than milliseconds: ~3.2 s
+  // on a developer machine, ~5.2 s on a GitHub Actions runner. Vitest's 5 s default made
+  // CI fail intermittently on it with no defect in the code. The limit is raised for this
+  // test alone so a genuine hang anywhere else still trips the default.
+  const SWEEP_TIMEOUT_MS = 60_000;
+
   it(`holds across ${ruleSets.length} rule sets and every chart row`, () => {
     // Every violation is collected rather than asserted in place: this is roughly 760,000
     // decisions, and a per-decision matcher is slower than the engine it is checking.
@@ -342,7 +349,7 @@ describe("basicStrategy never names an illegal action", () => {
     }
 
     expect(violations).toEqual([]);
-  });
+  }, SWEEP_TIMEOUT_MS);
 
   it("falls back when the resplit limit closes a split off", () => {
     // At four hands the pairs chart no longer applies, so 8,8 is read as hard 16.
