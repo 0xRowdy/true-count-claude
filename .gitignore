@@ -46,3 +46,7 @@ dist/
 
 # Agent worktrees
 .claude/worktrees/
+
+# npm residue — this project uses pnpm
+package-lock.json
+yarn.lock

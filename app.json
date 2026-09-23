@@ -21,6 +21,13 @@
     },
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "15b42160-932f-4c21-bfd0-b6a539d7cf94"
+      }
+    },
+    "owner": "mmgjlegacy"
   }
 }
