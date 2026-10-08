@@ -15,8 +15,11 @@ state() { if [ -f "$RUN/instance" ]; then . "$RUN/instance"; fi; }   # PID TOKEN
 # Content fingerprint of the working tree (tracked + untracked, minus ignored like dist/ and .verify/).
 # Changes on every edit, staged or not, unlike "HEAD+dirty".
 fingerprint() {
-  (cd "$ROOT" && git ls-files -co --exclude-standard | while IFS= read -r f; do [ -f "$f" ] && printf '%s\n' "$f"; done \
-    | git hash-object --stdin-paths | git hash-object --stdin | cut -c1-12)
+  (cd "$ROOT"
+   files="$(git ls-files -co --exclude-standard | while IFS= read -r f; do if [ -f "$f" ]; then printf '%s\n' "$f"; fi; done)"
+   # Hash "<content-hash> <path>" pairs so renames count as changes too.
+   printf '%s\n' "$files" | git hash-object --stdin-paths | paste -d' ' - <(printf '%s\n' "$files") \
+     | git hash-object --stdin | cut -c1-12)
 }
 
 # Is $1 the server this worktree started? Alive AND carrying our token (portable: ps, no /proc).
