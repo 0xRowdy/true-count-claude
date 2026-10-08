@@ -17,5 +17,5 @@ Buttons by role+name (`Deal`, `Stand`, `No insurance`, `Next hand`); cards are `
 
 ## Gotchas
 - "Rounds played" advances on **Next hand**, not at settlement.
-- A dealt natural can settle the round with no player action; the flow handles it.
+- A dealt natural settles the round with no player decision (no "You stood…" feedback); the flow deals again, up to 5 rounds, until a round needs a decision.
 - Hidden duplicate views exist: filter to visible.

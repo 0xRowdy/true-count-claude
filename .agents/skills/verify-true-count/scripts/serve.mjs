@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 // Static server for the Expo web export (output: "static"): /play -> play.html, /drills -> drills/index.html.
-// Verification scaffolding only. Usage: node serve.mjs <distDir> <port> [host]
+// Verification scaffolding only. Usage: node serve.mjs <distDir> <host> <token>
+// Listens on an OS-assigned free port on <host> (no probe-then-bind race between parallel worktrees)
+// and prints "verify-serve ready <url>". <token> only marks the process so verify.sh can prove it owns it.
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 
-const [dist, port, host = "127.0.0.1"] = process.argv.slice(2);
+const [dist, host = "127.0.0.1"] = process.argv.slice(2);
 const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css",
   ".json": "application/json", ".png": "image/png", ".jpg": "image/jpeg", ".svg": "image/svg+xml",
   ".ico": "image/x-icon", ".ttf": "font/ttf", ".woff": "font/woff", ".woff2": "font/woff2", ".map": "application/json" };
@@ -19,12 +21,25 @@ async function resolve(urlPath) {
   return null;
 }
 
-createServer(async (req, res) => {
-  const file = await resolve(req.url === "/" ? "/index.html" : req.url);
-  if (!file) {
-    res.writeHead(404, { "content-type": TYPES[".html"] });
-    return res.end(await readFile(join(dist, "+not-found.html")).catch(() => "not found"));
+const server = createServer(async (req, res) => {
+  try {
+    let file;
+    try { file = await resolve(req.url === "/" ? "/index.html" : req.url); }
+    catch { res.writeHead(400); return res.end("bad request"); }   // e.g. malformed %-encoding
+    if (!file) {
+      res.writeHead(404, { "content-type": TYPES[".html"] });
+      return res.end(await readFile(join(dist, "+not-found.html")).catch(() => "not found"));
+    }
+    const body = await readFile(file);
+    res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream" });
+    res.end(body);
+  } catch (err) {
+    if (!res.headersSent) res.writeHead(500);
+    res.end(`server error: ${err?.message ?? err}`);
   }
-  res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream" });
-  res.end(await readFile(file));
-}).listen(Number(port), host, () => console.log(`verify-serve ready http://${host}:${port}`));
+});
+server.on("error", (err) => { console.error(`verify-serve failed: ${err.message}`); process.exit(1); });
+server.listen(0, host, () => {
+  const { port } = server.address();
+  console.log(`verify-serve ready http://${host.includes(":") ? `[${host}]` : host}:${port}`);
+});
