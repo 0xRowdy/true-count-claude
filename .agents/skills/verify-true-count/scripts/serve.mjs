@@ -14,7 +14,7 @@ async function resolve(urlPath) {
   const clean = normalize(decodeURIComponent(urlPath.split("?")[0])).replace(/^(\.\.[/\\])+/, "");
   for (const candidate of [clean, `${clean}.html`, join(clean, "index.html")]) {
     const file = join(dist, candidate);
-    try { if ((await stat(file)).isFile()) return file; } catch {}
+    try { if ((await stat(file)).isFile()) return file; } catch { /* not this candidate; try the next */ }
   }
   return null;
 }

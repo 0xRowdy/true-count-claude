@@ -248,4 +248,11 @@ export default tseslint.config(
     files: ["*.config.{js,mjs,ts}", "*.config.*.{js,mjs,ts}"],
     languageOptions: { globals: { ...globals.node } },
   },
+
+  // Agent skill harnesses (e.g. verify-true-count's server, Playwright driver and flows)
+  // run in Node on the dev machine, never in the app.
+  {
+    files: [".agents/**/*.{js,mjs}"],
+    languageOptions: { globals: { ...globals.node } },
+  },
 );
