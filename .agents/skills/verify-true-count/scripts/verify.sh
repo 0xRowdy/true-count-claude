@@ -25,8 +25,10 @@ cmd_launch() {
   nohup node "$SKILL/scripts/serve.mjs" "$ROOT/dist" "$port" "$host" >"$RUN/serve.log" 2>&1 &
   local pid=$!
   for _ in $(seq 1 50); do grep -q "verify-serve ready" "$RUN/serve.log" 2>/dev/null && break; sleep 0.1; done
-  printf 'PID=%s\nPORT=%s\nHOST=%s\nURL=http://%s:%s\nBUILT_AT=%s\n' "$pid" "$port" "$host" "$host" "$port" \
-    "$(git -C "$ROOT" rev-parse --short HEAD)$(git -C "$ROOT" diff --quiet || echo +dirty)" > "$RUN/instance"
+  # Plain HTTP is intended: the server binds localhost or the tailnet IP (WireGuard-encrypted) only.
+  local url="http://$host:$port"  # NOSONAR
+  local built; built="$(git -C "$ROOT" rev-parse --short HEAD)$(git -C "$ROOT" diff --quiet || echo +dirty)"
+  printf 'PID=%s\nPORT=%s\nHOST=%s\nURL=%s\nBUILT_AT=%s\n' "$pid" "$port" "$host" "$url" "$built" > "$RUN/instance"
   state; echo "ready: $URL (pid $PID, build of $BUILT_AT)"
 }
 
