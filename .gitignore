@@ -50,3 +50,6 @@ dist/
 # npm residue — this project uses pnpm
 package-lock.json
 yarn.lock
+
+# verify-true-count harness state and evidence
+.verify/
