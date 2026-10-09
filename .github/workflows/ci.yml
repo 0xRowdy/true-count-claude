@@ -89,7 +89,7 @@ jobs:
         run: $V doctor
 
       - name: Drive flows
-        run: $V drive play-round true-count-drill
+        run: $V drive no-hydration-errors play-round true-count-drill
 
       - name: Stop
         if: always()

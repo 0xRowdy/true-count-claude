@@ -43,8 +43,8 @@ server pid is ours (alive and carrying this launch's token) · URL serves the Ex
 `$V stop` kills only the server this worktree launched, proven by a per-launch token on its command line (never by name or by a possibly-reused PID), and keeps `.verify/evidence/`. Delete old evidence by hand if it piles up.
 
 ## CI
-The `e2e` job in `.github/workflows/ci.yml` runs launch → doctor → `drive play-round true-count-drill` → stop on every push/PR and uploads `.verify/` (evidence plus build/serve logs) as the `verify-evidence` artifact. A failing flow fails CI, so add new flows to that `drive` line.
+The `e2e` job in `.github/workflows/ci.yml` runs launch → doctor → `drive no-hydration-errors play-round true-count-drill` → stop on every push/PR and uploads `.verify/` (evidence plus build/serve logs) as the `verify-evidence` artifact. A failing flow fails CI, so add new flows to that `drive` line.
 
-## Known state (2026-10-08)
-- Both flows PASS on `main`, on Linux (pernilla) and macOS.
-- Every page load logs **React error #418** (hydration text mismatch between the static HTML and the client render). Pre-existing; tracked as an issue — don't mistake it for your regression, but don't add new ones.
+## Known state (2026-10-09)
+- All flows PASS on `main`, on Linux (pernilla) and macOS.
+- No route logs a hydration mismatch (React #418, fixed in #32); `no-hydration-errors` loads every top-level route and fails on one. Anything that differs between the prerendered HTML and the browser — a random seed, a clock, `toLocaleString`, stored state — must be produced after mount, not during the first render.

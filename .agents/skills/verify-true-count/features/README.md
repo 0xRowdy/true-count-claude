@@ -11,3 +11,5 @@ A proof that only drives one convenient entry point is incomplete when the map l
 | [Shoe Integrity](shoe-integrity.md) | `/shoe-integrity` | — | mapped, no flow yet |
 | Other drills: Basic strategy, Counting, Deviation | `/drills/*` | — | not mapped yet |
 | Session / Statistics | `/session` | — | not mapped yet |
+
+Cross-cutting: `flows/no-hydration-errors.mjs` loads every top-level route above (plus `/` and `/drills`) and fails on a React hydration mismatch (#32). Add a new top-level route to its `ROUTES`.

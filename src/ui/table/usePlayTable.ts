@@ -22,7 +22,7 @@
  * `rulesHold` for the three things that hold one back and why each of them has to.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Card } from "@/engine/cards";
 import {
   type CountingSystem,
@@ -438,18 +438,33 @@ export interface PlayTableController {
 }
 
 /**
- * Holds a `PlayTable` in React state. The seed is drawn once, at mount, and never again — the
- * engine stays free of `Math.random()` (ADR-0004) and the session remains reproducible from
- * the seed the Shoe panel shows the user.
+ * The seed of the table the static web export prerenders. The browser's first render must
+ * produce the same text as that HTML (#32), so the real seed cannot be drawn during render.
+ */
+const PRERENDER_SEED = 1;
+
+/**
+ * Holds a `PlayTable` in React state. The seed is drawn once, just after mount, and never
+ * again — the engine stays free of `Math.random()` (ADR-0004) and the session remains
+ * reproducible from the seed the Shoe panel shows the user.
+ *
+ * It is drawn in an effect, not during render: a random seed in the first render would differ
+ * from the prerendered page's and break hydration. The effect runs before any input can reach
+ * the table, and it is declared ahead of the Session's restore and rules effects, so it only
+ * ever replaces the untouched prerendered table.
  *
  * The Rule Set here is only the one the table *opens* with. The user's stored table is read
  * asynchronously and arrives through `configureRules`, which is why this defaults rather than
  * requiring one: a prerendered first frame cannot know it yet.
  */
 export function usePlayTable(rules: RuleSet = DEFAULT_RULES): PlayTableController {
-  const [table, setTable] = useState(() =>
-    createPlayTable(rules, Math.floor(Math.random() * 0xffffffff) >>> 0),
-  );
+  const [prerendered] = useState(() => createPlayTable(rules, PRERENDER_SEED));
+  const [table, setTable] = useState(prerendered);
+
+  useEffect(() => {
+    const seed = Math.floor(Math.random() * 0xffffffff) >>> 0;
+    setTable((current) => (current === prerendered ? createPlayTable(current.rules, seed) : current));
+  }, [prerendered]);
 
   const update = useCallback((transition: (current: PlayTable) => PlayTable) => {
     setTable((current) => transition(current));

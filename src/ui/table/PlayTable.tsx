@@ -116,6 +116,8 @@ const ACTION_HINT: Record<Action, string> = {
 
 export function PlayTable() {
   const configured = useConfiguredRules();
+  // Must stay ahead of `usePlaySession`: its seed effect has to reach the prerendered table
+  // before the Session's restore and rules effects replace it (#32).
   const controller = usePlayTable();
   const { table } = controller;
   // Every transition goes through the Session controller, so a Decision cannot be made
