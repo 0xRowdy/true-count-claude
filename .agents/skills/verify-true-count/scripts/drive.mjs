@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 // Run one flow (flows/*.mjs) against a launched instance with Playwright + Chromium, headless.
-// Usage: node drive.mjs <flow.mjs> <baseUrl> <evidenceDir>
+// Usage: PLAYWRIGHT_ROOT=<dir> node drive.mjs <flow.mjs> <baseUrl> <evidenceDir>
 // A flow exports `default async ({ page, url, shot, log, check })`. Throwing = FAIL.
 // Evidence (log.txt, result.json) is written whatever fails, including Playwright/browser startup.
 import { createRequire } from "node:module";
-import { execSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -27,8 +26,9 @@ const check = (cond, msg) => { if (!cond) throw new Error(`check failed: ${msg}`
 
 let status = "PASS";
 try {
-  // Playwright comes from the fleet toolchain (mise npm:playwright), not this repo's dependencies.
-  const pwRoot = execSync("mise where npm:playwright", { encoding: "utf8" }).trim();
+  // Playwright isn't a repo dependency; verify.sh resolves where it lives (CI or mise) into $PLAYWRIGHT_ROOT.
+  const pwRoot = process.env.PLAYWRIGHT_ROOT;
+  if (!pwRoot) throw new Error("PLAYWRIGHT_ROOT unset: run flows via verify.sh drive, or set it");
   const { chromium } = createRequire(join(pwRoot, "node_modules", "noop.js"))("playwright");
   browser = await chromium.launch();
   page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
