@@ -9,7 +9,7 @@ const MAX_ROUNDS = 5; // a natural (player or dealer) settles with no decision; 
 
 export default async ({ page, url, shot, log, check }) => {
   await page.goto(url("/play"));
-  await visible(page.getByRole("button", { name: "Deal (gate check)" })).waitFor({ timeout: 5000 });
+  await visible(page.getByRole("button", { name: "Deal" })).waitFor();
   await shot("table-before-deal");
 
   for (let round = 1; round <= MAX_ROUNDS; round++) {
@@ -38,7 +38,7 @@ export default async ({ page, url, shot, log, check }) => {
     }
 
     await visible(page.getByRole("button", { name: "Next hand" })).click();
-    await visible(page.getByRole("button", { name: "Deal (gate check)" })).waitFor({ timeout: 5000 });
+    await visible(page.getByRole("button", { name: "Deal" })).waitFor();
     const roundsAfter = await statValue(page, "Rounds played");
     check(roundsAfter !== roundsBefore, `rounds played advanced (${flat(roundsBefore)} -> ${flat(roundsAfter)})`);
     if (decided) { await shot("next-hand-ready"); return; }
