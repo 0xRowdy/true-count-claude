@@ -51,3 +51,58 @@ jobs:
 
       - name: Build web
         run: pnpm build:web
+
+  # The verify-true-count flows (.agents/skills/verify-true-count) drive the web build in
+  # headless Chromium, so a PR that breaks a user path fails here, not only on an agent's machine.
+  e2e:
+    name: e2e flows (web build, headless Chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      V: .agents/skills/verify-true-count/scripts/verify.sh
+      # Playwright isn't a repo dependency; the harness takes it from here instead of mise.
+      PLAYWRIGHT_ROOT: ${{ github.workspace }}/../playwright
+      PLAYWRIGHT_VERSION: 1.63.0
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright + Chromium
+        run: |
+          npm install --prefix "$PLAYWRIGHT_ROOT" --no-save --no-audit --no-fund "playwright@$PLAYWRIGHT_VERSION"
+          "$PLAYWRIGHT_ROOT/node_modules/.bin/playwright" install --with-deps chromium
+
+      - name: Launch web build
+        run: $V launch
+
+      - name: Doctor
+        run: $V doctor
+
+      - name: Drive flows
+        run: $V drive play-round true-count-drill
+
+      - name: Stop
+        if: always()
+        run: $V stop
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-evidence
+          path: .verify/evidence/
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 14

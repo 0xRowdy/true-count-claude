@@ -12,6 +12,10 @@ RUN="$ROOT/.verify/run"; EVID="$ROOT/.verify/evidence"
 mkdir -p "$RUN" "$EVID"
 state() { if [ -f "$RUN/instance" ]; then . "$RUN/instance"; fi; }   # PID TOKEN URL BUILT_FROM
 
+# Where Playwright lives: $PLAYWRIGHT_ROOT (a dir holding node_modules/playwright, as CI sets it)
+# or else the fleet toolchain (mise npm:playwright). drive.mjs gets it through the same variable.
+pw_root() { if [ -n "${PLAYWRIGHT_ROOT:-}" ]; then echo "$PLAYWRIGHT_ROOT"; else mise where npm:playwright 2>/dev/null; fi; }
+
 # Content fingerprint of the working tree (tracked + untracked, minus ignored like dist/ and .verify/).
 # Changes on every edit, staged or not, unlike "HEAD+dirty".
 fingerprint() {
@@ -62,14 +66,15 @@ cmd_doctor() {
     if [ "$now" = "$BUILT_FROM" ]; then echo "ok   build matches working tree ($now)"
     else echo "WARN build is of tree $BUILT_FROM, working tree is now $now — relaunch to rebuild"; fi
   fi
-  local pw; pw="$(mise where npm:playwright 2>/dev/null)" && [ -d "$pw/node_modules/playwright" ] \
-    && echo "ok   playwright at $pw" || { echo "FAIL playwright missing (fleet: mise npm:playwright)"; ok=0; }
+  local pw; pw="$(pw_root)" && [ -d "$pw/node_modules/playwright" ] \
+    && echo "ok   playwright at $pw" || { echo "FAIL playwright missing (fleet: mise npm:playwright, or set PLAYWRIGHT_ROOT)"; ok=0; }
   [ "$ok" = 1 ]
 }
 
 cmd_drive() {
   state; [ -n "${URL:-}" ] || { echo "no instance; run: verify.sh launch" >&2; exit 1; }
   local rc=0 f name dir
+  PLAYWRIGHT_ROOT="$(pw_root)" || true; export PLAYWRIGHT_ROOT
   for f in "$@"; do
     [ -f "$f" ] || f="$SKILL/flows/${f%.mjs}.mjs"
     name="$(basename "$f" .mjs)"; dir="$EVID/$(date +%Y%m%d-%H%M%S)-$name"

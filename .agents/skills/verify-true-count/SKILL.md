@@ -29,7 +29,7 @@ server pid is ours (alive and carrying this launch's token) · URL serves the Ex
 
 ## Drive
 - Flows are small Playwright scripts in `flows/<name>.mjs`: `export default async ({ page, url, shot, log, check }) => { … }`. `url("/play")` resolves a route, `shot(name)` screenshots, `check(cond, msg)` asserts (throw = FAIL), `log()` notes.
-- Playwright + Chromium come from the fleet toolchain (`mise where npm:playwright`), not this repo's dependencies. If `doctor` says Playwright is missing: `playwright install chromium`.
+- Playwright + Chromium come from the fleet toolchain (`mise where npm:playwright`), not this repo's dependencies. If `doctor` says Playwright is missing: `playwright install chromium`. Elsewhere, set `PLAYWRIGHT_ROOT` to a dir holding `node_modules/playwright` (CI does this).
 - **Selectors:** use ARIA roles and names; React Native maps `accessibilityLabel`/`accessibilityRole` to them. Buttons: `getByRole("button", { name: "Deal" })`. Cards: `getByRole("img", { name: /of/ })`. Drill links: `getByRole("link", { name: "True Count drill" })`.
 - **Gotcha — always filter to visible:** React Native Web keeps hidden copies of views mounted (the drills hub stays under a drill). Use `loc.filter({ visible: true }).first()`; plain `getByText` will hit strict-mode violations.
 - New behavior → write or extend a flow for it, and add/update its page in `features/`. One-off exploration can be a flow file anywhere: `$V drive path/to/flow.mjs`.
@@ -41,6 +41,9 @@ server pid is ours (alive and carrying this launch's token) · URL serves the Ex
 
 ## Cleanup
 `$V stop` kills only the server this worktree launched, proven by a per-launch token on its command line (never by name or by a possibly-reused PID), and keeps `.verify/evidence/`. Delete old evidence by hand if it piles up.
+
+## CI
+The `e2e` job in `.github/workflows/ci.yml` runs launch → doctor → `drive play-round true-count-drill` → stop on every push/PR and uploads `.verify/evidence/` as the `verify-evidence` artifact. A failing flow fails CI, so add new flows to that `drive` line.
 
 ## Known state (2026-10-08)
 - Both flows PASS on `main`, on Linux (pernilla) and macOS.

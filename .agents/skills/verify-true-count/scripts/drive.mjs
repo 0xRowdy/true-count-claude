@@ -27,8 +27,8 @@ const check = (cond, msg) => { if (!cond) throw new Error(`check failed: ${msg}`
 
 let status = "PASS";
 try {
-  // Playwright comes from the fleet toolchain (mise npm:playwright), not this repo's dependencies.
-  const pwRoot = execSync("mise where npm:playwright", { encoding: "utf8" }).trim();
+  // Playwright isn't a repo dependency: $PLAYWRIGHT_ROOT (set by verify.sh, or CI) or the fleet toolchain.
+  const pwRoot = process.env.PLAYWRIGHT_ROOT || execSync("mise where npm:playwright", { encoding: "utf8" }).trim();
   const { chromium } = createRequire(join(pwRoot, "node_modules", "noop.js"))("playwright");
   browser = await chromium.launch();
   page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
