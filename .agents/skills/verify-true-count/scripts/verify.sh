@@ -13,7 +13,7 @@ mkdir -p "$RUN" "$EVID"
 state() { if [ -f "$RUN/instance" ]; then . "$RUN/instance"; fi; }   # PID TOKEN URL BUILT_FROM
 
 # Where Playwright lives: $PLAYWRIGHT_ROOT (a dir holding node_modules/playwright, as CI sets it)
-# or else the fleet toolchain (mise npm:playwright). drive.mjs gets it through the same variable.
+# or else the fleet toolchain (mise npm:playwright). drive.mjs only reads the variable this exports.
 pw_root() { if [ -n "${PLAYWRIGHT_ROOT:-}" ]; then echo "$PLAYWRIGHT_ROOT"; else mise where npm:playwright 2>/dev/null; fi; }
 
 # Content fingerprint of the working tree (tracked + untracked, minus ignored like dist/ and .verify/).

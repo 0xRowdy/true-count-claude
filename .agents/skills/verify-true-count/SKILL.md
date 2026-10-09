@@ -43,7 +43,7 @@ server pid is ours (alive and carrying this launch's token) · URL serves the Ex
 `$V stop` kills only the server this worktree launched, proven by a per-launch token on its command line (never by name or by a possibly-reused PID), and keeps `.verify/evidence/`. Delete old evidence by hand if it piles up.
 
 ## CI
-The `e2e` job in `.github/workflows/ci.yml` runs launch → doctor → `drive play-round true-count-drill` → stop on every push/PR and uploads `.verify/evidence/` as the `verify-evidence` artifact. A failing flow fails CI, so add new flows to that `drive` line.
+The `e2e` job in `.github/workflows/ci.yml` runs launch → doctor → `drive play-round true-count-drill` → stop on every push/PR and uploads `.verify/` (evidence plus build/serve logs) as the `verify-evidence` artifact. A failing flow fails CI, so add new flows to that `drive` line.
 
 ## Known state (2026-10-08)
 - Both flows PASS on `main`, on Linux (pernilla) and macOS.
