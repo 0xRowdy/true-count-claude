@@ -16,7 +16,7 @@ import {
   makeSessionId,
   recordDecision,
   recordHand,
-  resetPracticeBankroll,
+  resetBankroll,
   startProgressSession,
   useProgressView,
 } from "@/ui/progress/progressStore";
@@ -157,7 +157,7 @@ export function useBaccaratTable(seedParam: string | undefined) {
           return { ...t, revealed: dealSequence(t.coup).length, phase: "result" };
         }),
       askHint: () => setHintAsked(true),
-      resetBankroll: () => resetPracticeBankroll("baccarat"),
+      resetBankroll: () => resetBankroll("baccarat"),
     }),
     [update, available, coach],
   );
