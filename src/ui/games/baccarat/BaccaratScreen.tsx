@@ -41,7 +41,7 @@ import {
   visibleHands,
 } from "./baccaratTable";
 import { FeltSurface, HandPanel, Spot } from "./Felt";
-import { Equal, Eraser, Info, Repeat, Undo2, X } from "./icons";
+import { Equal, Eraser, Info, Repeat, Undo2, X } from "@/ui/ds/icons";
 import { baccaratPalette as pal } from "./palette";
 import { Road, type RoadKind } from "./Road";
 import { RulesSheet } from "./RulesSheet";

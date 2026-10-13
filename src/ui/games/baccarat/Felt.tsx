@@ -13,7 +13,7 @@ import {
 } from "@/games/baccarat";
 import { Chip, PlayingCard, colors, display, surfaces, ui } from "@/ui/ds";
 import { chipStack, formatAmount } from "./baccaratTable";
-import { Minus } from "./icons";
+import { Minus } from "@/ui/ds/icons";
 import { baccaratPalette as pal } from "./palette";
 
 /** The felt (design "Felt", pgZXh): radial glow, rounded bottom corners. */

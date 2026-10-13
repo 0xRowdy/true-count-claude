@@ -29,7 +29,7 @@ import {
   radius,
   ui,
 } from "@/ui/ds";
-import { ChevronRight, ShieldCheck } from "./icons";
+import { ChevronRight, ShieldCheck } from "@/ui/ds/icons";
 import { baccaratPalette as pal } from "./palette";
 
 const TABLEAU: readonly [string, string][] = [
