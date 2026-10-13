@@ -1,11 +1,12 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors, ui } from "./tokens";
+import { colors, surfaces, ui } from "./tokens";
 
 export const TABLE_PHASES = ["Bet", "Deal", "Result", "Payout"] as const;
 
 /**
- * The design's Phase Stepper (bXiVQ): numbered steps with a bar each. Steps up to and
- * including `current` (0-based) are filled gold; the current label is bold.
+ * The design's Phase Stepper (bXiVQ): numbered steps with a bar each. The current step
+ * (0-based) is solid gold with a bold label; finished steps keep a dimmed gold bar and a muted
+ * label (frames N6Lcl, WSAfm, w7wLdL); steps still to come are on the border colour.
  */
 export function PhaseStepper({
   current,
@@ -28,12 +29,17 @@ export function PhaseStepper({
         return (
           <View key={label} style={styles.step}>
             <View
-              style={[styles.bar, { backgroundColor: done || on ? colors.primary : colors.border }]}
+              style={[
+                styles.bar,
+                {
+                  backgroundColor: on ? colors.primary : done ? surfaces.primaryDim : colors.border,
+                },
+              ]}
             />
             <Text
               style={[
                 ui(11, on ? 700 : 500, { letterSpacing: 0.3 }),
-                { color: on || done ? colors.foreground : colors.mutedForeground },
+                { color: on ? colors.foreground : colors.mutedForeground },
               ]}
             >
               {`${i + 1}  ${label}`}
