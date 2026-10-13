@@ -8,6 +8,8 @@ A proof that only drives one convenient entry point is incomplete when the map l
 | [Play](play.md)                                   | `/play`              | `flows/play-round.mjs`       | scripted, PASS      |
 | [True Count drill](true-count-drill.md)           | `/drills/true-count` | `flows/true-count-drill.mjs` | scripted, PASS      |
 | [Design system](design-system.md)                 | `/design-system`     | `flows/design-system.mjs`    | scripted, PASS      |
+| [Lobby](lobby.md)                                 | `/lobby`             | `flows/lobby.mjs`            | scripted, PASS      |
+| [Progress & Mastery](progress.md)                 | `/progress`          | `flows/progress.mjs`         | scripted, PASS      |
 | [Rules / your table](rules.md)                    | `/rules`             | —                            | mapped, no flow yet |
 | [Shoe Integrity](shoe-integrity.md)               | `/shoe-integrity`    | —                            | mapped, no flow yet |
 | Other drills: Basic strategy, Counting, Deviation | `/drills/*`          | —                            | not mapped yet      |
