@@ -18,6 +18,7 @@ import {
   parseProgress,
   recordDecision,
   recordHand,
+  resetPracticeBankroll,
   serializeProgress,
   startProgressSession,
 } from "./progress";
@@ -124,6 +125,20 @@ describe("recording", () => {
     expect(s.hands).toHaveLength(PROGRESS_LIMITS.hands);
     expect(s.bankrollBase.craps).toBe(1);
     expect(bankroll(s, "craps")).toBe(before + 5);
+  });
+
+  it("resets one game's bankroll to the start without touching its hands or other games", () => {
+    let s = recordHand(EMPTY_PROGRESS, { game: "roulette", net: -1995 }, when(1));
+    s = recordHand(s, { game: "roulette", net: -5 }, when(2));
+    s = recordHand(s, { game: "craps", net: 40 }, when(3));
+    expect(bankroll(s, "roulette")).toBe(0);
+    const reset = resetPracticeBankroll(s, "roulette");
+    expect(bankroll(reset, "roulette")).toBe(2000);
+    expect(bankroll(reset, "craps")).toBe(2040);
+    expect(reset.hands).toBe(s.hands);
+    const after = recordHand(reset, { game: "roulette", net: 35 }, when(4));
+    expect(bankroll(after, "roulette")).toBe(2035);
+    expect(bankroll(parseProgress(serializeProgress(after))!, "roulette")).toBe(2035);
   });
 });
 

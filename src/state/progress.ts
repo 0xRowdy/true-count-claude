@@ -286,6 +286,18 @@ export function endProgressSession(state: ProgressState, id: string, when: When)
   };
 }
 
+/**
+ * Refills a game's practice bankroll to `PRACTICE_BANKROLL_START` (invariant 6: a bankroll at
+ * zero always offers a one-tap reset in place). The hands stay in the log, so win rates and
+ * session nets are untouched; only `bankrollBase` moves, by exactly what the hands have lost.
+ */
+export function resetPracticeBankroll(state: ProgressState, game: GameId): ProgressState {
+  if (!isGame(game)) throw new Error(`progress: unknown game ${String(game)}`);
+  let handsNet = 0;
+  for (const h of state.hands) if (h.game === game) handsNet += h.net;
+  return { ...state, bankrollBase: { ...state.bankrollBase, [game]: -handsNet } };
+}
+
 function trim(state: ProgressState): ProgressState {
   const { decisions, hands, sessions } = PROGRESS_LIMITS;
   let next = state;
