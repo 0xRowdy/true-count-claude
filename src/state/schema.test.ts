@@ -13,6 +13,7 @@ import {
   type Migration,
   SESSION_MIGRATIONS,
   SESSION_RECORDS_V3,
+  DECISION_PLAYED_INSTEAD_V4,
   TRUE_COUNT_NULLABLE,
   V1_UNBALANCED_SYSTEMS,
   decodeSession,
@@ -87,10 +88,11 @@ describe("the persisted record carries its schema version", () => {
   });
 
   it("ships an unbroken upgrade path from version 1 to the current version", () => {
-    expect(CURRENT_SCHEMA_VERSION).toBe(3);
+    expect(CURRENT_SCHEMA_VERSION).toBe(4);
     expect(SESSION_MIGRATIONS.map((step) => [step.from, step.to])).toEqual([
       [1, 2],
       [2, 3],
+      [3, 4],
     ]);
   });
 });
@@ -185,7 +187,11 @@ describe("1→2: an absent True Count becomes null, and a real 0 stays 0", () =>
 
     expect(outcome.ok).toBe(true);
     if (!outcome.ok) return;
-    expect(outcome.applied).toEqual([TRUE_COUNT_NULLABLE.describe, SESSION_RECORDS_V3.describe]);
+    expect(outcome.applied).toEqual([
+      TRUE_COUNT_NULLABLE.describe,
+      SESSION_RECORDS_V3.describe,
+      DECISION_PLAYED_INSTEAD_V4.describe,
+    ]);
     expect(outcome.session.decisions.map((decision) => decision.count.trueCount)).toEqual([
       null,
       null,
@@ -208,7 +214,10 @@ describe("2→3: new drill logs arrive empty, and a stale Counting System is rep
       SESSION_MIGRATIONS,
     );
     if (!outcome.ok) throw new Error(outcome.reason);
-    expect(outcome.applied).toEqual([SESSION_RECORDS_V3.describe]);
+    expect(outcome.applied).toEqual([
+      SESSION_RECORDS_V3.describe,
+      DECISION_PLAYED_INSTEAD_V4.describe,
+    ]);
     return outcome.data;
   };
 
@@ -292,7 +301,10 @@ describe("2→3: new drill logs arrive empty, and a stale Counting System is rep
 
     expect(outcome.ok).toBe(true);
     if (!outcome.ok) return;
-    expect(outcome.applied).toEqual([SESSION_RECORDS_V3.describe]);
+    expect(outcome.applied).toEqual([
+      SESSION_RECORDS_V3.describe,
+      DECISION_PLAYED_INSTEAD_V4.describe,
+    ]);
     expect(outcome.session.countingSystem).toBe("Zen Count");
     expect(outcome.session.conversionChecks).toEqual([]);
     expect(outcome.session.indexPlays).toEqual([]);
@@ -306,7 +318,11 @@ describe("2→3: new drill logs arrive empty, and a stale Counting System is rep
 
     expect(outcome.ok).toBe(true);
     if (!outcome.ok) return;
-    expect(outcome.applied).toEqual([TRUE_COUNT_NULLABLE.describe, SESSION_RECORDS_V3.describe]);
+    expect(outcome.applied).toEqual([
+      TRUE_COUNT_NULLABLE.describe,
+      SESSION_RECORDS_V3.describe,
+      DECISION_PLAYED_INSTEAD_V4.describe,
+    ]);
     const session = outcome.data;
     expect(session.decisions[0]!.count.trueCount).toBeNull();
     expect(session.decisions[3]!.count.trueCount).toBe(0);
