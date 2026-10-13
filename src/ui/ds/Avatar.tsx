@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Image, StyleSheet, Text, View, type ImageSourcePropType } from "react-native";
 import dealerPortrait from "../../../assets/avatars/dealer.jpg";
 import playerPortrait from "../../../assets/avatars/player.jpg";
@@ -56,3 +57,27 @@ export const portraits: Record<"dealer" | "player", ImageSourcePropType> = {
   dealer: dealerPortrait,
   player: playerPortrait,
 };
+
+/** The URL a bundled image is served from on web (or null where it has none, e.g. native ids). */
+export function imageUri(source: ImageSourcePropType): string | null {
+  const value = source as unknown;
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && value !== null && "uri" in value) {
+    const uri = (value as { uri: unknown }).uri;
+    return typeof uri === "string" ? uri : null;
+  }
+  return null;
+}
+
+/**
+ * Fetches the portraits once, at app start, so a Coach Note never shows an empty disc while
+ * the dealer's photo loads (the web shell also preloads them; see app/+html.tsx).
+ */
+export function usePrefetchPortraits(): void {
+  useEffect(() => {
+    for (const source of Object.values(portraits)) {
+      const uri = imageUri(source);
+      if (uri) Image.prefetch(uri).catch(() => undefined);
+    }
+  }, []);
+}

@@ -9,6 +9,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { describe, expect, it } from "vitest";
+import { TITLED_ROUTES, pageTitle } from "./pageTitle";
 
 const ROOT = join(__dirname, "..", "..");
 
@@ -65,5 +66,18 @@ describe("in-app links", () => {
       }
     }
     expect(broken).toEqual([]);
+  });
+});
+
+describe("page titles", () => {
+  it("every route has its own title, and only routes do", () => {
+    expect([...TITLED_ROUTES].sort()).toEqual([...routes].sort());
+  });
+
+  it("reads '<Page> · Tableside'", () => {
+    expect(pageTitle("/")).toBe("Tableside");
+    expect(pageTitle("/games/baccarat")).toBe("Baccarat · Tableside");
+    expect(pageTitle("/lobby/")).toBe("Lobby · Tableside");
+    expect(pageTitle("/nope")).toBe("Not found · Tableside");
   });
 });

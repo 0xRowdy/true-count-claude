@@ -44,7 +44,12 @@ export function TableTopBar({
           {title}
         </Text>
         {subtitle ? (
-          <Text style={[ui(12), { color: colors.mutedForeground }]} numberOfLines={1}>
+          // Two lines rather than an ellipsis: at 390 a long rules line ("… 5% commission")
+          // would otherwise lose its last, most specific part.
+          <Text
+            style={[ui(12, 400, { lineHeight: 15 }), { color: colors.mutedForeground }]}
+            numberOfLines={2}
+          >
             {subtitle}
           </Text>
         ) : null}
@@ -75,7 +80,8 @@ export function TableTopBar({
 
 const styles = StyleSheet.create({
   bar: {
-    height: 56,
+    minHeight: 56,
+    paddingVertical: 4,
     flexDirection: "row",
     alignItems: "center",
     gap: 4,

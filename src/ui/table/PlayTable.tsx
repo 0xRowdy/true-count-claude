@@ -23,15 +23,7 @@
 
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Stack, useRouter } from "expo-router";
-import {
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  useWindowDimensions,
-} from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import type { Action } from "@/engine/hand";
 import { DEFAULT_RULES } from "@/engine/rules";
@@ -51,7 +43,6 @@ import {
   PhaseStepper,
   TableTopBar,
   icons,
-  portraits,
   type CardSize,
   type LucideIcon,
 } from "@/ui/ds";
@@ -192,19 +183,6 @@ export function PlayTable() {
   const rules = table.rules;
   const available = availableBankroll(table);
   const broke = isBroke(table);
-
-  // The coach's portrait is fetched before the first note, so a caught mistake never shows an
-  // empty disc while the photo loads.
-  useEffect(() => {
-    const source = portraits.dealer as unknown;
-    const uri =
-      typeof source === "string"
-        ? source
-        : typeof source === "object" && source !== null && "uri" in source
-          ? String((source as { uri: unknown }).uri)
-          : null;
-    if (uri) Image.prefetch(uri).catch(() => undefined);
-  }, []);
 
   // The wager the engine actually dealt — `deal` clamps it to the bankroll and the table — is
   // the one Rebet and Next hand repeat, never the amount that was asked for.

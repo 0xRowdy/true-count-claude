@@ -1,12 +1,13 @@
-# True Count
+# Tableside
 
-A card-counting and advantage-play trainer for blackjack. Web, iOS, and Android from one
-codebase.
+A casino-game trainer built on an auditable blackjack engine: card counting and basic
+strategy, plus roulette, craps, video poker and baccarat. Web, iOS, and Android from one
+codebase. (The repository, package and bundle ids keep the project's original name, True Count.)
 
 **Not a gambling app.** No real money, no tokens, no wagering, no ads.
 
 > Every other trainer tells you that you were wrong.
-> True Count shows you _why_, and proves its own math.
+> Tableside shows you _why_, and proves its own math.
 
 ## Why
 
