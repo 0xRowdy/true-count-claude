@@ -178,7 +178,7 @@ describe("analyzeHolds", () => {
    * the clock).
    */
   it("is fast enough to run on every deal", () => {
-    const clock = () => performance.now();
+    const clock = () => globalThis.performance.now();
     const rng = createRng(2026);
     const tables: PayTableId[] = ["job-9-6", "deuces-wild-full-pay", "double-double-bonus-9-6"];
     const deals = Array.from({ length: 60 }, () => shuffleInPlace(freshDeck(), rng).slice(0, 5));
