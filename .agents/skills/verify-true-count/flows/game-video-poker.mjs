@@ -182,5 +182,39 @@ export default async ({ page, url, shot, log, check }) => {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
   check(overflow <= 0, `no horizontal page scroll at 390 wide (overflow ${overflow}px)`);
   await shot("bet-deuces");
+  // Coach "asked": a worse hold draws without a word, so the result carries the Explanation
+  // (the better hold, both returns) and the dealt hand, with the math one tap away.
+  await page.evaluate(() =>
+    localStorage.setItem(
+      "tableside/profile/v1",
+      JSON.stringify({ onboarded: true, coach: "asked" }),
+    ),
+  );
+  await page.goto(url("/games/video-poker?seed=1981"), { waitUntil: "networkidle" });
+  await visible(page.getByRole("button", { name: "Deal, bet $5" })).click();
+  await visible(page.getByRole("img", { name: "5 of hearts" })).waitFor();
+  await visible(page.getByRole("button", { name: "Hold 9 of spades" })).click();
+  await visible(page.getByRole("button", { name: "Hold 9 of hearts" })).click();
+  await visible(page.getByRole("button", { name: "Draw" })).click();
+  await visible(page.getByText("DECISIONS THIS HAND")).waitFor();
+  check(
+    await visible(
+      page.getByText(
+        "Better: keep the four hearts (3♥ A♥ 9♥ 5♥), about $6.10 back vs $4.10 for yours. Gave up about $1.90 a hand on average. Counts as a miss.",
+      ),
+    ).isVisible(),
+    "an asked-coach miss names the better hold and both returns",
+  );
+  check(
+    await visible(page.getByLabel("The dealt hand")).isVisible(),
+    "the dealt hand is shown with the verdict",
+  );
+  await visible(page.getByRole("button", { name: "Show the math" })).click();
+  check(
+    await visible(page.getByLabel("Holds ranked by expected return")).isVisible(),
+    "the math opens on the result",
+  );
+  await shot("asked-miss-explained");
+
   check(errors.length === 0, `no console errors${errors.length ? `: ${errors.join(" | ")}` : ""}`);
 };

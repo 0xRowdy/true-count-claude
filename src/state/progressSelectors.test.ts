@@ -184,6 +184,31 @@ describe("hands and bankroll", () => {
     expect(chipBalance(s)).toBe(5 * PRACTICE_BANKROLL_START + 20);
   });
 
+  it("sums many 5¢ video poker results to the exact cent, with no float noise", () => {
+    // 1,200 one-coin 5¢ hands: lose 5¢, or win back 5¢–45¢ (pays 1, 2, 3, 4, 6, 9).
+    const nets = Array.from(
+      { length: 1200 },
+      (_, i) => [-0.05, 0.05, 0.1, -0.05, 0.15, 0.25, 0.4][i % 7]!,
+    );
+    const s = nets.reduce(
+      (acc, net, i) => recordHand(acc, { game: "video-poker", net }, { at: i, day: TODAY }),
+      EMPTY_PROGRESS,
+    );
+    const cents = nets.reduce((sum, net) => sum + Math.round(net * 100), 0);
+    const expected = (PRACTICE_BANKROLL_START * 100 + cents) / 100;
+    expect(bankroll(s, "video-poker")).toBe(expected);
+    // The nearest double to a whole-cent amount, i.e. no accumulated noise.
+    const clean = (x: number) => Number(x.toFixed(2)) === x;
+    expect(clean(bankroll(s, "video-poker"))).toBe(true);
+    expect(chipBalance(s)).toBe((5 * PRACTICE_BANKROLL_START * 100 + cents) / 100);
+    const series = bankrollSeries(s, "video-poker", rangeWindow("7d", TODAY), 2000);
+    expect(series.now).toBe(expected);
+    expect(series.points.every(clean)).toBe(true);
+    // The old float sum drifts; the cent sum does not.
+    const naive = nets.reduce((sum, net) => sum + net, PRACTICE_BANKROLL_START);
+    expect(clean(naive)).toBe(false);
+  });
+
   it("plots a bankroll series from the window's opening balance", () => {
     let s = recordHand(EMPTY_PROGRESS, { game: "craps", net: 100 }, { at: 1, day: "2026-09-01" });
     s = recordHand(s, { game: "craps", net: -20 }, { at: 2, day: TODAY });
