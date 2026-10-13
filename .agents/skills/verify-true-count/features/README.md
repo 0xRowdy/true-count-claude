@@ -3,14 +3,14 @@
 One file per user-facing feature: what it is, how a user reaches it, how to drive it, what proves it works.
 A proof that only drives one convenient entry point is incomplete when the map lists others.
 
-| Feature                                           | Route                | Flow                         | Status              |
-| ------------------------------------------------- | -------------------- | ---------------------------- | ------------------- |
-| [Play](play.md)                                   | `/play`              | `flows/play-round.mjs`       | scripted, PASS      |
-| [True Count drill](true-count-drill.md)           | `/drills/true-count` | `flows/true-count-drill.mjs` | scripted, PASS      |
-| [Design system](design-system.md)                 | `/design-system`     | `flows/design-system.mjs`    | scripted, PASS      |
-| [Rules / your table](rules.md)                    | `/rules`             | —                            | mapped, no flow yet |
-| [Shoe Integrity](shoe-integrity.md)               | `/shoe-integrity`    | —                            | mapped, no flow yet |
-| Other drills: Basic strategy, Counting, Deviation | `/drills/*`          | —                            | not mapped yet      |
-| Session / Statistics                              | `/session`           | —                            | not mapped yet      |
+| Feature                                              | Route                  | Flow                         | Status         |
+| ---------------------------------------------------- | ---------------------- | ---------------------------- | -------------- |
+| [Play](play.md)                                      | `/play`                | `flows/play-round.mjs`       | scripted, PASS |
+| [True Count drill](true-count-drill.md)              | `/drills/true-count`   | `flows/true-count-drill.mjs` | scripted, PASS |
+| [Design system](design-system.md)                    | `/design-system`       | `flows/design-system.mjs`    | scripted, PASS |
+| [Drills (Trainer): hub + all four drills](drills.md) | `/drills`, `/drills/*` | `flows/drills.mjs`           | scripted, PASS |
+| [Rules / your table](rules.md)                       | `/rules`               | `flows/rules-integrity.mjs`  | scripted, PASS |
+| [Shoe Integrity](shoe-integrity.md)                  | `/shoe-integrity`      | `flows/rules-integrity.mjs`  | scripted, PASS |
+| [Session / Statistics](session.md)                   | `/session`             | `flows/rules-integrity.mjs`  | scripted, PASS |
 
-Cross-cutting: `flows/no-hydration-errors.mjs` loads every top-level route above (plus `/` and `/drills`) and fails on a React hydration mismatch (#32). Add a new top-level route to its `ROUTES`.
+Cross-cutting: `flows/no-hydration-errors.mjs` loads every top-level route above (plus `/`, `/drills` and every drill) and fails on a React hydration mismatch (#32). Add a new top-level route to its `ROUTES`.
