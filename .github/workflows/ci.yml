@@ -93,7 +93,11 @@ jobs:
 
       # Every flow in the skill runs, so a PR that adds a flow gates on it without touching this file.
       - name: Drive flows
-        run: $V drive $(ls .agents/skills/verify-true-count/flows/*.mjs | xargs -n1 basename | sed 's/\.mjs$//')
+        run: |
+          shopt -s nullglob
+          flows=(.agents/skills/verify-true-count/flows/*.mjs)
+          [ ${#flows[@]} -gt 0 ] || { echo "no e2e flows found" >&2; exit 1; }
+          $V drive "${flows[@]}"
 
       - name: Stop
         if: always()
