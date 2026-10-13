@@ -117,8 +117,24 @@ export default async ({ page, url, shot, log, check }) => {
   // Range control.
   await visible(page.getByRole("tab", { name: "Blackjack" })).click();
   const before = await card("Hands played");
-  await visible(page.getByRole("button", { name: "Range: Last 30 days" })).click();
-  await visible(page.getByRole("menuitem", { name: "All time" })).click();
+  const rangeButton = visible(page.getByRole("button", { name: "Range: Last 30 days" }));
+  await rangeButton.click();
+  check(
+    (await visible(page.getByRole("menuitemradio", { name: "Last 30 days" })).getAttribute(
+      "aria-checked",
+    )) === "true",
+    "range menu items are menuitemradio, the current one checked",
+  );
+  await page.keyboard.press("Escape");
+  await page.getByRole("menu", { name: "Range" }).waitFor({ state: "hidden" });
+  log("Escape closes the range menu");
+  await rangeButton.click();
+  await visible(page.getByRole("menu", { name: "Range" })).waitFor();
+  await page.mouse.click(700, 120); // the page title, outside the picker
+  await page.getByRole("menu", { name: "Range" }).waitFor({ state: "hidden" });
+  log("an outside press closes the range menu");
+  await rangeButton.click();
+  await visible(page.getByRole("menuitemradio", { name: "All time" })).click();
   await visible(page.getByRole("button", { name: "Range: All time" })).waitFor();
   const after = await card("Hands played");
   check(after !== before, `range changes the numbers (${before} → ${after})`);
@@ -136,23 +152,33 @@ export default async ({ page, url, shot, log, check }) => {
   // Real blackjack: a round at the Play table shows up in Progress (bridged from the Session log).
   await page.setViewportSize({ width: 1440, height: 1700 });
   await page.goto(url("/play"), { waitUntil: "networkidle" });
+  // The Tableside table (#46): Deal → insurance → Stand (Keep my stand if the coach catches it) →
+  // Result → Collect → Payout → Rebet back to the bet prompt.
+  const collect = visible(page.getByRole("button", { name: /^(Collect \$|Continue$)/ }));
   for (let round = 1; round <= 5; round++) {
-    await visible(page.getByRole("button", { name: "Deal" })).click();
+    await visible(page.getByRole("button", { name: "Deal", exact: true })).click();
     await page.getByRole("img", { name: / of / }).first().waitFor();
     const noInsurance = visible(page.getByRole("button", { name: "No insurance" }));
-    if (await noInsurance.isVisible().catch(() => false)) await noInsurance.click();
+    if (await noInsurance.isVisible().catch(() => false)) {
+      await noInsurance.click();
+      const keepChoice = visible(page.getByRole("button", { name: "Keep my choice" }));
+      if (await keepChoice.isVisible().catch(() => false)) await keepChoice.click();
+    }
     let decided = false;
-    for (let i = 0; i < 4 && !(await visible(page.getByText("Round settled")).isVisible()); i++) {
-      const stand = visible(page.getByRole("button", { name: "Stand" }));
+    for (let i = 0; i < 6 && !(await collect.isVisible().catch(() => false)); i++) {
+      const stand = visible(page.getByRole("button", { name: "Stand", exact: true }));
       if (await stand.isVisible().catch(() => false)) {
         await stand.click();
         decided = true;
+        const keep = visible(page.getByRole("button", { name: "Keep my stand" }));
+        if (await keep.isVisible().catch(() => false)) await keep.click();
       }
       await page.waitForTimeout(300);
     }
-    await visible(page.getByText("Round settled")).waitFor({ timeout: 5000 });
-    await visible(page.getByRole("button", { name: "Next hand" })).click();
-    await visible(page.getByRole("button", { name: "Deal" })).waitFor();
+    await collect.waitFor({ timeout: 5000 });
+    await collect.click();
+    await visible(page.getByRole("button", { name: /^Rebet \$/ })).click();
+    await visible(page.getByRole("button", { name: "Deal", exact: true })).waitFor();
     if (decided) break;
   }
   await page.waitForTimeout(500); // the Session write is queued

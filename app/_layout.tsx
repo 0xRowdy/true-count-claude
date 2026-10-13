@@ -19,8 +19,17 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: ds.background },
         }}
       >
-        <Stack.Screen name="index" options={{ title: "True Count" }} />
-        <Stack.Screen name="play" options={{ title: "Play" }} />
+        {/* The marketing pages draw their own top bar (frames Do2ZB, aLrYu); pricing uses AppShell. */}
+        <Stack.Screen name="index" options={{ title: "Tableside", headerShown: false }} />
+        <Stack.Screen
+          name="onboarding"
+          options={{ title: "Get started · Tableside", headerShown: false }}
+        />
+        <Stack.Screen
+          name="pricing"
+          options={{ title: "Pricing · Tableside", headerShown: false }}
+        />
+        <Stack.Screen name="play" options={{ title: "Blackjack", headerShown: false }} />
         {/* The sheet is not an AppShell page (it mirrors frame bi8Au), so it hides the header here. */}
         <Stack.Screen
           name="design-system"

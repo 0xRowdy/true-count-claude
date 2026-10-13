@@ -18,10 +18,10 @@ import { type Rank, RANKS } from "@/engine/cards";
 import type { TagTable } from "@/engine/counting";
 import type { RankComposition } from "@/engine/shoe";
 import { formatSigned } from "./integrity";
-import { Badge, Panel } from "@/ui/primitives";
-import { colors, radius, spacing, type } from "@/ui/theme";
+import { colors, radius, ui, Panel } from "@/ui/ds";
+import { ToneBadge, signColor, text } from "@/ui/trainer/kit";
 
-const ROW_HEIGHT = 26;
+const ROW_HEIGHT = 32;
 const COLUMN_WIDTH = 44;
 
 export function RankTable({
@@ -48,12 +48,12 @@ export function RankTable({
   return (
     <Panel title="The Shoe, rank by rank">
       <View style={styles.badges}>
-        <Badge
-          label={intact ? "COMPOSITION VERIFIED" : "COMPOSITION FAILED"}
+        <ToneBadge
+          label={intact ? "Composition verified" : "Composition failed"}
           tone={intact ? "good" : "bad"}
         />
-        <Badge
-          label={conserved ? "EVERY RANK ADDS BACK" : "CARDS UNACCOUNTED FOR"}
+        <ToneBadge
+          label={conserved ? "Every rank adds back" : "Cards unaccounted for"}
           tone={conserved ? "good" : "bad"}
         />
       </View>
@@ -110,7 +110,7 @@ function RankColumn({
   remaining: number;
   dealt: number;
 }) {
-  const tagColor = tag > 0 ? colors.accent : tag < 0 ? colors.danger : colors.textMuted;
+  const tagColor = signColor(tag);
   return (
     <View style={styles.column}>
       <Cell text={rank} style={styles.headerCell} />
@@ -134,35 +134,36 @@ function Cell({ text, style }: { text: string; style: StyleProp<TextStyle> }) {
   );
 }
 
+const NUM = { fontVariant: ["tabular-nums" as const] };
+
 const styles = StyleSheet.create({
-  badges: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  prose: { ...type.caption, color: colors.textMuted, lineHeight: 19 },
-  strong: { color: colors.text, fontWeight: "700" },
+  badges: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  prose: text.note,
+  strong: text.strong,
   table: {
     flexDirection: "row",
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.sm,
-    backgroundColor: colors.background,
+    borderRadius: radius.md,
     overflow: "hidden",
   },
   labelColumn: {
     borderRightWidth: 1,
     borderRightColor: colors.border,
-    backgroundColor: colors.surfaceRaised,
-    paddingHorizontal: spacing.sm,
+    backgroundColor: colors.muted,
+    paddingHorizontal: 12,
   },
   scrollRow: { flexDirection: "row" },
   column: { width: COLUMN_WIDTH, alignItems: "center" },
   totalColumn: {
     borderLeftWidth: 1,
     borderLeftColor: colors.border,
-    backgroundColor: colors.surfaceRaised,
+    backgroundColor: colors.muted,
   },
   cell: { height: ROW_HEIGHT, justifyContent: "center", alignItems: "center" },
-  labelCell: { ...type.caption, color: colors.textMuted },
-  headerCell: { ...type.mono, ...type.caption, color: colors.text, fontWeight: "700" },
-  valueCell: { ...type.mono, ...type.caption, color: colors.text },
-  mutedCell: { ...type.mono, ...type.caption, color: colors.textMuted },
-  exhausted: { color: colors.warning },
+  labelCell: { ...ui(12, 600), color: colors.mutedForeground },
+  headerCell: { ...ui(13, 700), ...NUM, color: colors.foreground },
+  valueCell: { ...ui(13, 500), ...NUM, color: colors.foreground },
+  mutedCell: { ...ui(13, 400), ...NUM, color: colors.mutedForeground },
+  exhausted: { color: colors.primary },
 });

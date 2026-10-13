@@ -175,6 +175,50 @@ describe("blackjack bridge", () => {
     expect(p.decisions.every((d) => d.sessionId === "bj:s1" && d.day === "2026-10-12")).toBe(true);
   });
 
+  it("counts drill decisions but not drill chips", () => {
+    const played = endSession(buildSession({ id: "d1", rounds: 6 }), "user", 1_700_000_900_000);
+    const drill = { ...played, mode: "drill" as const, drillId: "basic-strategy" };
+    const p = blackjackProgress([drill], () => "2026-10-12");
+    expect(p.decisions).toHaveLength(drill.decisions.length);
+    expect(p.hands).toEqual([]);
+    expect(p.sessions).toHaveLength(1);
+  });
+
+  it("labels index plays soft only for a real soft total", () => {
+    const base = endSession(buildSession({ id: "ip", rounds: 0 }), "user", 2);
+    const play = (cards: Card[]) =>
+      ({
+        index: 0,
+        entryId: "x",
+        entryLabel: "x",
+        indexNumber: 0,
+        system: "Hi-Lo",
+        kind: "hand",
+        placedCards: cards,
+        dealerUpcard: c("9"),
+        runningCount: 0,
+        cardsRemaining: 52,
+        rounding: "truncate",
+        trueCount: 0,
+        firing: false,
+        actionTaken: "stand",
+        correctAction: "stand",
+        basicStrategyAction: "stand",
+        verdict: "correct",
+        runSeed: 1,
+        questionIndex: 0,
+        cutShoeSeed: null,
+        cutPosition: null,
+        at: 1,
+      }) as const;
+    const session = {
+      ...base,
+      indexPlays: [play([c("A"), c("6", "h"), c("10")]), play([c("A"), c("7", "h")])],
+    };
+    const p = blackjackProgress([session], () => "2026-10-12");
+    expect(p.decisions.map((d) => d.category)).toEqual(["hard", "soft"]);
+  });
+
   it("skips discarded and empty Sessions", () => {
     const discarded = endSession(buildSession({ id: "d", rounds: 3 }), "discarded", 2);
     const empty = buildSession({ id: "e", rounds: 0 });
@@ -323,6 +367,42 @@ describe("store", () => {
     await p;
     expect(store.snapshot().progress).toEqual(EMPTY_PROGRESS);
     expect(cleared()).toBe(1);
+  });
+
+  it("a throwing early change throws to the caller, is never queued, and the store still loads", async () => {
+    const { repo, release, saved } = deferredRepo(hand(10, 1)(EMPTY_PROGRESS));
+    const store = createProgressStore(repo);
+    const bad = (s: ProgressState) =>
+      recordDecision(s, { game: "roulette", category: "soft", correct: true }, when(2));
+    expect(() => store.apply(bad)).toThrow(/unknown category/);
+    const good = store.apply(hand(-5, 3));
+    release();
+    await good;
+    expect(store.snapshot()).toMatchObject({ ready: true, status: "stored" });
+    expect(store.snapshot().progress.hands.map((h) => h.net)).toEqual([10, -5]);
+    expect(saved.at(-1)!.hands).toHaveLength(2);
+    expect(saved.at(-1)!.decisions).toHaveLength(0);
+  });
+
+  it("replay skips and drops a change that throws only on the stored state", async () => {
+    const stored = startProgressSession(EMPTY_PROGRESS, { id: "x", game: "craps" }, when(1));
+    const { repo, release, saved } = deferredRepo(stored);
+    const store = createProgressStore(repo);
+    let calls = 0;
+    // Fine on the empty initial state, throws on the stored one.
+    const flaky = (s: ProgressState) => {
+      calls++;
+      if (s.sessions.length > 0) throw new Error("boom");
+      return s;
+    };
+    void store.apply(flaky);
+    const good = store.apply(hand(7, 2));
+    release();
+    await good;
+    expect(calls).toBe(2);
+    expect(store.snapshot()).toMatchObject({ ready: true, status: "stored" });
+    expect(store.snapshot().progress.hands.map((h) => h.net)).toEqual([7]);
+    expect(saved.at(-1)!.sessions).toHaveLength(1);
   });
 
   it("keeps working when storage fails", async () => {

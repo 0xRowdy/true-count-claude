@@ -144,6 +144,8 @@ export const surfaces = {
   chipEdgeSpot: "#FFFFFFEE",
   chipInlay: "#FFFFFFB3",
   chipDotRing: "#FFFFFFAA",
+  /** Finished Phase Stepper steps (primary at 40%). */
+  primaryDim: "#D4AE6266",
   /** Selected option wash (primary at 8%). */
   primaryWash: "#D4AE6214",
   /** Progress track on dark surfaces. */
@@ -156,6 +158,11 @@ export const surfaces = {
   diePip: "#FFFFFF",
   /** Swatch hex captions on the design sheet. */
   caption: "#7E8882",
+  /**
+   * Information text on the dark surfaces (the strategy chart's "Ds" light blue): `--coach-accent`
+   * is too dark to read as text on `--card`.
+   */
+  infoInk: "#7FA8F2",
   transparent: "transparent",
 } as const;
 

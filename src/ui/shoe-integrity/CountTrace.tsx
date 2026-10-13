@@ -13,7 +13,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import type { TracePoint, TraceRange } from "./integrity";
 import { formatSigned } from "./integrity";
-import { colors, radius, spacing, type } from "@/ui/theme";
+import { colors, radius, ui, surfaces } from "@/ui/ds";
 
 const FRAME_HEIGHT = 132;
 const DOT = 3;
@@ -50,9 +50,9 @@ export function CountTrace({
   const width = Math.max(1, totalCards);
   const endTone = landed
     ? last && last.count === range.home
-      ? colors.accent
-      : colors.danger
-    : colors.info;
+      ? colors.correct
+      : colors.mistake
+    : surfaces.infoInk;
 
   return (
     <View style={styles.wrapper}>
@@ -117,11 +117,13 @@ export function CountTrace({
   );
 }
 
+const NUM = { fontVariant: ["tabular-nums" as const] };
+
 const styles = StyleSheet.create({
-  wrapper: { gap: spacing.xs },
+  wrapper: { gap: 6 },
   frame: {
     height: FRAME_HEIGHT,
-    borderRadius: radius.sm,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.background,
@@ -141,25 +143,25 @@ const styles = StyleSheet.create({
     right: 0,
     top: "50%",
     height: 1,
-    backgroundColor: colors.accent,
-    opacity: 0.55,
+    backgroundColor: colors.correct,
+    opacity: 0.6,
   },
   homeLabel: {
-    ...type.mono,
-    fontSize: 11,
-    color: colors.accent,
+    ...ui(11, 600),
+    ...NUM,
+    color: colors.correct,
     position: "absolute",
-    left: spacing.xs,
+    left: 6,
     top: "50%",
-    marginTop: -14,
+    marginTop: -16,
   },
   cutMarker: {
     position: "absolute",
     top: 0,
     bottom: 0,
     width: 1,
-    backgroundColor: colors.warning,
-    opacity: 0.5,
+    backgroundColor: colors.primary,
+    opacity: 0.6,
   },
   dot: {
     position: "absolute",
@@ -168,7 +170,7 @@ const styles = StyleSheet.create({
     borderRadius: DOT / 2,
     marginLeft: -DOT / 2,
     marginTop: -DOT / 2,
-    backgroundColor: colors.info,
+    backgroundColor: surfaces.infoInk,
   },
   endDot: {
     position: "absolute",
@@ -181,15 +183,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   axisLabel: {
-    ...type.mono,
-    fontSize: 11,
-    color: colors.textMuted,
+    ...ui(11, 500),
+    ...NUM,
+    color: colors.mutedForeground,
     position: "absolute",
-    right: spacing.xs,
+    right: 6,
   },
-  axisTop: { top: 2 },
-  axisBottom: { bottom: 2 },
-  footer: { flexDirection: "row", justifyContent: "space-between", gap: spacing.xs },
-  footerLabel: { ...type.mono, fontSize: 11, color: colors.textMuted },
-  caption: { ...type.caption, color: colors.textMuted },
+  axisTop: { top: 4 },
+  axisBottom: { bottom: 4 },
+  footer: { flexDirection: "row", justifyContent: "space-between", gap: 4 },
+  footerLabel: { ...ui(11, 500), ...NUM, color: colors.mutedForeground },
+  caption: { ...ui(13), color: colors.mutedForeground },
 });
