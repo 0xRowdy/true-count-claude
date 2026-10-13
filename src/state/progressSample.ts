@@ -44,13 +44,13 @@ const PLANS: Record<"blackjack" | "craps" | "video-poker", GamePlan> = {
     categories: [
       ["hard", 0.45, 0.035],
       ["soft", 0.2, -0.09],
-      ["doubles", 0.15, -0.045],
+      ["doubles", 0.15, -0.03],
       ["pairs", 0.12, 0],
       ["insurance-surrender", 0.08, 0.06],
     ],
     hands: [30, 56],
     bet: 25,
-    winP: 0.505,
+    winP: 0.52,
   },
   craps: {
     game: "craps",
