@@ -157,6 +157,10 @@ export const surfaces = {
   /** Swatch hex captions on the design sheet. */
   caption: "#7E8882",
   transparent: "transparent",
+  /** Roulette: the hairline around a number cell, and the bet loupe's option tiles. */
+  numberLine: "#EDE4CC55",
+  loupeOption: "#FFFFFF",
+  loupeOnMuted: "#F6F1E4B3",
 } as const;
 
 export type ColorToken = keyof typeof colors;
@@ -252,4 +256,5 @@ export const shadow = {
   card: "0px 2px 6px #00000055",
   note: "0px 8px 24px #00000066",
   die: "0px 4px 8px #00000088",
+  loupe: "0px 12px 32px #000000AA",
 } as const;
