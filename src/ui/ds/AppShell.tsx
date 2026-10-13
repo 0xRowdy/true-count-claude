@@ -30,7 +30,12 @@ export function AppShell({
       {/* The shell is the page chrome: no stack header above it, whichever route uses it. */}
       <Stack.Screen options={{ headerShown: false }} />
       <AppHeader active={active} chips={chips} />
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+      {/* "handled": a tap on a button inside the page lands even while a field has focus. */}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={[styles.page, narrow && styles.pageNarrow]}>{children}</View>
       </ScrollView>
     </View>

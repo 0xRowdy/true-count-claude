@@ -19,7 +19,8 @@ import { useEffect, useState } from "react";
 import { Platform } from "react-native";
 import Constants from "expo-constants";
 import type { RuleSet } from "@/engine/rules";
-import { SecondaryButton } from "@/ui/primitives";
+import Bug from "lucide-react-native/icons/bug";
+import { SecondaryButton } from "@/ui/trainer/kit";
 import { useConfiguredRules } from "@/ui/rules/rulesStore";
 import { loadActiveSession, useSessionState } from "@/ui/session/sessionStore";
 import {
@@ -96,7 +97,7 @@ export function ReportBugButton({
 
   return (
     <>
-      <SecondaryButton label={label} onPress={open} />
+      <SecondaryButton label={label} icon={Bug} onPress={open} />
       {report ? <BugReportSheet report={report} onClose={() => setReport(null)} /> : null}
     </>
   );
