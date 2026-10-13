@@ -252,14 +252,22 @@ export const WIN_RATE_EXPECTATION: Readonly<Record<GameId, string>> = {
 
 /** A game's practice-chip bankroll now. */
 export function bankroll(data: ProgressState, game: GameId): number {
-  let net = data.bankrollBase[game] ?? 0;
-  for (const h of data.hands) if (h.game === game) net += h.net;
-  return PRACTICE_BANKROLL_START + net;
+  let net = toCents(data.bankrollBase[game] ?? 0);
+  for (const h of data.hands) if (h.game === game) net += toCents(h.net);
+  return (toCents(PRACTICE_BANKROLL_START) + net) / 100;
 }
 
 /** The practice chips across every game: the header balance. */
 export function chipBalance(data: ProgressState): number {
-  return GAMES.reduce((sum, g) => sum + bankroll(data, g), 0);
+  return GAMES.reduce((sum, g) => sum + toCents(bankroll(data, g)), 0) / 100;
+}
+
+/**
+ * Practice chips are dollars that can carry cents (a 5¢ video poker machine). Money is summed in
+ * whole cents so a long run of fractional nets never drifts into float noise (10057.599999…).
+ */
+function toCents(amount: number): number {
+  return Math.round(amount * 100);
 }
 
 export interface BankrollSeries {
@@ -277,21 +285,22 @@ export function bankrollSeries(
   maxPoints = 80,
 ): BankrollSeries {
   const games = scope === "all" ? GAMES : [scope];
+  // Summed in whole cents (see `toCents`), reported in dollars.
   let value = 0;
-  for (const g of games) value += PRACTICE_BANKROLL_START + (data.bankrollBase[g] ?? 0);
+  for (const g of games) value += toCents(PRACTICE_BANKROLL_START + (data.bankrollBase[g] ?? 0));
   const points: number[] = [];
   for (const h of data.hands) {
     if (!inScope(h.game, scope)) continue;
     if (window.from !== null && h.day < window.from) {
-      value += h.net;
+      value += toCents(h.net);
       continue;
     }
     if (h.day > window.to) continue;
-    if (points.length === 0) points.push(value);
-    value += h.net;
-    points.push(value);
+    if (points.length === 0) points.push(value / 100);
+    value += toCents(h.net);
+    points.push(value / 100);
   }
-  if (points.length === 0) points.push(value);
+  if (points.length === 0) points.push(value / 100);
   const start = points[0]!;
   const now = points[points.length - 1]!;
   if (points.length <= maxPoints) return { start, now, points };

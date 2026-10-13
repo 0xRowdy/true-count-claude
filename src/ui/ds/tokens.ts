@@ -144,6 +144,8 @@ export const surfaces = {
   chipEdgeSpot: "#FFFFFFEE",
   chipInlay: "#FFFFFFB3",
   chipDotRing: "#FFFFFFAA",
+  /** Finished Phase Stepper steps (primary at 40%). */
+  primaryDim: "#D4AE6266",
   /** Selected option wash (primary at 8%). */
   primaryWash: "#D4AE6214",
   /** Progress track on dark surfaces. */

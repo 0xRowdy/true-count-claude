@@ -34,11 +34,14 @@ function verdictOf(decision: TableDecision): VerdictView {
 
 export function DecisionFeedback({
   decisions,
+  focus,
   roundOver,
   expanded,
   onChangeExpanded,
 }: {
   decisions: readonly TableDecision[];
+  /** Open on this Decision rather than the newest (the Result's review list picks one). */
+  focus?: number;
   /** The cards have been swept and the bet prompt is showing. */
   roundOver: boolean;
   expanded: boolean;
@@ -46,7 +49,9 @@ export function DecisionFeedback({
 }) {
   // A pick is only honoured while no new Decision has arrived; the newest one always takes
   // the panel, because it is the one the player just made.
-  const [pick, setPick] = useState<{ count: number; index: number } | null>(null);
+  const [pick, setPick] = useState<{ count: number; index: number } | null>(
+    focus !== undefined ? { count: decisions.length, index: focus } : null,
+  );
   if (decisions.length === 0) return null;
 
   const latest = decisions.length - 1;

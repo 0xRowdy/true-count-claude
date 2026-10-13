@@ -286,6 +286,27 @@ describe("what the report carries", () => {
     expect(report.session).not.toHaveProperty("rules");
   });
 
+  it("reports the play that reached the cards when the coach's catch was taken back", () => {
+    const session = buildSplitSession({ rounds: 6, id: "coached", seed: 99 });
+    const last = session.decisions[session.decisions.length - 1]!;
+    const coached: Session = {
+      ...session,
+      decisions: [
+        ...session.decisions.slice(0, -1),
+        { ...last, actionTaken: "split", playedInstead: "stand", verdict: "incorrect" },
+      ],
+    };
+    const table = dealRound(createPlayTable(session.rules, 1));
+    const report = buildBugReport(tableInput(table, { session: coached }));
+    expect(report.session?.lastDecision).toMatchObject({
+      actionTaken: "split",
+      playedInstead: "stand",
+    });
+
+    const plain = buildBugReport(tableInput(table, { session }));
+    expect(plain.session?.lastDecision?.playedInstead).toBeNull();
+  });
+
   it("includes the Session's own Rule Set when it was recorded at a different table", () => {
     const session = buildSession({ rounds: 2 });
     const rules: RuleSet = { ...DEFAULT_RULES, decks: 1 };
