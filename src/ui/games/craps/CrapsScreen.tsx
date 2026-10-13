@@ -1,13 +1,14 @@
 import { Stack, router } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { formatDollars, onTable, tableLabel } from "@/games/craps";
+import { describePlan, formatDollars, onTable, tableLabel } from "@/games/craps";
 import { Button } from "@/ui/ds/Button";
 import { ChipRack } from "@/ui/ds/ChipRack";
 import { CoachNote } from "@/ui/ds/CoachNote";
 import type { ChipValue } from "@/ui/ds/format";
 import { PhaseStepper } from "@/ui/ds/PhaseStepper";
 import { TableTopBar } from "@/ui/ds/TableTopBar";
+import { TestingBanner, useTestedStrategy } from "@/ui/strategies/TestingBanner";
 import { colors, radius, ui } from "@/ui/ds/tokens";
 import { CrapsFelt } from "./CrapsFelt";
 import { Dices, Eraser, Layers, Lightbulb, Repeat, Undo2 } from "@/ui/ds/icons";
@@ -35,6 +36,8 @@ const COLUMN = 430;
 /** `/games/craps` — the single-player craps table (frame 06, lUiCl). */
 export function CrapsScreen({ seed }: { seed?: string }) {
   const g = useCrapsGame(seed);
+  // "Test in trainer" (`?strategy=<id>`): which plan is under test, for reference at the rail.
+  const tested = useTestedStrategy("craps");
   const { state } = g;
   const [chip, setChip] = useState<ChipValue>(5);
   const [sheet, setSheet] = useState<"center" | "edit" | "rules" | null>(null);
@@ -87,6 +90,17 @@ export function CrapsScreen({ seed }: { seed?: string }) {
             bookLabel="Rules and payouts"
           />
           <PhaseStepper current={PHASE_INDEX[state.phase]} steps={PHASE_STEPS} />
+          <TestingBanner
+            game="craps"
+            tested={tested}
+            detail={(draft) =>
+              `${describePlan(draft.plan)
+                .map((row) => `${row.when}: ${row.text}`)
+                .join(
+                  " · ",
+                )}. Bet the plan by hand; the coach still prices every bet by its house edge.`
+            }
+          />
 
           <View style={styles.rail}>
             <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>

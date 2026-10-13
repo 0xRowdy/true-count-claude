@@ -175,6 +175,8 @@ export type TableAction =
   | { type: "undo" }
   | { type: "clear" }
   | { type: "rebet"; coach: CoachLevel }
+  /** "Test in trainer": a strategy's wheel and layout, placed like a rebet (coach included). */
+  | { type: "layout"; wheel: WheelChoice; bets: readonly Bet[]; coach: CoachLevel }
   | { type: "spin" }
   | { type: "reveal" }
   | { type: "payout" }
@@ -254,6 +256,14 @@ export function tableReducer(state: TableState, action: TableAction): TableState
         };
       }
       return out;
+    }
+    case "layout": {
+      if (state.phase !== "bet") return state;
+      const onWheel = tableReducer(state, { type: "wheel", wheel: action.wheel });
+      return tableReducer(
+        { ...onWheel, lastBets: action.bets },
+        { type: "rebet", coach: action.coach },
+      );
     }
     case "spin":
       return spin(state);
@@ -718,4 +728,10 @@ export function stackLabel(amount: number): string {
   if (amount >= 1000 && amount % 1000 === 0) return `${amount / 1000}K`;
   if (amount >= 1000) return `${Math.round(amount / 100) / 10}K`;
   return String(amount);
+}
+
+/** The table wheel a strategy's rules describe. */
+export function wheelOf(rules: RouletteRules): WheelChoice {
+  if (rules.wheel === "american") return "american";
+  return rules.laPartage ? "french" : "european";
 }

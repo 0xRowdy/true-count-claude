@@ -60,6 +60,7 @@ import { colors, display, radius, ui } from "@/ui/ds/tokens";
 import { ACTION_NAME } from "@/ui/explanation/explanationFormat";
 import { useProfile } from "@/ui/profile/profileStore";
 import { useConfiguredRules } from "@/ui/rules/rulesStore";
+import { TestingBanner, useTestedStrategy } from "@/ui/strategies/TestingBanner";
 import { type PlaySession, usePlaySession } from "@/ui/session/usePlaySession";
 import {
   type CoachedDecision,
@@ -86,6 +87,7 @@ import {
 } from "./Felt";
 import { felt } from "./feltTokens";
 import { useTableFeedback } from "./feedback";
+import { type DraftAdvice, draftAdvice } from "./draftCoach";
 import { type TableDecision, gradeTableInsurance, gradeTablePlay } from "./tableExplanation";
 import { type SheetTab, TableSheet } from "./TableSheet";
 import {
@@ -179,6 +181,11 @@ export function PlayTable() {
   const [focus, setFocus] = useState<number | undefined>(undefined);
   const [explanationOpen, setExplanationOpen] = useState(true);
   const [visibility, setVisibility] = useState<CountVisibility>("shown");
+  // "Test in trainer" (`?strategy=<id>`): the draft under test, and what the coach last said
+  // about it. Grading and the Session log stay against the engine (see draftCoach.ts).
+  const tested = useTestedStrategy("blackjack");
+  const testedDraft = tested.status === "ready" ? tested.draft : null;
+  const [draftNote, setDraftNote] = useState<DraftAdvice | null>(null);
 
   const round = table.round;
   const phase: TablePhase = tablePhase(round, collected);
@@ -231,6 +238,7 @@ export function PlayTable() {
   const startDeal = (bet: number) => {
     feedback.play("deal");
     setDecisions([]);
+    setDraftNote(null);
     setCaught(null);
     setHintOpen(false);
     setCollected(false);
@@ -255,7 +263,13 @@ export function PlayTable() {
   const onAction = (action: Action) => {
     // Graded against the table as it stands *before* the action — the hand on the felt.
     const result = gradeTablePlay(table, action, Date.now());
-    if (result && shouldCatch(coach, result)) {
+    const advice =
+      testedDraft && result?.kind === "decision"
+        ? draftAdvice(testedDraft, result.explanation, action, result.correctAction)
+        : null;
+    setDraftNote(advice);
+    // The draft's own move is what is being tested: the coach explains it rather than stopping it.
+    if (result && shouldCatch(coach, result) && advice?.kind !== "follows") {
       setCaught({ kind: "play", action, result });
       setHintOpen(false);
       return;
@@ -466,6 +480,11 @@ export function PlayTable() {
           onBook={() => openSheet(decisions.length > 0 ? "why" : "table")}
         />
         <PhaseStepper current={PHASE_INDEX[phase]} />
+        <TestingBanner
+          game="blackjack"
+          tested={tested}
+          detail="The coach checks your plays against this chart and shows what each departure from the table's play costs."
+        />
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
@@ -518,6 +537,17 @@ export function PlayTable() {
             </>
           ) : null}
 
+          {draftNote && (phase === "deal" || phase === "result") ? (
+            <View style={styles.coachLayer}>
+              <CoachNote
+                variant="hint"
+                kind={draftNote.eyebrow}
+                title={draftNote.title}
+                body={draftNote.body}
+                width="100%"
+              />
+            </View>
+          ) : null}
           {phase === "deal" && round ? (
             <View style={styles.dealArea}>
               <Notices

@@ -1,21 +1,29 @@
+import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import { colors, radius, ui } from "./tokens";
 import { Info, X } from "./icons";
 
 /**
- * An in-place notice for an action this build cannot perform (sign-in, purchases). It says so
- * plainly instead of opening a form that goes nowhere. Announced politely, dismissible.
+ * An in-place notice: an action this build cannot perform (sign-in, purchases), said plainly
+ * instead of opening a form that goes nowhere, or context such as the strategy under test.
+ * Announced politely, dismissible.
  */
 export function Notice({
   title,
   body,
   onClose,
+  closeLabel = "Dismiss",
   style,
+  children,
 }: {
   title: string;
   body?: string;
   onClose?: () => void;
+  /** The close button's accessible name. */
+  closeLabel?: string;
   style?: StyleProp<ViewStyle>;
+  /** Extra content under the body (a link, an action). */
+  children?: ReactNode;
 }) {
   return (
     <View role="status" aria-live="polite" accessibilityLabel={title} style={[styles.box, style]}>
@@ -27,11 +35,12 @@ export function Notice({
             {body}
           </Text>
         ) : null}
+        {children}
       </View>
       {onClose ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Dismiss"
+          accessibilityLabel={closeLabel}
           onPress={onClose}
           hitSlop={12}
           style={styles.close}

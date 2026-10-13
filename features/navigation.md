@@ -17,3 +17,23 @@ does not exist compiles fine and ships as a 404. Two checks stop that:
 
 `no-hydration-errors` uses the same sitemap discovery (`scripts/routes.mjs`), so new screens
 are covered by both without editing a list.
+
+# Strategy hand-off ("Test in trainer")
+
+Flow: `.agents/skills/verify-true-count/flows/strategy-handoff.mjs`. Units:
+`src/ui/strategies/testedStrategy.test.ts`, `src/ui/table/draftCoach.test.ts`,
+`src/ui/games/roulette/rouletteTable.test.ts` ("lays a strategy's wheel and bets").
+
+The builders' "Test in trainer" opens the game's table with `?strategy=<id>`. The table finds the
+strategy (the player's drafts on this device, the design's example draft, or a library strategy)
+after mount and shows a dismissible **"Testing: <name>"** banner with a link back to the builder.
+
+- **Blackjack (`/play`)** coaches against the draft's chart. A play that follows the draft but
+  not the table's chart is not stopped as a mistake: a coach note labelled "Your strategy · <name>"
+  shows the draft's own coach note for that cell and what the play gives up in EV on this shoe.
+  Leaving the draft for the table's play gets the same note the other way round. Grading and the
+  Session log stay against the engine, so the log never calls a losing chart cell right.
+- **Roulette** offers "Place its bets": the strategy's wheel and layout go on the felt like a
+  rebet, and the coach still prices each bet.
+- **Craps** lists the plan in the banner for reference; bets are made by hand.
+- An id this device does not have says so, with a link to the strategy library.

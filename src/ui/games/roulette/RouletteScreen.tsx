@@ -33,6 +33,7 @@ import {
   type ChipValue,
 } from "@/ui/ds";
 import { useProfile } from "@/ui/profile/profileStore";
+import { TestingBanner, useTestedStrategy } from "@/ui/strategies/TestingBanner";
 import {
   endProgressSession,
   makeSessionId,
@@ -55,6 +56,7 @@ import {
   gradeBets,
   initialTable,
   lastPockets,
+  wheelOf,
   needsReset,
   netLabel,
   payoutRows,
@@ -78,6 +80,8 @@ export function RouletteScreen({ seed }: { seed?: string }) {
   const { profile } = useProfile();
   const progress = useProgressView(false);
   const rules = rulesOf(state);
+  // "Test in trainer" (`?strategy=<id>`): the banner can lay the strategy's bets on the felt.
+  const tested = useTestedStrategy("roulette");
 
   // Seed after mount (hydration): `?seed=` for deterministic e2e, otherwise random.
   useEffect(() => {
@@ -171,6 +175,21 @@ export function RouletteScreen({ seed }: { seed?: string }) {
           bookLabel="Rules and payouts"
         />
         <PhaseStepper current={phaseIndex(state.phase)} steps={ROULETTE_PHASES} />
+        <TestingBanner
+          game="roulette"
+          tested={tested}
+          detail="Place its bets to play its layout; the coach still prices every bet by its house edge."
+          action={{
+            label: "Place its bets",
+            onPress: (draft) =>
+              dispatch({
+                type: "layout",
+                wheel: wheelOf(draft.layout.rules),
+                bets: draft.layout.bets,
+                coach: profile.coach,
+              }),
+          }}
+        />
 
         <View style={styles.history} accessibilityLabel="Last spins" role="list">
           <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
