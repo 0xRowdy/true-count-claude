@@ -12,6 +12,7 @@ A proof that only drives one convenient entry point is incomplete when the map l
 | [Progress & Mastery](progress.md)                    | `/progress`             | `flows/progress.mjs`                                | scripted, PASS |
 | [Play](play.md) (Tableside blackjack table, coach)   | `/play`                 | `flows/play-round.mjs`, `flows/blackjack-coach.mjs` | scripted, PASS |
 | [Live tables](live-tables.md)                        | `/live`, `/live/craps`  | `flows/live-craps.mjs`                              | scripted, PASS |
+| [Baccarat table](game-baccarat.md)                   | `/games/baccarat`       | `flows/game-baccarat.mjs`                           | scripted, PASS |
 | [Video poker](game-video-poker.md)                   | `/games/video-poker`    | `flows/game-video-poker.mjs`                        | scripted, PASS |
 | [Drills (Trainer): hub + all four drills](drills.md) | `/drills`, `/drills/*`  | `flows/drills.mjs`                                  | scripted, PASS |
 | [True Count drill](true-count-drill.md)              | `/drills/true-count`    | `flows/true-count-drill.mjs`                        | scripted, PASS |

@@ -20,6 +20,7 @@ const ROUTES = [
   "/lobby",
   "/progress",
   "/progress?demo=1",
+  "/games/baccarat",
   "/strategies",
   "/strategies/blackjack",
   "/strategies/craps",
