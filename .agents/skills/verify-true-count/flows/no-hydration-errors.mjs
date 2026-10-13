@@ -3,6 +3,8 @@
 // Minified production React logs mismatches as error #418 (text), #423/#425 or "Hydration failed".
 const ROUTES = [
   "/",
+  "/onboarding",
+  "/pricing",
   "/play",
   "/drills",
   "/drills/true-count",
@@ -10,6 +12,11 @@ const ROUTES = [
   "/shoe-integrity",
   "/session",
   "/design-system",
+  "/live",
+  "/live/craps",
+  "/lobby",
+  "/progress",
+  "/progress?demo=1",
 ];
 const HYDRATION = /Minified React error #(418|423|425)|hydrat/i;
 

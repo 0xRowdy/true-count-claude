@@ -109,6 +109,11 @@ export default async ({ page, url, shot, log, check }) => {
     );
     const takeBack = visible(page.getByRole("button", { name: /^Take it back & / }));
     check(await takeBack.isVisible(), "a take-back is offered");
+    const [a, b] = [await takeBack.boundingBox(), await keep.boundingBox()];
+    check(
+      a && b && Math.abs(a.y + a.height / 2 - (b.y + b.height / 2)) < 4,
+      "at 390 wide the note's two choices sit on one row",
+    );
     const replacement = (await takeBack.innerText()).replace("Take it back & ", "").trim();
     await shot("mistake-caught");
 

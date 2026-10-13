@@ -104,7 +104,9 @@ function NoteButton({ action, solid = false }: { action: CoachAction; solid?: bo
         pressed && { opacity: 0.85 },
       ]}
     >
-      <Text style={[ui(14, 600), { color: solid ? colors.paper : colors.ink }]}>
+      <Text
+        style={[ui(14, 600, { textAlign: "center" }), { color: solid ? colors.paper : colors.ink }]}
+      >
         {action.label}
       </Text>
     </Pressable>
@@ -125,9 +127,13 @@ const styles = StyleSheet.create({
   },
   header: { flexDirection: "row", alignItems: "center", gap: 10 },
   who: { flex: 1 },
-  actions: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  // One row, as in N6Lcl: a long label ("Take it back & surrender") wraps inside its button
+  // rather than pushing the other button onto a second row.
+  actions: { flexDirection: "row", gap: 8 },
   button: {
-    height: 40,
+    minHeight: 40,
+    flexShrink: 1,
+    paddingVertical: 6,
     paddingHorizontal: 14,
     borderRadius: radius.md,
     alignItems: "center",

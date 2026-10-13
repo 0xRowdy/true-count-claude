@@ -11,7 +11,7 @@ import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import type { Card } from "@/engine/cards";
 import { CardBack, Chip, PlayingCard, type CardSize, type LucideIcon } from "@/ui/ds";
 import { formatMoney, type ChipValue } from "@/ui/ds/format";
-import { colors, display, ui } from "@/ui/ds/tokens";
+import { colors, display, surfaces, ui } from "@/ui/ds/tokens";
 import { felt } from "./feltTokens";
 import type { TotalTone } from "./tableView";
 
@@ -167,7 +167,8 @@ export function HandBox({
       accessibilityLabel={label}
       style={[
         styles.handBox,
-        cards.length === 0 && styles.handEmpty,
+        // The outline marks where cards will go; once they are down the frames draw none.
+        cards.length === 0 && !holeCard && styles.handEmpty,
         active && styles.handActive,
         dim && styles.dim,
       ]}
@@ -340,13 +341,13 @@ const styles = StyleSheet.create({
     height: 82,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: felt.outline,
+    borderColor: surfaces.transparent,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 6,
   },
-  handEmpty: { paddingHorizontal: 0 },
+  handEmpty: { paddingHorizontal: 0, borderColor: felt.outline },
   handActive: { borderColor: colors.primary, borderWidth: 1.5 },
   dim: { opacity: 0.55 },
   pill: {
