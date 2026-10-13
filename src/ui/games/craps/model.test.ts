@@ -3,10 +3,12 @@ import { betsOf, dice, isLineBet, onTable } from "@/games/craps";
 import {
   type GameState,
   type Spot,
+  breakageCheck,
   canRebet,
   clearWindow,
   coachHint,
   editBet,
+  fixAmount,
   historyLabels,
   initialGame,
   lineChips,
@@ -77,9 +79,16 @@ describe("betting", () => {
     let s = withSeed(initialGame(), 1);
     s = bet(s, { kind: "come" }, 10);
     expect(s.error).toMatch(/Come bets are made once a point is on/);
-    s = bet(s, PASS, 5);
-    expect(s.error).toBe("Pass line needs at least $10.");
     expect(s.table.bets).toHaveLength(0);
+  });
+
+  it("starts a new line or place bet at the table minimum", () => {
+    let s = bet(withSeed(initialGame(), 1), PASS, 5);
+    expect(lineChips(s.table, "pass").flat).toBe(10);
+    expect(s.notice).toBe("Pass line starts at the $10 table minimum.");
+    s = bet(s, PASS, 5);
+    expect(lineChips(s.table, "pass").flat).toBe(15);
+    expect(s.notice).toBeNull();
   });
 
   it("never bets more than the practice chips left", () => {
@@ -144,10 +153,23 @@ describe("the coach", () => {
     expect(effects.decisions).toContainEqual({ category: "place", correct: false, coached: true });
   });
 
-  it("flags a place bet whose payout breaks", () => {
-    const s = bet(designTable("mistakes"), { kind: "place", number: 6 }, 10, "mistakes");
-    expect(s.note?.title).toBe("Place 6 for $10 pays only $11.");
-    expect(s.note?.body).toMatch(/steps of \$6/);
+  it("catches a place bet whose payout breaks before the roll, and fixes it", () => {
+    let s = bet(designTable("mistakes"), { kind: "place", number: 6 }, 10, "mistakes");
+    expect(s.note).toBeNull(); // chips may still be going down
+    const caught = breakageCheck(s, "mistakes", 1000)!;
+    expect(caught.note).toMatchObject({
+      variant: "mistake",
+      title: "Place 6 for $10 pays only $11.",
+      primary: "fixAmount",
+      secondary: "rollAnyway",
+      fixTo: 12,
+    });
+    expect(caught.note?.body).toMatch(/steps of \$6.*Make it \$12\?$/);
+    expect(breakageCheck(caught, "mistakes", 1000)).toBeNull(); // asked once
+    expect(breakageCheck(s, "asked", 1000)).toBeNull();
+    s = fixAmount(caught, { kind: "place", number: 6 }, 12);
+    const { effects } = roll(s, 2, 3, "mistakes");
+    expect(effects.decisions).toContainEqual({ category: "place", correct: true, coached: true });
   });
 
   it("stays quiet at coach level 'asked' but still grades the decision", () => {

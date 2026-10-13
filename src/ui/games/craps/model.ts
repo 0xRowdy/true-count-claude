@@ -192,7 +192,14 @@ export function removeFromSpot(table: CrapsTable, spot: Spot, amount: number): A
 
 export type CoachLevel = "asked" | "mistakes" | "every";
 export type NoteVariant = "hint" | "mistake" | "good";
-export type NoteAction = "takeBack" | "keep" | "gotIt" | "oddsHelp" | "maxOdds";
+export type NoteAction =
+  | "takeBack"
+  | "keep"
+  | "gotIt"
+  | "oddsHelp"
+  | "maxOdds"
+  | "fixAmount"
+  | "rollAnyway";
 
 export interface Note {
   readonly variant: NoteVariant;
@@ -204,6 +211,8 @@ export interface Note {
   readonly secondary?: NoteAction;
   /** For a take-back: the spot the caught bet is on. */
   readonly spot?: Spot;
+  /** For "fixAmount": the exact-paying amount to set. */
+  readonly fixTo?: number;
 }
 
 export const NOTE_ACTION_LABEL: Record<NoteAction, string> = {
@@ -212,6 +221,8 @@ export const NOTE_ACTION_LABEL: Record<NoteAction, string> = {
   gotIt: "Got it",
   oddsHelp: "How odds work",
   maxOdds: "Take max odds",
+  fixAmount: "Fix the amount",
+  rollAnyway: "Roll anyway",
 };
 
 interface Grade {
@@ -238,7 +249,11 @@ export function alternativeFor(table: CrapsTable, spot: Spot, amount: number): s
 }
 
 /** Grades the bet now on `spot` by its house edge (and whether its payout breaks). */
-export function gradeSpot(table: CrapsTable, spot: Spot): Grade | null {
+/**
+ * Grades the bet on `spot`. While chips are still going down (`final` false) only the edge
+ * counts: a place 8 built up chip by chip passes through amounts that break its payout.
+ */
+export function gradeSpot(table: CrapsTable, spot: Spot, final = true): Grade | null {
   const bet = betAt(table, spot);
   if (!bet) return null;
   const rules = table.rules;
@@ -246,8 +261,22 @@ export function gradeSpot(table: CrapsTable, spot: Spot): Grade | null {
   const review = reviewBet(spec, rules);
   const category = categoryOf(spot);
   const name = spotName(spot);
-  const broken = breaks(spot, bet.amount);
+  const broken = final && breaks(spot, bet.amount);
   const mistake = review.verdict === "costly" || broken;
+  if (!final && !mistake && review.verdict === "fair" && spot.kind === "place") {
+    // The breakage message is for the final amount; mid-build, grade the edge alone.
+    return {
+      category,
+      mistake,
+      note: {
+        variant: "hint",
+        kind: `Tip · ${CATEGORY_TAG[category]}`,
+        title: `${name} has a ${formatEdge(review.edge)} house edge.`,
+        body: explainBet(spec.kind, rules, "number" in spot ? spot.number : undefined),
+        primary: "gotIt",
+      },
+    };
+  }
   if (mistake) {
     const center = isCenterSpot(spot);
     const [first, ...rest] = review.message.split(/(?<=\.) /);
@@ -326,6 +355,8 @@ interface Pending {
   /** The coach stepped in on it. */
   readonly coached: boolean;
   readonly takenBack: boolean;
+  /** The pre-roll breakage check has already caught it. */
+  readonly warned?: boolean;
 }
 
 /** What a rebet puts back: chips on a spot (odds, on a line with the point on). */
@@ -358,6 +389,8 @@ export interface GameState {
   readonly last: LastRoll | null;
   readonly note: Note | null;
   readonly error: string | null;
+  /** A neutral note about the last action ("Pass line starts at the $10 table minimum."). */
+  readonly notice: string | null;
 }
 
 export function initialGame(rules: CrapsRules = DOWNTOWN_RULES): GameState {
@@ -373,6 +406,7 @@ export function initialGame(rules: CrapsRules = DOWNTOWN_RULES): GameState {
     last: null,
     note: null,
     error: null,
+    notice: null,
   };
 }
 
@@ -386,13 +420,26 @@ export function openBetting(state: GameState): GameState {
 }
 
 function changed(state: GameState, table: CrapsTable): GameState {
-  return { ...state, table, undo: [...state.undo, state.table], error: null };
+  return { ...state, table, undo: [...state.undo, state.table], error: null, notice: null };
 }
 
 /**
  * Bets `amount` on a spot. `available` is the practice chips not already on the layout.
  * Grades the bet and, per the coach level, shows a note (a caught mistake can be taken back).
  */
+/**
+ * The table minimum a new bet on this spot must start at (0 when the spot already holds your
+ * bet, or takes any amount). A $5 chip on an empty pass line at a $10 table bets the $10.
+ */
+export function startingMinimum(table: CrapsTable, spot: Spot): number {
+  const minimumKinds = ["pass", "dontPass", "come", "dontCome", "place"];
+  if (!minimumKinds.includes(spot.kind)) return 0;
+  const existing = betAt(table, spot);
+  if (existing) return 0;
+  // With the point on, a chip on your own line goes to odds (handled by the engine).
+  return table.rules.minBet;
+}
+
 export function placeChip(
   state: GameState,
   spot: Spot,
@@ -401,7 +448,9 @@ export function placeChip(
   coach: CoachLevel,
 ): GameState {
   const s = openBetting(state);
-  if (amount > available) {
+  const minimum = startingMinimum(s.table, spot);
+  const stake = Math.max(amount, minimum);
+  if (stake > available) {
     return {
       ...s,
       error:
@@ -410,9 +459,13 @@ export function placeChip(
           : `You have ${formatDollars(available)} in practice chips left.`,
     };
   }
-  const result = addToSpot(s.table, spot, amount);
+  const result = addToSpot(s.table, spot, stake);
   if (!result.ok) return { ...s, error: result.reason };
-  const next = changed(s, result.table);
+  const bumped =
+    stake > amount
+      ? `${spotName(spot)} starts at the ${formatDollars(minimum)} table minimum.`
+      : null;
+  const next = { ...changed(s, result.table), notice: bumped };
   if (result.odds && result.bet) {
     const key = `odds-${result.bet.id}`;
     return {
@@ -424,7 +477,7 @@ export function placeChip(
       note: coach === "every" ? oddsNote(result.table, result.bet) : next.note,
     };
   }
-  const grade = gradeSpot(result.table, spot);
+  const grade = gradeSpot(result.table, spot, false);
   if (!grade) return next;
   const key = spotKey(spot);
   const caught = grade.mistake && coach !== "asked";
@@ -445,6 +498,50 @@ export function placeChip(
 }
 
 /** Takes `amount` off a spot (long-press). */
+/**
+ * Before the dice go out: a place bet whose payout breaks is caught (coach "mistakes" or
+ * "every") with an offer to fix the amount. Returns null when there is nothing to catch.
+ */
+export function breakageCheck(
+  state: GameState,
+  coach: CoachLevel,
+  available: number,
+): GameState | null {
+  if (coach === "asked") return null;
+  for (const [key, entry] of Object.entries(state.pending)) {
+    if (!entry.spot || entry.spot.kind !== "place" || entry.takenBack || entry.warned) continue;
+    const bet = betAt(state.table, entry.spot);
+    if (!bet || !breaks(entry.spot, bet.amount)) continue;
+    const step = exactStep("place", entry.spot.number);
+    const up = Math.ceil(bet.amount / step) * step;
+    const fixTo =
+      up - bet.amount <= available ? up : Math.max(step, Math.floor(bet.amount / step) * step);
+    const grade = gradeSpot(state.table, entry.spot);
+    if (!grade) continue;
+    return {
+      ...state,
+      pending: { ...state.pending, [key]: { ...entry, coached: true, warned: true } },
+      note: {
+        ...grade.note,
+        body: `${grade.note.body.replace(/ Take it back before the roll\?$/, "")} Make it ${formatDollars(fixTo)}?`,
+        primary: "fixAmount",
+        secondary: "rollAnyway",
+        fixTo,
+      },
+    };
+  }
+  return null;
+}
+
+/** "Fix the amount": sets the caught place bet to its exact-paying amount. */
+export function fixAmount(state: GameState, spot: Spot, amount: number): GameState {
+  const bet = betAt(state.table, spot);
+  if (!bet) return { ...state, note: null };
+  const result = setAmount(state.table, bet.id, amount);
+  if (!result.ok) return { ...state, note: null, error: result.reason };
+  return { ...changed(state, result.table), note: null };
+}
+
 export function removeChip(state: GameState, spot: Spot, amount: number): GameState {
   const s = openBetting(state);
   const result = removeFromSpot(s.table, spot, amount);
@@ -480,13 +577,28 @@ export function takeBack(state: GameState, spot: Spot): GameState {
 export function undo(state: GameState): GameState {
   const prev = state.undo[state.undo.length - 1];
   if (!prev) return state;
-  return { ...state, table: prev, undo: state.undo.slice(0, -1), error: null, note: null };
+  return {
+    ...state,
+    table: prev,
+    undo: state.undo.slice(0, -1),
+    error: null,
+    notice: null,
+    note: null,
+  };
 }
 
 /** Clears every chip put down in this window (standing bets stay up). */
 export function clearWindow(state: GameState): GameState {
   if (state.undo.length === 0) return state;
-  return { ...state, table: state.windowStart, undo: [], pending: {}, error: null, note: null };
+  return {
+    ...state,
+    table: state.windowStart,
+    undo: [],
+    pending: {},
+    error: null,
+    notice: null,
+    note: null,
+  };
 }
 
 export function canRebet(state: GameState): boolean {
@@ -647,6 +759,7 @@ export function throwDice(
       last: { before, outcome, mine, net, inAction },
       note,
       error: null,
+      notice: null,
     },
     effects: { decisions, hand: inAction ? net : null },
   };
@@ -716,9 +829,14 @@ export function coachHint(state: GameState): Note {
 // ---------------------------------------------------------------------------------------------
 // What the screen draws
 
-/** The table the felt shows: the pre-roll layout while the dice tumble. */
+/**
+ * The layout the felt shows: the bets as they stood when the dice went out, through the Roll
+ * and Result phases (the win tags sit on them), then the settled layout for the Payout.
+ */
 export function shownTable(state: GameState): CrapsTable {
-  return state.phase === "roll" && state.last ? state.last.before : state.table;
+  return (state.phase === "roll" || state.phase === "result") && state.last
+    ? state.last.before
+    : state.table;
 }
 
 /**
@@ -754,7 +872,8 @@ export function rollCallFor(state: GameState): Call {
 
 /** The ROLLS strip, most recent first. */
 export function historyLabels(state: GameState, limit = 6): RollLabel[] {
-  return rollHistoryLabels(shownTable(state).history, limit);
+  const t = state.phase === "roll" && state.last ? state.last.before : state.table;
+  return rollHistoryLabels(t.history, limit);
 }
 
 export interface WinTag {
