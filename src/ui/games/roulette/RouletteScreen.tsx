@@ -36,7 +36,7 @@ import {
   makeSessionId,
   recordDecision,
   recordHand,
-  resetPracticeBankroll,
+  resetBankroll,
   startProgressSession,
   useProgressView,
 } from "@/ui/progress/progressStore";
@@ -287,7 +287,7 @@ function BetControls({ state, dispatch }: { state: TableState; dispatch: Dispatc
             label={`Reset to ${formatDollars(PRACTICE_BANKROLL_START)}`}
             size="sm"
             onPress={() => {
-              resetPracticeBankroll("roulette");
+              resetBankroll("roulette");
               dispatch({ type: "resetBankroll", bankroll: PRACTICE_BANKROLL_START });
             }}
           />
