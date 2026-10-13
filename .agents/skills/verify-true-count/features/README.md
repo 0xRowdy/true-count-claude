@@ -5,6 +5,9 @@ A proof that only drives one convenient entry point is incomplete when the map l
 
 | Feature                                           | Route                | Flow                         | Status              |
 | ------------------------------------------------- | -------------------- | ---------------------------- | ------------------- |
+| [Landing page](landing.md)                        | `/`                  | `flows/landing.mjs`          | scripted, PASS      |
+| [Onboarding](onboarding.md)                       | `/onboarding`        | `flows/onboarding.mjs`       | scripted, PASS      |
+| [Pricing](pricing.md)                             | `/pricing`           | `flows/pricing.mjs`          | scripted, PASS      |
 | [Play](play.md)                                   | `/play`              | `flows/play-round.mjs`       | scripted, PASS      |
 | [True Count drill](true-count-drill.md)           | `/drills/true-count` | `flows/true-count-drill.mjs` | scripted, PASS      |
 | [Design system](design-system.md)                 | `/design-system`     | `flows/design-system.mjs`    | scripted, PASS      |
@@ -13,4 +16,4 @@ A proof that only drives one convenient entry point is incomplete when the map l
 | Other drills: Basic strategy, Counting, Deviation | `/drills/*`          | —                            | not mapped yet      |
 | Session / Statistics                              | `/session`           | —                            | not mapped yet      |
 
-Cross-cutting: `flows/no-hydration-errors.mjs` loads every top-level route above (plus `/` and `/drills`) and fails on a React hydration mismatch (#32). Add a new top-level route to its `ROUTES`.
+Cross-cutting: `flows/no-hydration-errors.mjs` loads every top-level route above (plus `/drills`) and fails on a React hydration mismatch (#32). Add a new top-level route to its `ROUTES`.
