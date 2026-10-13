@@ -39,10 +39,11 @@ import type {
   HandSnapshot,
   InsuranceExplanation,
 } from "@/drills/explanation";
-import { Panel } from "@/ui/primitives";
+import { CoachNote, colors, radius, ui } from "@/ui/ds";
+import { infoInk } from "@/ui/ds/strategyColors";
 import { upcardLabel } from "@/ui/rules/chartChanges";
-import { CardRow } from "@/ui/table/CardView";
-import { colors, radius, spacing, type } from "@/ui/theme";
+import { CardFan } from "@/ui/trainer/Felt";
+import { Group, Panel, text } from "@/ui/trainer/kit";
 import { EvLadder, TONE_COLOR } from "./EvLadder";
 import { GoverningCellChart } from "./GoverningCellChart";
 import { IndexScale } from "./IndexScale";
@@ -50,6 +51,7 @@ import {
   type ExplanationVerdict,
   type IndexView,
   type VerdictView,
+  cellView,
   closeness,
   countView,
   dealerOddsView,
@@ -130,7 +132,16 @@ export function DecisionExplanationPanel({
         <Text style={styles.handTitle}>{handTitle(explanation)}</Text>
       )}
 
-      {verdict ? <VerdictBox view={decisionVerdict(explanation, verdict)} /> : null}
+      {verdict ? (
+        <VerdictBox view={decisionVerdict(explanation, verdict)} />
+      ) : (
+        <CoachNote
+          variant="hint"
+          title={handTitle(explanation)}
+          body={cellView(explanation).sentence}
+          width="100%"
+        />
+      )}
 
       <Section title="Every legal action" subtitle="Expected result per bet, for this exact shoe">
         {rows.length > 0 ? (
@@ -251,14 +262,14 @@ function DensityBar({ density, breakEven }: { density: number; breakEven: number
         <View
           style={[
             styles.densityFill,
-            { width: at(density), backgroundColor: over ? colors.accent : colors.textMuted },
+            { width: at(density), backgroundColor: over ? colors.correct : colors.mutedForeground },
           ]}
         />
         <View style={[styles.breakEvenTick, { left: at(breakEven) }]} />
       </View>
       <View style={styles.densityLabels}>
         <Text style={styles.tickText}>0%</Text>
-        <Text style={[styles.tickText, { color: colors.warning }]}>break-even 1 in 3</Text>
+        <Text style={[styles.tickText, { color: colors.primary }]}>break-even 1 in 3</Text>
         <Text style={styles.tickText}>50%</Text>
       </View>
     </View>
@@ -289,25 +300,33 @@ function HandHeader({
       <View style={styles.hands}>
         <View style={styles.seat}>
           <Text style={styles.seatLabel}>You</Text>
-          <CardRow cards={hand.playerCards} size="sm" />
+          <CardFan cards={hand.playerCards} size="sm" />
         </View>
         <Text style={styles.versus}>vs</Text>
         <View style={styles.seat}>
           <Text style={styles.seatLabel}>Dealer</Text>
-          <CardRow cards={[upcard]} size="sm" />
+          <CardFan cards={[upcard]} size="sm" />
         </View>
       </View>
     </View>
   );
 }
 
+/**
+ * The verdict as the dealer's coach note (the design's Coach Note, p3Ojh3): a good call in
+ * green, a mistake in orange, with what it cost and what it was graded against.
+ */
 function VerdictBox({ view }: { view: VerdictView }) {
-  const accent = TONE_COLOR[view.tone];
+  const body = [view.detail, view.standard].filter((line): line is string => !!line).join(" ");
   return (
-    <View accessibilityRole="summary" style={[styles.verdict, { borderLeftColor: accent }]}>
-      <Text style={[styles.verdictHeadline, { color: accent }]}>{view.headline}</Text>
-      {view.detail ? <Text style={styles.body}>{view.detail}</Text> : null}
-      <Text style={styles.note}>{view.standard}</Text>
+    <View accessibilityRole="summary">
+      <CoachNote
+        variant={view.correct ? "good" : "mistake"}
+        kind={view.correct ? "Good call" : "Here is the miss"}
+        title={view.headline}
+        body={body}
+        width="100%"
+      />
     </View>
   );
 }
@@ -322,15 +341,9 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle} accessibilityRole="header">
-          {title}
-        </Text>
-        {subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}
-      </View>
+    <Group title={title} {...(subtitle ? { subtitle } : {})}>
       {children}
-    </View>
+    </Group>
   );
 }
 
@@ -395,78 +408,63 @@ function toneOf(tier: ReturnType<typeof evRows>[number]["tier"]) {
   return tier === "near-tie" || tier === "close" ? "warn" : "info";
 }
 
+const NUM = { fontVariant: ["tabular-nums" as const] };
+
 const styles = StyleSheet.create({
-  handHeader: { gap: spacing.xs },
+  handHeader: { gap: 8 },
   handTitleRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "baseline",
     justifyContent: "space-between",
-    gap: spacing.sm,
+    gap: 8,
   },
-  handTitle: { ...type.body, fontWeight: "700", color: colors.text },
-  hands: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-end", gap: spacing.sm },
-  seat: { gap: 2, flexShrink: 1 },
-  seatLabel: { ...type.caption, fontSize: 11, color: colors.textMuted },
-  versus: { ...type.caption, color: colors.textMuted, paddingBottom: spacing.md },
-  verdict: {
-    gap: spacing.xs,
-    padding: spacing.sm,
-    borderRadius: radius.sm,
-    borderLeftWidth: 4,
-    backgroundColor: colors.surfaceRaised,
+  handTitle: { ...ui(16, 700), color: colors.foreground },
+  hands: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "flex-end",
+    gap: 12,
+    padding: 12,
+    borderRadius: radius.md,
+    backgroundColor: colors.feltDeep,
+    alignSelf: "flex-start",
   },
-  verdictHeadline: { ...type.body, fontSize: 16, fontWeight: "700" },
-  section: {
-    gap: spacing.sm,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+  seat: { gap: 4, flexShrink: 1 },
+  seatLabel: {
+    ...ui(10, 700, { letterSpacing: 1.2, textTransform: "uppercase" }),
+    color: colors.feltText,
   },
-  sectionHeader: { gap: 2 },
-  sectionTitle: {
-    ...type.caption,
-    color: colors.textMuted,
-    fontWeight: "700",
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-  },
-  sectionSubtitle: { ...type.caption, fontSize: 12, color: colors.textMuted },
-  lead: { ...type.body, fontWeight: "600" },
-  body: { ...type.body, color: colors.text },
-  strong: { fontWeight: "700" },
-  mono: { ...type.mono },
-  muted: { color: colors.textMuted },
-  note: { ...type.caption, color: colors.textMuted, lineHeight: 18 },
-  refusal: {
-    ...type.caption,
-    color: colors.info,
-    lineHeight: 18,
-  },
-  countBlock: { gap: 2 },
-  indexBlock: { gap: spacing.xs },
-  bullets: { gap: spacing.xs },
-  bullet: { flexDirection: "row", gap: spacing.sm },
-  bulletMark: { ...type.body, color: colors.textMuted },
+  versus: { ...ui(13, 600), color: colors.feltText, paddingBottom: 22 },
+  lead: text.lead,
+  body: text.body,
+  strong: text.strong,
+  mono: { ...NUM, fontFamily: ui(15, 600).fontFamily },
+  muted: text.muted,
+  note: text.note,
+  refusal: { ...ui(13, 400, { lineHeight: 19 }), color: infoInk },
+  countBlock: { gap: 4 },
+  indexBlock: { gap: 8 },
+  bullets: { gap: 6 },
+  bullet: { flexDirection: "row", gap: 8 },
+  bulletMark: { ...ui(15), color: colors.primary },
   bulletText: { flex: 1 },
   densityWrap: { gap: 4 },
   densityTrack: {
     height: 12,
     borderRadius: 6,
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: colors.muted,
     overflow: "visible",
   },
-  densityFill: { height: 10, borderRadius: 5 },
+  densityFill: { height: 12, borderRadius: 6 },
   breakEvenTick: {
     position: "absolute",
     top: -4,
     bottom: -4,
     width: 2,
     marginLeft: -1,
-    backgroundColor: colors.warning,
+    backgroundColor: colors.primary,
   },
   densityLabels: { flexDirection: "row", justifyContent: "space-between" },
-  tickText: { ...type.mono, fontSize: 10, color: colors.textMuted },
+  tickText: { ...ui(11, 500), ...NUM, color: colors.mutedForeground },
 });

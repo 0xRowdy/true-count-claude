@@ -10,14 +10,15 @@
  */
 
 import { StyleSheet, Text, View } from "react-native";
-import { colors, radius, spacing, type } from "@/ui/theme";
+import { colors, radius, ui } from "@/ui/ds";
+import { infoInk } from "@/ui/ds/strategyColors";
 import { type EvRowView, ROW_TIER_LABEL, TIER_TONE, type TierTone } from "./explanationFormat";
 
 export const TONE_COLOR: Readonly<Record<TierTone, string>> = {
-  good: colors.accent,
-  info: colors.info,
-  warn: colors.warning,
-  bad: colors.danger,
+  good: colors.correct,
+  info: infoInk,
+  warn: colors.primary,
+  bad: colors.mistake,
 };
 
 export function EvLadder({ rows }: { rows: readonly EvRowView[] }) {
@@ -48,7 +49,7 @@ function EvRow({ row }: { row: EvRowView }) {
     >
       <View style={styles.topLine}>
         <View style={styles.name}>
-          <Text style={[styles.label, row.best && { color: colors.accent }]}>{row.label}</Text>
+          <Text style={[styles.label, row.best && { color: colors.correct }]}>{row.label}</Text>
           {marks.map((mark) => (
             <View key={mark} style={[styles.mark, mark === "YOU" && styles.youMark]}>
               <Text style={[styles.markText, mark === "YOU" && styles.youMarkText]}>{mark}</Text>
@@ -76,51 +77,52 @@ function EvRow({ row }: { row: EvRowView }) {
   );
 }
 
+const NUM = { fontVariant: ["tabular-nums" as const] };
+
 const styles = StyleSheet.create({
-  ladder: { gap: spacing.xs },
+  ladder: { gap: 6 },
   row: {
-    gap: 4,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.sm,
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: "transparent",
   },
-  chosenRow: { borderColor: colors.border, backgroundColor: colors.surfaceRaised },
+  chosenRow: { borderColor: colors.border, backgroundColor: colors.muted },
   topLine: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: 8,
   },
   name: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.xs,
+    gap: 6,
     flexWrap: "wrap",
     flexShrink: 1,
   },
-  label: { ...type.body, color: colors.text, fontWeight: "600" },
+  label: { ...ui(15, 600), color: colors.foreground },
   mark: {
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+    backgroundColor: colors.secondary,
   },
-  markText: { ...type.mono, fontSize: 10, color: colors.textMuted, fontWeight: "700" },
-  youMark: { borderColor: colors.text },
-  youMarkText: { color: colors.text },
-  ev: { ...type.mono, ...type.body, color: colors.text },
+  markText: { ...ui(10, 700, { letterSpacing: 0.8 }), color: colors.mutedForeground },
+  youMark: { backgroundColor: colors.paper },
+  youMarkText: { color: colors.ink },
+  ev: { ...ui(15, 600), ...NUM, color: colors.foreground },
   // The track spans the full row on every row, so the same gap draws the same length on every
   // line: a label beside the track would steal a different width from each one.
-  bottomLine: { gap: 2 },
+  bottomLine: { gap: 4 },
   track: {
-    height: 8,
-    borderRadius: 4,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: colors.background,
     overflow: "hidden",
   },
-  fill: { height: 8, borderRadius: 4 },
-  gap: { ...type.mono, fontSize: 12, textAlign: "right" },
+  fill: { height: 6, borderRadius: 3 },
+  gap: { ...ui(12, 500), ...NUM, textAlign: "right" },
 });

@@ -18,8 +18,10 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { RuleSet } from "@/engine/rules";
 import { describeRules } from "@/engine/rules";
-import { Badge, Panel, StatRow, type Tone } from "@/ui/primitives";
-import { colors, radius, spacing, type } from "@/ui/theme";
+import ChevronDown from "lucide-react-native/icons/chevron-down";
+import ChevronUp from "lucide-react-native/icons/chevron-up";
+import { colors, display, radius, ui } from "@/ui/ds";
+import { Panel, StatRow, ToneBadge, text, toneColor, type Tone } from "@/ui/trainer/kit";
 import {
   EDGE_NEUTRAL_RULES,
   EDGE_PRECISION_NOTE,
@@ -70,8 +72,13 @@ export function HouseEdgePanel({
         style={({ pressed }) => [styles.disclosure, pressed && styles.pressed]}
       >
         <Text style={styles.disclosureLabel}>
-          {showWorking ? "Hide the working ▴" : "Show the working ▾"}
+          {showWorking ? "Hide the working" : "Show the working"}
         </Text>
+        {showWorking ? (
+          <ChevronUp size={16} color={colors.primary} strokeWidth={2} />
+        ) : (
+          <ChevronDown size={16} color={colors.primary} strokeWidth={2} />
+        )}
       </Pressable>
 
       {showWorking ? <Working estimate={estimate} /> : null}
@@ -88,9 +95,9 @@ function Headline({ percent, rules }: { percent: number; rules: RuleSet }) {
   return (
     <>
       <View style={styles.headline}>
-        <Text style={[styles.edge, { color: toneColor(tone) }]}>{formatEdge(percent)}</Text>
+        <Text style={[styles.edge, { color: toneColor[tone] }]}>{formatEdge(percent)}</Text>
         <View style={styles.headlineText}>
-          <Badge label={EDGE_VERDICT_LABEL[verdict]} tone={tone} />
+          <ToneBadge label={EDGE_VERDICT_LABEL[verdict]} tone={tone} />
           <Text style={styles.headlineNote}>{formatEdgePerHundred(percent)}</Text>
         </View>
       </View>
@@ -114,7 +121,7 @@ function Headline({ percent, rules }: { percent: number; rules: RuleSet }) {
 function Unpriceable({ estimate }: { estimate: HouseEdgeEstimate }) {
   return (
     <View style={styles.unpriceable}>
-      <Badge label="NO PUBLISHED FIGURE" tone="warn" />
+      <ToneBadge label="No published figure" tone="warn" />
       <Text style={styles.prose}>
         We will not show you a number we cannot source. The rest of this screen still works — the
         strategy chart below is exact for these rules.
@@ -177,14 +184,14 @@ function LedgerRow({ entry, baseline }: { entry: EdgeContribution; baseline: boo
       : `${entry.percent > 0 && !baseline ? "+" : ""}${entry.percent.toFixed(2)}`;
   const valueColor =
     entry.percent === undefined
-      ? colors.warning
+      ? colors.primary
       : baseline
-        ? colors.text
+        ? colors.foreground
         : entry.percent > 0
-          ? colors.danger
+          ? colors.mistake
           : entry.percent < 0
-            ? colors.accent
-            : colors.textMuted;
+            ? colors.correct
+            : colors.mutedForeground;
 
   return (
     <View style={styles.ledgerRow}>
@@ -197,71 +204,66 @@ function LedgerRow({ entry, baseline }: { entry: EdgeContribution; baseline: boo
   );
 }
 
-function toneColor(tone: Tone): string {
-  switch (tone) {
-    case "good":
-      return colors.accent;
-    case "bad":
-      return colors.danger;
-    case "warn":
-      return colors.warning;
-    case "info":
-      return colors.info;
-    default:
-      return colors.text;
-  }
-}
-
 /** Whole dollars — the table minimum is never a fractional amount. */
 function formatMoney(amount: number): string {
   return `$${Math.round(amount).toLocaleString("en-US")}`;
 }
 
+const NUM = { fontVariant: ["tabular-nums" as const] };
+
 const styles = StyleSheet.create({
-  tableLine: { ...type.mono, ...type.caption, color: colors.textMuted },
-  headline: { flexDirection: "row", alignItems: "center", gap: spacing.md, flexWrap: "wrap" },
-  edge: { fontSize: 44, fontWeight: "700", letterSpacing: -1.5, ...type.mono },
-  headlineText: { gap: spacing.xs, flexShrink: 1 },
-  headlineNote: { ...type.caption, color: colors.textMuted },
-  prose: { ...type.caption, color: colors.textMuted, lineHeight: 19 },
-  unpriceable: { gap: spacing.sm },
-  unsourcedReason: { ...type.caption, color: colors.warning, lineHeight: 19 },
-  disclosure: { minHeight: 44, justifyContent: "center" },
-  disclosureLabel: { ...type.caption, color: colors.info, fontWeight: "600" },
-  pressed: { opacity: 0.65 },
-  working: { gap: spacing.sm },
-  workingIntro: { ...type.caption, color: colors.textMuted, lineHeight: 19 },
+  tableLine: text.note,
+  headline: { flexDirection: "row", alignItems: "center", gap: 16, flexWrap: "wrap" },
+  edge: { ...display(56, 500), ...NUM, letterSpacing: -1 },
+  headlineText: { gap: 6, flexShrink: 1 },
+  headlineNote: text.note,
+  prose: text.note,
+  unpriceable: { gap: 10 },
+  unsourcedReason: text.warn,
+  disclosure: {
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+  },
+  disclosureLabel: { ...ui(14, 600), color: colors.primary },
+  pressed: { opacity: 0.7 },
+  working: { gap: 10 },
+  workingIntro: text.note,
   ledger: {
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.sm,
-    backgroundColor: colors.background,
-    paddingHorizontal: spacing.sm,
+    borderRadius: radius.md,
+    overflow: "hidden",
   },
   ledgerRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    gap: spacing.sm,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
   ledgerLabelColumn: { flexShrink: 1, flexGrow: 1, gap: 2 },
-  ledgerLabel: { ...type.caption, color: colors.text, lineHeight: 18 },
-  ledgerNote: { ...type.caption, color: colors.warning, fontSize: 12, lineHeight: 17 },
-  ledgerValue: { ...type.mono, ...type.caption, minWidth: 56, textAlign: "right" },
+  ledgerLabel: { ...ui(13, 400, { lineHeight: 18 }), color: colors.foreground },
+  ledgerNote: { ...ui(12, 400, { lineHeight: 17 }), color: colors.primary },
+  ledgerValue: { ...ui(13, 600), ...NUM, minWidth: 56, textAlign: "right" },
   ledgerTotal: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: spacing.sm,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    backgroundColor: colors.muted,
   },
-  totalLabel: { ...type.caption, color: colors.text, fontWeight: "700" },
-  totalValue: { ...type.mono, ...type.caption, color: colors.text, fontWeight: "700" },
-  caveat: { ...type.caption, color: colors.textMuted, fontSize: 12, lineHeight: 17 },
-  subheading: { ...type.caption, color: colors.text, fontWeight: "700", marginTop: spacing.xs },
-  neutral: { ...type.caption, color: colors.textMuted, fontSize: 12, lineHeight: 17 },
-  strong: { color: colors.text, fontWeight: "700" },
-  source: { ...type.caption, color: colors.textMuted, fontSize: 12, lineHeight: 17 },
+  totalLabel: { ...ui(13, 700), color: colors.foreground },
+  totalValue: { ...ui(14, 700), ...NUM, color: colors.foreground },
+  caveat: text.small,
+  subheading: { ...text.overline, marginTop: 6 },
+  neutral: text.small,
+  strong: text.strong,
+  source: text.small,
 });

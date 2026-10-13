@@ -15,7 +15,7 @@
 
 import { DEFAULT_RULES } from "@/engine/rules";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { RANKS } from "@/engine/cards";
 import { type CountingSystem, initialRunningCount } from "@/engine/counting";
 import {
@@ -35,16 +35,18 @@ import {
   totalCards,
 } from "@/drills/counting";
 import { getDrill } from "@/drills/types";
+import { PlayingCard, colors, surfaces, ui } from "@/ui/ds";
+import { Felt } from "@/ui/trainer/Felt";
 import {
   ActionButton,
+  Choice,
   Panel,
-  Screen,
   SecondaryButton,
-  SegmentedControl,
+  StatCards,
   StatRow,
-} from "@/ui/primitives";
-import { CardView } from "@/ui/table/CardView";
-import { colors, spacing, type } from "@/ui/theme";
+  TrainerPage,
+  text,
+} from "@/ui/trainer/kit";
 import { CountEntryPad } from "./CountEntryPad";
 import {
   DrillHeader,
@@ -151,12 +153,10 @@ export function CountingDrillScreen() {
 
   if (!run || !config) {
     return (
-      <ScrollView style={drillStyles.scroll} contentContainerStyle={drillStyles.scrollContent}>
-        <Screen width="wide">
-          <DrillHeader drill={DRILL} />
-          <Text style={drillStyles.loading}>Loading your table…</Text>
-        </Screen>
-      </ScrollView>
+      <TrainerPage>
+        <DrillHeader drill={DRILL} />
+        <Text style={drillStyles.loading}>Loading your table…</Text>
+      </TrainerPage>
     );
   }
 
@@ -172,17 +172,30 @@ export function CountingDrillScreen() {
 
   const dealColumn = (
     <View style={twoColumn ? styles.columnWide : styles.columnNarrow}>
-      <Panel>
+      <Felt>
         <View style={styles.cardStage} accessibilityLiveRegion="polite">
           {showing.length === 0 ? (
-            <Text style={drillStyles.note}>Press Start and keep the count in your head.</Text>
+            <Text style={styles.feltNote}>Press Start and keep the count in your head.</Text>
           ) : (
             showing.map((card, index) => (
-              <CardView key={`${seen.length}-${index}`} card={card} size="md" />
+              <PlayingCard
+                key={`${seen.length}-${index}`}
+                rank={card.rank}
+                suit={card.suit}
+                size="lg"
+              />
             ))
           )}
         </View>
-        <StatRow label="Cards seen" value={`${seen.length} of ${totalCards(state)} (cut card)`} />
+        <Text style={styles.feltNote}>
+          Cards seen{" "}
+          <Text style={styles.feltStrong}>
+            {seen.length} of {totalCards(state)}
+          </Text>{" "}
+          (cut card)
+        </Text>
+      </Felt>
+      <Panel>
         <View style={drillStyles.actions}>
           {finished ? (
             <ActionButton label="New shoe" tone="good" onPress={recorded.restart} />
@@ -247,7 +260,7 @@ export function CountingDrillScreen() {
   const railColumn = (
     <View style={twoColumn ? styles.columnWide : styles.columnNarrow}>
       <Panel title="The count">
-        <SegmentedControl
+        <Choice
           options={[
             { value: "hidden", label: "Hide count" },
             { value: "shown", label: "Reveal count" },
@@ -289,16 +302,22 @@ export function CountingDrillScreen() {
         </Text>
       </Panel>
 
+      <StatCards
+        cards={[
+          {
+            label: "Checks correct",
+            value: formatRate(report.tally.accuracy),
+            delta: `${report.tally.correct} of ${report.tally.attempts} checks`,
+          },
+          {
+            label: "Streak",
+            value: String(report.tally.streak),
+            delta: report.tally.streak > 0 ? "in a row" : "check to start one",
+            tone: report.tally.streak > 0 ? "good" : "neutral",
+          },
+        ]}
+      />
       <Panel title="This run">
-        <StatRow
-          label="Checks correct"
-          value={`${formatRate(report.tally.accuracy)} (${report.tally.correct} of ${report.tally.attempts})`}
-        />
-        <StatRow
-          label="Streak"
-          value={report.tally.streak}
-          tone={report.tally.streak > 0 ? "good" : "neutral"}
-        />
         <StatRow
           label="Average miss"
           value={
@@ -335,8 +354,8 @@ export function CountingDrillScreen() {
               : "changing it deals a new shoe."
           }
         />
-        <Text style={styles.label}>Speed</Text>
-        <SegmentedControl
+        <Text style={[text.overline, styles.label]}>Speed</Text>
+        <Choice
           options={COUNTING_SPEEDS.map((speed) => ({
             value: String(speed.cardsPerMinute),
             label: `${speed.name} · ${speed.cardsPerMinute}/min`,
@@ -350,8 +369,8 @@ export function CountingDrillScreen() {
             update((current) => replaceRun(current, setSpeed(current.drill, next)));
           }}
         />
-        <Text style={styles.label}>Cards at a time</Text>
-        <SegmentedControl
+        <Text style={[text.overline, styles.label]}>Cards at a time</Text>
+        <Choice
           options={[
             { value: "1", label: "One" },
             { value: "2", label: "Two" },
@@ -374,69 +393,58 @@ export function CountingDrillScreen() {
   );
 
   return (
-    <ScrollView
-      style={drillStyles.scroll}
-      contentContainerStyle={drillStyles.scrollContent}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Screen width="wide">
-        <DrillHeader
-          drill={DRILL}
-          report={{
-            table: { shoe: state.shoe },
-            rules: {
-              ...DEFAULT_RULES,
-              decks: state.config.decks,
-              penetration: state.config.penetration,
-            },
-            countingSystem: state.config.system.name,
-            details: { runSeed: state.seed },
-          }}
+    <TrainerPage>
+      <DrillHeader
+        drill={DRILL}
+        report={{
+          table: { shoe: state.shoe },
+          rules: {
+            ...DEFAULT_RULES,
+            decks: state.config.decks,
+            penetration: state.config.penetration,
+          },
+          countingSystem: state.config.system.name,
+          details: { runSeed: state.seed },
+        }}
+      />
+      <RecordingPanel
+        session={recorded.session}
+        ended={recorded.ended}
+        unit="count checks"
+        error={recorded.storageError}
+        onEnd={() => {
+          setRunning(false);
+          recorded.endSession();
+        }}
+      />
+      {recorded.pendingRules ? (
+        <PendingTablePanel
+          current={config.rules}
+          pending={recorded.pendingRules}
+          onTakeUp={recorded.takeUpRules}
         />
-        <RecordingPanel
-          session={recorded.session}
-          ended={recorded.ended}
-          unit="count checks"
-          error={recorded.storageError}
-          onEnd={() => {
-            setRunning(false);
-            recorded.endSession();
-          }}
-        />
-        {recorded.pendingRules ? (
-          <PendingTablePanel
-            current={config.rules}
-            pending={recorded.pendingRules}
-            onTakeUp={recorded.takeUpRules}
-          />
-        ) : null}
-        <View style={twoColumn ? styles.wide : styles.narrow}>
-          {dealColumn}
-          {railColumn}
-        </View>
-      </Screen>
-    </ScrollView>
+      ) : null}
+      <View style={twoColumn ? styles.wide : styles.narrow}>
+        {dealColumn}
+        {railColumn}
+      </View>
+    </TrainerPage>
   );
 }
 
 const styles = StyleSheet.create({
-  narrow: { flexDirection: "column", gap: spacing.md },
-  wide: { flexDirection: "row", gap: spacing.md, alignItems: "flex-start" },
-  columnWide: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0, gap: spacing.md },
-  columnNarrow: { width: "100%", gap: spacing.md },
+  narrow: { flexDirection: "column", gap: 24 },
+  wide: { flexDirection: "row", gap: 24, alignItems: "flex-start" },
+  columnWide: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0, gap: 24 },
+  columnNarrow: { width: "100%", gap: 24 },
   cardStage: {
-    minHeight: 80,
+    minHeight: 120,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: 10,
   },
-  label: {
-    ...type.caption,
-    color: colors.textMuted,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginTop: spacing.sm,
-  },
+  feltNote: { ...ui(14), color: surfaces.feltTextMuted, textAlign: "center" },
+  feltStrong: { ...ui(14, 700), color: colors.feltText, fontVariant: ["tabular-nums"] },
+  label: { marginTop: 8 },
 });

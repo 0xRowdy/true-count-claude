@@ -17,8 +17,8 @@ import type { Card } from "@/engine/cards";
 import type { CountingSystem } from "@/engine/counting";
 import { tagFor } from "@/engine/counting";
 import { formatSigned, isRedSuit, suitGlyph } from "./integrity";
-import { Panel, SecondaryButton } from "@/ui/primitives";
-import { colors, radius, spacing, type } from "@/ui/theme";
+import { colors, radius, surfaces, ui } from "@/ui/ds";
+import { Panel, SecondaryButton, text } from "@/ui/trainer/kit";
 
 /** How many cards show before the history has to be opened. */
 const COLLAPSED_LIMIT = 40;
@@ -83,7 +83,8 @@ export function DealtHistoryPanel({
 }
 
 function CardChip({ card, position, tag }: { card: Card; position: number; tag: number }) {
-  const tagColor = tag > 0 ? colors.accent : tag < 0 ? colors.danger : colors.textMuted;
+  // Tags read on the paper chip: the ink shades of correct and mistake.
+  const tagColor = tag > 0 ? colors.correctInk : tag < 0 ? colors.mistakeInk : colors.inkMuted;
   return (
     <View
       style={styles.chip}
@@ -98,22 +99,22 @@ function CardChip({ card, position, tag }: { card: Card; position: number; tag: 
   );
 }
 
+const NUM = { fontVariant: ["tabular-nums" as const] };
+
 const styles = StyleSheet.create({
-  prose: { ...type.caption, color: colors.textMuted, lineHeight: 19 },
-  note: { ...type.caption, color: colors.warning },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },
+  prose: text.note,
+  note: text.warn,
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   chip: {
-    minWidth: 40,
+    minWidth: 42,
     alignItems: "center",
-    paddingVertical: 2,
-    paddingHorizontal: spacing.xs,
+    paddingVertical: 4,
+    paddingHorizontal: 6,
     borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceRaised,
+    backgroundColor: surfaces.cardFace,
   },
-  chipFace: { ...type.mono, ...type.caption, color: colors.text },
-  redSuit: { color: colors.danger },
-  blackSuit: { color: colors.text },
-  chipTag: { ...type.mono, fontSize: 10 },
+  chipFace: { ...ui(13, 700), ...NUM, color: colors.ink },
+  redSuit: { color: colors.suitHeart },
+  blackSuit: { color: colors.suitSpade },
+  chipTag: { ...ui(11, 700), ...NUM },
 });

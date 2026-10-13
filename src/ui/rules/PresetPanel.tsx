@@ -12,8 +12,9 @@
 
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { RuleSet } from "@/engine/rules";
-import { Badge, Panel } from "@/ui/primitives";
-import { colors, radius, spacing, type } from "@/ui/theme";
+import { colors, radius, surfaces, ui } from "@/ui/ds";
+import { infoInk } from "@/ui/ds/strategyColors";
+import { Panel, ToneBadge, text } from "@/ui/trainer/kit";
 import { RULE_PRESETS, type RulePreset, matchingPreset } from "./presets";
 import { edgeVerdict, formatEdge, houseEdge } from "./houseEdge";
 
@@ -65,14 +66,14 @@ function PresetCard({
   const verdict = percent === undefined ? undefined : edgeVerdict(percent);
   const edgeColor =
     verdict === undefined
-      ? colors.textMuted
+      ? colors.mutedForeground
       : verdict === "player-advantage" || verdict === "excellent"
-        ? colors.accent
+        ? colors.correct
         : verdict === "fair"
-          ? colors.info
+          ? infoInk
           : verdict === "poor"
-            ? colors.warning
-            : colors.danger;
+            ? colors.primary
+            : colors.mistake;
 
   return (
     <Pressable
@@ -99,7 +100,7 @@ function PresetCard({
       <Text style={styles.note}>{preset.note}</Text>
       {selected ? (
         <View style={styles.badgeRow}>
-          <Badge label="YOUR TABLE" tone="good" />
+          <ToneBadge label="Your table" tone="good" />
         </View>
       ) : null}
     </Pressable>
@@ -107,29 +108,31 @@ function PresetCard({
 }
 
 const styles = StyleSheet.create({
-  intro: { ...type.caption, color: colors.textMuted, lineHeight: 19 },
-  list: { gap: spacing.sm },
+  intro: text.note,
+  list: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   card: {
     minHeight: 44,
+    flexGrow: 1,
+    flexBasis: 220,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.sm,
-    backgroundColor: colors.surfaceRaised,
-    padding: spacing.sm + 2,
-    gap: 2,
+    borderRadius: radius.md,
+    backgroundColor: colors.muted,
+    padding: 14,
+    gap: 4,
   },
-  cardSelected: { borderColor: colors.accent, backgroundColor: colors.accentMuted },
-  pressed: { opacity: 0.65 },
+  cardSelected: { borderColor: colors.primary, backgroundColor: surfaces.primaryWash },
+  pressed: { opacity: 0.8 },
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "baseline",
-    gap: spacing.sm,
+    gap: 8,
   },
-  name: { ...type.body, color: colors.text, fontWeight: "700", flexShrink: 1 },
-  edge: { ...type.mono, ...type.caption, fontWeight: "700" },
-  where: { ...type.caption, color: colors.textMuted, fontSize: 12 },
-  note: { ...type.caption, color: colors.textMuted, lineHeight: 18, marginTop: 2 },
-  badgeRow: { marginTop: spacing.xs },
-  custom: { ...type.caption, color: colors.textMuted, lineHeight: 19 },
+  name: { ...ui(15, 600), color: colors.foreground, flexShrink: 1 },
+  edge: { ...ui(14, 700), fontVariant: ["tabular-nums"] },
+  where: text.small,
+  note: { ...text.note, marginTop: 2 },
+  badgeRow: { marginTop: 6 },
+  custom: text.note,
 });

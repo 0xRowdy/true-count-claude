@@ -9,19 +9,31 @@
  */
 
 import { Link } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import ChevronRight from "lucide-react-native/icons/chevron-right";
+import Divide from "lucide-react-native/icons/divide";
+import GitBranch from "lucide-react-native/icons/git-branch";
+import Grid3x3 from "lucide-react-native/icons/grid-3x3";
+import Hash from "lucide-react-native/icons/hash";
 import { COUNTING_SYSTEMS } from "@/engine/counting";
 import { DRILLS, type DrillDefinition, type DrillId } from "@/drills/types";
-import { Panel, Screen } from "@/ui/primitives";
+import { colors, display, radius, ui, type LucideIcon } from "@/ui/ds";
 import { useConfiguredRules } from "@/ui/rules/rulesStore";
-import { colors, radius, spacing, type } from "@/ui/theme";
-import { TableLine, drillStyles } from "./DrillChrome";
+import { PageHeader, Panel, TrainerPage, text, useWide } from "@/ui/trainer/kit";
+import { TableLine } from "./DrillChrome";
 
 export const DRILL_HREF: Readonly<Record<DrillId, string>> = {
   "basic-strategy": "/drills/basic-strategy",
   counting: "/drills/counting",
   "true-count": "/drills/true-count",
   deviation: "/drills/deviation",
+};
+
+const DRILL_ICON: Readonly<Record<DrillId, LucideIcon>> = {
+  "basic-strategy": Grid3x3,
+  counting: Hash,
+  "true-count": Divide,
+  deviation: GitBranch,
 };
 
 function systemsLine(drill: DrillDefinition): string {
@@ -34,69 +46,96 @@ function systemsLine(drill: DrillDefinition): string {
 
 export function DrillsHub() {
   const configured = useConfiguredRules();
+  const [wide, onLayout] = useWide(720);
 
   return (
-    <ScrollView style={drillStyles.scroll} contentContainerStyle={drillStyles.scrollContent}>
-      <Screen>
-        <Panel>
-          <Text style={styles.title}>Drills</Text>
-          <Text style={styles.lede}>
-            Focused practice with every answer graded and explained while the cards are still in
-            front of you — right answers included. All four are part of the app; none is sold
-            separately.
-          </Text>
-          <TableLine rules={configured.rules} />
-        </Panel>
+    <TrainerPage>
+      <PageHeader
+        eyebrow="Trainer"
+        title="Drills"
+        lede="Focused practice with every answer graded and explained while the cards are still in front of you — right answers included. All four are part of the app; none is sold separately."
+      >
+        <TableLine rules={configured.rules} />
+      </PageHeader>
 
-        {DRILLS.map((drill) => (
-          <Link key={drill.id} href={DRILL_HREF[drill.id]} asChild>
-            <Pressable
-              accessibilityRole="link"
-              accessibilityLabel={`${drill.name} drill`}
-              style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-            >
-              <View style={styles.cardHead}>
+      <View style={styles.grid} onLayout={onLayout}>
+        {DRILLS.map((drill, index) => {
+          const Icon = DRILL_ICON[drill.id];
+          return (
+            <Link key={drill.id} href={DRILL_HREF[drill.id]} asChild>
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel={`${drill.name} drill`}
+                // Link asChild hands its child's style to the DOM on update: one flat object.
+                style={StyleSheet.flatten([styles.card, wide && styles.cardWide])}
+              >
+                <View style={styles.cardHead}>
+                  <View style={styles.icon}>
+                    <Icon size={20} color={colors.feltText} strokeWidth={2} />
+                  </View>
+                  <Text style={styles.number}>{String(index + 1).padStart(2, "0")}</Text>
+                </View>
                 <Text style={styles.cardTitle}>{drill.name}</Text>
-                <Text style={styles.arrow}>Start →</Text>
-              </View>
-              <Text style={styles.body}>{drill.summary}</Text>
-              <Text style={styles.meta}>Graded against {drill.gradedAgainst}</Text>
-              <Text style={styles.meta}>{systemsLine(drill)}</Text>
-            </Pressable>
-          </Link>
-        ))}
+                <Text style={text.note}>{drill.summary}</Text>
+                <View style={styles.meta}>
+                  <Text style={text.small}>Graded against {drill.gradedAgainst}</Text>
+                  <Text style={text.small}>{systemsLine(drill)}</Text>
+                </View>
+                <View style={styles.start}>
+                  <Text style={styles.startText}>Start drill</Text>
+                  <ChevronRight size={16} color={colors.primary} strokeWidth={2} />
+                </View>
+              </Pressable>
+            </Link>
+          );
+        })}
+      </View>
 
-        <Link href="/session" style={styles.link}>
+      <Panel title="Your record">
+        <Text style={text.note}>
+          Every drill records into its own Session on this device. Counting accuracy, conversions,
+          index plays and every drill Session are on the Statistics screen.
+        </Text>
+        <Link href="/session" style={text.link}>
           Statistics — counting accuracy and every drill Session →
         </Link>
-      </Screen>
-    </ScrollView>
+      </Panel>
+    </TrainerPage>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { ...type.title, color: colors.text },
-  lede: { ...type.body, color: colors.textMuted },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: 16 },
   card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    width: "100%",
+    minHeight: 44,
+    padding: 20,
+    gap: 10,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: spacing.md,
-    gap: spacing.xs,
-    minHeight: 44,
+    backgroundColor: colors.card,
   },
-  pressed: { opacity: 0.7 },
-  cardHead: {
+  cardWide: { width: "auto", flexGrow: 1, flexBasis: 0, minWidth: 260 },
+  cardHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  icon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    backgroundColor: colors.felt,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  number: { ...display(20, 500), color: colors.mutedForeground },
+  cardTitle: { ...ui(20, 600), color: colors.foreground },
+  meta: { gap: 2, marginTop: "auto", paddingTop: 6 },
+  start: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    alignItems: "baseline",
-    gap: spacing.sm,
+    alignItems: "center",
+    gap: 4,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
-  cardTitle: { ...type.heading, color: colors.text },
-  arrow: { ...type.body, color: colors.accent, fontWeight: "600" },
-  body: { ...type.body, color: colors.text },
-  meta: { ...type.caption, color: colors.textMuted },
-  link: { ...type.body, color: colors.accent, minHeight: 44, paddingTop: spacing.sm },
+  startText: { ...ui(14, 600), color: colors.primary },
 });

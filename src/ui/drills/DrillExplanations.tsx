@@ -19,9 +19,9 @@ import { StyleSheet, Text, View } from "react-native";
 import { getCountingSystem } from "@/engine/counting";
 import type { CountCheckResult } from "@/drills/counting";
 import type { TrueCountResult } from "@/drills/trueCount";
-import { Panel, StatRow } from "@/ui/primitives";
-import { CardView } from "@/ui/table/CardView";
-import { colors, radius, spacing, type } from "@/ui/theme";
+import { CoachNote, PlayingCard, colors, radius, ui } from "@/ui/ds";
+import { infoInk } from "@/ui/ds/strategyColors";
+import { Group, Panel, StatRow, signColor, text } from "@/ui/trainer/kit";
 import {
   ROUNDING_NAME,
   ROUNDING_SHORT,
@@ -114,7 +114,7 @@ export function CountCheckExplanationPanel({
           <View style={styles.trail}>
             {e.trail.map((stepView) => (
               <View key={stepView.ordinal} style={styles.trailStep}>
-                <CardView card={stepView.card} size="sm" />
+                <PlayingCard rank={stepView.card.rank} suit={stepView.card.suit} size="sm" />
                 <Text style={[styles.tag, tagColor(stepView.tag)]}>
                   {formatCountValue(stepView.tag)}
                 </Text>
@@ -129,7 +129,7 @@ export function CountCheckExplanationPanel({
       {e.byRank.length > 0 ? (
         <Group title="By rank, since your last check">
           <View style={styles.table}>
-            <View style={styles.tableRow}>
+            <View style={[styles.tableRow, styles.tableHead]}>
               <Text style={[styles.cell, styles.head]}>Rank</Text>
               <Text style={[styles.cell, styles.head]}>Seen</Text>
               <Text style={[styles.cell, styles.head]}>Tag</Text>
@@ -243,6 +243,7 @@ export function TrueCountExplanationPanel({
   );
 }
 
+/** The verdict as the dealer's coach note: a good call in green, a mistake in orange. */
 function Verdict({
   correct,
   headline,
@@ -252,86 +253,69 @@ function Verdict({
   headline: string;
   detail: string | null;
 }) {
-  const accent = correct ? colors.accent : colors.danger;
   return (
-    <View accessibilityRole="summary" style={[styles.verdict, { borderLeftColor: accent }]}>
-      <Text style={[styles.headline, { color: accent }]}>{headline}</Text>
-      {detail ? <Text style={styles.body}>{detail}</Text> : null}
-    </View>
-  );
-}
-
-function Group({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <View style={styles.group}>
-      <Text style={styles.groupTitle} accessibilityRole="header">
-        {title}
-      </Text>
-      {children}
+    <View accessibilityRole="summary">
+      <CoachNote
+        variant={correct ? "good" : "mistake"}
+        kind={correct ? "Good call" : "Here is the miss"}
+        title={headline}
+        {...(detail ? { body: detail } : {})}
+        width="100%"
+      />
     </View>
   );
 }
 
 function tagColor(value: number) {
-  return { color: value > 0 ? colors.accent : value < 0 ? colors.danger : colors.textMuted };
+  return { color: signColor(value) };
 }
 
+const NUM = { fontVariant: ["tabular-nums" as const] };
+
 const styles = StyleSheet.create({
-  verdict: {
-    gap: spacing.xs,
-    padding: spacing.sm,
-    borderRadius: radius.sm,
-    borderLeftWidth: 4,
-    backgroundColor: colors.surfaceRaised,
+  body: text.body,
+  lesson: { ...ui(15, 500, { lineHeight: 22 }), color: colors.primary, flexShrink: 1 },
+  strong: text.strong,
+  mono: { ...NUM, fontFamily: ui(15, 600).fontFamily, color: colors.foreground },
+  muted: text.muted,
+  note: text.note,
+  refusal: { ...ui(13, 400, { lineHeight: 19 }), color: infoInk },
+  trail: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  trailStep: { alignItems: "center", gap: 3, minWidth: 44 },
+  tag: { ...ui(12, 700), ...NUM },
+  total: { ...ui(11, 500), ...NUM, color: colors.mutedForeground },
+  table: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    overflow: "hidden",
   },
-  headline: { ...type.body, fontSize: 16, fontWeight: "700" },
-  body: { ...type.body, color: colors.text, flexShrink: 1 },
-  lesson: { ...type.body, color: colors.warning, flexShrink: 1 },
-  strong: { fontWeight: "700" },
-  mono: { ...type.mono, color: colors.text },
-  muted: { color: colors.textMuted },
-  note: { ...type.caption, color: colors.textMuted, lineHeight: 18 },
-  refusal: { ...type.caption, color: colors.info, lineHeight: 18 },
-  group: {
-    gap: spacing.sm,
-    paddingTop: spacing.sm,
+  tableRow: {
+    flexDirection: "row",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
-  groupTitle: {
-    ...type.caption,
-    color: colors.textMuted,
-    fontWeight: "700",
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-  },
-  trail: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },
-  trailStep: { alignItems: "center", gap: 2, minWidth: 40 },
-  tag: { ...type.mono, fontSize: 12, fontWeight: "700" },
-  total: { ...type.mono, fontSize: 11, color: colors.textMuted },
-  table: { gap: 2 },
-  tableRow: { flexDirection: "row" },
-  cell: { ...type.mono, ...type.caption, color: colors.text, flexBasis: 0, flexGrow: 1 },
-  head: { color: colors.textMuted, fontWeight: "700" },
+  tableHead: { backgroundColor: colors.muted, borderTopWidth: 0 },
+  cell: { ...ui(13), ...NUM, color: colors.foreground, flexBasis: 0, flexGrow: 1 },
+  head: { ...ui(12, 600), color: colors.mutedForeground },
   roundRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: radius.sm,
   },
-  roundGraded: { backgroundColor: colors.surfaceRaised },
-  roundName: { ...type.caption, color: colors.text, flexShrink: 1 },
-  roundValue: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  roundGraded: { backgroundColor: colors.muted },
+  roundName: { ...ui(14, 500), color: colors.foreground, flexShrink: 1 },
+  roundValue: { flexDirection: "row", alignItems: "center", gap: 8 },
   flag: {
-    ...type.caption,
-    fontSize: 10,
-    fontWeight: "700",
-    color: colors.accent,
-    letterSpacing: 0.6,
+    ...ui(10, 700, { letterSpacing: 1 }),
+    color: colors.correct,
   },
-  flagYou: { color: colors.warning },
+  flagYou: { color: colors.primary },
 });

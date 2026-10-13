@@ -14,7 +14,7 @@
  */
 
 import { useCallback, useMemo } from "react";
-import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import type { Action } from "@/engine/hand";
 import { isRoundOver, visibleDealerCards } from "@/engine/round";
 import {
@@ -32,9 +32,17 @@ import {
 } from "@/drills/basicStrategy";
 import { getDrill } from "@/drills/types";
 import { ExplanationPanel } from "@/ui/explanation/ExplanationPanel";
-import { ActionButton, Panel, Screen, StatRow, type Tone } from "@/ui/primitives";
-import { DealerHandView, PlayerHandView } from "@/ui/table/HandView";
-import { colors, spacing, type } from "@/ui/theme";
+import { colors, surfaces, ui } from "@/ui/ds";
+import { DealerHand, Felt, PlayerHand } from "@/ui/trainer/Felt";
+import {
+  ActionButton,
+  Panel,
+  StatCards,
+  StatRow,
+  TrainerPage,
+  text,
+  type Tone,
+} from "@/ui/trainer/kit";
 import {
   DrillHeader,
   PendingTablePanel,
@@ -90,7 +98,7 @@ export function BasicStrategyDrillScreen() {
   const { run, config, update } = recorded;
   const { width } = useWindowDimensions();
   const twoColumn = width >= TWO_COLUMN_WIDTH;
-  const cardSize = width < 420 ? "sm" : "md";
+  const cardSize = width < 420 ? "sm" : width >= TWO_COLUMN_WIDTH ? "lg" : "md";
 
   const report = useMemo(() => (run ? basicStrategyReport(run.drill) : null), [run]);
 
@@ -133,12 +141,10 @@ export function BasicStrategyDrillScreen() {
 
   if (!run || !config || !report) {
     return (
-      <ScrollView style={drillStyles.scroll} contentContainerStyle={drillStyles.scrollContent}>
-        <Screen width="wide">
-          <DrillHeader drill={DRILL} />
-          <Text style={drillStyles.loading}>Loading your table…</Text>
-        </Screen>
-      </ScrollView>
+      <TrainerPage>
+        <DrillHeader drill={DRILL} />
+        <Text style={drillStyles.loading}>Loading your table…</Text>
+      </TrainerPage>
     );
   }
 
@@ -148,8 +154,8 @@ export function BasicStrategyDrillScreen() {
 
   const tableColumn = (
     <View style={twoColumn ? styles.columnWide : styles.columnNarrow}>
-      <Panel>
-        <DealerHandView
+      <Felt>
+        <DealerHand
           cards={round ? visibleDealerCards(round) : []}
           revealed={round?.dealerHoleCardRevealed ?? true}
           size={cardSize}
@@ -158,7 +164,7 @@ export function BasicStrategyDrillScreen() {
         {round ? (
           <View style={styles.hands}>
             {round.playerHands.map((hand, index) => (
-              <PlayerHandView
+              <PlayerHand
                 key={index}
                 hand={hand}
                 index={index}
@@ -170,11 +176,11 @@ export function BasicStrategyDrillScreen() {
             ))}
           </View>
         ) : (
-          <Text style={drillStyles.note}>
+          <Text style={styles.feltNote}>
             Deal a hand to start. Every decision you make is graded.
           </Text>
         )}
-      </Panel>
+      </Felt>
 
       {awaitingInsurance(state) ? (
         <Panel title="Insurance?">
@@ -240,18 +246,23 @@ export function BasicStrategyDrillScreen() {
 
   const railColumn = (
     <View style={twoColumn ? styles.columnWide : styles.columnNarrow}>
+      <StatCards
+        cards={[
+          {
+            label: "Accuracy",
+            value: formatRate(report.tally.accuracy),
+            delta: `${report.tally.correct} of ${report.tally.attempts} decisions`,
+          },
+          {
+            label: "Streak",
+            value: String(report.tally.streak),
+            delta: `best ${report.tally.bestStreak}`,
+            tone: report.tally.streak > 0 ? "good" : "neutral",
+          },
+        ]}
+      />
       <Panel title="Where you stand">
-        <Text style={styles.sentence}>{breakdownSentence(report)}</Text>
-        <StatRow
-          label="Accuracy"
-          value={`${formatRate(report.tally.accuracy)} (${report.tally.correct} of ${report.tally.attempts})`}
-        />
-        <StatRow
-          label="Streak"
-          value={report.tally.streak}
-          tone={report.tally.streak > 0 ? "good" : "neutral"}
-        />
-        <StatRow label="Best streak" value={report.tally.bestStreak} />
+        <Text style={text.lead}>{breakdownSentence(report)}</Text>
         <StatRow label="Hands dealt" value={report.roundsDealt} />
         {report.insuranceTally.attempts > 0 ? (
           <StatRow
@@ -302,51 +313,49 @@ export function BasicStrategyDrillScreen() {
   );
 
   return (
-    <ScrollView style={drillStyles.scroll} contentContainerStyle={drillStyles.scrollContent}>
-      <Screen width="wide">
-        <DrillHeader
-          drill={DRILL}
-          report={{
-            table: {
-              shoe: state.shoe,
-              round: state.round,
-              bankroll: state.config.bankroll,
-              shoeIndex: state.shoeIndex,
-            },
-            rules: state.config.rules,
-            countingSystem: state.config.system.name,
-            details: { runSeed: state.seed, roundsDealt: state.roundsDealt },
-          }}
+    <TrainerPage>
+      <DrillHeader
+        drill={DRILL}
+        report={{
+          table: {
+            shoe: state.shoe,
+            round: state.round,
+            bankroll: state.config.bankroll,
+            shoeIndex: state.shoeIndex,
+          },
+          rules: state.config.rules,
+          countingSystem: state.config.system.name,
+          details: { runSeed: state.seed, roundsDealt: state.roundsDealt },
+        }}
+      />
+      <RecordingPanel
+        session={recorded.session}
+        ended={recorded.ended}
+        unit="decisions"
+        error={recorded.storageError}
+        onEnd={recorded.endSession}
+      />
+      {recorded.pendingRules ? (
+        <PendingTablePanel
+          current={config.rules}
+          pending={recorded.pendingRules}
+          onTakeUp={recorded.takeUpRules}
         />
-        <RecordingPanel
-          session={recorded.session}
-          ended={recorded.ended}
-          unit="decisions"
-          error={recorded.storageError}
-          onEnd={recorded.endSession}
-        />
-        {recorded.pendingRules ? (
-          <PendingTablePanel
-            current={config.rules}
-            pending={recorded.pendingRules}
-            onTakeUp={recorded.takeUpRules}
-          />
-        ) : null}
-        <View style={twoColumn ? styles.wide : styles.narrow}>
-          {tableColumn}
-          {railColumn}
-        </View>
-      </Screen>
-    </ScrollView>
+      ) : null}
+      <View style={twoColumn ? styles.wide : styles.narrow}>
+        {tableColumn}
+        {railColumn}
+      </View>
+    </TrainerPage>
   );
 }
 
 const styles = StyleSheet.create({
-  narrow: { flexDirection: "column", gap: spacing.md },
-  wide: { flexDirection: "row", gap: spacing.md, alignItems: "flex-start" },
-  columnWide: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0, gap: spacing.md },
-  columnNarrow: { width: "100%", gap: spacing.md },
-  divider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.xs },
-  hands: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  sentence: { ...type.body, color: colors.text, fontWeight: "600" },
+  narrow: { flexDirection: "column", gap: 24 },
+  wide: { flexDirection: "row", gap: 24, alignItems: "flex-start" },
+  columnWide: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0, gap: 24 },
+  columnNarrow: { width: "100%", gap: 24 },
+  divider: { height: 1, backgroundColor: colors.feltLine, opacity: 0.4 },
+  hands: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  feltNote: { ...ui(14), color: surfaces.feltTextMuted },
 });

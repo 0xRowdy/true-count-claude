@@ -15,21 +15,25 @@
 import type { ReactNode } from "react";
 import { Link } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
+import Undo2 from "lucide-react-native/icons/undo-2";
 import { COUNTING_SYSTEMS, type CountingSystem } from "@/engine/counting";
 import { type RuleSet, describeRules } from "@/engine/rules";
 import { type Session, type SessionStats, computeStats } from "@/state";
 import type { DrillDefinition } from "@/drills/types";
+import { ReportBugButton, type ReportBugButtonProps } from "@/ui/bug-report/ReportBugButton";
+import { colors, display, ui } from "@/ui/ds";
+import { matchingPreset } from "@/ui/rules/presets";
 import {
   ActionButton,
-  Badge,
+  Choice,
+  Group,
+  PageHeader,
   Panel,
   SecondaryButton,
-  SegmentedControl,
   StatRow,
-} from "@/ui/primitives";
-import { ReportBugButton, type ReportBugButtonProps } from "@/ui/bug-report/ReportBugButton";
-import { matchingPreset } from "@/ui/rules/presets";
-import { colors, spacing, type } from "@/ui/theme";
+  ToneBadge,
+  text,
+} from "@/ui/trainer/kit";
 import { formatRate } from "./drillFormat";
 
 /**
@@ -41,12 +45,16 @@ export type DrillReport = Omit<ReportBugButtonProps, "screen" | "includeSession"
 
 export function DrillHeader({ drill, report }: { drill: DrillDefinition; report?: DrillReport }) {
   return (
-    <Panel>
-      <View style={styles.headerRow}>
-        <Text style={styles.title} accessibilityRole="header">
-          {drill.name}
-        </Text>
-        <View style={styles.headerActions}>
+    <PageHeader
+      eyebrow="Trainer · Drill"
+      title={drill.name}
+      lede={
+        <>
+          {drill.summary} Graded against <Text style={text.strong}>{drill.gradedAgainst}</Text>.
+        </>
+      }
+      actions={
+        <>
           {/* Drill Sessions never hold the active pointer, so the open Session in the store is
               the Play table's and does not belong in a drill's report. */}
           <ReportBugButton
@@ -55,16 +63,12 @@ export function DrillHeader({ drill, report }: { drill: DrillDefinition; report?
             {...report}
             details={{ drill: drill.id, ...report?.details }}
           />
-          <Link href="/drills" style={styles.link}>
+          <Link href="/drills" style={styles.headLink}>
             All drills
           </Link>
-        </View>
-      </View>
-      <Text style={styles.body}>{drill.summary}</Text>
-      <Text style={styles.graded}>
-        Graded against <Text style={styles.strong}>{drill.gradedAgainst}</Text>.
-      </Text>
-    </Panel>
+        </>
+      }
+    />
   );
 }
 
@@ -92,9 +96,9 @@ export function RecordingPanel({
       <View style={styles.recordRow}>
         <View style={styles.recordStatus}>
           {session ? (
-            <Badge label="RECORDING" tone="good" />
+            <ToneBadge label="Recording" tone="good" />
           ) : (
-            <Badge label="NOT STARTED" tone="neutral" />
+            <ToneBadge label="Not started" tone="neutral" />
           )}
           <Text style={styles.note}>
             {session
@@ -103,7 +107,7 @@ export function RecordingPanel({
           </Text>
         </View>
         <View style={styles.recordControls}>
-          <Link href="/session" style={styles.link}>
+          <Link href="/session" style={text.link}>
             Statistics
           </Link>
           {session ? (
@@ -162,7 +166,7 @@ export function TableLine({ rules }: { rules: RuleSet }) {
         {preset ? `${preset.name} · ` : ""}
         {describeRules(rules)}
       </Text>
-      <Link href="/rules" style={styles.link}>
+      <Link href="/rules" style={styles.inlineLink}>
         Change your table
       </Link>
     </View>
@@ -187,7 +191,7 @@ export function PendingTablePanel({
 }) {
   return (
     <Panel>
-      <Badge label="NEW TABLE WAITING" tone="warn" />
+      <ToneBadge label="New table waiting" tone="warn" />
       <StatRow label="Drilling now" value={describeRules(current)} />
       <StatRow label="Configured" value={describeRules(pending)} tone="info" />
       <Text style={styles.note}>{reason}</Text>
@@ -217,7 +221,8 @@ export function SystemPicker({
   return (
     <View style={styles.picker}>
       <Text style={styles.label}>Counting system</Text>
-      <SegmentedControl
+      <Choice
+        accessibilityLabel="Counting system"
         options={systems.map((system) => ({ value: system.id, label: system.name }))}
         value={value.id}
         onChange={(id) => {
@@ -246,7 +251,7 @@ export function UndoControl({
   if (!canUndo && undone === 0) return null;
   return (
     <View style={styles.undo}>
-      {canUndo ? <SecondaryButton label="↶ Undo last answer" onPress={onUndo} /> : null}
+      {canUndo ? <SecondaryButton label="Undo last answer" icon={Undo2} onPress={onUndo} /> : null}
       {undone > 0 ? (
         <Text style={styles.note}>
           {undone} answer{undone === 1 ? "" : "s"} undone this run. Undo restores the streak and the
@@ -259,77 +264,38 @@ export function UndoControl({
 
 /** A labelled group inside a panel. */
 export function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle} accessibilityRole="header">
-        {title}
-      </Text>
-      {children}
-    </View>
-  );
+  return <Group title={title}>{children}</Group>;
 }
 
 export const drillStyles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.background },
-  scrollContent: { flexGrow: 1, paddingBottom: spacing.xl },
-  column: { gap: spacing.md },
-  actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
-  note: { ...type.caption, color: colors.textMuted, lineHeight: 18, flexShrink: 1 },
-  body: { ...type.body, color: colors.text, flexShrink: 1 },
-  strong: { fontWeight: "700" },
-  mono: { ...type.mono },
-  big: { ...type.mono, fontSize: 28, fontWeight: "700", color: colors.text },
-  refusal: { ...type.body, color: colors.info, flexShrink: 1 },
-  loading: { ...type.body, color: colors.textMuted },
+  column: { gap: 24 },
+  actions: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  note: text.note,
+  body: text.body,
+  strong: text.strong,
+  mono: { fontVariant: ["tabular-nums"] },
+  big: { ...display(40, 500), fontVariant: ["tabular-nums"], color: colors.foreground },
+  refusal: { ...ui(15, 400, { lineHeight: 22 }), color: colors.foreground, flexShrink: 1 },
+  loading: text.bodyMuted,
 });
 
 const styles = StyleSheet.create({
-  headerRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  headerActions: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  title: { ...type.title, color: colors.text, flexShrink: 1 },
-  body: { ...type.body, color: colors.textMuted, flexShrink: 1 },
-  graded: { ...type.caption, color: colors.textMuted, lineHeight: 18 },
-  strong: { fontWeight: "700", color: colors.text },
-  link: { ...type.body, color: colors.accent, minHeight: 44, paddingTop: spacing.sm },
-  note: { ...type.caption, color: colors.textMuted, lineHeight: 18, flexShrink: 1 },
-  error: { ...type.caption, color: colors.danger, lineHeight: 18 },
+  headLink: { ...ui(14, 600), color: colors.primary, paddingVertical: 12, paddingHorizontal: 8 },
+  inlineLink: { ...ui(13, 600), color: colors.primary, paddingVertical: 12 },
+  note: text.note,
+  error: text.bad,
   recordRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: spacing.md,
+    gap: 16,
   },
-  recordStatus: { flexGrow: 1, flexShrink: 1, flexBasis: 220, gap: spacing.xs },
-  recordControls: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.md },
-  tableLine: { gap: 0 },
-  actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md, marginTop: spacing.sm },
-  picker: { gap: spacing.xs },
-  label: {
-    ...type.caption,
-    color: colors.textMuted,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  undo: { gap: spacing.xs, alignItems: "flex-start" },
-  section: {
-    gap: spacing.sm,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  sectionTitle: {
-    ...type.caption,
-    color: colors.textMuted,
-    fontWeight: "700",
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-  },
+  recordStatus: { flexGrow: 1, flexShrink: 1, flexBasis: 220, gap: 8 },
+  recordControls: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 16 },
+  tableLine: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: 12 },
+  actions: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 4 },
+  picker: { gap: 8 },
+  label: text.overline,
+  undo: { gap: 6, alignItems: "flex-start" },
 });

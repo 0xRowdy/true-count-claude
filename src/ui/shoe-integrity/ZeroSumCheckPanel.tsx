@@ -23,8 +23,8 @@ import { StyleSheet, Text, View } from "react-native";
 import type { TracePoint, TraceRange, ZeroSumCheck } from "./integrity";
 import { formatSigned } from "./integrity";
 import { CountTrace } from "./CountTrace";
-import { Badge, Panel, StatRow } from "@/ui/primitives";
-import { colors, radius, spacing, type } from "@/ui/theme";
+import { colors, display, radius, ui } from "@/ui/ds";
+import { Panel, StatRow, ToneBadge, text } from "@/ui/trainer/kit";
 
 export function ZeroSumCheckPanel({
   check,
@@ -55,13 +55,13 @@ export function ZeroSumCheckPanel({
   return (
     <Panel title="The zero-sum check">
       <View style={styles.headerRow}>
-        <Badge
-          label={check.holds ? "RECONCILES" : "DOES NOT RECONCILE"}
+        <ToneBadge
+          label={check.holds ? "Reconciles" : "Does not reconcile"}
           tone={check.holds ? "good" : "bad"}
         />
         {check.shoeComplete ? (
-          <Badge
-            label={check.countNow === check.finish ? `FINISHED ON ${finishLabel}` : "WRONG FINISH"}
+          <ToneBadge
+            label={check.countNow === check.finish ? `Finished on ${finishLabel}` : "Wrong finish"}
             tone={check.countNow === check.finish ? "good" : "bad"}
           />
         ) : null}
@@ -93,7 +93,9 @@ export function ZeroSumCheckPanel({
         <View style={styles.rule} />
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>Adds up to</Text>
-          <Text style={[styles.totalValue, { color: check.holds ? colors.accent : colors.danger }]}>
+          <Text
+            style={[styles.totalValue, { color: check.holds ? colors.correct : colors.mistake }]}
+          >
             {formatSigned(check.reconciled)}
             <Text style={styles.totalSuffix}>{`  must be ${finishLabel}`}</Text>
           </Text>
@@ -143,28 +145,30 @@ export function ZeroSumCheckPanel({
   );
 }
 
+const NUM = { fontVariant: ["tabular-nums" as const] };
+
 const styles = StyleSheet.create({
-  headerRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  prose: { ...type.body, color: colors.textMuted },
-  strong: { color: colors.text, fontWeight: "700" },
+  headerRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  prose: text.bodyMuted,
+  strong: text.strong,
   ledger: {
-    backgroundColor: colors.surfaceRaised,
-    borderRadius: radius.sm,
-    padding: spacing.sm,
-    gap: spacing.xs,
+    backgroundColor: colors.muted,
+    borderRadius: radius.md,
+    padding: 16,
+    gap: 8,
   },
-  rule: { height: 1, backgroundColor: colors.border, marginVertical: spacing.xs },
+  rule: { height: 1, backgroundColor: colors.border, marginVertical: 4 },
   totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: 8,
     flexWrap: "wrap",
   },
-  totalLabel: { ...type.body, color: colors.text, fontWeight: "600" },
-  totalValue: { ...type.mono, fontSize: 18, fontWeight: "700" },
-  totalSuffix: { ...type.mono, fontSize: 12, color: colors.textMuted, fontWeight: "400" },
-  controls: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  footNotes: { gap: spacing.xs },
-  note: { ...type.caption, color: colors.textMuted },
+  totalLabel: { ...ui(15, 600), color: colors.foreground },
+  totalValue: { ...display(28, 500), ...NUM },
+  totalSuffix: { ...ui(12, 400), ...NUM, color: colors.mutedForeground },
+  controls: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  footNotes: { gap: 8 },
+  note: text.note,
 });

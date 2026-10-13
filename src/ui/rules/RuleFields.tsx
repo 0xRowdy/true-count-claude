@@ -25,8 +25,8 @@ import type {
   RuleSet,
   SurrenderRule,
 } from "@/engine/rules";
-import { Panel, SegmentedControl } from "@/ui/primitives";
-import { colors, radius, spacing, type } from "@/ui/theme";
+import { colors, ui } from "@/ui/ds";
+import { Choice, Panel, inputStyle, text } from "@/ui/trainer/kit";
 import { SOURCED_DECK_COUNTS } from "./houseEdge";
 
 const YES_NO = [
@@ -80,7 +80,7 @@ export function RuleFields({
               }
             : {})}
         >
-          <SegmentedControl
+          <Choice
             options={DECK_OPTIONS}
             value={String(rules.decks)}
             onChange={(next) => set("decks", Number(next))}
@@ -91,7 +91,7 @@ export function RuleFields({
           label="Dealer on soft 17"
           why="Hitting soft 17 gives the dealer a second chance at a stiff hand. It costs you about a fifth of a percent and changes how you play A,7 and hard 11."
         >
-          <SegmentedControl<DealerSoft17>
+          <Choice<DealerSoft17>
             options={[
               { value: "stand", label: "Stands (S17)" },
               { value: "hit", label: "Hits (H17)" },
@@ -108,7 +108,7 @@ export function RuleFields({
             ? { warning: "6:5 costs you 1.39%. No counting system recovers that." }
             : {})}
         >
-          <SegmentedControl<BlackjackPayout>
+          <Choice<BlackjackPayout>
             options={[
               { value: "3:2", label: "3 to 2" },
               { value: "6:5", label: "6 to 5" },
@@ -122,7 +122,7 @@ export function RuleFields({
           label="Dealer peek"
           why="With a hole card the dealer checks for blackjack before you act, so a doubled or split bet is safe. With no hole card it is not — which is why A,A and hard 11 stop wanting the extra money against an ace."
         >
-          <SegmentedControl
+          <Choice
             options={[
               { value: "yes", label: "Peeks" },
               { value: "no", label: "No hole card" },
@@ -138,7 +138,7 @@ export function RuleFields({
           label="Double on"
           why="Restricting doubles to hard totals takes away every soft double — A,2 through A,7 — which is most of what the soft chart is for."
         >
-          <SegmentedControl<DoubleRule>
+          <Choice<DoubleRule>
             options={[
               { value: "any", label: "Any two cards" },
               { value: "9-11", label: "9-11 only" },
@@ -153,7 +153,7 @@ export function RuleFields({
           label="Double after split"
           why="Splitting 2s, 3s, 4s and 6s is mostly worth it because of the doubles that follow. Without DAS, several pairs stop being splits at all."
         >
-          <SegmentedControl
+          <Choice
             options={[...YES_NO]}
             value={yn(rules.doubleAfterSplit)}
             onChange={(next) => set("doubleAfterSplit", next === "yes")}
@@ -164,7 +164,7 @@ export function RuleFields({
           label="Surrender"
           why="Late surrender gives back half a bet after the dealer checks for blackjack. Early surrender — rare, and worth nine times as much — lets you fold before the check."
         >
-          <SegmentedControl<SurrenderRule>
+          <Choice<SurrenderRule>
             options={[
               { value: "none", label: "None" },
               { value: "late", label: "Late" },
@@ -187,7 +187,7 @@ export function RuleFields({
               }
             : {})}
         >
-          <SegmentedControl
+          <Choice
             options={SPLIT_HAND_OPTIONS}
             value={String(Math.min(rules.maxSplitHands, 4))}
             onChange={(next) => set("maxSplitHands", Number(next))}
@@ -198,7 +198,7 @@ export function RuleFields({
           label="Resplit aces"
           why="Whether a third ace on a split hand may be split again. Worth 0.08% and almost never offered."
         >
-          <SegmentedControl
+          <Choice
             options={[...YES_NO]}
             value={yn(rules.resplitAces)}
             onChange={(next) => set("resplitAces", next === "yes")}
@@ -209,7 +209,7 @@ export function RuleFields({
           label="Cards to split aces"
           why="Nearly every table gives split aces exactly one card each. A table that lets you draw to them hands you 0.19% — better than late surrender."
         >
-          <SegmentedControl
+          <Choice
             options={[
               { value: "yes", label: "One card" },
               { value: "no", label: "May draw" },
@@ -225,7 +225,7 @@ export function RuleFields({
           label="Penetration"
           why="How much of the shoe is dealt before the shuffle. It does not move the house edge or a single chart cell — it decides how much of your count is worth anything. Deep penetration is the counter's single biggest ask."
         >
-          <SegmentedControl
+          <Choice
             options={PENETRATION_OPTIONS}
             value={rules.penetration.toFixed(2)}
             onChange={(next) => set("penetration", Number(next))}
@@ -302,7 +302,7 @@ function MoneyInput({
           inputMode="numeric"
           keyboardType="number-pad"
           placeholder="0"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.mutedForeground}
           accessibilityLabel={`${label} bet`}
           style={styles.moneyInput}
         />
@@ -319,30 +319,25 @@ function parseMoney(text: string): number {
 }
 
 const styles = StyleSheet.create({
-  field: { gap: spacing.xs, paddingVertical: spacing.xs },
-  fieldLabel: { ...type.body, color: colors.text, fontWeight: "600" },
-  why: { ...type.caption, color: colors.textMuted, fontSize: 12, lineHeight: 17 },
-  warning: { ...type.caption, color: colors.warning, fontSize: 12, lineHeight: 17 },
-  betRow: { flexDirection: "row", gap: spacing.sm, flexWrap: "wrap" },
-  money: { gap: spacing.xs, flexGrow: 1, flexBasis: 130 },
-  moneyLabel: { ...type.caption, color: colors.textMuted },
+  field: { gap: 8, paddingVertical: 4 },
+  fieldLabel: { ...ui(15, 600), color: colors.foreground },
+  why: text.small,
+  warning: { ...ui(12, 500, { lineHeight: 17 }), color: colors.primary },
+  betRow: { flexDirection: "row", gap: 12, flexWrap: "wrap" },
+  money: { gap: 6, flexGrow: 1, flexBasis: 130 },
+  moneyLabel: text.label,
   moneyField: {
+    ...inputStyle,
     flexDirection: "row",
     alignItems: "center",
-    minHeight: 44,
-    paddingHorizontal: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.sm,
-    backgroundColor: colors.background,
   },
-  currency: { ...type.mono, ...type.caption, color: colors.textMuted },
+  currency: { ...ui(15, 500), color: colors.mutedForeground },
   moneyInput: {
-    ...type.mono,
-    ...type.body,
-    color: colors.text,
+    ...ui(15, 500),
+    fontVariant: ["tabular-nums"],
+    color: colors.foreground,
     flex: 1,
-    paddingVertical: spacing.sm,
-    paddingLeft: spacing.xs,
+    paddingVertical: 10,
+    paddingLeft: 6,
   },
 });

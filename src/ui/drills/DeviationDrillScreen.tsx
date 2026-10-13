@@ -23,7 +23,7 @@
  */
 
 import { memo, useCallback, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import {
   type CountingSystem,
   type RuleSet,
@@ -46,17 +46,18 @@ import {
 import type { DrillAction } from "@/drills/explanation";
 import { getDrill } from "@/drills/types";
 import { ExplanationPanel } from "@/ui/explanation/ExplanationPanel";
+import { colors, display, surfaces, ui } from "@/ui/ds";
+import { CardFan, Felt, FeltLabel } from "@/ui/trainer/Felt";
 import {
   ActionButton,
-  Badge,
   Panel,
-  Screen,
   SecondaryButton,
+  StatCards,
   StatRow,
+  ToneBadge,
+  TrainerPage,
   type Tone,
-} from "@/ui/primitives";
-import { CardRow } from "@/ui/table/CardView";
-import { colors, spacing, type } from "@/ui/theme";
+} from "@/ui/trainer/kit";
 import {
   DrillHeader,
   PendingTablePanel,
@@ -179,12 +180,10 @@ export function DeviationDrillScreen() {
 
   if (!config || !rules || !system || !availability) {
     return (
-      <ScrollView style={drillStyles.scroll} contentContainerStyle={drillStyles.scrollContent}>
-        <Screen width="wide">
-          <DrillHeader drill={DRILL} />
-          <Text style={drillStyles.loading}>Loading your table…</Text>
-        </Screen>
-      </ScrollView>
+      <TrainerPage>
+        <DrillHeader drill={DRILL} />
+        <Text style={drillStyles.loading}>Loading your table…</Text>
+      </TrainerPage>
     );
   }
 
@@ -220,78 +219,74 @@ export function DeviationDrillScreen() {
 
   if (declined || !run || !availability.available) {
     return (
-      <ScrollView style={drillStyles.scroll} contentContainerStyle={drillStyles.scrollContent}>
-        <Screen width="wide">
-          {header}
-          <Panel
-            title={
-              availability.indexSet
-                ? "Nothing to drill at this table"
-                : `No indices for ${system.name}`
-            }
-          >
-            <Badge label="DECLINED" tone="info" />
-            <Text style={drillStyles.refusal}>{availability.note}</Text>
-            <View style={drillStyles.actions}>
-              {availability.indexSet === null
-                ? availability.systemsWithIndexes.map((id) => {
-                    const supported = getCountingSystem(id);
-                    return (
-                      <ActionButton
-                        key={id}
-                        label={`Drill ${supported.name} indices`}
-                        tone="good"
-                        onPress={() => pickSystem(supported)}
-                      />
-                    );
-                  })
-                : null}
-            </View>
-          </Panel>
-          {availability.indexSet ? (
-            <PoolPanel
-              availability={availability}
-              showExcluded={showExcluded}
-              onToggle={toggleExcluded}
-            />
-          ) : null}
-          <SetupPanel
-            rules={rules}
-            system={system}
+      <TrainerPage>
+        {header}
+        <Panel
+          title={
+            availability.indexSet
+              ? "Nothing to drill at this table"
+              : `No indices for ${system.name}`
+          }
+        >
+          <ToneBadge label="Declined" tone="info" />
+          <Text style={drillStyles.refusal}>{availability.note}</Text>
+          <View style={drillStyles.actions}>
+            {availability.indexSet === null
+              ? availability.systemsWithIndexes.map((id) => {
+                  const supported = getCountingSystem(id);
+                  return (
+                    <ActionButton
+                      key={id}
+                      label={`Drill ${supported.name} indices`}
+                      tone="good"
+                      onPress={() => pickSystem(supported)}
+                    />
+                  );
+                })
+              : null}
+          </View>
+        </Panel>
+        {availability.indexSet ? (
+          <PoolPanel
             availability={availability}
-            onPickSystem={pickSystem}
+            showExcluded={showExcluded}
+            onToggle={toggleExcluded}
           />
-        </Screen>
-      </ScrollView>
+        ) : null}
+        <SetupPanel
+          rules={rules}
+          system={system}
+          availability={availability}
+          onPickSystem={pickSystem}
+        />
+      </TrainerPage>
     );
   }
 
   return (
-    <ScrollView style={drillStyles.scroll} contentContainerStyle={drillStyles.scrollContent}>
-      <Screen width="wide">
-        {header}
-        <View style={twoColumn ? styles.wide : styles.narrow}>
-          <QuestionColumn
-            drill={run.drill}
-            twoColumn={twoColumn}
-            canUndo={recorded.canUndo}
-            onUndo={undo}
-            onAnswer={answer}
-            onNext={nextQuestion}
-          />
-          <RailColumn
-            drill={run.drill}
-            twoColumn={twoColumn}
-            rules={rules}
-            system={system}
-            availability={availability}
-            showExcluded={showExcluded}
-            onToggleExcluded={toggleExcluded}
-            onPickSystem={pickSystem}
-          />
-        </View>
-      </Screen>
-    </ScrollView>
+    <TrainerPage>
+      {header}
+      <View style={twoColumn ? styles.wide : styles.narrow}>
+        <QuestionColumn
+          drill={run.drill}
+          twoColumn={twoColumn}
+          canUndo={recorded.canUndo}
+          onUndo={undo}
+          onAnswer={answer}
+          onNext={nextQuestion}
+        />
+        <RailColumn
+          drill={run.drill}
+          twoColumn={twoColumn}
+          rules={rules}
+          system={system}
+          availability={availability}
+          showExcluded={showExcluded}
+          onToggleExcluded={toggleExcluded}
+          onPickSystem={pickSystem}
+        />
+      </View>
+    </TrainerPage>
   );
 }
 
@@ -329,32 +324,35 @@ const QuestionColumn = memo(function QuestionColumn({
 
   return (
     <View style={twoColumn ? styles.columnWide : styles.columnNarrow}>
-      <Panel title={`Question ${question.index + 1}`}>
+      <Felt>
+        <Text accessibilityRole="header" style={styles.questionTitle}>
+          {`Question ${question.index + 1}`}
+        </Text>
         <View style={styles.hands}>
           {question.kind === "hand" ? (
             <View style={styles.seat}>
-              <Text style={styles.seatLabel}>You</Text>
-              <CardRow cards={question.hand.cards} />
+              <FeltLabel>You</FeltLabel>
+              <CardFan cards={question.hand.cards} size="lg" />
             </View>
           ) : null}
           <View style={styles.seat}>
-            <Text style={styles.seatLabel}>Dealer shows</Text>
-            <CardRow cards={[question.dealerUpcard]} />
+            <FeltLabel>Dealer shows</FeltLabel>
+            <CardFan cards={[question.dealerUpcard]} size="lg" />
           </View>
         </View>
         <View style={styles.count}>
-          <StatRow
+          <CountFigure
             label={`Running count · ${count.systemName}`}
             value={formatCountValue(count.runningCount)}
           />
-          <StatRow label="Left in the shoe" value={decksText(count.cardsRemaining)} />
-          <StatRow
+          <CountFigure label="Left in the shoe" value={decksText(count.cardsRemaining)} />
+          <CountFigure
             label={`True count (${ROUNDING_NAME[count.rounding]})`}
             value={count.trueCount === null ? "—" : formatCountValue(count.trueCount)}
-            tone="info"
+            accent
           />
         </View>
-      </Panel>
+      </Felt>
 
       {result ? null : question.kind === "insurance" ? (
         <Panel title={`Insurance against a dealer ${upcardName(11)}?`}>
@@ -430,16 +428,22 @@ const RailColumn = memo(function RailColumn({
 
   return (
     <View style={twoColumn ? styles.columnWide : styles.columnNarrow}>
+      <StatCards
+        cards={[
+          {
+            label: "Correct",
+            value: formatRate(report.tally.accuracy),
+            delta: `${report.tally.correct} of ${report.tally.attempts} index plays`,
+          },
+          {
+            label: "Streak",
+            value: String(report.tally.streak),
+            delta: report.tally.streak > 0 ? "in a row" : "answer to start one",
+            tone: report.tally.streak > 0 ? "good" : "neutral",
+          },
+        ]}
+      />
       <Panel title="This run">
-        <StatRow
-          label="Correct"
-          value={`${formatRate(report.tally.accuracy)} (${report.tally.correct} of ${report.tally.attempts})`}
-        />
-        <StatRow
-          label="Streak"
-          value={report.tally.streak}
-          tone={report.tally.streak > 0 ? "good" : "neutral"}
-        />
         <StatRow
           label="When the index had fired"
           value={`${formatRate(report.departures.accuracy)} (${report.departures.correct} of ${report.departures.attempts})`}
@@ -559,16 +563,44 @@ function PoolPanel({
   );
 }
 
+/** One of the three numbers the question is posed at, large on the felt. */
+function CountFigure({
+  label,
+  value,
+  accent = false,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
+  return (
+    <View style={styles.figure} accessible accessibilityLabel={`${label}: ${value}`}>
+      <FeltLabel>{label}</FeltLabel>
+      <Text style={[styles.figureValue, accent && styles.figureAccent]}>{value}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  narrow: { flexDirection: "column", gap: spacing.md },
-  wide: { flexDirection: "row", gap: spacing.md, alignItems: "flex-start" },
-  columnWide: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0, gap: spacing.md },
-  columnNarrow: { width: "100%", gap: spacing.md },
-  hands: { flexDirection: "row", flexWrap: "wrap", gap: spacing.lg, alignItems: "flex-end" },
-  seat: { gap: spacing.xs },
-  seatLabel: { ...type.caption, color: colors.textMuted },
-  count: { gap: 2, marginTop: spacing.sm },
-  accessory: { gap: spacing.sm },
+  narrow: { flexDirection: "column", gap: 24 },
+  wide: { flexDirection: "row", gap: 24, alignItems: "flex-start" },
+  columnWide: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0, gap: 24 },
+  columnNarrow: { width: "100%", gap: 24 },
+  questionTitle: { ...ui(17, 600), color: colors.feltText },
+  hands: { flexDirection: "row", flexWrap: "wrap", gap: 32, alignItems: "flex-end" },
+  seat: { gap: 8 },
+  count: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 28,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: surfaces.betSpot,
+  },
+  figure: { gap: 4 },
+  figureValue: { ...display(28, 500), fontVariant: ["tabular-nums"], color: colors.feltText },
+  figureAccent: { color: colors.primary },
+  accessory: { gap: 12 },
   toggle: { alignSelf: "flex-start" },
-  excluded: { gap: 2, paddingTop: spacing.xs, borderTopWidth: 1, borderTopColor: colors.border },
+  excluded: { gap: 2, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.border },
 });

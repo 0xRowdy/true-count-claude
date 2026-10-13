@@ -18,7 +18,7 @@
  */
 
 import { useCallback, useRef, useState } from "react";
-import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import {
   type CountingSystem,
   type TrueCountRounding,
@@ -36,8 +36,18 @@ import {
   trueCountReport,
 } from "@/drills/trueCount";
 import { getDrill } from "@/drills/types";
-import { ActionButton, Badge, Panel, Screen, SegmentedControl, StatRow } from "@/ui/primitives";
-import { colors, spacing, type } from "@/ui/theme";
+import { display, surfaces, ui, colors } from "@/ui/ds";
+import { Felt, FeltLabel } from "@/ui/trainer/Felt";
+import {
+  ActionButton,
+  Choice,
+  Panel,
+  StatCards,
+  StatRow,
+  ToneBadge,
+  TrainerPage,
+  text,
+} from "@/ui/trainer/kit";
 import { CountEntryPad } from "./CountEntryPad";
 import {
   DrillHeader,
@@ -159,12 +169,10 @@ export function TrueCountDrillScreen() {
 
   if (!config || !shownSystem) {
     return (
-      <ScrollView style={drillStyles.scroll} contentContainerStyle={drillStyles.scrollContent}>
-        <Screen width="wide">
-          <DrillHeader drill={DRILL} />
-          <Text style={drillStyles.loading}>Loading your table…</Text>
-        </Screen>
-      </ScrollView>
+      <TrainerPage>
+        <DrillHeader drill={DRILL} />
+        <Text style={drillStyles.loading}>Loading your table…</Text>
+      </TrainerPage>
     );
   }
 
@@ -181,8 +189,8 @@ export function TrueCountDrillScreen() {
             : "changing it starts a new set of questions."
         }
       />
-      <Text style={styles.label}>Rounding</Text>
-      <SegmentedControl
+      <Text style={[text.overline, styles.label]}>Rounding</Text>
+      <Choice
         options={ROUNDINGS.map((mode) => ({ value: mode, label: ROUNDING_SHORT[mode] }))}
         value={rounding}
         onChange={(mode) => {
@@ -206,38 +214,36 @@ export function TrueCountDrillScreen() {
     const availability = trueCountDrillAvailability(refused);
     const references = unbalancedCountRows(refused, decks);
     return (
-      <ScrollView style={drillStyles.scroll} contentContainerStyle={drillStyles.scrollContent}>
-        <Screen width="wide">
-          {header}
-          <Panel title={`Not for ${refused.name}`}>
-            <Badge label="DECLINED" tone="info" />
-            <Text style={drillStyles.refusal}>{availability.note}</Text>
-            {references.map((row) => (
-              <View key={row.kind} style={styles.reference}>
-                <StatRow
-                  label={row.label}
-                  value={row.value === null ? NONE_PUBLISHED : formatCountValue(row.value)}
-                />
-                <Text style={drillStyles.note}>{row.meaning}</Text>
-              </View>
-            ))}
-            <View style={drillStyles.actions}>
-              {availability.supportedSystems.map((id) => {
-                const supported = getCountingSystem(id);
-                return (
-                  <ActionButton
-                    key={id}
-                    label={`Drill ${supported.name}`}
-                    tone="good"
-                    onPress={() => pickSystem(supported)}
-                  />
-                );
-              })}
+      <TrainerPage>
+        {header}
+        <Panel title={`Not for ${refused.name}`}>
+          <ToneBadge label="Declined" tone="info" />
+          <Text style={drillStyles.refusal}>{availability.note}</Text>
+          {references.map((row) => (
+            <View key={row.kind} style={styles.reference}>
+              <StatRow
+                label={row.label}
+                value={row.value === null ? NONE_PUBLISHED : formatCountValue(row.value)}
+              />
+              <Text style={drillStyles.note}>{row.meaning}</Text>
             </View>
-          </Panel>
-          {setup}
-        </Screen>
-      </ScrollView>
+          ))}
+          <View style={drillStyles.actions}>
+            {availability.supportedSystems.map((id) => {
+              const supported = getCountingSystem(id);
+              return (
+                <ActionButton
+                  key={id}
+                  label={`Drill ${supported.name}`}
+                  tone="good"
+                  onPress={() => pickSystem(supported)}
+                />
+              );
+            })}
+          </View>
+        </Panel>
+        {setup}
+      </TrainerPage>
     );
   }
 
@@ -248,19 +254,24 @@ export function TrueCountDrillScreen() {
 
   const questionColumn = (
     <View style={twoColumn ? styles.columnWide : styles.columnNarrow}>
-      <Panel title={`Question ${question.index + 1}`}>
+      <Felt>
+        <View style={styles.questionHead}>
+          <Text accessibilityRole="header" style={styles.questionTitle}>
+            {`Question ${question.index + 1}`}
+          </Text>
+          {result ? <ToneBadge label={FOCUS_LABEL[question.focus]} tone="info" /> : null}
+        </View>
         <View style={styles.question}>
           <View style={styles.given}>
-            <Text style={styles.givenLabel}>Running Count · {question.systemName}</Text>
-            <Text style={drillStyles.big}>{formatCountValue(question.runningCount)}</Text>
+            <FeltLabel>Running Count · {question.systemName}</FeltLabel>
+            <Text style={styles.big}>{formatCountValue(question.runningCount)}</Text>
           </View>
           <View style={styles.given}>
-            <Text style={styles.givenLabel}>Left in the shoe</Text>
+            <FeltLabel>Left in the shoe</FeltLabel>
             <Text style={styles.decks}>{decksText(question.cardsRemaining)}</Text>
           </View>
         </View>
-        {result ? <Badge label={FOCUS_LABEL[question.focus]} tone="info" /> : null}
-      </Panel>
+      </Felt>
 
       {result ? null : (
         <Panel>
@@ -295,16 +306,22 @@ export function TrueCountDrillScreen() {
 
   const railColumn = (
     <View style={twoColumn ? styles.columnWide : styles.columnNarrow}>
+      <StatCards
+        cards={[
+          {
+            label: "Correct",
+            value: formatRate(report.tally.accuracy),
+            delta: `${report.tally.correct} of ${report.tally.attempts} answers`,
+          },
+          {
+            label: "Streak",
+            value: String(report.tally.streak),
+            delta: report.tally.streak > 0 ? "in a row" : "answer to start one",
+            tone: report.tally.streak > 0 ? "good" : "neutral",
+          },
+        ]}
+      />
       <Panel title="This run">
-        <StatRow
-          label="Correct"
-          value={`${formatRate(report.tally.accuracy)} (${report.tally.correct} of ${report.tally.attempts})`}
-        />
-        <StatRow
-          label="Streak"
-          value={report.tally.streak}
-          tone={report.tally.streak > 0 ? "good" : "neutral"}
-        />
         <Section title="Where it goes wrong">
           {[
             report.negativeTrueCounts,
@@ -359,38 +376,38 @@ export function TrueCountDrillScreen() {
   );
 
   return (
-    <ScrollView
-      style={drillStyles.scroll}
-      contentContainerStyle={drillStyles.scrollContent}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Screen width="wide">
-        {header}
-        <View style={twoColumn ? styles.wide : styles.narrow}>
-          {questionColumn}
-          {railColumn}
-        </View>
-      </Screen>
-    </ScrollView>
+    <TrainerPage>
+      {header}
+      <View style={twoColumn ? styles.wide : styles.narrow}>
+        {questionColumn}
+        {railColumn}
+      </View>
+    </TrainerPage>
   );
 }
 
 const styles = StyleSheet.create({
-  narrow: { flexDirection: "column", gap: spacing.md },
-  wide: { flexDirection: "row", gap: spacing.md, alignItems: "flex-start" },
-  columnWide: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0, gap: spacing.md },
-  columnNarrow: { width: "100%", gap: spacing.md },
-  question: { flexDirection: "row", flexWrap: "wrap", gap: spacing.lg },
-  given: { gap: 2 },
-  givenLabel: { ...type.caption, color: colors.textMuted },
-  decks: { ...type.mono, fontSize: 20, fontWeight: "700", color: colors.text },
-  reference: { gap: 2 },
-  label: {
-    ...type.caption,
-    color: colors.textMuted,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginTop: spacing.sm,
+  narrow: { flexDirection: "column", gap: 24 },
+  wide: { flexDirection: "row", gap: 24, alignItems: "flex-start" },
+  columnWide: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0, gap: 24 },
+  columnNarrow: { width: "100%", gap: 24 },
+  questionHead: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
   },
+  questionTitle: { ...ui(17, 600), color: colors.feltText },
+  question: { flexDirection: "row", flexWrap: "wrap", gap: 40 },
+  given: { gap: 6 },
+  big: { ...display(56, 500), fontVariant: ["tabular-nums"], color: colors.feltText },
+  decks: {
+    ...display(32, 400),
+    fontVariant: ["tabular-nums"],
+    color: surfaces.feltTextMuted,
+    paddingTop: 14,
+  },
+  reference: { gap: 2 },
+  label: { marginTop: 8 },
 });
