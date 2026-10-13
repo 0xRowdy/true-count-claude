@@ -21,6 +21,7 @@ const ROUTES = [
   "/progress",
   "/progress?demo=1",
   "/games/baccarat",
+  "/games/video-poker",
 ];
 const HYDRATION = /Minified React error #(418|423|425)|hydrat/i;
 
