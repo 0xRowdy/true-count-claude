@@ -95,6 +95,13 @@ export interface Decision {
   readonly basicStrategyAction: DecisionAction;
   readonly verdict: Verdict;
   readonly count: CountSnapshot;
+  /**
+   * Set when the coach caught this Decision and the player took it back (schema version 4):
+   * `actionTaken` is the play the player chose, and scored, and this is the play that
+   * actually reached the cards in its place. Absent when what was chosen was what was played.
+   * Replay reads the cards by this, never by `actionTaken`.
+   */
+  readonly playedInstead?: DecisionAction;
   /** Epoch milliseconds, supplied by the caller. */
   readonly at: number;
 }

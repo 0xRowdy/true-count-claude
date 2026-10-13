@@ -154,6 +154,12 @@ export interface DecisionReport {
   readonly playerCards: readonly string[];
   readonly dealerUpcard: string;
   readonly actionTaken: string;
+  /**
+   * The play that reached the cards when the coach caught `actionTaken` and the player took it
+   * back; `null` when what was chosen was what was played. Anyone reproducing the hand follows
+   * this, not `actionTaken`.
+   */
+  readonly playedInstead: string | null;
   readonly correctAction: string;
   readonly verdict: string;
 }
@@ -311,6 +317,7 @@ function decisionReport(decision: Decision): DecisionReport {
     playerCards: decision.hand.playerCards.map(cardId),
     dealerUpcard: cardId(decision.hand.dealerUpcard),
     actionTaken: decision.actionTaken,
+    playedInstead: decision.playedInstead ?? null,
     correctAction: decision.correctAction,
     verdict: decision.verdict,
   };

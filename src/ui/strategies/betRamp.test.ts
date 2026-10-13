@@ -31,7 +31,7 @@ describe("bet ramp", () => {
     const check = checkRamp(ramp, rules);
     expect(check.level).toBe("warn");
     expect(check.title).toBe("Aggressive for a 6-deck shoe");
-    // The same ramp is fine… no: a single deck is stricter still.
+    // A single deck is stricter still: even the default ramp is aggressive there.
     expect(checkRamp(defaultRamp(rules), { ...rules, decks: 1 }).level).toBe("warn");
   });
 

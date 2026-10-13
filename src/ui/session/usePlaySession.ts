@@ -43,6 +43,7 @@ import {
   configureRules,
   createPlayTable,
   dealRound,
+  isBroke,
   nextRound,
   playAction,
   resetBankroll as resetTableBankroll,
@@ -53,6 +54,7 @@ import {
   takeUpRules,
 } from "@/ui/table/usePlayTable";
 import {
+  type ObservedAction,
   type PendingRound,
   beginSession,
   closeRound,
@@ -92,9 +94,19 @@ export interface PlaySession {
    */
   readonly switchTable: () => void;
 
-  readonly deal: () => void;
-  readonly act: (action: Action) => void;
-  readonly insurance: (take: boolean) => void;
+  /**
+   * Deals the next round. From a settled round it banks that round first, so "Next hand" is
+   * one tap; `bet` sets the wager in the same breath. A bankroll below the minimum after the
+   * bank stops at the bet prompt, where the reset is (invariant 6).
+   */
+  readonly deal: (bet?: number) => void;
+  /**
+   * Plays `action`. With `takenBack`, the coach caught `takenBack` and the player replaced it
+   * with `action`: the Decision is recorded (and scored) as `takenBack`, the cards follow
+   * `action`.
+   */
+  readonly act: (action: Action, takenBack?: Action) => void;
+  readonly insurance: (take: boolean, takenBack?: boolean) => void;
   readonly next: () => void;
   readonly shuffle: () => void;
   readonly setBet: (amount: number) => void;
@@ -183,33 +195,51 @@ export function usePlaySession(
     putSession(closeRound(session, buffered, next, at));
   }, []);
 
-  const deal = useCallback(() => {
-    const at = Date.now();
-    // Dealing settles the question of which table this is, so a restore that is still in
-    // flight must not arrive later and rebuild the table underneath the hand.
-    restored.current = true;
-    const existing = currentSession();
-    // A resumed Session and a table whose system was picked while it loaded are brought into
-    // line before anything is dealt, so no round is ever recorded under the wrong system.
-    const session =
-      existing && isActive(existing)
-        ? syncCountingSystem(existing, table, at)
-        : beginSession({ table, id: newSessionId(at), startedAt: at });
+  const deal = useCallback(
+    (bet?: number) => {
+      const at = Date.now();
+      let start = table;
+      if (start.round?.phase === "settled") start = nextRound(start);
+      if (bet !== undefined) start = chooseBet(start, bet);
+      if (start.round !== null) return;
+      if (isBroke(start)) {
+        advance(() => start);
+        return;
+      }
+      // Dealing settles the question of which table this is, so a restore that is still in
+      // flight must not arrive later and rebuild the table underneath the hand.
+      restored.current = true;
+      const existing = currentSession();
+      // A resumed Session and a table whose system was picked while it loaded are brought into
+      // line before anything is dealt, so no round is ever recorded under the wrong system.
+      const session =
+        existing && isActive(existing)
+          ? syncCountingSystem(existing, start, at)
+          : beginSession({ table: start, id: newSessionId(at), startedAt: at });
 
-    const opened = openRound(session, table);
-    pending.current = opened.pending;
-    // A Session that gained nothing is not rewritten; a new one always has, so its first
-    // write is also what sets the repository's active pointer.
-    if (opened.session !== existing) putSession(opened.session);
+      const opened = openRound(session, start);
+      pending.current = opened.pending;
+      // A Session that gained nothing is not rewritten; a new one always has, so its first
+      // write is also what sets the repository's active pointer.
+      if (opened.session !== existing) putSession(opened.session);
 
-    settleIfDone(advance(dealRound), at);
-  }, [table, advance, settleIfDone]);
+      settleIfDone(
+        advance(() => dealRound(start)),
+        at,
+      );
+    },
+    [table, advance, settleIfDone],
+  );
 
   const act = useCallback(
-    (action: Action) => {
+    (action: Action, takenBack?: Action) => {
       const at = Date.now();
       if (pending.current) {
-        pending.current = observeDecision(pending.current, table, { kind: "play", action }, at);
+        const observed: ObservedAction =
+          takenBack === undefined
+            ? { kind: "play", action }
+            : { kind: "play", action: takenBack, playedInstead: action };
+        pending.current = observeDecision(pending.current, table, observed, at);
       }
       settleIfDone(
         advance((current) => playAction(current, action)),
@@ -220,10 +250,14 @@ export function usePlaySession(
   );
 
   const insurance = useCallback(
-    (take: boolean) => {
+    (take: boolean, takenBack?: boolean) => {
       const at = Date.now();
       if (pending.current) {
-        pending.current = observeDecision(pending.current, table, { kind: "insurance", take }, at);
+        const observed: ObservedAction =
+          takenBack === undefined
+            ? { kind: "insurance", take }
+            : { kind: "insurance", take: takenBack, playedInstead: take };
+        pending.current = observeDecision(pending.current, table, observed, at);
       }
       settleIfDone(
         advance((current) => takeInsurance(current, take)),

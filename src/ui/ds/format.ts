@@ -40,10 +40,24 @@ export function formatThousands(amount: number): string {
   return `${sign}${grouped}${fraction ? `.${fraction}` : ""}`;
 }
 
-/** `2450` → `"$2,450"`. */
+/**
+ * A practice-chip count: `9999.8` → `"9,999.80"`, `10000` → `"10,000"`. Rounded to the cent, so
+ * float noise never shows.
+ */
+export function formatChips(amount: number): string {
+  return formatMoney(amount).replace("$", "");
+}
+
+/**
+ * `2450` → `"$2,450"`; `2591.5` → `"$2,591.50"` (fractions are rounded to the cent and always
+ * show two digits, so a 5¢ video poker machine never reads as `$2,591.5` or carries float noise).
+ */
 export function formatMoney(amount: number): string {
-  const text = formatThousands(Math.abs(amount));
-  return `${amount < 0 ? "-" : ""}$${text}`;
+  const cents = Math.round(Math.abs(amount) * 100);
+  const rest = cents % 100;
+  const text = formatThousands(Math.floor(cents / 100));
+  const fraction = rest === 0 ? "" : `.${String(rest).padStart(2, "0")}`;
+  return `${amount < 0 && cents > 0 ? "-" : ""}$${text}${fraction}`;
 }
 
 /** Suit glyphs with U+FE0E so browsers draw text, not emoji. */

@@ -316,7 +316,8 @@ function playerCardsDealt(session: Session, roundIndex: number, problems: string
       counted[handIndex] = [...playerCards];
     }
 
-    if (decision.actionTaken !== "split") continue;
+    // A taken-back Decision never reached the cards; the play that did is `playedInstead`.
+    if ((decision.playedInstead ?? decision.actionTaken) !== "split") continue;
     const [first, second] = playerCards;
     if (playerCards.length !== 2 || !first || !second) {
       problems.push(
