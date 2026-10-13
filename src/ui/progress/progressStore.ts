@@ -24,7 +24,7 @@
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { createAsyncStorageStore } from "@/state/asyncStorage";
-import { localIsoDate } from "@/state/profile";
+import { type GameId, localIsoDate } from "@/state/profile";
 import {
   type DecisionInput,
   EMPTY_PROGRESS,
@@ -43,6 +43,7 @@ import {
   recordHand as recordHandIn,
   startProgressSession as startSessionIn,
 } from "@/state/progress";
+import { resetBankroll as resetBankrollIn } from "@/state/progressReset";
 import { sampleProgress } from "@/state/progressSample";
 import { chipBalance } from "@/state/progressSelectors";
 import type { Session } from "@/state/types";
@@ -176,4 +177,9 @@ export function useProgressView(demo: boolean): ProgressView {
 /** The header's practice-chip balance, or undefined until known. */
 export function useChipBalance(view: ProgressView): number | undefined {
   return useMemo(() => (view.ready ? chipBalance(view.data) : undefined), [view.ready, view.data]);
+}
+
+/** Tops a game's practice bankroll back up to the start (invariant 6: never a dead end). */
+export function resetBankroll(game: GameId): void {
+  void store.apply((s) => resetBankrollIn(s, game));
 }

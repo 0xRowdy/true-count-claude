@@ -45,6 +45,9 @@ describe("numbers", () => {
   it("formats money", () => {
     expect(formatMoney(2450)).toBe("$2,450");
     expect(formatMoney(-75)).toBe("-$75");
+    expect(formatMoney(2591.5)).toBe("$2,591.50");
+    expect(formatMoney(0.1 + 0.2)).toBe("$0.30");
+    expect(formatMoney(-0.001)).toBe("$0");
   });
 
   it("clamps progress", () => {
