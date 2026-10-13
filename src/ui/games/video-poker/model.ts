@@ -381,6 +381,16 @@ function settle(
   };
 }
 
+/**
+ * A hand left in Hold & draw (the player navigated away or closed the page) is not a refund:
+ * it is drawn as held, like a machine that times out, and its net is what gets recorded. The
+ * hold itself is not graded: the player never pressed Draw.
+ */
+export function abandonedNet(state: VpState): number | null {
+  const round = dealtRound(state);
+  return round ? drawRound(round).netCents / 100 : null;
+}
+
 /** Result → Payout ("Collect" / "Continue"). */
 export function collect(state: VpState): VpState {
   return state.phase === "result" ? { ...state, phase: "payout" } : state;
@@ -533,25 +543,57 @@ export function decisionSummary(
   settings: VideoPokerSettings,
 ): { title: string; detail: string; correct: boolean } {
   const bet = betCents(settings);
+  const table = getPayTable(settings.payTableId);
+  const average = (option: HoldOption) =>
+    formatAverage(evCents(option, settings.coins, settings.denominationCents), bet);
   if (decision.correct) {
     const option = decision.advice.best;
-    const concept = describeHold(option.held, getPayTable(settings.payTableId)).concept;
+    const concept = describeHold(option.held, table).concept;
     return {
       title: `Hold: ${concept}. The best play.`,
-      detail: `Returns about ${formatAverage(evCents(option, settings.coins, settings.denominationCents), bet)} of your ${formatMoney(bet)} bet on average.`,
+      detail: `Returns about ${average(option)} of your ${formatMoney(bet)} bet on average.`,
       correct: true,
     };
   }
+  // Invariant 2: a miss always names the better hold, its cards and both average returns.
+  const best = decision.advice.best;
   const chosen = decision.advice.compared;
-  const concept = chosen
-    ? describeHold(chosen.held, getPayTable(settings.payTableId)).concept
-    : "that hold";
+  const concept = chosen ? describeHold(chosen.held, table).concept : "that hold";
+  const keep =
+    best.indices.length === 0
+      ? "draw five new cards"
+      : `keep ${describeHold(best.held, table).phrase} (${cardsText(best.held)})`;
+  const versus = chosen ? ` vs ${average(chosen)} for yours` : "";
+  const better = `Better: ${keep}, about ${average(best)} back${versus}.`;
   const cost = formatAverage(decision.advice.costCents, bet);
   return {
     title: `Hold: ${concept}${decision.tookBack ? ", taken back" : ""}.`,
-    detail: `${decision.tookBack ? "You drew to the better hold. " : ""}Gave up about ${cost} a hand on average. Counts as a miss.`,
+    detail: decision.tookBack
+      ? `${better} You took it back and drew to it. Counts as a miss.`
+      : `${better} Gave up about ${cost} a hand on average. Counts as a miss.`,
     correct: false,
   };
+}
+
+export interface DealtCardView {
+  readonly card: Card;
+  /** The player pressed Draw holding this card. */
+  readonly yours: boolean;
+  /** The best hold keeps this card. */
+  readonly best: boolean;
+}
+
+/** The dealt hand behind a verdict (invariant 3: the explanation shows the cards). */
+export function dealtCards(
+  round: DealtRound | DrawnRound,
+  decision: HoldDecision,
+): DealtCardView[] {
+  const best = decision.advice.best.mask;
+  return round.dealt.map((card, i) => ({
+    card,
+    yours: (decision.chosenMask & (1 << i)) !== 0,
+    best: (best & (1 << i)) !== 0,
+  }));
 }
 
 /** The result headline: "You win $30", "Push", "No win". */

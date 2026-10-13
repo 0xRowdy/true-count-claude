@@ -6,6 +6,7 @@ import {
   type Migration,
   SESSION_MIGRATIONS,
   SESSION_RECORDS_V3,
+  DECISION_PLAYED_INSTEAD_V4,
 } from "./schema";
 import { endSession } from "./session";
 import { verifyReplay } from "./replay";
@@ -75,7 +76,10 @@ describe("the session archive", () => {
 
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    expect(parsed.applied).toEqual([SESSION_RECORDS_V3.describe]);
+    expect(parsed.applied).toEqual([
+      SESSION_RECORDS_V3.describe,
+      DECISION_PLAYED_INSTEAD_V4.describe,
+    ]);
     const [session] = parsed.sessions;
     expect(session!.countingSystem).toBe("Zen Count");
     expect(session!.countingSystemChanges).toHaveLength(3);
@@ -86,9 +90,9 @@ describe("the session archive", () => {
 
   it("upgrades an archive through every step of a longer chain", () => {
     const step: Migration = {
-      from: 3,
-      to: 4,
-      describe: "3→4: add a per-Session note",
+      from: 4,
+      to: 5,
+      describe: "4→5: add a per-Session note",
       migrate: (data) => ({ ...(data as object), note: "" }),
     };
     const raw = JSON.stringify({
@@ -98,7 +102,7 @@ describe("the session archive", () => {
       sessions: [buildSession({ id: "old", rounds: 2 })],
     });
 
-    const parsed = parseArchive(raw, [...SESSION_MIGRATIONS, step], 4);
+    const parsed = parseArchive(raw, [...SESSION_MIGRATIONS, step], 5);
 
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;

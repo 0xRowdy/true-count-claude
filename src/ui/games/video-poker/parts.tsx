@@ -7,7 +7,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import type { Card } from "@/engine/cards";
 import { PlayingCard, colors, display, icons, radius, surfaces, ui } from "@/ui/ds";
-import type { PayLine, MathRow, HistoryEntry } from "./model";
+import type { DealtCardView, HistoryEntry, MathRow, PayLine } from "./model";
 import { historyLabel } from "./model";
 import { machine } from "./theme";
 
@@ -252,6 +252,35 @@ export function DecisionLine({
   );
 }
 
+/** The dealt hand behind a verdict: which cards you held, which the best hold keeps. */
+export function DealtHand({ cards }: { cards: DealtCardView[] }) {
+  return (
+    <View style={styles.dealt} accessibilityLabel="The dealt hand">
+      <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
+        DEALT · YOUR HOLD VS THE BEST HOLD
+      </Text>
+      <View style={styles.dealtRow}>
+        {cards.map((c, i) => (
+          <View key={i} style={styles.dealtSlot}>
+            <View style={[styles.dealtWrap, c.best && styles.dealtBest]}>
+              <PlayingCard rank={c.card.rank} suit={c.card.suit} size="sm" />
+            </View>
+            <Text
+              style={[ui(9, 800, { letterSpacing: 0.5 }), { color: colors.foreground }]}
+              accessibilityLabel={`${c.yours ? "you held" : "you let go"}${c.best ? ", best hold keeps" : ""}`}
+            >
+              {c.yours ? "YOU HELD" : " "}
+            </Text>
+            <Text style={[ui(9, 800, { letterSpacing: 0.5 }), { color: colors.coachAccent }]}>
+              {c.best ? "KEEP" : " "}
+            </Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 export function HistoryStrip({ history }: { history: readonly HistoryEntry[] }) {
   if (history.length === 0) return null;
   return (
@@ -369,6 +398,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  dealt: { gap: 8 },
+  dealtRow: { flexDirection: "row", justifyContent: "space-between" },
+  dealtSlot: { alignItems: "center", gap: 2 },
+  dealtWrap: { padding: 2, borderRadius: 8, borderWidth: 2, borderColor: surfaces.transparent },
+  dealtBest: { borderColor: colors.coachAccent },
   history: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
   pill: {
     paddingHorizontal: 8,

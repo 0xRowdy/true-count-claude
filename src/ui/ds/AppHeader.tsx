@@ -2,7 +2,7 @@ import { Link } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from "react-native";
 import { Avatar, portraits } from "./Avatar";
-import { formatThousands } from "./format";
+import { formatChips } from "./format";
 import {
   Bell,
   ChartLine,
@@ -113,11 +113,11 @@ export function AppHeader({
           <View
             style={styles.pill}
             accessible
-            accessibilityLabel={`${formatThousands(chips)} practice chips`}
+            accessibilityLabel={`${formatChips(chips)} practice chips`}
           >
             <View style={styles.chipDot} />
             <Text style={[ui(13, 600), { color: colors.foreground }]}>
-              {compact ? formatThousands(chips) : `${formatThousands(chips)} practice chips`}
+              {compact ? formatChips(chips) : `${formatChips(chips)} practice chips`}
             </Text>
           </View>
         )}

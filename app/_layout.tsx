@@ -29,7 +29,7 @@ export default function RootLayout() {
           name="pricing"
           options={{ title: "Pricing · Tableside", headerShown: false }}
         />
-        <Stack.Screen name="play" options={{ title: "Play" }} />
+        <Stack.Screen name="play" options={{ title: "Blackjack", headerShown: false }} />
         {/* The sheet is not an AppShell page (it mirrors frame bi8Au), so it hides the header here. */}
         <Stack.Screen
           name="design-system"
