@@ -1,6 +1,6 @@
 ---
 name: verify-true-count
-description: Drive the True Count app (Expo web export) in a real headless browser and capture evidence — launch, doctor, run feature flows, clean up. Use before calling any UI/behavior change done, when reproducing a bug report, or when a PR needs proof that a screen still works. Covers Play, the drills, Rules, Shoe Integrity, Session.
+description: Drive the True Count app (Expo web export) in a real headless browser and capture evidence — launch, doctor, run feature flows, clean up. Use before calling any UI/behavior change done, when reproducing a bug report, or when a PR needs proof that a screen still works. Covers Play, the drills, Rules, Shoe Integrity, Session, and the /design-system sheet.
 ---
 
 # verify-true-count
