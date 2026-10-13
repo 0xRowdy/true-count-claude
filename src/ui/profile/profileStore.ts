@@ -2,76 +2,51 @@
  * The player profile, shared by every screen that tailors itself to it (onboarding writes it;
  * the lobby, the coach and the game tables read it).
  *
- * A module-level store for the same reasons as `rulesStore.ts`: separate routes must see one
- * profile without remounting, the prerendered snapshot is the `loading` state, and a choice
- * the player makes before storage answers is never overwritten by the late read.
+ * The state machine lives in `src/state/profile.ts` (`createProfileStore`), tested in Node.
+ * This module binds one instance to AsyncStorage and React. The server snapshot is the fixed
+ * initial state, so the prerendered markup is always the `loading` profile.
  */
 
 import { useEffect, useSyncExternalStore } from "react";
 import { createAsyncStorageStore } from "@/state/asyncStorage";
-import { DEFAULT_PROFILE, type PlayerProfile, createProfileRepository } from "@/state/profile";
+import {
+  INITIAL_PROFILE_STATE,
+  type PlayerProfile,
+  type ProfileState,
+  createProfileRepository,
+  createProfileStore,
+} from "@/state/profile";
 
-export interface ProfileState {
-  /** `DEFAULT_PROFILE` until storage answers. */
-  readonly profile: PlayerProfile;
-  /** False until storage has answered; nothing should redirect or persist before then. */
-  readonly ready: boolean;
-}
+export type { ProfileState };
 
-const repo = createProfileRepository(createAsyncStorageStore());
+const store = createProfileStore(createProfileRepository(createAsyncStorageStore()));
+const serverSnapshot = (): ProfileState => INITIAL_PROFILE_STATE;
 
-let state: ProfileState = { profile: DEFAULT_PROFILE, ready: false };
-const listeners = new Set<() => void>();
-let started = false;
-let chosen = false;
-let writes: Promise<unknown> = Promise.resolve();
-
-function publish(next: ProfileState): void {
-  state = next;
-  for (const listener of listeners) listener();
-}
-
-function subscribe(listener: () => void): () => void {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-}
-
-const snapshot = (): ProfileState => state;
-
-/** The player profile, subscribed. */
+/** The player profile, subscribed. Wait for `ready` before acting on `onboarded` or the name. */
 export function useProfile(): ProfileState {
-  const current = useSyncExternalStore(subscribe, snapshot, snapshot);
+  const current = useSyncExternalStore(store.subscribe, store.snapshot, serverSnapshot);
   useEffect(() => {
-    loadProfile();
+    void store.load();
   }, []);
   return current;
 }
 
-/** Reads the stored profile once per app launch. Idempotent. */
-export function loadProfile(): void {
-  if (started) return;
-  started = true;
-  void repo.load().then(
-    (stored) => {
-      if (!chosen) publish({ profile: stored ?? DEFAULT_PROFILE, ready: true });
-    },
-    () => publish({ profile: state.profile, ready: true }),
-  );
+/** The profile as it stands right now, for callers outside React (e.g. the coach). */
+export function currentProfile(): ProfileState {
+  return store.snapshot();
 }
 
-/** Merges a change into the profile, publishes it and persists it. */
+/** Reads the stored profile once per app launch. Idempotent. */
+export function loadProfile(): void {
+  void store.load();
+}
+
+/** Merges a change into the profile and persists it (safe before storage has answered). */
 export function updateProfile(change: Partial<PlayerProfile>): void {
-  chosen = true;
-  const profile = { ...state.profile, ...change };
-  publish({ profile, ready: true });
-  writes = writes.then(() => repo.save(profile)).catch(() => undefined);
+  void store.update(change);
 }
 
 /** Forgets the profile (e.g. "start over" in onboarding). */
 export function resetProfile(): void {
-  chosen = true;
-  publish({ profile: DEFAULT_PROFILE, ready: true });
-  writes = writes.then(() => repo.clear()).catch(() => undefined);
+  void store.reset();
 }
