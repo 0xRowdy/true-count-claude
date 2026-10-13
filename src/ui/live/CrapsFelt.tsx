@@ -513,7 +513,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 2,
   },
-  numberNarrow: { height: undefined, minHeight: 84, paddingVertical: 6 },
+  numberNarrow: { height: "auto", minHeight: 84, paddingVertical: 6 },
   numberChips: { position: "absolute", left: 6, bottom: 6 },
   puckSpot: { position: "absolute", left: 6, top: 6 },
   strip: {
