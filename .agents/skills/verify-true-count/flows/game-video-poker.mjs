@@ -1,4 +1,4 @@
-/* global document, innerWidth, localStorage -- page.evaluate callbacks run in the browser */
+/* global document, innerWidth -- page.evaluate callbacks run in the browser */
 // Video Poker (/games/video-poker, frame xfJEh). Proves, with ?seed=1981: two full hands through
 // Bet → Hold & draw → Result → Payout; a deliberately worse hold (the pair of 9s over four
 // hearts) is stopped by the coach's mistake note *before* the draw, with the cards on screen,

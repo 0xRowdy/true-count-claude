@@ -5,7 +5,7 @@ The video poker machine (design frame `xfJEh`, route `/games/video-poker`): a tw
 ## Sub-features
 
 - Bet: coins 1–5 and coin value (5¢, 25¢, $1, $5); a bet over the bankroll is refused in place; below 5¢ a one-tap bankroll reset
-- Hold & draw: HOLD toggles (`aria-pressed`), Draw. Coach by profile: "every" shows the hint at each deal; "mistakes" stops a worse hold with a mistake note *before* the draw ("Hold the better cards" / "Keep my hold"); "asked" only via "Ask Marcus for a hint". Hint: "Hold these N" applies the best holds; "Show the math" ranks holds by exact average return (`analyzeHolds`)
+- Hold & draw: HOLD toggles (`aria-pressed`), Draw. Coach by profile: "every" shows the hint at each deal; "mistakes" stops a worse hold with a mistake note _before_ the draw ("Hold the better cards" / "Keep my hold"); "asked" only via "Ask Marcus for a hint". Hint: "Hold these N" applies the best holds; "Show the math" ranks holds by exact average return (`analyzeHolds`)
 - Result: hand name and pay, "Decisions this hand" (best play / miss, taken back) · Payout: LAST strip, practice bankroll · Speed toggles the deal animation
 - Rules sheet (book icon): how it plays, 9/6 and 8/5 Jacks or Better, Full Pay Deuces Wild, 9/6 Double Double Bonus with pay tables, return and house edge; switching machines only between hands
 - Each hold is recorded as a video poker decision (made hands / pairs / flush draws / straight draws / high cards) and each hand's net into progress; the header bankroll is the game's practice bankroll
