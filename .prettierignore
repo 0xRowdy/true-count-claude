@@ -6,3 +6,5 @@ pnpm-lock.yaml
 design/
 docs/research/
 *.pen
+.claude/
+.mcp.json
