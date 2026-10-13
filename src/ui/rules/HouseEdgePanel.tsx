@@ -103,8 +103,8 @@ function Headline({ percent, rules }: { percent: number; rules: RuleSet }) {
 
       {playerAhead ? (
         <Text style={styles.prose}>
-          Basic strategy alone is ahead of the house at this table, before a single card is
-          counted. Tables like this are rare, short-lived, and watched closely.
+          Basic strategy alone is ahead of the house at this table, before a single card is counted.
+          Tables like this are rare, short-lived, and watched closely.
         </Text>
       ) : null}
     </>
@@ -116,8 +116,8 @@ function Unpriceable({ estimate }: { estimate: HouseEdgeEstimate }) {
     <View style={styles.unpriceable}>
       <Badge label="NO PUBLISHED FIGURE" tone="warn" />
       <Text style={styles.prose}>
-        We will not show you a number we cannot source. The rest of this screen still works —
-        the strategy chart below is exact for these rules.
+        We will not show you a number we cannot source. The rest of this screen still works — the
+        strategy chart below is exact for these rules.
       </Text>
       {estimate.unsourced.map((entry) => (
         <Text key={entry.id} style={styles.unsourcedReason}>
@@ -132,8 +132,8 @@ function Working({ estimate }: { estimate: HouseEdgeEstimate }) {
   return (
     <View style={styles.working}>
       <Text style={styles.workingIntro}>
-        A published house edge for the baseline game, plus a published figure for each rule
-        your table differs by. Positive costs you; negative pays you.
+        A published house edge for the baseline game, plus a published figure for each rule your
+        table differs by. Positive costs you; negative pays you.
       </Text>
 
       <View style={styles.ledger}>

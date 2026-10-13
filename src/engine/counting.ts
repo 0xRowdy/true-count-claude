@@ -64,9 +64,7 @@ export interface CountingSystem {
 }
 
 /** The ten distinct values a published tag table lists. `T` covers 10, J, Q and K. */
-type TagSpec = Readonly<
-  Record<"A" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "T", number>
->;
+type TagSpec = Readonly<Record<"A" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "T", number>>;
 
 /** Expands a published tag table into a tag for every rank. */
 function tagTable(spec: TagSpec): TagTable {

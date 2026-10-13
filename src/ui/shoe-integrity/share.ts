@@ -26,10 +26,7 @@ export interface ExportOutcome {
 const MANUAL_FALLBACK = "Copy it from the report text below instead.";
 
 /** Offers `contents` to the user as a file they can attach to a bug report. */
-export async function exportReportFile(
-  fileName: string,
-  contents: string,
-): Promise<ExportOutcome> {
+export async function exportReportFile(fileName: string, contents: string): Promise<ExportOutcome> {
   if (Platform.OS === "web") {
     if (typeof document === "undefined" || typeof URL.createObjectURL !== "function") {
       return { ok: false, message: `This browser blocked the download. ${MANUAL_FALLBACK}` };

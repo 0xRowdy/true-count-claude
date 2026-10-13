@@ -70,7 +70,12 @@ const ACTION_TONE: Record<Action, Tone> = {
 
 function start(config: RunConfig) {
   return startBasicStrategyDrill(
-    { ...DEFAULT_BASIC_STRATEGY_CONFIG, rules: config.rules, system: config.system, bet: config.rules.minBet },
+    {
+      ...DEFAULT_BASIC_STRATEGY_CONFIG,
+      rules: config.rules,
+      system: config.system,
+      bet: config.rules.minBet,
+    },
     config.seed,
   );
 }
@@ -165,7 +170,9 @@ export function BasicStrategyDrillScreen() {
             ))}
           </View>
         ) : (
-          <Text style={drillStyles.note}>Deal a hand to start. Every decision you make is graded.</Text>
+          <Text style={drillStyles.note}>
+            Deal a hand to start. Every decision you make is graded.
+          </Text>
         )}
       </Panel>
 
@@ -188,22 +195,24 @@ export function BasicStrategyDrillScreen() {
           }
         >
           <View style={drillStyles.actions}>
-            {ACTION_ORDER.filter((action) => currentActions(state).includes(action)).map((action) => (
-              <ActionButton
-                key={action}
-                label={ACTION_LABEL[action]}
-                tone={ACTION_TONE[action]}
-                onPress={() => act(action)}
-              />
-            ))}
+            {ACTION_ORDER.filter((action) => currentActions(state).includes(action)).map(
+              (action) => (
+                <ActionButton
+                  key={action}
+                  label={ACTION_LABEL[action]}
+                  tone={ACTION_TONE[action]}
+                  onPress={() => act(action)}
+                />
+              ),
+            )}
           </View>
         </Panel>
       ) : (
         <Panel title={round && isRoundOver(round) ? "Hand over" : "Ready"}>
           {round?.settlement ? (
             <Text style={drillStyles.note}>
-              The cards and the Explanation stay put until you deal again. Chips are topped up before
-              every hand, so no chart cell is ever taken off the table.
+              The cards and the Explanation stay put until you deal again. Chips are topped up
+              before every hand, so no chart cell is ever taken off the table.
             </Text>
           ) : null}
           <View style={drillStyles.actions}>
@@ -233,8 +242,15 @@ export function BasicStrategyDrillScreen() {
     <View style={twoColumn ? styles.columnWide : styles.columnNarrow}>
       <Panel title="Where you stand">
         <Text style={styles.sentence}>{breakdownSentence(report)}</Text>
-        <StatRow label="Accuracy" value={`${formatRate(report.tally.accuracy)} (${report.tally.correct} of ${report.tally.attempts})`} />
-        <StatRow label="Streak" value={report.tally.streak} tone={report.tally.streak > 0 ? "good" : "neutral"} />
+        <StatRow
+          label="Accuracy"
+          value={`${formatRate(report.tally.accuracy)} (${report.tally.correct} of ${report.tally.attempts})`}
+        />
+        <StatRow
+          label="Streak"
+          value={report.tally.streak}
+          tone={report.tally.streak > 0 ? "good" : "neutral"}
+        />
         <StatRow label="Best streak" value={report.tally.bestStreak} />
         <StatRow label="Hands dealt" value={report.roundsDealt} />
         {report.insuranceTally.attempts > 0 ? (
@@ -259,7 +275,13 @@ export function BasicStrategyDrillScreen() {
             {report.breakdown.sections.map((section) => (
               <StatRow
                 key={section.section}
-                label={section.section === "pairs" ? "Pairs" : section.section === "soft" ? "Soft totals" : "Hard totals"}
+                label={
+                  section.section === "pairs"
+                    ? "Pairs"
+                    : section.section === "soft"
+                      ? "Soft totals"
+                      : "Hard totals"
+                }
                 value={`${formatRate(section.accuracy)} (${section.correct} of ${section.attempts})`}
                 tone={section.missed > 0 ? "warn" : "good"}
               />
@@ -304,7 +326,11 @@ export function BasicStrategyDrillScreen() {
           onEnd={recorded.endSession}
         />
         {recorded.pendingRules ? (
-          <PendingTablePanel current={config.rules} pending={recorded.pendingRules} onTakeUp={recorded.takeUpRules} />
+          <PendingTablePanel
+            current={config.rules}
+            pending={recorded.pendingRules}
+            onTakeUp={recorded.takeUpRules}
+          />
         ) : null}
         <View style={twoColumn ? styles.wide : styles.narrow}>
           {tableColumn}

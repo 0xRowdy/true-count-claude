@@ -187,9 +187,7 @@ export function Screen({
   children: ReactNode;
   width?: "reading" | "wide";
 }) {
-  return (
-    <View style={[styles.screen, width === "wide" && styles.screenWide]}>{children}</View>
-  );
+  return <View style={[styles.screen, width === "wide" && styles.screenWide]}>{children}</View>;
 }
 
 const styles = StyleSheet.create({

@@ -144,10 +144,7 @@ describe("rules that move the chart", () => {
 
 describe("describing a change", () => {
   it("reads as a sentence about a hand, not a diff", () => {
-    const changes = changesFor(
-      { ...DEFAULT_RULES, surrender: "none" },
-      { surrender: "late" },
-    );
+    const changes = changesFor({ ...DEFAULT_RULES, surrender: "none" }, { surrender: "late" });
     const hard16 = changes.find(
       (change) => change.section === "hard" && change.rowLabel === "16" && change.upcard === 10,
     );

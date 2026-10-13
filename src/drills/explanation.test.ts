@@ -129,8 +129,12 @@ describe("count context", () => {
   });
 
   it("checks Red 7 the same way: pivot named and explained, nothing else", () => {
-    const note = buildCountContext({ system: RED_7, decks: 6, runningCount: -3, cardsRemaining: 208 })
-      .trueCountNote as string;
+    const note = buildCountContext({
+      system: RED_7,
+      decks: 6,
+      runningCount: -3,
+      cardsRemaining: 208,
+    }).trueCountNote as string;
     expect(note).toContain("Red 7 is unbalanced");
     expect(note).toContain("Its pivot, +0, is the one Running Count that signals the same edge");
     expect(note).not.toMatch(/key count|raise|bet/i);

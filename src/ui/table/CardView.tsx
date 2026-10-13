@@ -48,11 +48,7 @@ export function FaceDownCardView({ size = "md" }: { size?: CardSize }) {
       accessible
       accessibilityRole="image"
       accessibilityLabel="Face-down card"
-      style={[
-        styles.card,
-        styles.faceDown,
-        { width: dimensions.width, height: dimensions.height },
-      ]}
+      style={[styles.card, styles.faceDown, { width: dimensions.width, height: dimensions.height }]}
     >
       <Text style={[styles.faceDownMark, { fontSize: dimensions.suit }]}>{"▤"}</Text>
     </View>

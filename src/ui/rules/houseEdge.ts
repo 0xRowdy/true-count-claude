@@ -222,9 +222,7 @@ function line(
   source: EdgeSourceId,
   note?: string,
 ): EdgeContribution {
-  return note === undefined
-    ? { id, label, percent, source }
-    : { id, label, percent, source, note };
+  return note === undefined ? { id, label, percent, source } : { id, label, percent, source, note };
 }
 
 /**
@@ -243,17 +241,12 @@ export function houseEdge(rules: RuleSet): HouseEdgeEstimate {
     "decks",
     baselinePercent === undefined
       ? `No house edge has been published for a ${rules.decks}-deck game — ` +
-        `casinos deal 1, 2, 4, 6 and 8. Pick one of those to see the edge.`
+          `casinos deal 1, 2, 4, 6 and 8. Pick one of those to see the edge.`
       : undefined,
   );
 
   const adjustments: EdgeContribution[] = [];
-  const add = (
-    id: string,
-    label: string,
-    percent: number | undefined,
-    note?: string,
-  ): void => {
+  const add = (id: string, label: string, percent: number | undefined, note?: string): void => {
     adjustments.push(line(id, label, percent, "variations", note));
   };
 

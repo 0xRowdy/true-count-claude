@@ -70,8 +70,8 @@ export function ZeroSumCheckPanel({
       <Text style={styles.prose}>
         {check.balanced ? (
           <>
-            <Text style={styles.strong}>{check.systemName}</Text> is balanced: its tags sum to
-            zero over a deck, so the Running Count must finish this Shoe on{" "}
+            <Text style={styles.strong}>{check.systemName}</Text> is balanced: its tags sum to zero
+            over a deck, so the Running Count must finish this Shoe on{" "}
             <Text style={styles.strong}>exactly 0</Text>.
           </>
         ) : (

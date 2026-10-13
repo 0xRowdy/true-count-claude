@@ -3,7 +3,7 @@
 ## What this is
 
 **True Count** is a card-counting and advantage-play trainer for blackjack. It is a
-*training tool*, not a gambling product: no real money, no tokens, no wagering, no ads.
+_training tool_, not a gambling product: no real money, no tokens, no wagering, no ads.
 
 The product thesis, in one sentence: **every other trainer tells you that you were wrong;
 True Count shows you why, and proves its own math.**
@@ -30,23 +30,23 @@ by review volume are older, thinner apps. The opportunity is real.
 
 Use these terms exactly. Do not drift to synonyms.
 
-| Term | Definition |
-| --- | --- |
-| **Shoe** | The set of decks in play, plus the cut card position. Owns all randomness. |
-| **Penetration** | Fraction of the shoe dealt before the cut card. Expressed 0–1. |
-| **Running Count (RC)** | Sum of card tags seen so far, per the active Counting System. |
-| **True Count (TC)** | RC divided by estimated decks remaining. The product's namesake. |
-| **Counting System** | A named tag assignment (Hi-Lo, KO, Omega II, Wong Halves, Zen, Red 7). Carries a tag table, a balanced/unbalanced flag, and an index set. |
-| **Balanced system** | A system whose tags sum to zero over a full shoe. Hi-Lo, Omega II, Wong Halves, Zen are balanced; KO and Red 7 are not. |
-| **Basic Strategy (BS)** | The count-independent optimal play for a given Rule Set. |
-| **Deviation / Index Play** | A departure from Basic Strategy triggered when TC crosses an index number. The Illustrious 18 and Fab 4 are the canonical sets. |
-| **Rule Set** | The table configuration: deck count, S17/H17, 3:2 vs 6:5, DAS, surrender, resplit aces, dealer peek, penetration, min/max. Strategy is a *function of* the Rule Set. |
-| **Drill** | A focused training exercise with scored, per-decision feedback. Distinct from free Play. |
-| **Play** | Unscored simulated table play. |
-| **Decision** | One player action (hit/stand/double/split/surrender/insurance) with the hand state that produced it. The unit of scoring and of explanation. |
-| **Explanation** | The *why* behind a Decision verdict: per-action EV, the governing chart cell, and the count's effect. Never omitted. |
-| **Session** | A bounded run of Play or Drill, with its own stats and a replayable Decision log. |
-| **Shoe Integrity Panel** | The user-facing proof that the shoe is fair: remaining composition, RC returning to zero at the cut card, exportable history. |
+| Term                       | Definition                                                                                                                                                           |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Shoe**                   | The set of decks in play, plus the cut card position. Owns all randomness.                                                                                           |
+| **Penetration**            | Fraction of the shoe dealt before the cut card. Expressed 0–1.                                                                                                       |
+| **Running Count (RC)**     | Sum of card tags seen so far, per the active Counting System.                                                                                                        |
+| **True Count (TC)**        | RC divided by estimated decks remaining. The product's namesake.                                                                                                     |
+| **Counting System**        | A named tag assignment (Hi-Lo, KO, Omega II, Wong Halves, Zen, Red 7). Carries a tag table, a balanced/unbalanced flag, and an index set.                            |
+| **Balanced system**        | A system whose tags sum to zero over a full shoe. Hi-Lo, Omega II, Wong Halves, Zen are balanced; KO and Red 7 are not.                                              |
+| **Basic Strategy (BS)**    | The count-independent optimal play for a given Rule Set.                                                                                                             |
+| **Deviation / Index Play** | A departure from Basic Strategy triggered when TC crosses an index number. The Illustrious 18 and Fab 4 are the canonical sets.                                      |
+| **Rule Set**               | The table configuration: deck count, S17/H17, 3:2 vs 6:5, DAS, surrender, resplit aces, dealer peek, penetration, min/max. Strategy is a _function of_ the Rule Set. |
+| **Drill**                  | A focused training exercise with scored, per-decision feedback. Distinct from free Play.                                                                             |
+| **Play**                   | Unscored simulated table play.                                                                                                                                       |
+| **Decision**               | One player action (hit/stand/double/split/surrender/insurance) with the hand state that produced it. The unit of scoring and of explanation.                         |
+| **Explanation**            | The _why_ behind a Decision verdict: per-action EV, the governing chart cell, and the count's effect. Never omitted.                                                 |
+| **Session**                | A bounded run of Play or Drill, with its own stats and a replayable Decision log.                                                                                    |
+| **Shoe Integrity Panel**   | The user-facing proof that the shoe is fair: remaining composition, RC returning to zero at the cut card, exportable history.                                        |
 
 ## Non-negotiable product invariants
 

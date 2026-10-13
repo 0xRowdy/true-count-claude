@@ -6,7 +6,7 @@ codebase.
 **Not a gambling app.** No real money, no tokens, no wagering, no ads.
 
 > Every other trainer tells you that you were wrong.
-> True Count shows you *why*, and proves its own math.
+> True Count shows you _why_, and proves its own math.
 
 ## Why
 
@@ -22,13 +22,13 @@ attacking:
 
 ## What's in it
 
-| Route | What it does |
-| --- | --- |
-| `/play` | A full blackjack table at your configured rules. Running and true count, six counting systems, every legal action and none greyed out. |
-| `/drills` | Four scored drills — Basic Strategy (with a per-chart-cell weakness breakdown), Counting, True Count conversion, and Deviations (Illustrious 18 and Fab 4). |
-| `/rules` | Configure the table: decks, S17/H17, payout, DAS, surrender, penetration, presets. Shows the house edge and the strategy chart reacting live. |
-| `/shoe-integrity` | Proof the shoe is fair: live composition, the running count landing on zero, the seed, the full dealt history. |
-| `/session` | Statistics and session history, with an explicit end-session control. |
+| Route             | What it does                                                                                                                                                |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/play`           | A full blackjack table at your configured rules. Running and true count, six counting systems, every legal action and none greyed out.                      |
+| `/drills`         | Four scored drills — Basic Strategy (with a per-chart-cell weakness breakdown), Counting, True Count conversion, and Deviations (Illustrious 18 and Fab 4). |
+| `/rules`          | Configure the table: decks, S17/H17, payout, DAS, surrender, penetration, presets. Shows the house edge and the strategy chart reacting live.               |
+| `/shoe-integrity` | Proof the shoe is fair: live composition, the running count landing on zero, the seed, the full dealt history.                                              |
+| `/session`        | Statistics and session history, with an explicit end-session control.                                                                                       |
 
 Every graded decision opens an **Explanation**: the expected value of each legal action for
 the exact shoe, the governing chart cell, and how the count moved the play. A **Report a bug**

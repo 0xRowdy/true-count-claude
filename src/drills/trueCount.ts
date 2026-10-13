@@ -272,10 +272,7 @@ export function trueCountQuestionFrom(
   };
 }
 
-function pickFocus(
-  mix: Readonly<Record<TrueCountFocus, number>>,
-  rng: Rng,
-): TrueCountFocus {
+function pickFocus(mix: Readonly<Record<TrueCountFocus, number>>, rng: Rng): TrueCountFocus {
   const total = TRUE_COUNT_FOCUSES.reduce((sum, focus) => sum + Math.max(0, mix[focus]), 0);
   if (total <= 0) return "ordinary";
 
@@ -294,10 +291,7 @@ interface Draw {
 
 function draw(config: TrueCountDrillConfig, focus: TrueCountFocus, rng: Rng): Draw {
   const maxQuarters = config.decks * 4;
-  const minQuarters = Math.max(
-    1,
-    Math.ceil(config.minCardsRemaining / CARDS_PER_QUARTER_DECK),
-  );
+  const minQuarters = Math.max(1, Math.ceil(config.minCardsRemaining / CARDS_PER_QUARTER_DECK));
   const quartersIn = (low: number, high: number): number =>
     clampInt(
       low + rng.nextInt(Math.max(1, Math.min(high, maxQuarters) - low + 1)),
@@ -369,7 +363,10 @@ function finish(
   // The largest count a balanced level-1 shoe can reach is one point per low card, of which
   // there are twenty per deck. Higher-level systems reach further, so this is scaled by the
   // system's own biggest tag rather than assumed.
-  const maxTag = RANKS.reduce((best, rank) => Math.max(best, Math.abs(config.system.tags[rank])), 1);
+  const maxTag = RANKS.reduce(
+    (best, rank) => Math.max(best, Math.abs(config.system.tags[rank])),
+    1,
+  );
   const ceiling = Math.min(dealt, 20 * config.decks * maxTag);
 
   const clamped = Math.max(-ceiling, Math.min(ceiling, snapped));
@@ -446,9 +443,8 @@ export function scoreTrueCount(
   const correctUnderRounding =
     stated === question.answer
       ? null
-      : (ROUNDING_MODES.find(
-          (mode) => mode !== question.rounding && byRounding[mode] === stated,
-        ) ?? null);
+      : (ROUNDING_MODES.find((mode) => mode !== question.rounding && byRounding[mode] === stated) ??
+        null);
 
   return {
     kind: "true-count",
@@ -540,11 +536,7 @@ export function startTrueCountDrill(
  * A second submission for the same question is a no-op rather than an error, so a
  * double-tapped button cannot double-count an answer.
  */
-export function submitTrueCount(
-  drill: TrueCountDrill,
-  stated: number,
-  at: number,
-): TrueCountDrill {
+export function submitTrueCount(drill: TrueCountDrill, stated: number, at: number): TrueCountDrill {
   const state = drill.current;
   if (state.lastResult !== null) return drill;
 

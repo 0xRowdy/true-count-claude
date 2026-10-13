@@ -15,13 +15,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  type LayoutChangeEvent,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { type LayoutChangeEvent, ScrollView, StyleSheet, Text, View } from "react-native";
 import type { RuleSet } from "@/engine/rules";
 import {
   type ChartCode,
@@ -98,8 +92,8 @@ export function StrategyChartPanel({
   return (
     <Panel title="Basic Strategy for this table">
       <Text style={styles.intro}>
-        Generated from your rules, not looked up in a fixed table. Change anything above and
-        the cells that move are outlined here.
+        Generated from your rules, not looked up in a fixed table. Change anything above and the
+        cells that move are outlined here.
       </Text>
 
       <ChangeReport changes={changes} />
@@ -111,10 +105,7 @@ export function StrategyChartPanel({
           {SECTION_TITLE[section]} · dealer upcard across the top
         </Text>
         {changedInSection > 0 ? (
-          <Badge
-            label={`${changedInSection} MOVED HERE`}
-            tone="info"
-          />
+          <Badge label={`${changedInSection} MOVED HERE`} tone="info" />
         ) : null}
       </View>
 
@@ -123,9 +114,8 @@ export function StrategyChartPanel({
       <ChartLegend />
 
       <Text style={styles.footnote}>
-        Hard 21 and soft 21 are not printed — a 21 is never a decision. Split aces take one
-        card each{rules.oneCardToSplitAces ? "" : " — except at your table, where you may draw"}
-        .
+        Hard 21 and soft 21 are not printed — a 21 is never a decision. Split aces take one card
+        each{rules.oneCardToSplitAces ? "" : " — except at your table, where you may draw"}.
       </Text>
     </Panel>
   );
@@ -205,21 +195,13 @@ export function StrategyChartGrid({
         })}
       </View>
 
-      <ScrollView
-        ref={scroller}
-        horizontal
-        showsHorizontalScrollIndicator
-        onLayout={onLayout}
-      >
+      <ScrollView ref={scroller} horizontal showsHorizontalScrollIndicator onLayout={onLayout}>
         <View>
           <View style={styles.headerRow}>
             {DEALER_UPCARDS.map((upcard) => {
               const lit = highlight?.upcard === upcard;
               return (
-                <View
-                  key={upcard}
-                  style={[styles.cell, cellSize, column, lit && styles.litLabel]}
-                >
+                <View key={upcard} style={[styles.cell, cellSize, column, lit && styles.litLabel]}>
                   <Text style={[styles.headerText, lit && styles.litLabelText]}>
                     {upcardLabel(upcard)}
                   </Text>
@@ -290,9 +272,7 @@ function ChangeReport({ changes }: { changes: readonly ChartChange[] }) {
         </Text>
       ))}
       {remaining > 0 ? (
-        <Text style={styles.changeMore}>
-          …and {remaining} more, outlined in the table below.
-        </Text>
+        <Text style={styles.changeMore}>…and {remaining} more, outlined in the table below.</Text>
       ) : null}
     </View>
   );

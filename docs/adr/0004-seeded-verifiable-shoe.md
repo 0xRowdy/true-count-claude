@@ -5,14 +5,14 @@
 ## Context
 
 "Rigged RNG" accounts for **19% of low-star reviews** across competitor trainers — the
-fourth-largest complaint category, and one that is mostly *perception* rather than defect.
-Representative: *"every time I bet higher, the dealer magically gets a blackjack or 20... it
-appears rigged."* Craps and blackjack simulators attract this at a high rate because users
+fourth-largest complaint category, and one that is mostly _perception_ rather than defect.
+Representative: _"every time I bet higher, the dealer magically gets a blackjack or 20... it
+appears rigged."_ Craps and blackjack simulators attract this at a high rate because users
 cannot distinguish an ordinary downswing from a dishonest shoe.
 
 But not all of it is perception. Users have caught real defects: a double-deck game dealing
-more than twelve 2s, and — most damningly — *"the count does not end on 0 when the shoe is
-finished like it should."* That last one is a complete, testable proof of a broken shoe, and
+more than twelve 2s, and — most damningly — _"the count does not end on 0 when the shoe is
+finished like it should."_ That last one is a complete, testable proof of a broken shoe, and
 a user found it before the developer did.
 
 We cannot argue a user out of believing the shoe is rigged. We can let them check.

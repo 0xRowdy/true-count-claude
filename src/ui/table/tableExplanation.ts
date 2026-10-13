@@ -112,7 +112,11 @@ export function tableInsuranceSituation(table: PlayTable): InsuranceSituation | 
  * waiting on a play, or the action is not one of the buttons on offer — the same taps the
  * engine would refuse.
  */
-export function gradeTablePlay(table: PlayTable, action: Action, at: number): DecisionResult | null {
+export function gradeTablePlay(
+  table: PlayTable,
+  action: Action,
+  at: number,
+): DecisionResult | null {
   const round = table.round;
   if (!round || !currentLegalActions(round).includes(action)) return null;
   const situation = tableDecisionSituation(table);

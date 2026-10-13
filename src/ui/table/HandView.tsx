@@ -138,7 +138,12 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
   },
   activeSeat: { borderColor: colors.accent },
-  seatHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: spacing.sm },
+  seatHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+    gap: spacing.sm,
+  },
   seatLabel: { ...type.caption, color: colors.textMuted, fontWeight: "600" },
   activeLabel: { color: colors.accent },
   seatTotal: { ...type.mono, ...type.caption, color: colors.text },

@@ -118,8 +118,7 @@ function nullAbsentTrueCount(decision: unknown): unknown {
 export const SESSION_RECORDS_V3: Migration = {
   from: 2,
   to: 3,
-  describe:
-    "2→3: add True Count and index-play records, and record Counting System changes",
+  describe: "2→3: add True Count and index-play records, and record Counting System changes",
   migrate: (data) => {
     if (typeof data !== "object" || data === null) return data;
     const session = data as {

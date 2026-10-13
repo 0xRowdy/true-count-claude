@@ -48,8 +48,8 @@ export function SeedPanel({
         {shoe.seed}
       </Text>
       <Text style={styles.prose}>
-        This seed and the Rule Set below rebuild this Shoe exactly, card for card, on any
-        device. Send it with a bug report and we see what you saw.
+        This seed and the Rule Set below rebuild this Shoe exactly, card for card, on any device.
+        Send it with a bug report and we see what you saw.
       </Text>
 
       <View style={styles.row}>

@@ -1,6 +1,7 @@
 import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
+import prettierConfig from "eslint-config-prettier";
 
 /**
  * Lint configuration for True Count.
@@ -255,4 +256,8 @@ export default tseslint.config(
     files: [".agents/**/*.{js,mjs}"],
     languageOptions: { globals: { ...globals.node } },
   },
+
+  // Formatting is Prettier's job (`pnpm format:check` in CI). This turns off every lint rule
+  // that would fight it, so the two never disagree about whitespace.
+  prettierConfig,
 );

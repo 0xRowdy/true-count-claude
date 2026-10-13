@@ -72,7 +72,9 @@ export function DealtHistoryPanel({
 
       {cards.length > COLLAPSED_LIMIT ? (
         <SecondaryButton
-          label={expanded ? `Collapse to the last ${COLLAPSED_LIMIT}` : `Show all ${cards.length} cards`}
+          label={
+            expanded ? `Collapse to the last ${COLLAPSED_LIMIT}` : `Show all ${cards.length} cards`
+          }
           onPress={onToggleExpanded}
         />
       ) : null}

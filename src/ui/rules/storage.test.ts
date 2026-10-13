@@ -79,7 +79,10 @@ describe("a record that cannot be trusted", () => {
     ["no rules", JSON.stringify({ version: RULES_RECORD_VERSION })],
     [
       "a missing field",
-      JSON.stringify({ version: RULES_RECORD_VERSION, rules: { ...DEFAULT_RULES, decks: undefined } }),
+      JSON.stringify({
+        version: RULES_RECORD_VERSION,
+        rules: { ...DEFAULT_RULES, decks: undefined },
+      }),
     ],
     [
       "a field of the wrong type",
@@ -101,7 +104,10 @@ describe("a record that cannot be trusted", () => {
     ],
     [
       "NaN smuggled in as null",
-      JSON.stringify({ version: RULES_RECORD_VERSION, rules: { ...DEFAULT_RULES, penetration: NaN } }),
+      JSON.stringify({
+        version: RULES_RECORD_VERSION,
+        rules: { ...DEFAULT_RULES, penetration: NaN },
+      }),
     ],
   ];
 

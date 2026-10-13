@@ -211,7 +211,10 @@ export function usePlaySession(
       if (pending.current) {
         pending.current = observeDecision(pending.current, table, { kind: "play", action }, at);
       }
-      settleIfDone(advance((current) => playAction(current, action)), at);
+      settleIfDone(
+        advance((current) => playAction(current, action)),
+        at,
+      );
     },
     [table, advance, settleIfDone],
   );
@@ -222,7 +225,10 @@ export function usePlaySession(
       if (pending.current) {
         pending.current = observeDecision(pending.current, table, { kind: "insurance", take }, at);
       }
-      settleIfDone(advance((current) => takeInsurance(current, take)), at);
+      settleIfDone(
+        advance((current) => takeInsurance(current, take)),
+        at,
+      );
     },
     [table, advance, settleIfDone],
   );
@@ -406,7 +412,9 @@ export function tableFromSession(session: Session): PlayTable {
   const stats = computeStats(session);
   // A Session always opens a Shoe as it starts, so the fallback is unreachable in practice;
   // it is here so a hand-edited or imported record cannot crash the screen.
-  const shoe = record ? rebuildShoe(session, record.index) : createShoe(session.rules, session.seed);
+  const shoe = record
+    ? rebuildShoe(session, record.index)
+    : createShoe(session.rules, session.seed);
 
   return restorePlayTable({
     rules: session.rules,

@@ -31,10 +31,7 @@ export function IndexScale({
       style={styles.wrap}
     >
       <View style={styles.labels}>
-        <Text
-          style={[styles.indexLabel, { left: pct(geometry.indexAt) }]}
-          numberOfLines={1}
-        >
+        <Text style={[styles.indexLabel, { left: pct(geometry.indexAt) }]} numberOfLines={1}>
           index {signed(scale.index)}
         </Text>
       </View>
@@ -57,15 +54,16 @@ export function IndexScale({
         {geometry.ticks.map((tick) => (
           <Text
             key={tick}
-            style={[styles.tick, { left: pct((tick - geometry.low) / (geometry.high - geometry.low)) }]}
+            style={[
+              styles.tick,
+              { left: pct((tick - geometry.low) / (geometry.high - geometry.low)) },
+            ]}
           >
             {tick}
           </Text>
         ))}
       </View>
-      <Text style={styles.legend}>
-        Shaded: where the count says {departure}.
-      </Text>
+      <Text style={styles.legend}>Shaded: where the count says {departure}.</Text>
     </View>
   );
 }

@@ -54,8 +54,10 @@ export function CountEntryPad({
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       const target = event.target as HTMLElement | null;
       if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
-      if (/^[0-9]$/.test(event.key)) setEntry((c) => pressKey(c, { kind: "digit", digit: Number(event.key) }));
-      else if (event.key === "-" || event.key === "_") setEntry((c) => pressKey(c, { kind: "sign" }));
+      if (/^[0-9]$/.test(event.key))
+        setEntry((c) => pressKey(c, { kind: "digit", digit: Number(event.key) }));
+      else if (event.key === "-" || event.key === "_")
+        setEntry((c) => pressKey(c, { kind: "sign" }));
       else if (event.key === "." && allowHalf) setEntry((c) => pressKey(c, { kind: "half" }));
       else if (event.key === "Backspace") setEntry((c) => pressKey(c, { kind: "backspace" }));
       else if (event.key === "Escape") setEntry(EMPTY_ENTRY);
@@ -96,13 +98,22 @@ export function CountEntryPad({
         {rows.map((row, index) => (
           <View key={index} style={styles.row}>
             {row.map((cell) => (
-              <Key key={cell.label} label={cell.label} hint={cell.hint} onPress={() => press(cell.key)} />
+              <Key
+                key={cell.label}
+                label={cell.label}
+                hint={cell.hint}
+                onPress={() => press(cell.key)}
+              />
             ))}
           </View>
         ))}
         <View style={styles.row}>
           {allowHalf ? (
-            <Key label=".5" hint="Add or remove a half point" onPress={() => press({ kind: "half" })} />
+            <Key
+              label=".5"
+              hint="Add or remove a half point"
+              onPress={() => press({ kind: "half" })}
+            />
           ) : null}
           <Key label="Clear" hint="Clear the entry" onPress={() => press({ kind: "clear" })} />
         </View>

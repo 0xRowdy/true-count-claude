@@ -42,7 +42,10 @@ describe("every preset", () => {
   it("is a distinct table from every other preset", () => {
     for (const preset of RULE_PRESETS) {
       const twins = RULE_PRESETS.filter((other) => sameRules(other.rules, preset.rules));
-      expect(twins.map((twin) => twin.id), preset.name).toEqual([preset.id]);
+      expect(
+        twins.map((twin) => twin.id),
+        preset.name,
+      ).toEqual([preset.id]);
     }
   });
 

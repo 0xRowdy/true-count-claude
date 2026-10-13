@@ -38,7 +38,10 @@ export const NONE_PUBLISHED = "none published";
  * The labelled reference rows for a system at a known deck count. Empty for a balanced system,
  * which reads a True Count against an index instead.
  */
-export function unbalancedCountRows(system: CountingSystem, decks: number): readonly UnbalancedCountRow[] {
+export function unbalancedCountRows(
+  system: CountingSystem,
+  decks: number,
+): readonly UnbalancedCountRow[] {
   return rowsFor(system, keyCount(system, decks) ?? null, decks);
 }
 

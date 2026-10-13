@@ -198,7 +198,9 @@ describe("the statistics a screen renders", () => {
 describe("labelling Play and drill Sessions", () => {
   it("names Play, and each drill by name", () => {
     expect(sessionKindLabel({ mode: "play", drillId: null })).toBe("Play");
-    expect(sessionKindLabel({ mode: "drill", drillId: "basic-strategy" })).toBe("Basic Strategy drill");
+    expect(sessionKindLabel({ mode: "drill", drillId: "basic-strategy" })).toBe(
+      "Basic Strategy drill",
+    );
     expect(sessionKindLabel({ mode: "drill", drillId: "counting" })).toBe("Counting drill");
     expect(sessionKindLabel({ mode: "drill", drillId: "true-count" })).toBe("True Count drill");
     expect(sessionKindLabel({ mode: "drill", drillId: "deviation" })).toBe("Deviations drill");

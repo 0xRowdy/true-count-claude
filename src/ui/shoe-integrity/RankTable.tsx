@@ -60,9 +60,9 @@ export function RankTable({
 
       <Text style={styles.prose}>
         Every rank started at <Text style={styles.strong}>{expectedPerRank}</Text>, and Left plus
-        Dealt still adds back to {expectedPerRank} on every column. The tag row is{" "}
-        {systemName}&apos;s — multiply each tag by {expectedPerRank}, add the row up, and you get
-        the Shoe&apos;s total count.
+        Dealt still adds back to {expectedPerRank} on every column. The tag row is {systemName}
+        &apos;s — multiply each tag by {expectedPerRank}, add the row up, and you get the
+        Shoe&apos;s total count.
       </Text>
 
       <View style={styles.table}>

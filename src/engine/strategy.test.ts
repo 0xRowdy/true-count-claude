@@ -221,9 +221,9 @@ describe("known competitor failures", () => {
     expect(basicStrategy(eights, card("10"), h17Late)).toBe("split");
     // The short-shoe exceptions to that exception: single deck, and two decks with DAS.
     expect(basicStrategy(eights, card("A"), { ...h17Late, decks: 1 })).toBe("split");
-    expect(
-      basicStrategy(eights, card("A"), { ...h17Late, decks: 2, doubleAfterSplit: true }),
-    ).toBe("split");
+    expect(basicStrategy(eights, card("A"), { ...h17Late, decks: 2, doubleAfterSplit: true })).toBe(
+      "split",
+    );
 
     // Early surrender is settled before the dealer checks the hole card, which is worth
     // far more, so it takes the 8s back against both a ten and an ace.
@@ -276,9 +276,9 @@ describe("rule sensitivity", () => {
     ).toBe("hit");
     // Hard 17 vs an ace is given up only under H17 with late surrender.
     expect(basicStrategy(hand(["10", "7"]), card("A"), base)).toBe("surrender");
-    expect(
-      basicStrategy(hand(["10", "7"]), card("A"), { ...base, dealerSoft17: "stand" }),
-    ).toBe("stand");
+    expect(basicStrategy(hand(["10", "7"]), card("A"), { ...base, dealerSoft17: "stand" })).toBe(
+      "stand",
+    );
   });
 
   it("withdraws doubles the rule set forbids", () => {
@@ -322,34 +322,38 @@ describe("basicStrategy never names an illegal action", () => {
   // test alone so a genuine hang anywhere else still trips the default.
   const SWEEP_TIMEOUT_MS = 60_000;
 
-  it(`holds across ${ruleSets.length} rule sets and every chart row`, () => {
-    // Every violation is collected rather than asserted in place: this is roughly 760,000
-    // decisions, and a per-decision matcher is slower than the engine it is checking.
-    const violations: string[] = [];
+  it(
+    `holds across ${ruleSets.length} rule sets and every chart row`,
+    () => {
+      // Every violation is collected rather than asserted in place: this is roughly 760,000
+      // decisions, and a per-decision matcher is slower than the engine it is checking.
+      const violations: string[] = [];
 
-    for (const rules of ruleSets) {
-      const chartKey = chartIdentity(rules);
-      for (const probe of probeHands(rules)) {
-        for (const upcard of DEALER_UPCARDS) {
-          const context = { handCount: probe.handCount, bankroll: probe.bankroll };
-          const legal = legalActions({ hand: probe.hand, rules, ...context });
-          if (alreadyChecked(chartKey, probe, upcard, legal)) continue;
+      for (const rules of ruleSets) {
+        const chartKey = chartIdentity(rules);
+        for (const probe of probeHands(rules)) {
+          for (const upcard of DEALER_UPCARDS) {
+            const context = { handCount: probe.handCount, bankroll: probe.bankroll };
+            const legal = legalActions({ hand: probe.hand, rules, ...context });
+            if (alreadyChecked(chartKey, probe, upcard, legal)) continue;
 
-          const action = basicStrategy(probe.hand, card(rankFor(upcard)), rules, context);
-          const label = `${probe.label} vs ${upcardName(upcard)} (${ruleLabel(rules)})`;
+            const action = basicStrategy(probe.hand, card(rankFor(upcard)), rules, context);
+            const label = `${probe.label} vs ${upcardName(upcard)} (${ruleLabel(rules)})`;
 
-          if (legal.length === 0) {
-            // Nothing left to decide: busted, a natural, or a closed split ace.
-            if (action !== "stand") violations.push(`${label}: ${action} on a finished hand`);
-          } else if (!legal.includes(action)) {
-            violations.push(`${label}: ${action} not in [${legal.join(", ")}]`);
+            if (legal.length === 0) {
+              // Nothing left to decide: busted, a natural, or a closed split ace.
+              if (action !== "stand") violations.push(`${label}: ${action} on a finished hand`);
+            } else if (!legal.includes(action)) {
+              violations.push(`${label}: ${action} not in [${legal.join(", ")}]`);
+            }
           }
         }
       }
-    }
 
-    expect(violations).toEqual([]);
-  }, SWEEP_TIMEOUT_MS);
+      expect(violations).toEqual([]);
+    },
+    SWEEP_TIMEOUT_MS,
+  );
 
   it("falls back when the resplit limit closes a split off", () => {
     // At four hands the pairs chart no longer applies, so 8,8 is read as hard 16.

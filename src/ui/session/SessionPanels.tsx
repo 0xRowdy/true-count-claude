@@ -98,8 +98,8 @@ export function SessionControlBar({
 
       {error ? (
         <Text style={styles.error}>
-          Saving to this device failed: {error}. Play carries on, but this run may not survive
-          a reload.
+          Saving to this device failed: {error}. Play carries on, but this run may not survive a
+          reload.
         </Text>
       ) : null}
     </Panel>
@@ -164,10 +164,7 @@ export function SessionStatsPanel({
       <View style={styles.divider} />
 
       <StatRow label="Win rate" value={formatRate(stats.winRate)} />
-      <StatRow
-        label="Wins"
-        value={formatRatio(stats.wins + stats.blackjacks, stats.handsPlayed)}
-      />
+      <StatRow label="Wins" value={formatRatio(stats.wins + stats.blackjacks, stats.handsPlayed)} />
       <StatRow label="Bust rate" value={formatRate(stats.bustRate)} />
       <StatRow label="Busts" value={formatRatio(stats.busts, stats.handsPlayed)} />
       <StatRow label="Pushes" value={stats.pushes} />
@@ -186,16 +183,16 @@ export function SessionStatsPanel({
 
       {stats.decisionsMade === 0 ? (
         <Text style={styles.note}>
-          {NO_VALUE} means there is nothing to divide yet, not a score of zero. A rate appears
-          the moment it has a denominator.
+          {NO_VALUE} means there is nothing to divide yet, not a score of zero. A rate appears the
+          moment it has a denominator.
         </Text>
       ) : null}
 
       {reset ? (
         <Text style={styles.note}>
-          The bankroll has been topped up by {formatChips(topUp)} since this Session began, so
-          it no longer matches the net result. Both numbers are true: every chip lost is still
-          in the net, because going broke is the most instructive thing in a training log.
+          The bankroll has been topped up by {formatChips(topUp)} since this Session began, so it no
+          longer matches the net result. Both numbers are true: every chip lost is still in the net,
+          because going broke is the most instructive thing in a training log.
         </Text>
       ) : null}
     </Panel>
@@ -217,9 +214,8 @@ export function SessionEndedPanel({
   return (
     <Panel title="Session closed">
       <Text style={styles.note}>
-        {describeEndReason(session)} after {formatDuration(duration)}, across{" "}
-        {stats.roundsPlayed} rounds. It is saved on this device and will not reopen — start a
-        new one whenever you like.
+        {describeEndReason(session)} after {formatDuration(duration)}, across {stats.roundsPlayed}{" "}
+        rounds. It is saved on this device and will not reopen — start a new one whenever you like.
       </Text>
       <StatRow label="Seed" value={session.seed} />
       <StatRow label="Shoes dealt" value={session.shoes.length} />
@@ -251,7 +247,10 @@ export function SessionHistoryRow({ summary }: { summary: SessionSummary }) {
   return (
     <View style={styles.historyRow}>
       <View style={styles.historyHead}>
-        <Badge label={sessionKindLabel(summary).toUpperCase()} tone={summary.mode === "play" ? "info" : "neutral"} />
+        <Badge
+          label={sessionKindLabel(summary).toUpperCase()}
+          tone={summary.mode === "play" ? "info" : "neutral"}
+        />
         <Text style={styles.historyTitle}>{formatStartedAt(summary.startedAt)}</Text>
         {summary.active ? <Badge label="OPEN" tone="good" /> : null}
       </View>

@@ -235,9 +235,12 @@ describe("unbalanced systems pivot correctly", () => {
   });
 
   for (const system of UNBALANCED) {
-    it.each(DECK_COUNTS)(`${system.name} finishes a complete %i-deck shoe on its pivot`, (decks) => {
-      expect(currentRunningCount(fullShoeCards(decks), system, decks)).toBe(system.pivot);
-    });
+    it.each(DECK_COUNTS)(
+      `${system.name} finishes a complete %i-deck shoe on its pivot`,
+      (decks) => {
+        expect(currentRunningCount(fullShoeCards(decks), system, decks)).toBe(system.pivot);
+      },
+    );
 
     it.each(DECK_COUNTS)(`${system.name} starts a %i-deck shoe at its IRC`, (decks) => {
       expect(currentRunningCount([], system, decks)).toBe(initialRunningCount(system, decks));

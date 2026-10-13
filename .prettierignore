@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.expo/
+.verify/
+pnpm-lock.yaml
+design/
+docs/research/
+*.pen

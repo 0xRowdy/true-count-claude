@@ -389,8 +389,7 @@ export function nextRound(table: PlayTable): PlayTable {
   const round = table.round;
   if (!round || round.phase !== "settled") return table;
 
-  const needsShuffle =
-    isCutCardReached(round.shoe) || cardsRemaining(round.shoe) < RESERVE_CARDS;
+  const needsShuffle = isCutCardReached(round.shoe) || cardsRemaining(round.shoe) < RESERVE_CARDS;
   const shoeIndex = needsShuffle ? table.shoeIndex + 1 : table.shoeIndex;
 
   const banked: PlayTable = {
@@ -463,7 +462,9 @@ export function usePlayTable(rules: RuleSet = DEFAULT_RULES): PlayTableControlle
 
   useEffect(() => {
     const seed = Math.floor(Math.random() * 0xffffffff) >>> 0;
-    setTable((current) => (current === prerendered ? createPlayTable(current.rules, seed) : current));
+    setTable((current) =>
+      current === prerendered ? createPlayTable(current.rules, seed) : current,
+    );
   }, [prerendered]);
 
   const update = useCallback((transition: (current: PlayTable) => PlayTable) => {

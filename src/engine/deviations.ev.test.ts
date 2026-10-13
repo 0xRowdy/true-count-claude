@@ -150,7 +150,11 @@ import type { RankComposition } from "./shoe";
 import { basicStrategy } from "./strategy";
 
 const card = (rank: Rank, suit: Card["suit"] = "s"): Card => ({ rank, suit });
-const hand = (...ranks: Rank[]): Hand => createHand(ranks.map((rank) => card(rank)), 10);
+const hand = (...ranks: Rank[]): Hand =>
+  createHand(
+    ranks.map((rank) => card(rank)),
+    10,
+  );
 
 /** Dealer upcards as the published tables write them: 11 is an ace. */
 const up = (upcard: number): Card => card(upcard === 11 ? "A" : (String(upcard) as Rank));
@@ -317,9 +321,7 @@ function variantsFor(entry: IndexEntry): Variant[] {
       if (rankValue(low) + rankValue(high) !== entry.hand.total) continue;
       if (basicStrategy(hand(low, high), up(entry.upcard), BASELINE) !== entry.from) continue;
       const weight =
-        low === high
-          ? (supply(low) * (supply(low) - 1)) / 2
-          : supply(low) * supply(high);
+        low === high ? (supply(low) * (supply(low) - 1)) / 2 : supply(low) * supply(high);
       variants.push({ ranks: [low, high], weight });
     }
   }
@@ -648,9 +650,7 @@ describe("the boundary convention costs almost nothing at the index itself", () 
     // the true crossover are close enough that either side of the boundary is defensible.
     const nearTies = PLAYING.filter((entry) => {
       const recorded = MEASURED[entry.id] as Measurement;
-      return (
-        Math.abs(recorded.atFiring) < NEAR_TIE || Math.abs(recorded.atBasic) < NEAR_TIE
-      );
+      return Math.abs(recorded.atFiring) < NEAR_TIE || Math.abs(recorded.atBasic) < NEAR_TIE;
     });
     expect(nearTies.map((entry) => entry.id)).toEqual([
       "16v10",

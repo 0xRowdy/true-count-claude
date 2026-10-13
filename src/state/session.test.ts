@@ -167,7 +167,9 @@ describe("the Decision log", () => {
 
     expect(first.count.system).toBe("Hi-Lo");
     expect(first.count.decksRemaining).toBeLessThan(DEFAULT_RULES.decks);
-    expect(first.count.trueCount).toBeCloseTo(first.count.runningCount / first.count.decksRemaining);
+    expect(first.count.trueCount).toBeCloseTo(
+      first.count.runningCount / first.count.decksRemaining,
+    );
   });
 
   it("derives a count check's verdict from the numbers, never from the caller", () => {

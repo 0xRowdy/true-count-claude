@@ -155,7 +155,9 @@ export function DecisionExplanationPanel({
           </>
         ) : (
           // An honest gap, not a blank: say why there are no numbers.
-          <Text style={styles.body}>{explanation.evNote ?? "No expected values for this hand."}</Text>
+          <Text style={styles.body}>
+            {explanation.evNote ?? "No expected values for this hand."}
+          </Text>
         )}
       </Section>
 
@@ -213,7 +215,9 @@ export function InsuranceExplanationPanel({
             {view.evLine ? <Text style={styles.body}>{view.evLine}</Text> : null}
           </>
         ) : (
-          <Text style={styles.body}>{explanation.evNote ?? "No composition to price this bet."}</Text>
+          <Text style={styles.body}>
+            {explanation.evNote ?? "No composition to price this bet."}
+          </Text>
         )}
         <Text style={styles.note}>Basic Strategy never insures, at any count.</Text>
       </Section>
@@ -300,10 +304,7 @@ function HandHeader({
 function VerdictBox({ view }: { view: VerdictView }) {
   const accent = TONE_COLOR[view.tone];
   return (
-    <View
-      accessibilityRole="summary"
-      style={[styles.verdict, { borderLeftColor: accent }]}
-    >
+    <View accessibilityRole="summary" style={[styles.verdict, { borderLeftColor: accent }]}>
       <Text style={[styles.verdictHeadline, { color: accent }]}>{view.headline}</Text>
       {view.detail ? <Text style={styles.body}>{view.detail}</Text> : null}
       <Text style={styles.note}>{view.standard}</Text>
@@ -339,8 +340,7 @@ function CountBlock({ count }: { count: CountContext }) {
     <View style={styles.countBlock}>
       <Text style={styles.body}>
         <Text style={styles.strong}>{view.systemName}</Text> running count{" "}
-        <Text style={styles.mono}>{view.runningCount}</Text> with{" "}
-        {view.decksRemaining} left
+        <Text style={styles.mono}>{view.runningCount}</Text> with {view.decksRemaining} left
       </Text>
       {view.division && view.trueCount ? (
         <Text style={styles.body}>

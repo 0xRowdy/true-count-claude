@@ -63,7 +63,10 @@ function tableInput(table: PlayTable, overrides: Partial<BugReportInput> = {}): 
 }
 
 /** A table dealt at the first seed that produces the situation a test needs. */
-function tableWhere(predicate: (table: PlayTable) => boolean, rules: RuleSet = DEFAULT_RULES): PlayTable {
+function tableWhere(
+  predicate: (table: PlayTable) => boolean,
+  rules: RuleSet = DEFAULT_RULES,
+): PlayTable {
   for (let seed = 1; seed < 5000; seed++) {
     const table = dealRound(createPlayTable(rules, seed));
     if (predicate(table)) return table;
@@ -305,7 +308,19 @@ describe("what the report carries", () => {
     const json = JSON.stringify(report);
 
     expect(Object.keys(report).sort()).toEqual(
-      ["app", "countingSystem", "details", "format", "kind", "round", "rules", "screen", "session", "shoe", "table"].sort(),
+      [
+        "app",
+        "countingSystem",
+        "details",
+        "format",
+        "kind",
+        "round",
+        "rules",
+        "screen",
+        "session",
+        "shoe",
+        "table",
+      ].sort(),
     );
     expect(Object.keys(report.app).sort()).toEqual(["osVersion", "platform", "version"]);
     expect(json).not.toContain("1234567890123");
@@ -329,7 +344,10 @@ describe("what the report carries", () => {
 });
 
 describe("presenting the report", () => {
-  const table = playAction(tableWhere((candidate) => candidate.round?.phase === "player"), "stand");
+  const table = playAction(
+    tableWhere((candidate) => candidate.round?.phase === "player"),
+    "stand",
+  );
   const report = buildBugReport(tableInput(table));
 
   it("leads with a readable summary and the note, only when one was written", () => {

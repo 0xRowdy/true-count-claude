@@ -228,7 +228,11 @@ describe("a ConversionCheck for the Session log (#27)", () => {
   it("carries the question's numbers, the rounding, and what regenerates the question", () => {
     // -7 over two decks is -3.5: truncation says -3, and a user who floors says -4.
     const config = { ...DEFAULT_TRUE_COUNT_CONFIG, decks: 6 };
-    const question = trueCountQuestionFrom(config, { runningCount: -7, cardsRemaining: 104, index: 4 });
+    const question = trueCountQuestionFrom(config, {
+      runningCount: -7,
+      cardsRemaining: 104,
+      index: 4,
+    });
     const record = toConversionCheckInput(scoreTrueCount(question, -4, 77), 31);
 
     expect(record).toEqual({

@@ -9,11 +9,7 @@ import {
   createHand,
   fullShoeComposition,
 } from "@/engine";
-import {
-  type DecisionSituation,
-  type InsuranceSituation,
-  buildCountContext,
-} from "./explanation";
+import { type DecisionSituation, type InsuranceSituation, buildCountContext } from "./explanation";
 import {
   scoreAgainstBasicStrategy,
   scoreAgainstIndexPlay,

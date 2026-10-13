@@ -17,11 +17,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  COUNTING_SYSTEMS,
-  type CountingSystem,
-  DEFAULT_COUNTING_SYSTEM,
-} from "@/engine/counting";
+import { COUNTING_SYSTEMS, type CountingSystem, DEFAULT_COUNTING_SYSTEM } from "@/engine/counting";
 import type { RuleSet } from "@/engine/rules";
 import type { Session } from "@/state";
 import { type Undoable, canUndo } from "@/drills/progress";
@@ -117,7 +113,9 @@ export function useRecordedDrill<S>(options: RecordedDrillOptions<S>): RecordedD
   // The open Session matters only until the first run picks it up. After that it is this run's
   // own Session coming back from every save, so it is no longer read.
   const unstarted = state === null;
-  const open = useDrillSessions((sessions) => (unstarted ? (sessions.open[drillId] ?? null) : null));
+  const open = useDrillSessions((sessions) =>
+    unstarted ? (sessions.open[drillId] ?? null) : null,
+  );
   const storesReady = configured.ready && (status === "ready" || status === "failed");
 
   const newState = useCallback(
@@ -149,7 +147,12 @@ export function useRecordedDrill<S>(options: RecordedDrillOptions<S>): RecordedD
     if (open) {
       setState(newState({ rules: open.rules, system: systemNamed(open), seed: freshSeed() }, open));
     } else {
-      setState(newState({ rules: configured.rules, system: DEFAULT_COUNTING_SYSTEM, seed: freshSeed() }, null));
+      setState(
+        newState(
+          { rules: configured.rules, system: DEFAULT_COUNTING_SYSTEM, seed: freshSeed() },
+          null,
+        ),
+      );
     }
   }, [storesReady, state, open, configured.rules, newState]);
 
@@ -181,7 +184,8 @@ export function useRecordedDrill<S>(options: RecordedDrillOptions<S>): RecordedD
   }, [session, base, metaId, drillId]);
 
   const hasRecords = (state?.run?.log.current.length ?? 0) > 0;
-  const rulesDiffer = state !== null && configured.ready && !sameRules(state.config.rules, configured.rules);
+  const rulesDiffer =
+    state !== null && configured.ready && !sameRules(state.config.rules, configured.rules);
 
   // A run that has recorded nothing takes a new table up immediately: nothing is in the way.
   useEffect(() => {
@@ -190,9 +194,7 @@ export function useRecordedDrill<S>(options: RecordedDrillOptions<S>): RecordedD
   }, [state, rulesDiffer, session, hasRecords, configured.rules, newState]);
 
   const update = useCallback((transition: (run: RecordedRun<S>) => RecordedRun<S>) => {
-    setState((current) =>
-      current?.run ? { ...current, run: transition(current.run) } : current,
-    );
+    setState((current) => (current?.run ? { ...current, run: transition(current.run) } : current));
   }, []);
 
   const undo = useCallback(() => {
@@ -265,7 +267,7 @@ function systemNamed(session: Session): CountingSystem {
  * only picks *which* reproducible Shoe to deal, and the seed is recorded on the Session.
  */
 export function freshSeed(): number {
-  return (Math.floor(Math.random() * 0xffffffff) >>> 0) || 1;
+  return Math.floor(Math.random() * 0xffffffff) >>> 0 || 1;
 }
 
 function newSessionId(): string {

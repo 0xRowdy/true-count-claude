@@ -25,13 +25,7 @@
  */
 
 import { type Card, rankValue } from "./cards";
-import {
-  type Action,
-  type Hand,
-  evaluate,
-  isSplittablePair,
-  legalActions,
-} from "./hand";
+import { type Action, type Hand, evaluate, isSplittablePair, legalActions } from "./hand";
 import type { RuleSet } from "./rules";
 
 /** A dealer upcard as a chart column. 11 is an ace; all ten-ranks are 10. */
@@ -73,7 +67,25 @@ export type ChartCode =
   | "Rp";
 
 /** Hard totals a player can hold. 4 is an unsplittable 2,2; above 21 the hand has busted. */
-export type HardTotal = 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21;
+export type HardTotal =
+  | 4
+  | 5
+  | 6
+  | 7
+  | 8
+  | 9
+  | 10
+  | 11
+  | 12
+  | 13
+  | 14
+  | 15
+  | 16
+  | 17
+  | 18
+  | 19
+  | 20
+  | 21;
 
 /** Soft totals a player can hold. 12 is an unsplittable A,A; 21 is a soft 21. */
 export type SoftTotal = 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21;
@@ -198,27 +210,19 @@ export function strategyChart(rules: RuleSet): StrategyChart {
         (early && singleOrDouble && h17 ? "R" : "H"),
     ),
     // Hard 9 doubles vs 3-6, and vs 2 as well in single and double deck.
-    9: row(
-      (singleOrDouble && doubleNine ? "D" : "H") + (doubleNine ? "DDDD" : "HHHH") + "HHHHH",
-    ),
+    9: row((singleOrDouble && doubleNine ? "D" : "H") + (doubleNine ? "DDDD" : "HHHH") + "HHHHH"),
     10: row("DDDDDDDDHH"),
     // Hard 11 doubles across the board, except vs an ace in a multi-deck S17 game.
     // Without a peek the extra bet is exposed to a dealer blackjack, so 11 just hits
     // against both ten and ace.
-    11: row(
-      "DDDDDDDD" +
-        (peek ? "D" : "H") +
-        ((!h17 && decks >= 3) || !peek ? "H" : "D"),
-    ),
+    11: row("DDDDDDDD" + (peek ? "D" : "H") + ((!h17 && decks >= 3) || !peek ? "H" : "D")),
     // The stiffs. Hard 12 is the classic exception: it hits vs 2 and 3.
     12: row("HHSSSHHHH" + (early ? "R" : "H")),
     13: row("SSSSSHHHH" + (early ? "R" : "H")),
     14: row("SSSSSHHH" + (early && !single ? "R" : "H") + (early ? "R" : "H")),
     // Hard 15 surrenders vs 10 (late surrender, two decks or more) and vs an ace under H17.
     15: row(
-      "SSSSSHHH" +
-        ((late && !single) || early ? "R" : "H") +
-        (early || (late && h17) ? "R" : "H"),
+      "SSSSSHHH" + ((late && !single) || early ? "R" : "H") + (early || (late && h17) ? "R" : "H"),
     ),
     // Hard 16 surrenders vs 9 only from four decks up; vs 10 and ace at every deck count.
     16: row("SSSSSHH" + (surrenders && decks > 3 ? "R" : "H") + (surrenders ? "RR" : "HH")),
@@ -285,7 +289,9 @@ export function strategyChart(rules: RuleSet): StrategyChart {
         "HHH" +
         (early && (single || h17) ? "R" : "H"),
     ),
-    "3": row((das ? "PP" : "HH") + "PPPP" + (das && single ? "P" : "H") + "HH" + (early ? "R" : "H")),
+    "3": row(
+      (das ? "PP" : "HH") + "PPPP" + (das && single ? "P" : "H") + "HH" + (early ? "R" : "H"),
+    ),
     // 4,4 splits only with DAS, vs 5-6 (single deck adds 4). Without DAS it is hard 8.
     "4": row(
       "HH" +

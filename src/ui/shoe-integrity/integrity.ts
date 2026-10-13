@@ -278,8 +278,7 @@ function erf(x: number): number {
   const value = Math.abs(x);
   const t = 1 / (1 + 0.3275911 * value);
   const poly =
-    ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) *
-    t;
+    ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t;
   return sign * (1 - poly * Math.exp(-value * value));
 }
 
@@ -443,7 +442,8 @@ export function isRedSuit(card: Card): boolean {
 
 /** Signed, so `+3` reads as a count rather than as a quantity. Halves survive intact. */
 export function formatSigned(value: number): string {
-  const magnitude = Math.abs(value) % 1 === 0 ? String(Math.abs(value)) : Math.abs(value).toFixed(1);
+  const magnitude =
+    Math.abs(value) % 1 === 0 ? String(Math.abs(value)) : Math.abs(value).toFixed(1);
   if (value > 0) return `+${magnitude}`;
   if (value < 0) return `−${magnitude}`;
   return "0";

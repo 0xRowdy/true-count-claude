@@ -19,11 +19,7 @@
  */
 
 import { StyleSheet, Text, TextInput, View } from "react-native";
-import {
-  type ExpectationBand,
-  describeExpectation,
-  formatUnits,
-} from "./integrity";
+import { type ExpectationBand, describeExpectation, formatUnits } from "./integrity";
 import { Badge, Panel, SecondaryButton, StatRow } from "@/ui/primitives";
 import { colors, radius, spacing, type } from "@/ui/theme";
 
@@ -69,8 +65,8 @@ export function ExpectationBandPanel({
   return (
     <Panel title="Your results vs. expectation">
       <Text style={styles.prose}>
-        A losing run feels like evidence. Usually it is arithmetic. Enter a Session and see
-        where it falls against what a fair Shoe produces.
+        A losing run feels like evidence. Usually it is arithmetic. Enter a Session and see where it
+        falls against what a fair Shoe produces.
       </Text>
 
       {source ? <Text style={styles.source}>{source}</Text> : null}
@@ -125,10 +121,10 @@ export function ExpectationBandPanel({
       )}
 
       <Text style={styles.note}>
-        Assumes flat bets and Basic Strategy at the table above: a {(band.edgePerHand * 100).toFixed(2)}%
-        house edge and {band.sdPerHand.toFixed(2)} units of standard deviation per hand, with a normal
-        approximation that is sound past a few dozen hands. Counting and spreading bets moves the
-        expectation; this band does not model that.
+        Assumes flat bets and Basic Strategy at the table above: a{" "}
+        {(band.edgePerHand * 100).toFixed(2)}% house edge and {band.sdPerHand.toFixed(2)} units of
+        standard deviation per hand, with a normal approximation that is sound past a few dozen
+        hands. Counting and spreading bets moves the expectation; this band does not model that.
       </Text>
     </Panel>
   );
@@ -147,21 +143,11 @@ function BandChart({ band }: { band: ExpectationBand }) {
   return (
     <View style={styles.chartWrapper}>
       <View style={styles.frame}>
-        <View
-          style={[
-            styles.bandTwo,
-            { left: pct(twoSigmaLeft), right: pct(twoSigmaLeft) },
-          ]}
-        />
-        <View
-          style={[styles.bandOne, { left: pct(oneSigmaLeft), right: pct(oneSigmaLeft) }]}
-        />
+        <View style={[styles.bandTwo, { left: pct(twoSigmaLeft), right: pct(twoSigmaLeft) }]} />
+        <View style={[styles.bandOne, { left: pct(oneSigmaLeft), right: pct(oneSigmaLeft) }]} />
         <View style={[styles.expectedLine, { left: pct(position(band.expected)) }]} />
         <View
-          style={[
-            styles.marker,
-            { left: pct(marker), backgroundColor: markerColor(band.verdict) },
-          ]}
+          style={[styles.marker, { left: pct(marker), backgroundColor: markerColor(band.verdict) }]}
         />
         <Text style={[styles.markerLabel, { left: pct(marker) }]} numberOfLines={1}>
           you

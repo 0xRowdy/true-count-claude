@@ -15,12 +15,7 @@
  */
 
 import { useEffect, useSyncExternalStore } from "react";
-import {
-  type Session,
-  type SessionRepository,
-  createSessionRepository,
-  endSession,
-} from "@/state";
+import { type Session, type SessionRepository, createSessionRepository, endSession } from "@/state";
 import { createAsyncStorageStore } from "@/state/asyncStorage";
 import type { DrillId } from "@/drills/types";
 import { type OpenDrillSessions, openDrillSessions, withoutActivePointer } from "./drillRecorder";

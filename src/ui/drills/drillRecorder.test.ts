@@ -183,7 +183,9 @@ describe("a Basic Strategy drill, recorded", () => {
     expect(after.rounds.length).toBeLessThan(before.rounds.length);
     expect(after.decisions.length).toBeLessThan(before.decisions.length);
     // The Session never holds more answers than the drill remembers.
-    expect(computeStats(after).decisionsMade).toBeLessThanOrEqual(undone.drill.current.tally.attempts);
+    expect(computeStats(after).decisionsMade).toBeLessThanOrEqual(
+      undone.drill.current.tally.attempts,
+    );
     expect(verifyReplay(after)).toEqual({ ok: true, problems: [] });
 
     // And re-answering after the undo records the round once, not twice.
@@ -246,7 +248,11 @@ describe("a Counting drill, recorded", () => {
 
   it("records an unbalanced system's count as the player holds it", () => {
     const { run, truth } = checks(KO);
-    const session = drillSessionFrom(null, { ...META, countingSystem: "KO" }, run.log.current) as Session;
+    const session = drillSessionFrom(
+      null,
+      { ...META, countingSystem: "KO" },
+      run.log.current,
+    ) as Session;
     expect(session.countChecks.map((check) => check.actualRunningCount)).toEqual(truth);
     // KO starts a six-deck shoe at -20, so a truth near zero here would be the tag sum alone.
     expect(truth[0]).toBeLessThan(-10);
@@ -294,7 +300,9 @@ describe("a True Count drill, recorded", () => {
     expect(stats.conversionChecks).toBe(report.tally.attempts);
     expect(stats.correctConversionChecks).toBe(report.tally.correct);
     expect(stats.trueCountAccuracy).toBeCloseTo(4 / 7);
-    expect(session.conversionChecks.map((check) => check.questionIndex)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    expect(session.conversionChecks.map((check) => check.questionIndex)).toEqual([
+      0, 1, 2, 3, 4, 5, 6,
+    ]);
   });
 
   it("opens no Shoe and claims no cards, and still passes replay verification", () => {
@@ -352,17 +360,20 @@ describe("a Deviation drill, recorded", () => {
     return run;
   }
 
-  it.each([23, 5, 77])("records every answer as an index play, scored as the drill scored it (seed %i)", (seed) => {
-    const run = answers(12, seed);
-    const session = drillSessionFrom(null, META, run.log.current) as Session;
-    const report = deviationReport(run.drill);
+  it.each([23, 5, 77])(
+    "records every answer as an index play, scored as the drill scored it (seed %i)",
+    (seed) => {
+      const run = answers(12, seed);
+      const session = drillSessionFrom(null, META, run.log.current) as Session;
+      const report = deviationReport(run.drill);
 
-    expect(session.indexPlays).toHaveLength(12);
-    const stats = computeStats(session);
-    expect(stats.indexPlays).toBe(report.tally.attempts);
-    expect(stats.correctIndexPlays).toBe(report.tally.correct);
-    expect(stats.indexPlayAccuracy).toBe(report.tally.accuracy);
-  });
+      expect(session.indexPlays).toHaveLength(12);
+      const stats = computeStats(session);
+      expect(stats.indexPlays).toBe(report.tally.attempts);
+      expect(stats.correctIndexPlays).toBe(report.tally.correct);
+      expect(stats.indexPlayAccuracy).toBe(report.tally.accuracy);
+    },
+  );
 
   it("never logs a placed hand as a Decision, and never opens a Shoe for one", () => {
     const session = drillSessionFrom(null, META, answers(12).log.current) as Session;
@@ -431,7 +442,9 @@ describe("a drill Session carried on under another Counting System", () => {
     // Before a single answer, the carried-on Session already says KO.
     const switched = drillSessionFrom(first, meta, run.log.current) as Session;
     expect(switched.countingSystem).toBe("KO");
-    expect(switched.countingSystemChanges).toMatchObject([{ from: "Hi-Lo", to: "KO", at: AT + 500 }]);
+    expect(switched.countingSystemChanges).toMatchObject([
+      { from: "Hi-Lo", to: "KO", at: AT + 500 },
+    ]);
 
     run = deal(run, AT + 600);
     while (!betweenRounds(run.drill.current)) run = answer(run, AT + 700, false);

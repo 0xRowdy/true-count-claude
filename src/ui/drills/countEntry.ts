@@ -67,9 +67,11 @@ export function typeKeys(entry: CountEntry, text: string): CountEntry {
   for (const character of text) {
     if (character === "-" || character === "−") next = pressKey(next, { kind: "sign" });
     else if (character === "+") next = next.negative ? pressKey(next, { kind: "sign" }) : next;
-    else if (character === "." || character === "½") next = next.half ? next : pressKey(next, { kind: "half" });
+    else if (character === "." || character === "½")
+      next = next.half ? next : pressKey(next, { kind: "half" });
     else if (character === "5" && next.half) continue;
-    else if (/^[0-9]$/.test(character)) next = pressKey(next, { kind: "digit", digit: Number(character) });
+    else if (/^[0-9]$/.test(character))
+      next = pressKey(next, { kind: "digit", digit: Number(character) });
   }
   return next;
 }

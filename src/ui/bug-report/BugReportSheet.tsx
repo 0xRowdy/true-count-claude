@@ -15,7 +15,16 @@
  */
 
 import { useMemo, useState } from "react";
-import { Linking, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  Linking,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { ActionButton, Panel, SecondaryButton } from "@/ui/primitives";
 import { type ExportOutcome, copyText, exportReportFile } from "@/ui/shoe-integrity/share";
 import { colors, radius, spacing, type } from "@/ui/theme";
@@ -52,7 +61,8 @@ export function BugReportSheet({ report, onClose }: { report: BugReport; onClose
       Linking.openURL(link.url).catch(() =>
         setOutcome({
           ok: false,
-          message: "Could not open GitHub from here. Copy the report and paste it into a new issue.",
+          message:
+            "Could not open GitHub from here. Copy the report and paste it into a new issue.",
         }),
       );
     if (link.prefilled) {
@@ -93,8 +103,8 @@ export function BugReportSheet({ report, onClose }: { report: BugReport; onClose
 
             <Text style={styles.prose}>
               This captures the exact game you were looking at — the Shoe&apos;s seed, the cards
-              dealt so far, the round&apos;s actions, the Rule Set and the Counting System — so
-              we can replay it card for card instead of guessing.
+              dealt so far, the round&apos;s actions, the Rule Set and the Counting System — so we
+              can replay it card for card instead of guessing.
             </Text>
 
             <SecondaryButton label="See the known issues first →" onPress={onKnownIssues} />
@@ -117,7 +127,9 @@ export function BugReportSheet({ report, onClose }: { report: BugReport; onClose
             </View>
 
             {outcome ? (
-              <Text style={[styles.outcome, { color: outcome.ok ? colors.accent : colors.warning }]}>
+              <Text
+                style={[styles.outcome, { color: outcome.ok ? colors.accent : colors.warning }]}
+              >
                 {outcome.message}
               </Text>
             ) : null}
@@ -129,10 +141,10 @@ export function BugReportSheet({ report, onClose }: { report: BugReport; onClose
 
             <Text style={styles.label}>Exactly what will be shared</Text>
             <Text style={styles.note}>
-              Game state only: no name, no account, no device identifier, no location. Beyond
-              the game, just the app version and platform, and your note if you write one. The
-              Session id is made from the moment that Session started. Nothing leaves this
-              device until you copy or share it.
+              Game state only: no name, no account, no device identifier, no location. Beyond the
+              game, just the app version and platform, and your note if you write one. The Session
+              id is made from the moment that Session started. Nothing leaves this device until you
+              copy or share it.
             </Text>
             <ScrollView style={styles.preview} nestedScrollEnabled>
               <Text style={styles.previewText} selectable>

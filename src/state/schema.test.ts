@@ -283,7 +283,11 @@ describe("2→3: new drill logs arrive empty, and a stale Counting System is rep
   });
 
   it("upgrades a stored v2 record through decodeSession with the shipped chain", () => {
-    const raw = JSON.stringify({ schemaVersion: 2, kind: "session", data: buildV2DriftedSession() });
+    const raw = JSON.stringify({
+      schemaVersion: 2,
+      kind: "session",
+      data: buildV2DriftedSession(),
+    });
     const outcome = decodeSession(raw);
 
     expect(outcome.ok).toBe(true);

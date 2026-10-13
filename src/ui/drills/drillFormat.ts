@@ -93,7 +93,9 @@ export function breakdownSentence(report: BasicStrategyReport): string {
 /** One weak cell: where, what the chart says, and what the user actually did instead. */
 export function cellMistakeLine(cell: CellStat): string {
   const mistakes = cell.mistakes
-    .map((mistake) => `${ACTION_PAST[mistake.action]}${mistake.count > 1 ? ` ${mistake.count}×` : ""}`)
+    .map(
+      (mistake) => `${ACTION_PAST[mistake.action]}${mistake.count > 1 ? ` ${mistake.count}×` : ""}`,
+    )
     .join(", ");
   return `${rowName(cell.section, cell.row)} vs ${upcardName(cell.upcard)}: the chart says ${ACTION_NAME[
     cell.correctAction
@@ -171,7 +173,9 @@ function formatExact(value: number): string {
   return `${value > 0 ? "+" : "−"}${rendered}`;
 }
 
-export function trueCountVerdict(result: TrueCountResult): VerdictLines & { readonly lesson: string | null } {
+export function trueCountVerdict(
+  result: TrueCountResult,
+): VerdictLines & { readonly lesson: string | null } {
   const e = result.explanation;
   const division = divisionText(e.runningCount, e.decksRemaining, e.exact);
   const answer = formatCountValue(e.answer);
