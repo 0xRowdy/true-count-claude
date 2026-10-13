@@ -157,9 +157,9 @@ describe("grading plays", () => {
     const result = drill.current.lastResult;
 
     expect(result?.kind).toBe("decision");
-    expect(result && !isInsuranceResult(result) ? result.explanation.hand.playerCards : null).toEqual(
-      cards,
-    );
+    expect(
+      result && !isInsuranceResult(result) ? result.explanation.hand.playerCards : null,
+    ).toEqual(cards);
     expect(result?.at).toBe(500);
   });
 

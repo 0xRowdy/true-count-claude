@@ -110,7 +110,11 @@ export function loadStoredRules(): void {
 export function putStoredRules(rules: RuleSet): void {
   if (validateRules(rules).length > 0) return;
   chosen = true;
-  publish({ status: state.status === "unavailable" ? "unavailable" : "stored", rules, ready: true });
+  publish({
+    status: state.status === "unavailable" ? "unavailable" : "stored",
+    rules,
+    ready: true,
+  });
   enqueue(() => store.save(rules));
 }
 

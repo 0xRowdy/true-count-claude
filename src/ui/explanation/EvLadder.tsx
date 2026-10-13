@@ -61,7 +61,10 @@ function EvRow({ row }: { row: EvRowView }) {
         <View style={styles.track}>
           {row.bar > 0 ? (
             <View
-              style={[styles.fill, { width: `${Math.max(row.bar * 100, 1.5)}%`, backgroundColor: tone }]}
+              style={[
+                styles.fill,
+                { width: `${Math.max(row.bar * 100, 1.5)}%`, backgroundColor: tone },
+              ]}
             />
           ) : null}
         </View>
@@ -90,7 +93,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm,
   },
-  name: { flexDirection: "row", alignItems: "center", gap: spacing.xs, flexWrap: "wrap", flexShrink: 1 },
+  name: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    flexWrap: "wrap",
+    flexShrink: 1,
+  },
   label: { ...type.body, color: colors.text, fontWeight: "600" },
   mark: {
     paddingHorizontal: 5,

@@ -305,7 +305,10 @@ export function closeness(explanation: DecisionExplanation): ClosenessView | nul
   const lead = `${ACTION_NAME[first.action]} beats ${ACTION_NAME[second.action]} by ${formatBets(margin)}`;
   switch (tier) {
     case "best":
-      return { tier: "near-tie", text: `${ACTION_NAME[first.action]} and ${ACTION_NAME[second.action]} are worth exactly the same here.` };
+      return {
+        tier: "near-tie",
+        text: `${ACTION_NAME[first.action]} and ${ACTION_NAME[second.action]} are worth exactly the same here.`,
+      };
     case "near-tie":
       return { tier, text: `${lead} — effectively a coin flip.` };
     case "close":
@@ -576,7 +579,11 @@ export interface IndexView {
   /** "The count is +2 — 2 above the index." */
   readonly distance: string | null;
   /** The index number and the count, for a number line. Null without both. */
-  readonly scale: { readonly index: number; readonly trueCount: number; readonly direction: IndexEntry["direction"] } | null;
+  readonly scale: {
+    readonly index: number;
+    readonly trueCount: number;
+    readonly direction: IndexEntry["direction"];
+  } | null;
   /** The entry's sourcing caveat, or the system's refusal note. */
   readonly notes: readonly string[];
 }
@@ -713,7 +720,10 @@ export function whatWouldChange(
   explanation: DecisionExplanation,
   verdict?: ExplanationVerdict | null,
 ): { readonly other: Action | null; readonly lines: readonly string[] } {
-  const answer = verdict && isAction(verdict.correctAction) ? verdict.correctAction : explanation.countAwareAction;
+  const answer =
+    verdict && isAction(verdict.correctAction)
+      ? verdict.correctAction
+      : explanation.countAwareAction;
   const other = pickOther(explanation, answer, verdict);
   if (other === null) {
     return { other: null, lines: [`${ACTION_NAME[answer]} was the only play on offer.`] };
@@ -748,7 +758,11 @@ export function whatWouldChange(
     lines.push(
       `${count.systemName} has no index numbers, so no count reading here makes ${name} the play.`,
     );
-  } else if (index.skipped === "no-true-count" && entry && (other === entry.deviate || other === entry.from)) {
+  } else if (
+    index.skipped === "no-true-count" &&
+    entry &&
+    (other === entry.deviate || other === entry.from)
+  ) {
     lines.push(
       `${name} turns on the true count (index ${signed(entry.index)}), and there is no true count to read.`,
     );
@@ -770,7 +784,8 @@ export function whatWouldChange(
   const answerEv = evs[answer];
   if (otherEv !== undefined && answerEv !== undefined) {
     const gap = answerEv - otherEv;
-    const wrong = verdict !== null && verdict !== undefined && verdict.actionTaken !== verdict.correctAction;
+    const wrong =
+      verdict !== null && verdict !== undefined && verdict.actionTaken !== verdict.correctAction;
     // A wrong answer's cost is already the verdict's headline; saying it twice adds nothing.
     if (gap > EPSILON && !wrong) {
       lines.push(`On this shoe ${name} trails ${ACTION_NAME[answer]} by ${formatBets(gap)}.`);
@@ -793,7 +808,8 @@ export function whatWouldChange(
     other !== entry.deviate &&
     other !== entry.from
   ) {
-    const across = answer === entry.from ? entry.deviate : answer === entry.deviate ? entry.from : null;
+    const across =
+      answer === entry.from ? entry.deviate : answer === entry.deviate ? entry.from : null;
     if (across !== null && isAction(across) && explanation.legalActions.includes(across)) {
       const firesAbove = entry.direction === "at-or-above";
       const needsHigh = firesAbove === (across === entry.deviate);
@@ -826,7 +842,8 @@ function pickOther(
   const entry = explanation.index.entry;
   const legal = explanation.legalActions;
   if (entry && explanation.index.skipped !== "outside-published-rules") {
-    const across = answer === entry.deviate ? entry.from : answer === entry.from ? entry.deviate : null;
+    const across =
+      answer === entry.deviate ? entry.from : answer === entry.from ? entry.deviate : null;
     if (across !== null && isAction(across) && legal.includes(across)) return across;
   }
   const runnerUp = explanation.ranked.find((ranked) => ranked.action !== answer);
@@ -844,7 +861,11 @@ function isAction(action: DrillAction): action is Action {
 
 export interface DealerOddsView {
   readonly bust: string;
-  readonly totals: readonly { readonly total: DealerTotal; readonly text: string; readonly p: number }[];
+  readonly totals: readonly {
+    readonly total: DealerTotal;
+    readonly text: string;
+    readonly p: number;
+  }[];
   readonly bustP: number;
 }
 
@@ -877,7 +898,8 @@ export interface InsuranceView {
 export function insuranceView(explanation: InsuranceExplanation): InsuranceView {
   const { tenDensity, ev, breakEvenDensity } = explanation;
   return {
-    density: tenDensity === null ? null : `${formatPercent(tenDensity)} of the unseen cards are tens.`,
+    density:
+      tenDensity === null ? null : `${formatPercent(tenDensity)} of the unseen cards are tens.`,
     densityP: tenDensity,
     breakEven: formatPercent(breakEvenDensity),
     breakEvenP: breakEvenDensity,
@@ -947,7 +969,9 @@ export function insuranceWhatWouldChange(explanation: InsuranceExplanation): rea
         : `Insuring would be right at a true count of ${signed(index.index)} or higher. It is ${formatSignedCount(count.trueCount)}.`,
     );
   } else if (index.index !== null) {
-    lines.push(`Insurance turns on the true count (index ${signed(index.index)}), and there is no true count to read.`);
+    lines.push(
+      `Insurance turns on the true count (index ${signed(index.index)}), and there is no true count to read.`,
+    );
   }
   if (explanation.tenDensity !== null) {
     lines.push(

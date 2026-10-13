@@ -130,7 +130,10 @@ export type IndexPlayInput = Omit<IndexPlay, "index" | "verdict">;
  * index is what regenerates the question. No Shoe position: the question was generated, not
  * dealt, and a record that named a Shoe would be claiming otherwise.
  */
-export function toConversionCheckInput(result: TrueCountResult, runSeed: number): ConversionCheckInput {
+export function toConversionCheckInput(
+  result: TrueCountResult,
+  runSeed: number,
+): ConversionCheckInput {
   const { question } = result;
   return {
     system: question.systemName,

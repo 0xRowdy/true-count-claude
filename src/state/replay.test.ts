@@ -213,7 +213,10 @@ describe("verifyReplay on drill records and system changes", () => {
     const session = withDrillRecords();
     const [first, second] = session.countingSystemChanges;
 
-    const broken = verifyReplay({ ...session, countingSystemChanges: [first!, { ...second!, from: "Zen Count" }] });
+    const broken = verifyReplay({
+      ...session,
+      countingSystemChanges: [first!, { ...second!, from: "Zen Count" }],
+    });
     expect(broken.problems.join(" ")).toMatch(/switches from Zen Count, but the Session was in KO/);
 
     const stale = verifyReplay({ ...session, countingSystem: "Hi-Lo" });

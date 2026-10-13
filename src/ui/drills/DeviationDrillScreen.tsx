@@ -24,7 +24,13 @@
 
 import { memo, useCallback, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import { type CountingSystem, type RuleSet, getCountingSystem, getIndexSet, signed } from "@/engine";
+import {
+  type CountingSystem,
+  type RuleSet,
+  getCountingSystem,
+  getIndexSet,
+  signed,
+} from "@/engine";
 import { type Action, legalActions } from "@/engine/hand";
 import {
   DEFAULT_DEVIATION_CONFIG,
@@ -40,7 +46,15 @@ import {
 import type { DrillAction } from "@/drills/explanation";
 import { getDrill } from "@/drills/types";
 import { ExplanationPanel } from "@/ui/explanation/ExplanationPanel";
-import { ActionButton, Badge, Panel, Screen, SecondaryButton, StatRow, type Tone } from "@/ui/primitives";
+import {
+  ActionButton,
+  Badge,
+  Panel,
+  Screen,
+  SecondaryButton,
+  StatRow,
+  type Tone,
+} from "@/ui/primitives";
 import { CardRow } from "@/ui/table/CardView";
 import { colors, spacing, type } from "@/ui/theme";
 import {
@@ -54,7 +68,14 @@ import {
   drillStyles,
 } from "./DrillChrome";
 import { deviationRecords, replaceRun, stepRun } from "./drillRecorder";
-import { EXCLUSION_REASON, ROUNDING_NAME, decksText, formatCountValue, formatRate, upcardName } from "./drillFormat";
+import {
+  EXCLUSION_REASON,
+  ROUNDING_NAME,
+  decksText,
+  formatCountValue,
+  formatRate,
+  upcardName,
+} from "./drillFormat";
 import { type RunConfig, useRecordedDrill } from "./useRecordedDrill";
 
 const DRILL = getDrill("deviation");
@@ -84,7 +105,12 @@ const TABLE_REASON =
 function start(config: RunConfig) {
   if (!deviationDrillAvailability(config.rules, config.system).available) return null;
   return startDeviationDrill(
-    { ...DEFAULT_DEVIATION_CONFIG, rules: config.rules, system: config.system, bet: config.rules.minBet },
+    {
+      ...DEFAULT_DEVIATION_CONFIG,
+      rules: config.rules,
+      system: config.system,
+      bet: config.rules.minBet,
+    },
     config.seed,
   );
 }
@@ -197,7 +223,13 @@ export function DeviationDrillScreen() {
       <ScrollView style={drillStyles.scroll} contentContainerStyle={drillStyles.scrollContent}>
         <Screen width="wide">
           {header}
-          <Panel title={availability.indexSet ? "Nothing to drill at this table" : `No indices for ${system.name}`}>
+          <Panel
+            title={
+              availability.indexSet
+                ? "Nothing to drill at this table"
+                : `No indices for ${system.name}`
+            }
+          >
             <Badge label="DECLINED" tone="info" />
             <Text style={drillStyles.refusal}>{availability.note}</Text>
             <View style={drillStyles.actions}>
@@ -217,9 +249,18 @@ export function DeviationDrillScreen() {
             </View>
           </Panel>
           {availability.indexSet ? (
-            <PoolPanel availability={availability} showExcluded={showExcluded} onToggle={toggleExcluded} />
+            <PoolPanel
+              availability={availability}
+              showExcluded={showExcluded}
+              onToggle={toggleExcluded}
+            />
           ) : null}
-          <SetupPanel rules={rules} system={system} availability={availability} onPickSystem={pickSystem} />
+          <SetupPanel
+            rules={rules}
+            system={system}
+            availability={availability}
+            onPickSystem={pickSystem}
+          />
         </Screen>
       </ScrollView>
     );
@@ -277,7 +318,12 @@ const QuestionColumn = memo(function QuestionColumn({
   const actions =
     question.kind === "hand"
       ? ACTION_ORDER.filter((action) =>
-          legalActions({ hand: question.hand, rules: question.rules, handCount: 1, bankroll: DRILL_BANKROLL }).includes(action),
+          legalActions({
+            hand: question.hand,
+            rules: question.rules,
+            handCount: 1,
+            bankroll: DRILL_BANKROLL,
+          }).includes(action),
         )
       : [];
 
@@ -297,7 +343,10 @@ const QuestionColumn = memo(function QuestionColumn({
           </View>
         </View>
         <View style={styles.count}>
-          <StatRow label={`Running count · ${count.systemName}`} value={formatCountValue(count.runningCount)} />
+          <StatRow
+            label={`Running count · ${count.systemName}`}
+            value={formatCountValue(count.runningCount)}
+          />
           <StatRow label="Left in the shoe" value={decksText(count.cardsRemaining)} />
           <StatRow
             label={`True count (${ROUNDING_NAME[count.rounding]})`}
@@ -310,7 +359,11 @@ const QuestionColumn = memo(function QuestionColumn({
       {result ? null : question.kind === "insurance" ? (
         <Panel title={`Insurance against a dealer ${upcardName(11)}?`}>
           <View style={drillStyles.actions}>
-            <ActionButton label="Take insurance" tone="info" onPress={() => onAnswer("insurance")} />
+            <ActionButton
+              label="Take insurance"
+              tone="info"
+              onPress={() => onAnswer("insurance")}
+            />
             <ActionButton label="Decline insurance" onPress={() => onAnswer("decline-insurance")} />
           </View>
         </Panel>
@@ -339,7 +392,8 @@ const QuestionColumn = memo(function QuestionColumn({
             <View style={styles.accessory}>
               <Text style={drillStyles.note}>
                 {question.entry.label}: index {signed(question.entry.index)}, count{" "}
-                {signed(question.trueCount)} — {question.firing ? "the index has fired" : "the chart holds"}.
+                {signed(question.trueCount)} —{" "}
+                {question.firing ? "the index has fired" : "the chart holds"}.
               </Text>
               <View style={drillStyles.actions}>
                 <ActionButton label="Next question" tone="good" onPress={onNext} />
@@ -381,7 +435,11 @@ const RailColumn = memo(function RailColumn({
           label="Correct"
           value={`${formatRate(report.tally.accuracy)} (${report.tally.correct} of ${report.tally.attempts})`}
         />
-        <StatRow label="Streak" value={report.tally.streak} tone={report.tally.streak > 0 ? "good" : "neutral"} />
+        <StatRow
+          label="Streak"
+          value={report.tally.streak}
+          tone={report.tally.streak > 0 ? "good" : "neutral"}
+        />
         <StatRow
           label="When the index had fired"
           value={`${formatRate(report.departures.accuracy)} (${report.departures.correct} of ${report.departures.attempts})`}
@@ -390,8 +448,16 @@ const RailColumn = memo(function RailColumn({
           label="When the chart held"
           value={`${formatRate(report.holds.accuracy)} (${report.holds.correct} of ${report.holds.attempts})`}
         />
-        <StatRow label="Missed departures" value={report.missedDepartures} tone={report.missedDepartures > 0 ? "warn" : "neutral"} />
-        <StatRow label="Departed too early" value={report.earlyDepartures} tone={report.earlyDepartures > 0 ? "warn" : "neutral"} />
+        <StatRow
+          label="Missed departures"
+          value={report.missedDepartures}
+          tone={report.missedDepartures > 0 ? "warn" : "neutral"}
+        />
+        <StatRow
+          label="Departed too early"
+          value={report.earlyDepartures}
+          tone={report.earlyDepartures > 0 ? "warn" : "neutral"}
+        />
         {report.byEntry.length > 0 ? (
           <Section title="By index, weakest first">
             {report.byEntry.map((entry) => (
@@ -406,9 +472,18 @@ const RailColumn = memo(function RailColumn({
         ) : null}
       </Panel>
       {availability.indexSet ? (
-        <PoolPanel availability={availability} showExcluded={showExcluded} onToggle={onToggleExcluded} />
+        <PoolPanel
+          availability={availability}
+          showExcluded={showExcluded}
+          onToggle={onToggleExcluded}
+        />
       ) : null}
-      <SetupPanel rules={rules} system={system} availability={availability} onPickSystem={onPickSystem} />
+      <SetupPanel
+        rules={rules}
+        system={system}
+        availability={availability}
+        onPickSystem={onPickSystem}
+      />
     </View>
   );
 });
@@ -450,8 +525,8 @@ function PoolPanel({
     <Panel title={availability.indexSet ?? undefined}>
       <Text style={drillStyles.body}>
         <Text style={drillStyles.strong}>{availability.playable.length}</Text> of{" "}
-        {availability.playable.length + availability.excluded.length} published indices apply at your
-        table and are drilled.
+        {availability.playable.length + availability.excluded.length} published indices apply at
+        your table and are drilled.
         {availability.excluded.length > 0
           ? ` Your Rule Set takes ${availability.excluded.length} off the board:`
           : " None is taken off the board."}
@@ -460,7 +535,9 @@ function PoolPanel({
         <>
           <View style={styles.toggle}>
             <SecondaryButton
-              label={showExcluded ? "Hide the list" : `Show the ${availability.excluded.length} and why`}
+              label={
+                showExcluded ? "Hide the list" : `Show the ${availability.excluded.length} and why`
+              }
               onPress={onToggle}
             />
           </View>

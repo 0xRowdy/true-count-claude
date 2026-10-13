@@ -43,5 +43,5 @@ Turn typed routes off. `Link href` takes a string.
   route surface is small and every route is linked from the home screen, so a broken link is
   immediately visible.
 - If the route table grows large enough that this stops being true, revisit — but revisit by
-  adding a *test* that asserts every `href` in the codebase resolves to a file in `app/`,
+  adding a _test_ that asserts every `href` in the codebase resolves to a file in `app/`,
   which would work in CI, rather than by re-enabling an editor-only check.

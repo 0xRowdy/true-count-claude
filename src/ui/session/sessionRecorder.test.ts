@@ -370,11 +370,7 @@ describe("resuming", () => {
  */
 describe("changing the Counting System mid-Session (#26)", () => {
   /** Deals one round through the table's own transitions, syncing the system as the hook does. */
-  function playRound(
-    run: Run,
-    at: number,
-    midRound?: CountingSystemId,
-  ): Run {
+  function playRound(run: Run, at: number, midRound?: CountingSystemId): Run {
     let { session, table } = run;
     session = syncCountingSystem(session, table, at);
     const opened = openRound(session, table);

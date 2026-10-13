@@ -126,9 +126,7 @@ describe("the session archive", () => {
   it("rejects a file that is not ours, and one from a newer build", () => {
     expect(parseArchive("nope").ok).toBe(false);
     expect(parseArchive(JSON.stringify({ format: "other" })).ok).toBe(false);
-    expect(
-      parseArchive(JSON.stringify({ format: ARCHIVE_FORMAT, sessions: [] })).ok,
-    ).toBe(false);
+    expect(parseArchive(JSON.stringify({ format: ARCHIVE_FORMAT, sessions: [] })).ok).toBe(false);
 
     const future = parseArchive(
       JSON.stringify({ format: ARCHIVE_FORMAT, schemaVersion: 99, exportedAt: 0, sessions: [{}] }),

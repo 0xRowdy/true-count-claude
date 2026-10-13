@@ -817,9 +817,17 @@ export interface DeviationReport {
   /** Per published index, worst first. Which numbers you have actually learnt. */
   readonly byEntry: readonly EntryStat[];
   /** Accuracy on questions where the count *had* crossed the index. */
-  readonly departures: { readonly attempts: number; readonly correct: number; readonly accuracy: number | null };
+  readonly departures: {
+    readonly attempts: number;
+    readonly correct: number;
+    readonly accuracy: number | null;
+  };
   /** Accuracy on questions where it had not — the half that catches over-deviating. */
-  readonly holds: { readonly attempts: number; readonly correct: number; readonly accuracy: number | null };
+  readonly holds: {
+    readonly attempts: number;
+    readonly correct: number;
+    readonly accuracy: number | null;
+  };
   /** Times the count had crossed an index and the chart play was made anyway. */
   readonly missedDepartures: number;
   /** Times a departure was made at a count that does not support it. */

@@ -1,14 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Card, Rank } from "./cards";
-import {
-  COUNTING_SYSTEMS,
-  HI_LO,
-  KO,
-  RED_7,
-  WONG_HALVES,
-  ZEN,
-  trueCount,
-} from "./counting";
+import { COUNTING_SYSTEMS, HI_LO, KO, RED_7, WONG_HALVES, ZEN, trueCount } from "./counting";
 import {
   FAB_4,
   HI_LO_INDEXES,
@@ -27,7 +19,11 @@ import { DEFAULT_RULES, type RuleSet } from "./rules";
 import { basicStrategy } from "./strategy";
 
 const card = (rank: Rank, suit: Card["suit"] = "s"): Card => ({ rank, suit });
-const hand = (...ranks: Rank[]): Hand => createHand(ranks.map((rank) => card(rank)), 10);
+const hand = (...ranks: Rank[]): Hand =>
+  createHand(
+    ranks.map((rank) => card(rank)),
+    10,
+  );
 
 /** Dealer upcards as the published tables write them: 11 is an ace. */
 const up = (upcard: number): Card => card(upcard === 11 ? "A" : (String(upcard) as Rank));
@@ -240,9 +236,7 @@ describe("the index set as data", () => {
     expect(INDEX_SETS.map((set) => set.system)).toEqual(["hi-lo"]);
     expect(getIndexSet(ZEN)).toBeUndefined();
     expect(deviation(hand("10", "6"), up(10), 5, BASELINE, ZEN)).toBeNull();
-    expect(deviationLookup(hand("10", "6"), up(10), 5, BASELINE, ZEN).skipped).toBe(
-      "no-index-set",
-    );
+    expect(deviationLookup(hand("10", "6"), up(10), 5, BASELINE, ZEN).skipped).toBe("no-index-set");
   });
 });
 
@@ -313,9 +307,7 @@ describe("insurance at +3", () => {
  * assertions above were wrong with it, because it drives the real `governingCell` path.
  */
 describe("every published playing index fires at its own index", () => {
-  const playing = [...ILLUSTRIOUS_18, ...FAB_4].filter(
-    (entry) => entry.hand.kind !== "insurance",
-  );
+  const playing = [...ILLUSTRIOUS_18, ...FAB_4].filter((entry) => entry.hand.kind !== "insurance");
 
   /**
    * The Fab 4's 15 vs 10 is the one index with no rule set it can fire in, and that is the

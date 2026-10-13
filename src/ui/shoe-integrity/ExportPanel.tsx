@@ -41,8 +41,8 @@ export function ExportPanel({
     <Panel title="Export this report">
       <Text style={styles.prose}>
         Everything above, as one file: the seed, the Rule Set, every check on this screen, the
-        remaining composition, and the full dealt-card history. Send it with a bug report and we
-        can replay your exact Shoe.
+        remaining composition, and the full dealt-card history. Send it with a bug report and we can
+        replay your exact Shoe.
       </Text>
 
       <View style={styles.row}>

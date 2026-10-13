@@ -78,9 +78,9 @@ export function SessionScreen() {
         <Panel>
           <Text style={styles.title}>Statistics</Text>
           <Text style={styles.lede}>
-            Everything here is computed from hands you actually played, and every rate is shown
-            next to the counts it was divided from. A rate with nothing to divide reads{" "}
-            {NO_VALUE} — a fresh Session has no accuracy, not 0% accuracy.
+            Everything here is computed from hands you actually played, and every rate is shown next
+            to the counts it was divided from. A rate with nothing to divide reads {NO_VALUE} — a
+            fresh Session has no accuracy, not 0% accuracy.
           </Text>
           <View style={styles.headerActions}>
             <Link href="/play" style={styles.link}>
@@ -179,18 +179,15 @@ function SessionExpectation({ stats }: { stats: SessionStats }) {
       <Panel title="How the band reads your play">
         <StatRow label="Hands recorded" value={stats.handsPlayed} />
         <StatRow label="Net result" value={formatChips(stats.netResult)} />
-        <StatRow
-          label="Mean stake per hand"
-          value={unit === null ? NO_VALUE : formatChips(unit)}
-        />
+        <StatRow label="Mean stake per hand" value={unit === null ? NO_VALUE : formatChips(unit)} />
         <StatRow
           label="Net in betting units"
           value={result === null ? NO_VALUE : result.netUnits.toFixed(2)}
         />
         <Text style={styles.note}>
-          The band assumes flat bets, so the unit is your mean stake — doubles included, which
-          makes it slightly larger than your opening bet. Spreading your bets with the count
-          moves the real expectation, and the band does not model that.
+          The band assumes flat bets, so the unit is your mean stake — doubles included, which makes
+          it slightly larger than your opening bet. Spreading your bets with the count moves the
+          real expectation, and the band does not model that.
         </Text>
         {overridden ? (
           <View style={styles.controls}>

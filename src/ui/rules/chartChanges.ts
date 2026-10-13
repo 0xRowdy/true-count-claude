@@ -174,10 +174,7 @@ export function cellKey(rowKey: string, upcard: DealerUpcard): string {
  * screen shows. A change in a row that is not printed cannot be highlighted and would be
  * a count the user could not reconcile with what is in front of them.
  */
-export function chartChanges(
-  before: StrategyChart,
-  after: StrategyChart,
-): readonly ChartChange[] {
+export function chartChanges(before: StrategyChart, after: StrategyChart): readonly ChartChange[] {
   const changes: ChartChange[] = [];
   const beforeRows = chartRows(before);
   const afterRows = chartRows(after);

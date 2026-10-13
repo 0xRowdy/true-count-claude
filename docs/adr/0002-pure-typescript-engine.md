@@ -4,14 +4,14 @@
 
 ## Context
 
-Two of our ten product invariants are claims about correctness that we make *to users*:
+Two of our ten product invariants are claims about correctness that we make _to users_:
 the strategy engine is auditable (invariant 4) and the shoe is provable (invariant 5). These
 are marketing promises only if we cannot enforce them mechanically.
 
 Category research is unambiguous about the stakes. "Wrong math" accounts for 21% of low-star
 reviews across competitor apps, and the damage is not contained to the cell that is wrong.
-The representative review: *"Makes me wonder if other plays are wrong in this training app as
-well."* One bad chart cell discredits the entire product. Competitors have shipped, in
+The representative review: _"Makes me wonder if other plays are wrong in this training app as
+well."_ One bad chart cell discredits the entire product. Competitors have shipped, in
 production, strategy engines that advise standing on a pair of 9s in all cases, that describe
 a hard 22 as a target, and that report a running count which does not return to zero at the
 end of a balanced shoe.

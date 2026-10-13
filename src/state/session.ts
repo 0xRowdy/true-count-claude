@@ -78,11 +78,7 @@ export function isActive(session: Session): boolean {
  * never throws. A second call is a no-op rather than an error, so a double-tapped "End
  * Session" button cannot rewrite a closed record.
  */
-export function endSession(
-  session: Session,
-  reason: SessionEndReason,
-  endedAt: number,
-): Session {
+export function endSession(session: Session, reason: SessionEndReason, endedAt: number): Session {
   if (!isActive(session)) return session;
   return { ...session, endedAt, endReason: reason };
 }
@@ -231,10 +227,7 @@ export interface CountingSystemChangeInput {
  * it was taken under. A switch to the system already in force records nothing, so a caller
  * can pass the table's system on every transition without littering the log.
  */
-export function changeCountingSystem(
-  session: Session,
-  change: CountingSystemChangeInput,
-): Session {
+export function changeCountingSystem(session: Session, change: CountingSystemChangeInput): Session {
   if (change.to === session.countingSystem) return session;
   assertActive(session, "change the Counting System");
 

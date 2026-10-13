@@ -38,7 +38,9 @@ describe("describeRules", () => {
       for (const resplitAces of [true, false]) {
         for (const oneCardToSplitAces of [true, false]) {
           for (const doubleRule of ["any", "9-11", "10-11"] as const) {
-            seen.add(describeRules(rules({ dealerPeek, resplitAces, oneCardToSplitAces, doubleRule })));
+            seen.add(
+              describeRules(rules({ dealerPeek, resplitAces, oneCardToSplitAces, doubleRule })),
+            );
           }
         }
       }

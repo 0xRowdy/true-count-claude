@@ -219,11 +219,7 @@ export function PlayTable() {
           }}
         />
       ) : (
-        <ActionBar
-          round={round}
-          withheldInsurance={insuranceWithheld(table)}
-          onAction={onAction}
-        />
+        <ActionBar round={round} withheldInsurance={insuranceWithheld(table)} onAction={onAction} />
       )}
 
       <DecisionFeedback
@@ -305,11 +301,7 @@ export function PlayTable() {
         </SessionControlBar>
 
         {play.ended ? (
-          <SessionEndedPanel
-            session={play.ended}
-            stats={play.stats}
-            onStartNew={startNew}
-          />
+          <SessionEndedPanel session={play.ended} stats={play.stats} onStartNew={startNew} />
         ) : null}
 
         {play.pendingRules ? (
@@ -332,9 +324,7 @@ export function PlayTable() {
           {railColumn}
         </View>
 
-        <Text style={styles.rules}>
-          Dealing {describeRules(table.rules)}
-        </Text>
+        <Text style={styles.rules}>Dealing {describeRules(table.rules)}</Text>
       </ScrollView>
     </Screen>
   );
@@ -404,8 +394,8 @@ function InsuranceBar({
     <Panel title="Insurance?">
       <Text style={styles.note}>
         The dealer shows an ace. Insurance costs {formatChips(insuranceStake(round.bet))} and pays
-        2:1 if the dealer has a natural. It is a bet on tens, not on your hand — only a high
-        count makes it worth taking.
+        2:1 if the dealer has a natural. It is a bet on tens, not on your hand — only a high count
+        makes it worth taking.
       </Text>
       <View style={styles.actions}>
         <ActionButton
@@ -447,9 +437,9 @@ function BetBar({
       <Panel title="Out of chips">
         <Text style={styles.note}>
           The bankroll is {formatChips(table.bankroll)}, below the {formatChips(table.rules.minBet)}{" "}
-          table minimum. Reset it here and keep playing — you never have to leave this screen.
-          Going broke stays in your statistics either way; it is the most instructive thing in
-          a training log.
+          table minimum. Reset it here and keep playing — you never have to leave this screen. Going
+          broke stays in your statistics either way; it is the most instructive thing in a training
+          log.
         </Text>
         <View style={styles.actions}>
           <ActionButton
@@ -483,11 +473,7 @@ function BetBar({
       </View>
       <View style={styles.chips}>
         {chips.map((chip) => (
-          <SecondaryButton
-            key={chip}
-            label={formatChips(chip)}
-            onPress={() => onChooseBet(chip)}
-          />
+          <SecondaryButton key={chip} label={formatChips(chip)} onPress={() => onChooseBet(chip)} />
         ))}
         <SecondaryButton label="Max" onPress={() => onChooseBet(table.rules.maxBet)} />
       </View>
@@ -569,8 +555,7 @@ const HOLD_REASON: Record<RulesHold, string> = {
     "The hand on the table was dealt under your current game and will be settled under it — a payout rule that changed mid-hand would pay the wrong money. Finish the hand.",
   session:
     "A Session records one table for its whole length, and its Shoes are rebuilt from that record to prove the count. Playing a second game inside it would make the hands you have already played replay as cards that were never dealt.",
-  shoe:
-    "Cards are already off this shoe. Changing the deck count or the penetration under it would move the True Count's divisor mid-count and leave the zero-sum check unable to reconcile (ADR-0004).",
+  shoe: "Cards are already off this shoe. Changing the deck count or the penetration under it would move the True Count's divisor mid-count and leave the zero-sum check unable to reconcile (ADR-0004).",
 };
 
 const HOLD_ACTION: Record<RulesHold, string | null> = {
@@ -610,11 +595,7 @@ function PendingTablePanel({
         value={describeRules(pending)}
         tone="info"
       />
-      <Text style={styles.note}>
-        {hold === null
-          ? "Taking effect now."
-          : HOLD_REASON[hold]}
-      </Text>
+      <Text style={styles.note}>{hold === null ? "Taking effect now." : HOLD_REASON[hold]}</Text>
       {action ? (
         <View style={styles.actions}>
           <ActionButton

@@ -109,7 +109,9 @@ export function verifyReplay(session: Session): ReplayVerification {
   for (const round of session.rounds) {
     const shoe = session.shoes[round.shoeIndex];
     if (!shoe) {
-      problems.push(`Round ${round.index} references Shoe ${round.shoeIndex}, which was never opened`);
+      problems.push(
+        `Round ${round.index} references Shoe ${round.shoeIndex}, which was never opened`,
+      );
       continue;
     }
     if (round.shoeEndIndex < round.shoeStartIndex) {
@@ -150,7 +152,14 @@ function verifyConversionChecks(session: Session): string[] {
           `${check.runningCount} over ${check.cardsRemaining} cards (${check.rounding}), which is ${redone}`,
       );
     }
-    problems.push(...verdictProblem("Conversion check", check.index, check.verdict, check.statedTrueCount === check.actualTrueCount));
+    problems.push(
+      ...verdictProblem(
+        "Conversion check",
+        check.index,
+        check.verdict,
+        check.statedTrueCount === check.actualTrueCount,
+      ),
+    );
   });
   return problems;
 }
@@ -181,7 +190,14 @@ function verifyIndexPlays(session: Session): string[] {
         );
       }
     }
-    problems.push(...verdictProblem("Index play", play.index, play.verdict, play.actionTaken === play.correctAction));
+    problems.push(
+      ...verdictProblem(
+        "Index play",
+        play.index,
+        play.verdict,
+        play.actionTaken === play.correctAction,
+      ),
+    );
   });
   return problems;
 }

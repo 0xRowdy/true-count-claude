@@ -51,7 +51,14 @@ import {
 } from "./DrillChrome";
 import { TrueCountExplanationPanel } from "./DrillExplanations";
 import { replaceRun, stepRun, trueCountRecords } from "./drillRecorder";
-import { FOCUS_LABEL, ROUNDING_NAME, ROUNDING_SHORT, decksText, formatCountValue, formatRate } from "./drillFormat";
+import {
+  FOCUS_LABEL,
+  ROUNDING_NAME,
+  ROUNDING_SHORT,
+  decksText,
+  formatCountValue,
+  formatRate,
+} from "./drillFormat";
 import { type RunConfig, useRecordedDrill } from "./useRecordedDrill";
 import { NONE_PUBLISHED, unbalancedCountRows } from "./unbalancedCount";
 
@@ -275,7 +282,9 @@ export function TrueCountDrillScreen() {
               <ActionButton
                 label="Next question"
                 tone="good"
-                onPress={() => update((current) => replaceRun(current, nextTrueCountQuestion(current.drill)))}
+                onPress={() =>
+                  update((current) => replaceRun(current, nextTrueCountQuestion(current.drill)))
+                }
               />
             </View>
           }
@@ -291,19 +300,34 @@ export function TrueCountDrillScreen() {
           label="Correct"
           value={`${formatRate(report.tally.accuracy)} (${report.tally.correct} of ${report.tally.attempts})`}
         />
-        <StatRow label="Streak" value={report.tally.streak} tone={report.tally.streak > 0 ? "good" : "neutral"} />
+        <StatRow
+          label="Streak"
+          value={report.tally.streak}
+          tone={report.tally.streak > 0 ? "good" : "neutral"}
+        />
         <Section title="Where it goes wrong">
-          {[report.negativeTrueCounts, report.positiveTrueCounts, report.twoDigitCounts, report.singleDigitCounts].map(
-            (slice) => (
-              <StatRow
-                key={slice.label}
-                label={slice.label}
-                value={`${formatRate(slice.accuracy)} (${slice.correct} of ${slice.attempts})`}
-              />
-            ),
-          )}
-          <StatRow label="Right under another rounding" value={report.roundingErrors} tone={report.roundingErrors > 0 ? "warn" : "neutral"} />
-          <StatRow label="Right size, wrong sign" value={report.signErrors} tone={report.signErrors > 0 ? "warn" : "neutral"} />
+          {[
+            report.negativeTrueCounts,
+            report.positiveTrueCounts,
+            report.twoDigitCounts,
+            report.singleDigitCounts,
+          ].map((slice) => (
+            <StatRow
+              key={slice.label}
+              label={slice.label}
+              value={`${formatRate(slice.accuracy)} (${slice.correct} of ${slice.attempts})`}
+            />
+          ))}
+          <StatRow
+            label="Right under another rounding"
+            value={report.roundingErrors}
+            tone={report.roundingErrors > 0 ? "warn" : "neutral"}
+          />
+          <StatRow
+            label="Right size, wrong sign"
+            value={report.signErrors}
+            tone={report.signErrors > 0 ? "warn" : "neutral"}
+          />
           <StatRow
             label="Average miss"
             value={report.meanAbsoluteError === null ? "—" : report.meanAbsoluteError.toFixed(1)}
@@ -316,12 +340,17 @@ export function TrueCountDrillScreen() {
               <StatRow
                 key={focus}
                 label={FOCUS_LABEL[focus]}
-                value={slice ? `${formatRate(slice.accuracy)} (${slice.correct} of ${slice.attempts})` : "—"}
+                value={
+                  slice
+                    ? `${formatRate(slice.accuracy)} (${slice.correct} of ${slice.attempts})`
+                    : "—"
+                }
               />
             );
           })}
           <Text style={drillStyles.note}>
-            Negative and two-digit counts come up on purpose, far more often than a real shoe serves them.
+            Negative and two-digit counts come up on purpose, far more often than a real shoe serves
+            them.
           </Text>
         </Section>
       </Panel>

@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   verify:
-    name: test · typecheck · lint · web build
+    name: test · typecheck · lint · format · web build
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -42,6 +42,9 @@ jobs:
       # src/engine (ADR-0004) are enforced here. A violating import fails the build.
       - name: Lint
         run: pnpm lint
+
+      - name: Format
+        run: pnpm format:check
 
       - name: Typecheck
         run: pnpm typecheck
@@ -88,8 +91,13 @@ jobs:
       - name: Doctor
         run: $V doctor
 
+      # Every flow in the skill runs, so a PR that adds a flow gates on it without touching this file.
       - name: Drive flows
-        run: $V drive no-hydration-errors play-round true-count-drill
+        run: |
+          shopt -s nullglob
+          flows=(.agents/skills/verify-true-count/flows/*.mjs)
+          [ ${#flows[@]} -gt 0 ] || { echo "no e2e flows found" >&2; exit 1; }
+          $V drive "${flows[@]}"
 
       - name: Stop
         if: always()

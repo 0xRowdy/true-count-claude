@@ -54,9 +54,9 @@ export function RuleSetScreen() {
         <Panel>
           <Text style={styles.title}>Your table</Text>
           <Text style={styles.lede}>
-            Basic Strategy is not one chart, it is a chart per rule set. Tell us the table you
-            play and every verdict, drill and explanation in the app is generated for that
-            table — not for a generic one that happens to be close.
+            Basic Strategy is not one chart, it is a chart per rule set. Tell us the table you play
+            and every verdict, drill and explanation in the app is generated for that table — not
+            for a generic one that happens to be close.
           </Text>
           <StorageNote status={status} />
         </Panel>
@@ -79,9 +79,8 @@ export function RuleSetScreen() {
         <Panel>
           <SecondaryButton label="Reset to the default table" onPress={reset} />
           <Text style={styles.resetNote}>
-            The default is an ordinary Las Vegas six-deck shoe game — deliberately not the
-            most generous table, because the default should look like one you would actually
-            sit at.
+            The default is an ordinary Las Vegas six-deck shoe game — deliberately not the most
+            generous table, because the default should look like one you would actually sit at.
           </Text>
         </Panel>
       </Screen>
@@ -144,8 +143,8 @@ function ProblemPanel({ problems }: { problems: readonly string[] }) {
         </Text>
       ))}
       <Text style={styles.problemNote}>
-        Fix these and the table saves itself. Until then nothing is written, so your last
-        good table is still there next time.
+        Fix these and the table saves itself. Until then nothing is written, so your last good table
+        is still there next time.
       </Text>
     </Panel>
   );
@@ -160,15 +159,15 @@ function StorageNote({ status }: { status: RuleSetStatus }) {
     case "default":
       return (
         <Text style={styles.status}>
-          Showing the default table ({DEFAULT_RULES.decks}-deck Vegas shoe). Any change is
-          saved on this device.
+          Showing the default table ({DEFAULT_RULES.decks}-deck Vegas shoe). Any change is saved on
+          this device.
         </Text>
       );
     case "unavailable":
       return (
         <Text style={[styles.status, styles.statusBad]}>
-          This device will not let us save settings, so your table resets when the app
-          restarts. Everything else on this screen still works.
+          This device will not let us save settings, so your table resets when the app restarts.
+          Everything else on this screen still works.
         </Text>
       );
   }

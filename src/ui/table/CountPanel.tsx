@@ -63,7 +63,11 @@ export function CountPanel({
       <StatRow
         label="True count"
         value={
-          readout.trueCount === null ? (shown ? "—" : HIDDEN) : reveal(formatCount(readout.trueCount))
+          readout.trueCount === null
+            ? shown
+              ? "—"
+              : HIDDEN
+            : reveal(formatCount(readout.trueCount))
         }
         tone={shown && readout.trueCount !== null ? countTone(readout.trueCount) : "neutral"}
       />
@@ -124,8 +128,8 @@ export function SystemPanel({
           system reads the cards and deals none, so the Shoe still replays from its seed. */}
       <Text style={styles.note}>
         Switch whenever you like, mid-hand included: the count is recomputed from every card you
-        have seen, the change is written to your Session, and each decision keeps the system it
-        was made in.
+        have seen, the change is written to your Session, and each decision keeps the system it was
+        made in.
       </Text>
     </Panel>
   );

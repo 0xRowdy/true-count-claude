@@ -1,6 +1,7 @@
 import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
+import prettierConfig from "eslint-config-prettier";
 
 /**
  * Lint configuration for True Count.
@@ -65,7 +66,7 @@ const ENGINE_FORBIDDEN_IMPORT_PATTERNS = [
       "@expo/**",
     ],
     message:
-      "ADR-0002: src/engine is pure TypeScript. It may not import React, React Native or Expo. Keep framework code in src/ui.",
+      "ADR-0002: src/engine and src/games are pure TypeScript. They may not import React, React Native or Expo. Keep framework code in src/ui.",
   },
   {
     group: [
@@ -84,7 +85,7 @@ const ENGINE_FORBIDDEN_IMPORT_PATTERNS = [
       ...NODE_BUILTINS,
     ],
     message:
-      "ADR-0002: src/engine performs no I/O. No storage, no network, no Node built-ins. Persistence belongs in src/state.",
+      "ADR-0002: src/engine and src/games perform no I/O. No storage, no network, no Node built-ins. Persistence belongs in src/state.",
   },
   {
     group: [
@@ -106,7 +107,7 @@ const ENGINE_FORBIDDEN_IMPORT_PATTERNS = [
       "**/app/**",
     ],
     message:
-      "ADR-0002: src/engine sits at the bottom of the stack. It may not import from src/ui, src/state, src/drills or app — those import the engine, never the reverse.",
+      "ADR-0002: src/engine and src/games sit at the bottom of the stack. They may not import from src/ui, src/state, src/drills or app — those import the engine, never the reverse.",
   },
 ];
 
@@ -132,17 +133,18 @@ const CLOCK_SELECTORS = [
 ].join(", ");
 
 const RANDOM_MESSAGE =
-  "ADR-0004: Math.random() is banned in src/engine. The shoe must be reproducible from its seed — take randomness from the injected Rng (src/engine/rng.ts).";
+  "ADR-0004: Math.random() is banned in src/engine and src/games. The shoe must be reproducible from its seed — take randomness from the injected Rng (src/engine/rng.ts).";
 
 const CLOCK_MESSAGE =
-  "ADR-0004: src/engine reads no clock. A clock read makes the engine non-deterministic — pass the value in from the caller. (Benchmarks in src/engine/**/*.test.ts are exempt; see below.)";
+  "ADR-0004: src/engine and src/games read no clock. A clock read makes the engine non-deterministic — pass the value in from the caller. (Benchmarks in src/engine/**/*.test.ts and src/games/**/*.test.ts are exempt; see below.)";
 
 const ENGINE_FORBIDDEN_SYNTAX = [
   { selector: RANDOM_SELECTORS, message: RANDOM_MESSAGE },
   { selector: CLOCK_SELECTORS, message: CLOCK_MESSAGE },
   {
     selector: "CallExpression[callee.name='setTimeout'], CallExpression[callee.name='setInterval']",
-    message: "ADR-0002: src/engine is synchronous. Timers belong in src/ui or src/state.",
+    message:
+      "ADR-0002: src/engine and src/games are synchronous. Timers belong in src/ui or src/state.",
   },
 ];
 
@@ -162,22 +164,32 @@ const ENGINE_TEST_FORBIDDEN_SYNTAX = [
   { selector: RANDOM_SELECTORS, message: RANDOM_MESSAGE },
   {
     selector: "CallExpression[callee.name='setTimeout'], CallExpression[callee.name='setInterval']",
-    message: "ADR-0002: src/engine is synchronous. Timers belong in src/ui or src/state.",
+    message:
+      "ADR-0002: src/engine and src/games are synchronous. Timers belong in src/ui or src/state.",
   },
 ];
 
 /** Ambient host APIs. Reaching for any of these means the engine stopped being pure. */
 const ENGINE_FORBIDDEN_GLOBALS = [
-  { name: "fetch", message: "ADR-0002: src/engine performs no network I/O." },
-  { name: "XMLHttpRequest", message: "ADR-0002: src/engine performs no network I/O." },
-  { name: "WebSocket", message: "ADR-0002: src/engine performs no network I/O." },
-  { name: "localStorage", message: "ADR-0002: src/engine performs no storage I/O." },
-  { name: "sessionStorage", message: "ADR-0002: src/engine performs no storage I/O." },
-  { name: "indexedDB", message: "ADR-0002: src/engine performs no storage I/O." },
-  { name: "window", message: "ADR-0002: src/engine is platform-agnostic — no DOM access." },
-  { name: "document", message: "ADR-0002: src/engine is platform-agnostic — no DOM access." },
-  { name: "navigator", message: "ADR-0002: src/engine is platform-agnostic — no host APIs." },
-  { name: "performance", message: "ADR-0004: src/engine reads no clock." },
+  { name: "fetch", message: "ADR-0002: src/engine and src/games perform no network I/O." },
+  { name: "XMLHttpRequest", message: "ADR-0002: src/engine and src/games perform no network I/O." },
+  { name: "WebSocket", message: "ADR-0002: src/engine and src/games perform no network I/O." },
+  { name: "localStorage", message: "ADR-0002: src/engine and src/games perform no storage I/O." },
+  { name: "sessionStorage", message: "ADR-0002: src/engine and src/games perform no storage I/O." },
+  { name: "indexedDB", message: "ADR-0002: src/engine and src/games perform no storage I/O." },
+  {
+    name: "window",
+    message: "ADR-0002: src/engine and src/games are platform-agnostic — no DOM access.",
+  },
+  {
+    name: "document",
+    message: "ADR-0002: src/engine and src/games are platform-agnostic — no DOM access.",
+  },
+  {
+    name: "navigator",
+    message: "ADR-0002: src/engine and src/games are platform-agnostic — no host APIs.",
+  },
+  { name: "performance", message: "ADR-0004: src/engine and src/games read no clock." },
 ];
 
 export default tseslint.config(
@@ -215,9 +227,11 @@ export default tseslint.config(
 
   // ---------------------------------------------------------------------------
   // The engine boundary. This block is the enforcement of ADR-0002 and ADR-0004.
+  // src/games holds the engines for the other table games (roulette, craps, video poker,
+  // baccarat). They make the same promises as the blackjack engine, so the same rules apply.
   // ---------------------------------------------------------------------------
   {
-    files: ["src/engine/**/*.ts"],
+    files: ["src/engine/**/*.ts", "src/games/**/*.ts"],
     languageOptions: {
       // The engine targets no host. It gets the language and nothing else — which is
       // why an undeclared `window` or `fetch` is a no-undef error here.
@@ -234,7 +248,7 @@ export default tseslint.config(
   // clock. See ENGINE_TEST_FORBIDDEN_SYNTAX for why this exception is stated rather
   // than left as an accident of selector shape.
   {
-    files: ["src/engine/**/*.test.ts"],
+    files: ["src/engine/**/*.test.ts", "src/games/**/*.test.ts"],
     languageOptions: {
       globals: { ...globals.es2024, performance: "readonly" },
     },
@@ -255,4 +269,8 @@ export default tseslint.config(
     files: [".agents/**/*.{js,mjs}"],
     languageOptions: { globals: { ...globals.node } },
   },
+
+  // Formatting is Prettier's job (`pnpm format:check` in CI). This turns off every lint rule
+  // that would fight it, so the two never disagree about whitespace.
+  prettierConfig,
 );

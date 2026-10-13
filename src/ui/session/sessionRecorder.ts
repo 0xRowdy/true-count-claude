@@ -34,13 +34,7 @@ import {
   dealerUpcard,
 } from "@/engine/round";
 import { basicStrategy } from "@/engine/strategy";
-import type {
-  DecisionAction,
-  DecisionInput,
-  HandOutcome,
-  HandResult,
-  Session,
-} from "@/state";
+import type { DecisionAction, DecisionInput, HandOutcome, HandResult, Session } from "@/state";
 import {
   changeCountingSystem,
   currentShoe as currentSessionShoe,

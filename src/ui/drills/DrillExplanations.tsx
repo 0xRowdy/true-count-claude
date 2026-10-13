@@ -66,7 +66,10 @@ export function CountCheckExplanationPanel({
               <Text style={styles.mono}>
                 {divisionText(e.actualRunningCount, e.count.decksRemaining, e.count.exactTrueCount)}
               </Text>
-              , played as <Text style={[styles.mono, styles.strong]}>{formatCountValue(e.count.trueCount)}</Text>{" "}
+              , played as{" "}
+              <Text style={[styles.mono, styles.strong]}>
+                {formatCountValue(e.count.trueCount)}
+              </Text>{" "}
               <Text style={styles.muted}>({ROUNDING_NAME[e.count.rounding]})</Text>
             </Text>
           ) : null
@@ -74,8 +77,8 @@ export function CountCheckExplanationPanel({
           <>
             <Text style={styles.body}>
               {e.systemName} starts a {decks}-deck shoe at{" "}
-              <Text style={styles.mono}>{formatCountValue(e.initialRunningCount)}</Text>, not at zero — the
-              count you hold includes that start.
+              <Text style={styles.mono}>{formatCountValue(e.initialRunningCount)}</Text>, not at
+              zero — the count you hold includes that start.
             </Text>
             {references.map((row) => (
               <StatRow
@@ -91,14 +94,18 @@ export function CountCheckExplanationPanel({
 
       <Group title="Since your last check">
         <Text style={styles.body}>
-          The count was <Text style={styles.mono}>{formatCountValue(e.spanStartRunningCount)}</Text>;{" "}
-          {e.trailTruncated ? "the cards since" : `the ${e.trail.length} card${e.trail.length === 1 ? "" : "s"} since`} add{" "}
-          <Text style={styles.mono}>{formatCountValue(e.spanTagSum)}</Text>, making{" "}
+          The count was <Text style={styles.mono}>{formatCountValue(e.spanStartRunningCount)}</Text>
+          ;{" "}
+          {e.trailTruncated
+            ? "the cards since"
+            : `the ${e.trail.length} card${e.trail.length === 1 ? "" : "s"} since`}{" "}
+          add <Text style={styles.mono}>{formatCountValue(e.spanTagSum)}</Text>, making{" "}
           <Text style={styles.mono}>{formatCountValue(e.actualRunningCount)}</Text>.
         </Text>
         {e.trailTruncated ? (
           <Text style={styles.note}>
-            A long stretch: only its last {e.trail.length} cards are shown. The total above covers all of it.
+            A long stretch: only its last {e.trail.length} cards are shown. The total above covers
+            all of it.
           </Text>
         ) : null}
         {e.trail.length === 0 ? (
@@ -108,7 +115,9 @@ export function CountCheckExplanationPanel({
             {e.trail.map((stepView) => (
               <View key={stepView.ordinal} style={styles.trailStep}>
                 <CardView card={stepView.card} size="sm" />
-                <Text style={[styles.tag, tagColor(stepView.tag)]}>{formatCountValue(stepView.tag)}</Text>
+                <Text style={[styles.tag, tagColor(stepView.tag)]}>
+                  {formatCountValue(stepView.tag)}
+                </Text>
                 <Text style={styles.total}>{formatCountValue(stepView.runningCount)}</Text>
               </View>
             ))}
@@ -130,14 +139,19 @@ export function CountCheckExplanationPanel({
               <View key={rank.rank} style={styles.tableRow}>
                 <Text style={styles.cell}>{rank.rank}</Text>
                 <Text style={styles.cell}>{rank.seen}</Text>
-                <Text style={styles.cell}>{rank.tag === null ? "by suit" : formatCountValue(rank.tag)}</Text>
-                <Text style={[styles.cell, tagColor(rank.contribution)]}>{formatCountValue(rank.contribution)}</Text>
+                <Text style={styles.cell}>
+                  {rank.tag === null ? "by suit" : formatCountValue(rank.tag)}
+                </Text>
+                <Text style={[styles.cell, tagColor(rank.contribution)]}>
+                  {formatCountValue(rank.contribution)}
+                </Text>
               </View>
             ))}
           </View>
           {e.byRank.some((rank) => rank.tag === null) ? (
             <Text style={styles.note}>
-              {e.systemName} counts a red seven +1 and a black seven 0, so a seven has no single tag.
+              {e.systemName} counts a red seven +1 and a black seven 0, so a seven has no single
+              tag.
             </Text>
           ) : null}
         </Group>
@@ -157,12 +171,16 @@ export function TrueCountExplanationPanel({
   const verdict = trueCountVerdict(result);
   const modes = ["truncate", "floor", "round", "exact"] as const;
   const traits = [
-    e.traits.negativeRunningCount ? "a negative Running Count, where rounding conventions disagree" : null,
+    e.traits.negativeRunningCount
+      ? "a negative Running Count, where rounding conventions disagree"
+      : null,
     e.traits.twoDigitRunningCount ? "a two-digit Running Count" : null,
     e.traits.twoDigitTrueCount ? "a two-digit True Count" : null,
     e.traits.deepShoe ? "under one deck left, so dividing makes the count bigger" : null,
     e.traits.fractionalDecks ? "a fractional number of decks" : null,
-    e.traits.roundingMatters ? "a division that does not come out whole, so the rounding bites" : null,
+    e.traits.roundingMatters
+      ? "a division that does not come out whole, so the rounding bites"
+      : null,
   ].filter((line): line is string => line !== null);
 
   return (
@@ -172,9 +190,15 @@ export function TrueCountExplanationPanel({
       {verdict.lesson ? <Text style={styles.lesson}>{verdict.lesson}</Text> : null}
 
       <Group title="The division">
-        <StatRow label={`Running Count · ${e.systemName}`} value={formatCountValue(e.runningCount)} />
+        <StatRow
+          label={`Running Count · ${e.systemName}`}
+          value={formatCountValue(e.runningCount)}
+        />
         <StatRow label="Decks remaining" value={decksText(e.cardsRemaining)} />
-        <StatRow label="Exact quotient" value={divisionText(e.runningCount, e.decksRemaining, e.exact)} />
+        <StatRow
+          label="Exact quotient"
+          value={divisionText(e.runningCount, e.decksRemaining, e.exact)}
+        />
       </Group>
 
       <Group title="Every rounding of it">
@@ -189,7 +213,9 @@ export function TrueCountExplanationPanel({
               </Text>
               <View style={styles.roundValue}>
                 {graded ? <Text style={styles.flag}>THIS DRILL</Text> : null}
-                {yours && mode !== "exact" ? <Text style={[styles.flag, styles.flagYou]}>YOU</Text> : null}
+                {yours && mode !== "exact" ? (
+                  <Text style={[styles.flag, styles.flagYou]}>YOU</Text>
+                ) : null}
                 <Text style={styles.mono}>
                   {mode === "exact" ? e.exact.toFixed(2) : formatCountValue(e.byRounding[mode])}
                 </Text>
@@ -198,8 +224,9 @@ export function TrueCountExplanationPanel({
           );
         })}
         <Text style={styles.note}>
-          Truncating toward zero is symmetric: +3.9 and −3.9 both become 3. Flooring always goes down,
-          so −3.1 becomes −4. Pick the convention your index numbers were computed with, and keep it.
+          Truncating toward zero is symmetric: +3.9 and −3.9 both become 3. Flooring always goes
+          down, so −3.1 becomes −4. Pick the convention your index numbers were computed with, and
+          keep it.
         </Text>
       </Group>
 
@@ -216,7 +243,15 @@ export function TrueCountExplanationPanel({
   );
 }
 
-function Verdict({ correct, headline, detail }: { correct: boolean; headline: string; detail: string | null }) {
+function Verdict({
+  correct,
+  headline,
+  detail,
+}: {
+  correct: boolean;
+  headline: string;
+  detail: string | null;
+}) {
   const accent = correct ? colors.accent : colors.danger;
   return (
     <View accessibilityRole="summary" style={[styles.verdict, { borderLeftColor: accent }]}>
@@ -257,7 +292,12 @@ const styles = StyleSheet.create({
   muted: { color: colors.textMuted },
   note: { ...type.caption, color: colors.textMuted, lineHeight: 18 },
   refusal: { ...type.caption, color: colors.info, lineHeight: 18 },
-  group: { gap: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border },
+  group: {
+    gap: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
   groupTitle: {
     ...type.caption,
     color: colors.textMuted,
@@ -286,6 +326,12 @@ const styles = StyleSheet.create({
   roundGraded: { backgroundColor: colors.surfaceRaised },
   roundName: { ...type.caption, color: colors.text, flexShrink: 1 },
   roundValue: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  flag: { ...type.caption, fontSize: 10, fontWeight: "700", color: colors.accent, letterSpacing: 0.6 },
+  flag: {
+    ...type.caption,
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.accent,
+    letterSpacing: 0.6,
+  },
   flagYou: { color: colors.warning },
 });

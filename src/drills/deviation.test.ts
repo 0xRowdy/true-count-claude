@@ -92,9 +92,7 @@ describe("availability", () => {
 
     expect(withSurrender.playable.map((e) => e.id)).toContain("14v10R");
     expect(without.playable.map((e) => e.id)).not.toContain("14v10R");
-    expect(
-      without.excluded.find((e) => e.entry.id === "14v10R")?.reason,
-    ).toBe("action-not-legal");
+    expect(without.excluded.find((e) => e.entry.id === "14v10R")?.reason).toBe("action-not-legal");
   });
 
   it("keeps insurance, which no rule can move", () => {
@@ -144,7 +142,8 @@ describe("generating questions", () => {
       // card, which nobody has seen: one more than the decks-remaining divisor implies.
       const unseen = Object.values(question.composition).reduce((sum, held) => sum + held, 0);
       expect(unseen).toBe(question.count.cardsRemaining + 1);
-      for (const held of Object.values(question.composition)) expect(held).toBeGreaterThanOrEqual(0);
+      for (const held of Object.values(question.composition))
+        expect(held).toBeGreaterThanOrEqual(0);
     }
     expect(backed).toBeGreaterThan(50);
   });

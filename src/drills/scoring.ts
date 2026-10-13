@@ -116,7 +116,13 @@ export function scoreAgainstBasicStrategy(
   at: number,
 ): DecisionResult {
   const explanation = explainDecision(situation);
-  return buildDecisionResult(explanation, action, explanation.basicStrategyAction, "basic-strategy", at);
+  return buildDecisionResult(
+    explanation,
+    action,
+    explanation.basicStrategyAction,
+    "basic-strategy",
+    at,
+  );
 }
 
 /** Grades a play against Basic Strategy as amended by the index numbers at this count. */
@@ -191,12 +197,14 @@ function buildInsuranceResult(
   gradedAgainst: GradingStandard,
   at: number,
 ): InsuranceResult {
-  const correct: InsuranceAnswer = correctAction === "insurance" ? "insurance" : "decline-insurance";
+  const correct: InsuranceAnswer =
+    correctAction === "insurance" ? "insurance" : "decline-insurance";
   const ev = explanation.ev;
 
   // Taking stakes half a unit at 2:1; declining stakes nothing. The loss is the gap
   // between what the chosen side is worth and what the better side is worth.
-  const evLoss = ev === null ? null : Math.max(0, Math.max(ev, 0) - (answer === "insurance" ? ev : 0));
+  const evLoss =
+    ev === null ? null : Math.max(0, Math.max(ev, 0) - (answer === "insurance" ? ev : 0));
 
   return {
     kind: "insurance",

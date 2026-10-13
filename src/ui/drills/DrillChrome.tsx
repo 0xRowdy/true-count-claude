@@ -91,7 +91,11 @@ export function RecordingPanel({
     <Panel>
       <View style={styles.recordRow}>
         <View style={styles.recordStatus}>
-          {session ? <Badge label="RECORDING" tone="good" /> : <Badge label="NOT STARTED" tone="neutral" />}
+          {session ? (
+            <Badge label="RECORDING" tone="good" />
+          ) : (
+            <Badge label="NOT STARTED" tone="neutral" />
+          )}
           <Text style={styles.note}>
             {session
               ? `This drill's Session holds ${count} ${count === 1 ? unit.replace(/s$/, "") : unit}${unit === "decisions" ? " (insurance calls included)" : ""}, ${formatRate(tally?.rate ?? null)} correct, saved on this device. An undone answer is taken back out of it.`
@@ -121,7 +125,8 @@ export function RecordingPanel({
       ) : null}
       {error ? (
         <Text style={styles.error}>
-          Saving to this device failed: {error}. The drill carries on, but this run may not survive a reload.
+          Saving to this device failed: {error}. The drill carries on, but this run may not survive
+          a reload.
         </Text>
       ) : null}
     </Panel>
@@ -244,8 +249,8 @@ export function UndoControl({
       {canUndo ? <SecondaryButton label="↶ Undo last answer" onPress={onUndo} /> : null}
       {undone > 0 ? (
         <Text style={styles.note}>
-          {undone} answer{undone === 1 ? "" : "s"} undone this run. Undo restores the streak and
-          the cards exactly as they were.
+          {undone} answer{undone === 1 ? "" : "s"} undone this run. Undo restores the streak and the
+          cards exactly as they were.
         </Text>
       ) : null}
     </View>
@@ -306,7 +311,13 @@ const styles = StyleSheet.create({
   tableLine: { gap: 0 },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md, marginTop: spacing.sm },
   picker: { gap: spacing.xs },
-  label: { ...type.caption, color: colors.textMuted, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.8 },
+  label: {
+    ...type.caption,
+    color: colors.textMuted,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
   undo: { gap: spacing.xs, alignItems: "flex-start" },
   section: {
     gap: spacing.sm,

@@ -61,7 +61,10 @@ interface Observed {
 function playRounds(
   system: CountingSystemId,
   rounds: number,
-  check: (table: PlayTable, decision: { kind: "play"; action: Action } | { kind: "insurance"; take: boolean }) => void,
+  check: (
+    table: PlayTable,
+    decision: { kind: "play"; action: Action } | { kind: "insurance"; take: boolean },
+  ) => void,
 ): Observed {
   const random = lcg(7 + rounds);
   let table = chooseSystem(createPlayTable(DEFAULT_RULES, 424242), system);

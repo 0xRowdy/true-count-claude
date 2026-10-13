@@ -165,7 +165,7 @@ function assertBetIsPlayable(config: BasicStrategyDrillConfig): void {
  * reproduces from one number (ADR-0004) while no two shoes in it deal the same cards.
  */
 function shoeSeed(seed: number, shoeIndex: number): number {
-  return (Math.imul(seed ^ (shoeIndex + 1), 2654435761) >>> 0) || 1;
+  return Math.imul(seed ^ (shoeIndex + 1), 2654435761) >>> 0 || 1;
 }
 
 // --- Derived views --------------------------------------------------------------------

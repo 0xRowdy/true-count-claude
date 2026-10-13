@@ -14,11 +14,11 @@ graduates and casino partnerships. We cannot out-authenticate them and should no
 The category's own reviews point at an entirely different unmet need. **"It doesn't actually
 teach" is the largest product complaint at 22% of low-star reviews.** In the users' words:
 
-> *"The app rarely explains why a choice is wrong, only states that it's wrong."*
-> *"They tell you if your move is right or wrong, but they don't tell you why. So all it's
-> doing is teaching you to memorize the card combinations, not actually think through the game."*
-> *"You literally have to pay just to be told whether you're right or wrong. Bro, just watch
-> a YouTube video."*
+> _"The app rarely explains why a choice is wrong, only states that it's wrong."_
+> _"They tell you if your move is right or wrong, but they don't tell you why. So all it's
+> doing is teaching you to memorize the card combinations, not actually think through the game."_
+> _"You literally have to pay just to be told whether you're right or wrong. Bro, just watch
+> a YouTube video."_
 
 Nobody has left a review asking for a prettier felt.
 
@@ -30,7 +30,7 @@ EV engine and the Explanation surface.
 
 Concretely, every graded Decision can show:
 
-- the expected value of *each* legal action for this exact hand, rule set, and count
+- the expected value of _each_ legal action for this exact hand, rule set, and count
 - the governing basic-strategy chart cell, and the chart around it
 - how the current true count shifted that decision, and the index number that would flip it
 - what would have to change for the other answer to be correct

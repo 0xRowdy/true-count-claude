@@ -226,10 +226,7 @@ export function advanceTo(drill: CountingDrill, elapsedMs: number): CountingDril
 /** Deals the next step by hand, and moves the clock on by exactly one step's worth. */
 export function dealNextStep(drill: CountingDrill): CountingDrill {
   const state = drill.current;
-  const target = Math.min(
-    state.shoe.dealtCount + state.config.cardsPerStep,
-    state.shoe.cutIndex,
-  );
+  const target = Math.min(state.shoe.dealtCount + state.config.cardsPerStep, state.shoe.cutIndex);
   return replace(drill, {
     ...state,
     elapsedMs: state.elapsedMs + msPerStep(state.config),

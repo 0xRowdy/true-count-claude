@@ -29,10 +29,7 @@ import {
   explainDecision,
   explainInsurance,
 } from "@/drills/explanation";
-import {
-  scoreAgainstIndexPlay,
-  scoreInsuranceAgainstIndexPlay,
-} from "@/drills/scoring";
+import { scoreAgainstIndexPlay, scoreInsuranceAgainstIndexPlay } from "@/drills/scoring";
 import { sectionRows } from "@/ui/rules/chartChanges";
 import {
   EV_GAP_THRESHOLDS,
@@ -258,7 +255,24 @@ describe("the chart cell", () => {
   });
 
   it("windows the rows around the governing one, clamped at both ends", () => {
-    const labels = ["5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"];
+    const labels = [
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "11",
+      "12",
+      "13",
+      "14",
+      "15",
+      "16",
+      "17",
+      "18",
+      "19",
+      "20",
+    ];
     expect(chartWindow(labels, "16", 2)).toEqual({ start: 9, end: 14, index: 11, found: true });
     expect(chartWindow(labels, "5", 2)).toEqual({ start: 0, end: 5, index: 0, found: true });
     expect(chartWindow(labels, "20", 2)).toEqual({ start: 11, end: 16, index: 15, found: true });
@@ -347,7 +361,12 @@ describe("the index", () => {
   });
 
   it("shows the refusal for a system with no index set, with no borrowed number", () => {
-    const explanation = explain({ player: ["4", "3", "9"], upcard: "10", system: OMEGA_II, runningCount: 9 });
+    const explanation = explain({
+      player: ["4", "3", "9"],
+      upcard: "10",
+      system: OMEGA_II,
+      runningCount: 9,
+    });
     const view = indexView(explanation.index, explanation.count, explanation.basicStrategyAction);
     expect(view.status).toBe("no-index-set");
     expect(view.headline).toMatch(/Omega II publishes no index numbers/);
@@ -357,7 +376,12 @@ describe("the index", () => {
   });
 
   it("shows the refusal for an unbalanced system", () => {
-    const explanation = explain({ player: ["4", "3", "9"], upcard: "10", system: KO, runningCount: 2 });
+    const explanation = explain({
+      player: ["4", "3", "9"],
+      upcard: "10",
+      system: KO,
+      runningCount: 2,
+    });
     const view = indexView(explanation.index, explanation.count, explanation.basicStrategyAction);
     expect(view.status).toBe("no-index-set");
     expect(view.scale).toBeNull();

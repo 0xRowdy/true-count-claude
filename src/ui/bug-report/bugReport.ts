@@ -323,7 +323,10 @@ function decisionReport(decision: Decision): DecisionReport {
  * and the card index. This is the whole promise of ADR-0004 in one function, and it accepts
  * a report that has been through `JSON.parse` — the form we actually receive.
  */
-export function reproduceShoe(report: Pick<BugReport, "rules" | "shoe">, dealtCount?: number): Shoe {
+export function reproduceShoe(
+  report: Pick<BugReport, "rules" | "shoe">,
+  dealtCount?: number,
+): Shoe {
   if (!report.shoe) {
     throw new Error("This report was made on a screen with no Shoe, so there is none to rebuild.");
   }
@@ -338,7 +341,10 @@ export function reproduceShoe(report: Pick<BugReport, "rules" | "shoe">, dealtCo
 export function replayRound(report: {
   readonly rules: RuleSet;
   readonly shoe: Pick<ShoeReport, "seed"> | null;
-  readonly round: Pick<RoundReport, "startDealtCount" | "bet" | "bankrollBefore" | "actions"> | null;
+  readonly round: Pick<
+    RoundReport,
+    "startDealtCount" | "bet" | "bankrollBefore" | "actions"
+  > | null;
 }): RoundState {
   const { round, shoe } = report;
   if (!round || !shoe) throw new Error("This report has no round in progress to replay.");
@@ -502,7 +508,9 @@ function parseAction(action: ReportedAction): RoundAction {
 
 function dealTo(shoe: Shoe, dealtCount: number): Shoe {
   if (dealtCount > shoe.cards.length) {
-    throw new Error(`The report says ${dealtCount} cards were dealt from a ${shoe.cards.length}-card Shoe.`);
+    throw new Error(
+      `The report says ${dealtCount} cards were dealt from a ${shoe.cards.length}-card Shoe.`,
+    );
   }
   let current = shoe;
   while (current.dealtCount < dealtCount) current = deal(current).shoe;

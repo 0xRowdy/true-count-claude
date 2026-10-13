@@ -221,7 +221,9 @@ describe("the exportable report", () => {
     });
 
     for (const rank of RANKS) {
-      expect(report.dealtByRank[rank] + report.remainingByRank[rank]).toBe(report.checks.expectedPerRank);
+      expect(report.dealtByRank[rank] + report.remainingByRank[rank]).toBe(
+        report.checks.expectedPerRank,
+      );
     }
     expect(dealtComposition(shoe)).toEqual(report.dealtByRank);
   });

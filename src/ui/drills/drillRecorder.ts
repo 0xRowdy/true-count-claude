@@ -93,7 +93,10 @@ export type DrillRecord =
   | { readonly kind: "conversion-check"; readonly input: ConversionCheckInput }
   | { readonly kind: "index-play"; readonly input: IndexPlayInput }
   /** A run that carries on its Session under another Counting System (#26). */
-  | { readonly kind: "system-change"; readonly input: { readonly to: string; readonly at: number } };
+  | {
+      readonly kind: "system-change";
+      readonly input: { readonly to: string; readonly at: number };
+    };
 
 const PLACEHOLDER = { roundIndex: 0, shoeIndex: 0 };
 
@@ -208,7 +211,10 @@ export function basicStrategyRecords(
  * A hand can finish with no Decision at all, which is precisely why `src/state` counts money
  * per round rather than per Decision.
  */
-export function dealtRoundRecords(after: BasicStrategyDrillState, at: number): readonly DrillRecord[] {
+export function dealtRoundRecords(
+  after: BasicStrategyDrillState,
+  at: number,
+): readonly DrillRecord[] {
   const round = after.round;
   if (!round || round.phase !== "settled" || !round.settlement) return [];
   return [
@@ -373,11 +379,7 @@ function withShoe(session: Session, seed: number): Session {
  * System matters for a drill whose records do not carry one: a count check stores the stated
  * and actual Running Counts and nothing about the system they were kept in.
  */
-export function sessionAccepts(
-  session: Session,
-  rules: RuleSet,
-  countingSystem?: string,
-): boolean {
+export function sessionAccepts(session: Session, rules: RuleSet, countingSystem?: string): boolean {
   if (!isActive(session)) return false;
   if (!sameRules(session.rules, rules)) return false;
   return countingSystem === undefined || session.countingSystem === countingSystem;
@@ -403,7 +405,10 @@ export interface RecordedRun<S> {
  * Starts a run. `records` seed the bottom of its log — below every undo point, so no undo can
  * take them back. The one use is a `systemChangeRecord` for a run that carries its Session on.
  */
-export function beginRun<S>(drill: Undoable<S>, records: readonly DrillRecord[] = []): RecordedRun<S> {
+export function beginRun<S>(
+  drill: Undoable<S>,
+  records: readonly DrillRecord[] = [],
+): RecordedRun<S> {
   return { drill, log: beginUndoable<readonly DrillRecord[]>(records) };
 }
 
@@ -425,9 +430,7 @@ export function replaceRun<S>(
   return {
     drill,
     log:
-      records.length === 0
-        ? run.log
-        : replaceUndoable(run.log, [...run.log.current, ...records]),
+      records.length === 0 ? run.log : replaceUndoable(run.log, [...run.log.current, ...records]),
   };
 }
 

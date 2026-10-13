@@ -53,7 +53,9 @@ export default function Home() {
       {/* Invariant 1: every drill is included — the training is never a second purchase. */}
       <Link href="/drills" asChild>
         <Pressable style={styles.button}>
-          <Text style={styles.buttonLabel}>Drills — strategy, counting, true count, deviations</Text>
+          <Text style={styles.buttonLabel}>
+            Drills — strategy, counting, true count, deviations
+          </Text>
         </Pressable>
       </Link>
 
@@ -112,8 +114,7 @@ export default function Home() {
 }
 
 function Row({ label, value, tone }: { label: string; value: string; tone?: "good" | "bad" }) {
-  const valueColor =
-    tone === "good" ? colors.accent : tone === "bad" ? colors.danger : colors.text;
+  const valueColor = tone === "good" ? colors.accent : tone === "bad" ? colors.danger : colors.text;
   return (
     <View style={styles.row}>
       <Text style={styles.rowLabel}>{label}</Text>
@@ -148,7 +149,13 @@ function Button({
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.md, gap: spacing.md, maxWidth: 720, width: "100%", alignSelf: "center" },
+  content: {
+    padding: spacing.md,
+    gap: spacing.md,
+    maxWidth: 720,
+    width: "100%",
+    alignSelf: "center",
+  },
   title: { ...type.title, color: colors.text, marginTop: spacing.md },
   subtitle: { ...type.body, color: colors.textMuted, marginBottom: spacing.sm },
   card: {
@@ -160,7 +167,13 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   heading: { ...type.heading, color: colors.text, marginBottom: spacing.xs },
-  link: { ...type.body, color: colors.accent, marginTop: spacing.sm, minHeight: 44, paddingTop: spacing.sm },
+  link: {
+    ...type.body,
+    color: colors.accent,
+    marginTop: spacing.sm,
+    minHeight: 44,
+    paddingTop: spacing.sm,
+  },
   mono: { ...type.mono, ...type.caption, color: colors.text },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   rowLabel: { ...type.caption, color: colors.textMuted },

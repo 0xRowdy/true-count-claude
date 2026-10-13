@@ -271,10 +271,10 @@ export function ShoeIntegrityScreen({ session: played }: ShoeIntegrityScreenProp
         <Panel>
           <Text style={styles.title}>Shoe Integrity</Text>
           <Text style={styles.lede}>
-            Trainers get accused of rigging their shuffle, and sometimes the accusation is
-            right — a competitor shipped a count that never came back to zero, and a user found
-            it before the developer did. Arguing about it is useless. So here is everything you
-            need to check ours yourself.
+            Trainers get accused of rigging their shuffle, and sometimes the accusation is right — a
+            competitor shipped a count that never came back to zero, and a user found it before the
+            developer did. Arguing about it is useless. So here is everything you need to check ours
+            yourself.
           </Text>
           {/* Checked against *your* table, not a generic one. A six-deck proof shown to a
               single-deck player would be proving the wrong shoe. */}
@@ -383,8 +383,8 @@ export function ShoeIntegrityScreen({ session: played }: ShoeIntegrityScreenProp
         />
 
         <Text style={styles.footer}>
-          This panel is part of the app, not part of a purchase. It stays available on every
-          build, forever.
+          This panel is part of the app, not part of a purchase. It stays available on every build,
+          forever.
         </Text>
       </Screen>
     </ScrollView>

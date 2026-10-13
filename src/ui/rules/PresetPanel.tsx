@@ -29,8 +29,8 @@ export function PresetPanel({
   return (
     <Panel title="Common tables">
       <Text style={styles.intro}>
-        Start from a real game and adjust, or build your table field by field below. Edges
-        shown are for the preset as listed.
+        Start from a real game and adjust, or build your table field by field below. Edges shown are
+        for the preset as listed.
       </Text>
       <View style={styles.list}>
         {RULE_PRESETS.map((preset) => (
@@ -44,8 +44,7 @@ export function PresetPanel({
       </View>
       {active ? null : (
         <Text style={styles.custom}>
-          Your table does not match any preset. That is normal — check the pit sign, not the
-          list.
+          Your table does not match any preset. That is normal — check the pit sign, not the list.
         </Text>
       )}
     </Panel>

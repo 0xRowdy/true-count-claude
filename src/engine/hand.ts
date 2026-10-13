@@ -59,9 +59,7 @@ export function isBlackjack(hand: Hand): boolean {
   if (hand.cards.length !== 2 || hand.fromSplit) return false;
   const [first, second] = hand.cards;
   if (!first || !second) return false;
-  return (
-    (isAce(first.rank) && isTen(second.rank)) || (isTen(first.rank) && isAce(second.rank))
-  );
+  return (isAce(first.rank) && isTen(second.rank)) || (isTen(first.rank) && isAce(second.rank));
 }
 
 /** True when the hand is a pair eligible for splitting. Ranks that both count ten pair up. */

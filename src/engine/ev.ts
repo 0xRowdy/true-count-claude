@@ -535,8 +535,9 @@ function createSolver(
   function splitEv(pairSlot: number): number {
     const splittingAces = pairSlot === ACE_SLOT;
     const frozen = splittingAces && rules.oneCardToSplitAces;
-    const pairCard: Total =
-      splittingAces ? { total: 11, soft: true } : { total: pairSlot + 1, soft: false };
+    const pairCard: Total = splittingAces
+      ? { total: 11, soft: true }
+      : { total: pairSlot + 1, soft: false };
 
     const handEv = new Array<number>(SLOTS).fill(0);
     const chance = new Array<number>(SLOTS).fill(0);

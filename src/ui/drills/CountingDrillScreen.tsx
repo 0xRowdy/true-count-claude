@@ -35,7 +35,14 @@ import {
   totalCards,
 } from "@/drills/counting";
 import { getDrill } from "@/drills/types";
-import { ActionButton, Panel, Screen, SecondaryButton, SegmentedControl, StatRow } from "@/ui/primitives";
+import {
+  ActionButton,
+  Panel,
+  Screen,
+  SecondaryButton,
+  SegmentedControl,
+  StatRow,
+} from "@/ui/primitives";
 import { CardView } from "@/ui/table/CardView";
 import { colors, spacing, type } from "@/ui/theme";
 import { CountEntryPad } from "./CountEntryPad";
@@ -170,7 +177,9 @@ export function CountingDrillScreen() {
           {showing.length === 0 ? (
             <Text style={drillStyles.note}>Press Start and keep the count in your head.</Text>
           ) : (
-            showing.map((card, index) => <CardView key={`${seen.length}-${index}`} card={card} size="md" />)
+            showing.map((card, index) => (
+              <CardView key={`${seen.length}-${index}`} card={card} size="md" />
+            ))
           )}
         </View>
         <StatRow label="Cards seen" value={`${seen.length} of ${totalCards(state)} (cut card)`} />
@@ -178,7 +187,11 @@ export function CountingDrillScreen() {
           {finished ? (
             <ActionButton label="New shoe" tone="good" onPress={recorded.restart} />
           ) : running ? (
-            <ActionButton label="Pause and check my count" tone="warn" onPress={() => setRunning(false)} />
+            <ActionButton
+              label="Pause and check my count"
+              tone="warn"
+              onPress={() => setRunning(false)}
+            />
           ) : (
             <>
               <ActionButton
@@ -227,9 +240,7 @@ export function CountingDrillScreen() {
         undone={run.drill.undone}
       />
 
-      {result ? (
-        <CountCheckExplanationPanel result={result} decks={config.rules.decks} />
-      ) : null}
+      {result ? <CountCheckExplanationPanel result={result} decks={config.rules.decks} /> : null}
     </View>
   );
 
@@ -243,7 +254,8 @@ export function CountingDrillScreen() {
           ]}
           value={hidden ? "hidden" : "shown"}
           onChange={(next) => {
-            if ((next === "hidden") !== hidden) update((current) => replaceRun(current, toggleCount(current.drill)));
+            if ((next === "hidden") !== hidden)
+              update((current) => replaceRun(current, toggleCount(current.drill)));
           }}
         />
         <StatRow
@@ -251,7 +263,10 @@ export function CountingDrillScreen() {
           value={hidden ? "• • •" : formatCountValue(readout.runningCount)}
         />
         {readout.trueCount !== null ? (
-          <StatRow label="True count" value={hidden ? "• • •" : formatCountValue(readout.trueCount)} />
+          <StatRow
+            label="True count"
+            value={hidden ? "• • •" : formatCountValue(readout.trueCount)}
+          />
         ) : null}
         {references.map((row) => (
           <StatRow
@@ -279,10 +294,18 @@ export function CountingDrillScreen() {
           label="Checks correct"
           value={`${formatRate(report.tally.accuracy)} (${report.tally.correct} of ${report.tally.attempts})`}
         />
-        <StatRow label="Streak" value={report.tally.streak} tone={report.tally.streak > 0 ? "good" : "neutral"} />
+        <StatRow
+          label="Streak"
+          value={report.tally.streak}
+          tone={report.tally.streak > 0 ? "good" : "neutral"}
+        />
         <StatRow
           label="Average miss"
-          value={report.meanAbsoluteError === null ? "—" : `${report.meanAbsoluteError.toFixed(1)} points`}
+          value={
+            report.meanAbsoluteError === null
+              ? "—"
+              : `${report.meanAbsoluteError.toFixed(1)} points`
+          }
         />
         <StatRow
           label="Tendency"
@@ -292,7 +315,10 @@ export function CountingDrillScreen() {
               : `${Math.abs(report.meanSignedError).toFixed(1)} ${report.meanSignedError > 0 ? "high" : "low"}`
           }
         />
-        <StatRow label="Worst miss" value={report.worstError === null ? "—" : `${report.worstError} points`} />
+        <StatRow
+          label="Worst miss"
+          value={report.worstError === null ? "—" : `${report.worstError} points`}
+        />
       </Panel>
 
       <Panel title="Setup">
@@ -340,8 +366,8 @@ export function CountingDrillScreen() {
           }}
         />
         <Text style={drillStyles.note}>
-          A busy table deals around 90–120 cards a minute. Changing cards-at-a-time deals a new shoe;
-          your Session carries on.
+          A busy table deals around 90–120 cards a minute. Changing cards-at-a-time deals a new
+          shoe; your Session carries on.
         </Text>
       </Panel>
     </View>
@@ -358,7 +384,11 @@ export function CountingDrillScreen() {
           drill={DRILL}
           report={{
             table: { shoe: state.shoe },
-            rules: { ...DEFAULT_RULES, decks: state.config.decks, penetration: state.config.penetration },
+            rules: {
+              ...DEFAULT_RULES,
+              decks: state.config.decks,
+              penetration: state.config.penetration,
+            },
             countingSystem: state.config.system.name,
             details: { runSeed: state.seed },
           }}
@@ -374,7 +404,11 @@ export function CountingDrillScreen() {
           }}
         />
         {recorded.pendingRules ? (
-          <PendingTablePanel current={config.rules} pending={recorded.pendingRules} onTakeUp={recorded.takeUpRules} />
+          <PendingTablePanel
+            current={config.rules}
+            pending={recorded.pendingRules}
+            onTakeUp={recorded.takeUpRules}
+          />
         ) : null}
         <View style={twoColumn ? styles.wide : styles.narrow}>
           {dealColumn}

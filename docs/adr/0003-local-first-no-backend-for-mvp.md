@@ -8,7 +8,7 @@ The single most severe verified complaint against CQ Nexus is **entitlement and 
 failure**. A paying customer, in a 2-star iOS review, reported that a purchase made on one
 platform did not appear in "My Stuff" on another, and that game sessions did not close
 reliably across surfaces. A second paying customer left 1 star because their in-game bankroll
-hit zero and the top-up feature lived on a *separate website* they never found — the
+hit zero and the top-up feature lived on a _separate website_ they never found — the
 developer's own reply confirms both the feature and the discoverability failure.
 
 Every one of those failures is a consequence of server-authoritative state serving a product
@@ -22,7 +22,7 @@ progress — persists locally on device. No login, no account, no network call i
 use any part of the product.
 
 Cloud sync is deferred until there is a feature that genuinely requires it. When it arrives,
-it arrives as an *optional* layer over local state, never as a precondition for training.
+it arrives as an _optional_ layer over local state, never as a precondition for training.
 
 ## Consequences
 
