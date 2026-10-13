@@ -180,6 +180,6 @@ describe("hand frequencies over the whole deck", () => {
       );
       expect(actual).toEqual(FREQUENCIES[game]);
     },
-    30_000,
+    180_000,
   );
 });

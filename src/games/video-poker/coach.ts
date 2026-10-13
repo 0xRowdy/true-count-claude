@@ -123,12 +123,24 @@ function shapeOf(cards: readonly Card[], game: VideoPokerGame): Shape {
 
 const ROYAL_RANKS = 0b1111100000000;
 
-/** Rank mask of four consecutive ranks open at both ends (not A-2-3-4 or J-Q-K-A). */
+/**
+ * Four consecutive ranks open at both ends: 2-3-4-5 (an Ace or a 6) up to 10-J-Q-K (a 9 or
+ * an Ace). A-2-3-4 and J-Q-K-A are not in the loop — the Ace closes one end — so they, like
+ * gapped draws, are one-way ("inside").
+ */
 function isOutsideFour(mask: number): boolean {
   for (let low = 0; low <= 8; low++) {
-    if (mask === 0b1111 << low) return low >= 1 && low <= 7;
+    if (mask === 0b1111 << low) return true;
   }
   return false;
+}
+
+/** Every `size`-element subset of `items`. */
+function subsetsOf<T>(items: readonly T[], size: number): T[][] {
+  if (size === 0) return [[]];
+  if (items.length < size) return [];
+  const [first, ...rest] = items as [T, ...T[]];
+  return [...subsetsOf(rest, size - 1).map((sub) => [first, ...sub]), ...subsetsOf(rest, size)];
 }
 
 /** How a final hand reads in a sentence: "a flush", "two pair", "four Aces". */
@@ -361,16 +373,14 @@ export function describeHand(cards: readonly Card[], game: VideoPokerGame): stri
       features.push("three to a royal");
     }
   }
-  if (!flushDraw) {
-    // Any four distinct natural ranks that fit a straight window.
+  // Four to a straight: any (4 − deuces) distinct natural ranks that fit one straight window,
+  // the deuces filling the rest. With two or more deuces the deuces are the story already.
+  if (!flushDraw && s.wilds <= 1) {
     const ranks = [...new Set(s.naturals.map((c) => encodeCard(c) >> 2))];
-    const fourWay = ranks.length >= 4 - s.wilds;
-    if (fourWay) {
-      const subsets =
-        ranks.length <= 4 ? [ranks] : ranks.map((_, skip) => ranks.filter((__, i) => i !== skip));
-      const draw = subsets.some((sub) => fitsStraight(sub.reduce((m, r) => m | (1 << r), 0)));
-      if (draw) features.push("four to a straight");
-    }
+    const draw = subsetsOf(ranks, 4 - s.wilds).some((sub) =>
+      fitsStraight(sub.reduce((m, r) => m | (1 << r), 0)),
+    );
+    if (draw) features.push("four to a straight");
   }
 
   if (features.length === 0) {
@@ -476,7 +486,18 @@ function letGoPhrase(analysis: HoldAnalysis, best: HoldOption, other: HoldOption
   const named = broken
     ? otherCards.filter((c) => groups.has(c.rank))
     : dropped.map((i) => analysis.hand[i] as Card);
-  return ` Let ${describeHold(named, analysis.table).phrase} go.`;
+  const phrase = describeHold(named, analysis.table).phrase;
+  // "Keep the Queen, Jack, 10 and 9. Let the pair of 10s go." contradicts itself: a 10 is
+  // kept. When the keep line names a rank of the broken group, say "break up" instead. (The
+  // design's "Keep the four hearts. Let the pair of 5s go." names no rank, so it stays.)
+  if (broken) {
+    const keepPhrase = describeHold(best.held, analysis.table).phrase;
+    const keptGroupRank = best.held.some(
+      (c) => groups.has(c.rank) && new RegExp(`\\b${rankName(c.rank, game)}\\b`).test(keepPhrase),
+    );
+    if (keptGroupRank) return ` Break up ${phrase}.`;
+  }
+  return ` Let ${phrase} go.`;
 }
 
 function comparison(

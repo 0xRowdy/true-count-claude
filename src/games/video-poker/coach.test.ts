@@ -113,6 +113,25 @@ describe("judgeHold", () => {
   });
 });
 
+describe("breaking up a pair", () => {
+  it("says 'break up' when the keep line names a card of the pair", () => {
+    // J-10-9-8 with a pair of 9s in 9/6 Double Double Bonus: the best hold keeps one 9 for
+    // the outside straight draw, so "let the pair of 9s go" would contradict the keep line.
+    const analysis = analyze("9h Js 8d Ts 9s", "double-double-bonus-9-6");
+    expect(analysis.best.indices).toEqual([0, 1, 2, 3]);
+    const hint = coachHint(analysis, 100);
+    expect(hint.compared?.indices).toEqual([0, 4]);
+    expect(hint.title).toBe("Keep the Jack, 10, 9 and 8. Break up the pair of 9s.");
+    expect(judgeHold(analysis, 0b10001, 100).title).toBe(hint.title);
+  });
+
+  it("keeps the design's 'let the pair go' when the keep line names a suit", () => {
+    expect(coachHint(analyze("5h 5s 9h Qh 2h"), 100).title).toBe(
+      "Keep the four hearts. Let the pair of 5s go.",
+    );
+  });
+});
+
 describe("coachHint", () => {
   it("argues against breaking a pat flush when four to a royal is better", () => {
     const hint = coachHint(analyze("Ah Kh Qh Jh 3h"), 100);
@@ -177,6 +196,8 @@ describe("describeHand", () => {
     ["2c 2d 2h 2s 9s", "deuces-wild", "four deuces"],
     ["2c 9d 9h 9s Kc", "deuces-wild", "one deuce, four of a kind"],
     ["3c 7h 8d Jh Ks", "deuces-wild", "no pair"],
+    ["Qc Ac 4d 2c 5h", "deuces-wild", "one deuce, four to a straight"],
+    ["Qc Ac 4d 9c 5h", "jacks-or-better", "no pair, two high cards"],
   ])("%s (%s) → %s", (hand, game, expected) => {
     expect(describeHand(cards(hand), game)).toBe(expected);
   });
@@ -198,6 +219,9 @@ describe("describeHold", () => {
     ["9h Th Jh", "job-9-6", "three to a straight flush", "the three hearts"],
     ["5c 6d 7h 8s", "job-9-6", "four to an outside straight", "the 8, 7, 6 and 5"],
     ["5c 6d 7h 9s", "job-9-6", "four to an inside straight", "the 9, 7, 6 and 5"],
+    ["2h 3d 4c 5s", "job-9-6", "four to an outside straight", "the 5, 4, 3 and 2"],
+    ["Ts Jc Qd Kh", "job-9-6", "four to an outside straight", "the King, Queen, Jack and 10"],
+    ["Ah 2d 3c 4s", "job-9-6", "four to an inside straight", "the Ace, 4, 3 and 2"],
     ["Jc Qd Kh As", "job-9-6", "four to an inside straight", "the Ace, King, Queen and Jack"],
     ["Kc Qd", "job-9-6", "two high cards", "the King and Queen"],
     ["Qd", "job-9-6", "a single high card", "the Queen"],

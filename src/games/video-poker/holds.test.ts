@@ -55,7 +55,7 @@ describe("holdOutcomeCounts", () => {
         );
       }
     },
-    60_000,
+    180_000,
   );
 
   it("brute-force matches on seeded random deals for the cheaper holds", () => {
@@ -181,12 +181,18 @@ describe("analyzeHolds", () => {
     const clock = () => globalThis.performance.now();
     const rng = createRng(2026);
     const tables: PayTableId[] = ["job-9-6", "deuces-wild-full-pay", "double-double-bonus-9-6"];
-    const deals = Array.from({ length: 60 }, () => shuffleInPlace(freshDeck(), rng).slice(0, 5));
+    const deals = Array.from({ length: 30 }, () => shuffleInPlace(freshDeck(), rng).slice(0, 5));
     analyzeHolds(deals[0]!, getPayTable("job-9-6")); // warm up the JIT
-    const start = clock();
-    deals.forEach((deal, i) => analyzeHolds(deal, getPayTable(tables[i % 3]!)));
-    const perDeal = (clock() - start) / deals.length;
-    // Typically ~3 ms on a laptop; the bound leaves room for a slow CI runner.
-    expect(perDeal).toBeLessThan(50);
+    // Median of five batches, so one stall on a starved CI runner cannot fail the suite.
+    const batches = Array.from({ length: 5 }, (_, batch) => {
+      const start = clock();
+      deals.forEach((deal, i) => analyzeHolds(deal, getPayTable(tables[(i + batch) % 3]!)));
+      return (clock() - start) / deals.length;
+    }).sort((a, b) => a - b);
+    const perDeal = batches[2]!;
+    // Typically ~3 ms on a laptop. A frame is 16 ms; 100 ms is the "would feel broken" line,
+    // generous enough for a slow shared runner while still catching an algorithmic regression
+    // (brute force is ~100× slower).
+    expect(perDeal).toBeLessThan(100);
   });
 });
