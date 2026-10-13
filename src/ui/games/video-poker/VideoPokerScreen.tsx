@@ -148,8 +148,11 @@ export function VideoPokerScreen() {
       ? undefined
       : storedBankroll - (state.phase === "hold" ? betDollars(state.settings) : 0);
 
-  const record = useCallback((r: VpRecord | null) => {
-    if (!r) return;
+  // `handNo` is the hand being settled. If `pagehide` already recorded it as abandoned and the
+  // page then came back from the back/forward cache, the hand is already in the books: drawing
+  // it now must not count it a second time.
+  const record = useCallback((r: VpRecord | null, handNo: number) => {
+    if (!r || forfeitedRef.current === handNo) return;
     recordDecision({ game: "video-poker", ...r.decision });
     recordHand({ game: "video-poker", net: r.net });
   }, []);
@@ -165,12 +168,12 @@ export function VideoPokerScreen() {
   const onDraw = () => {
     const next = draw(state, coach);
     setState(next.state);
-    record(next.record);
+    record(next.record, state.handNo);
   };
   const onResolve = (choice: "take-back" | "keep") => {
     const next = resolveMistake(state, choice);
     setState(next.state);
-    record(next.record);
+    record(next.record, state.handNo);
   };
 
   // ------------------------------------------------------------------------------------------
