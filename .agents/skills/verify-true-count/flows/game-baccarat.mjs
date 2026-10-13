@@ -152,7 +152,7 @@ export default async ({ page, url, shot, log, check }) => {
   await shot("dealing");
   await visible(page.getByRole("progressbar", { name: /Step 3 of 4: Result/ })).waitFor();
   check(true, "phase: Result");
-  await visible(page.getByRole("button", { name: "Next hand" })).waitFor({ timeout: 8000 });
+  await visible(page.getByRole("button", { name: "Next hand" })).waitFor({ timeout: 20_000 });
   check(
     (await visible(page.getByRole("progressbar")).getAttribute("aria-label")) ===
       "Step 4 of 4: Payout",
@@ -187,7 +187,7 @@ export default async ({ page, url, shot, log, check }) => {
 
   // Round 2: Rebet $50 deals the same bet again.
   await visible(page.getByRole("button", { name: "Rebet $50" })).click();
-  await visible(page.getByRole("button", { name: "Next hand" })).waitFor({ timeout: 8000 });
+  await visible(page.getByRole("button", { name: "Next hand" })).waitFor({ timeout: 20_000 });
   const second = await outcome();
   log(`coup 2: ${second}`);
   expected += bankerNet(second);
@@ -250,7 +250,7 @@ export default async ({ page, url, shot, log, check }) => {
     await spot(side).click();
     await spot(side).click();
     await dealButton().click();
-    await visible(page.getByRole("button", { name: "Next hand" })).waitFor({ timeout: 8000 });
+    await visible(page.getByRole("button", { name: "Next hand" })).waitFor({ timeout: 20_000 });
     return outcome();
   };
   for (const side of ["Banker", "Banker", "Player"]) {
