@@ -24,7 +24,7 @@
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { createAsyncStorageStore } from "@/state/asyncStorage";
-import { type GameId, localIsoDate } from "@/state/profile";
+import { localIsoDate } from "@/state/profile";
 import {
   type DecisionInput,
   EMPTY_PROGRESS,
@@ -41,7 +41,6 @@ import {
   mergeProgress,
   recordDecision as recordDecisionIn,
   recordHand as recordHandIn,
-  resetPracticeBankroll as resetBankrollIn,
   startProgressSession as startSessionIn,
 } from "@/state/progress";
 import { sampleProgress } from "@/state/progressSample";
@@ -69,11 +68,6 @@ export function recordDecision(input: DecisionInput): void {
 export function recordHand(input: HandInput): void {
   const when = now();
   void store.apply((s) => recordHandIn(s, input, when));
-}
-
-/** Refills a game's practice bankroll to the starting amount (invariant 6). */
-export function resetPracticeBankroll(game: GameId): void {
-  void store.apply((s) => resetBankrollIn(s, game));
 }
 
 export function startProgressSession(input: SessionInput): void {
