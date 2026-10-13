@@ -12,6 +12,8 @@ const ROUTES = [
   "/shoe-integrity",
   "/session",
   "/design-system",
+  "/live",
+  "/live/craps",
   "/lobby",
   "/progress",
   "/progress?demo=1",
