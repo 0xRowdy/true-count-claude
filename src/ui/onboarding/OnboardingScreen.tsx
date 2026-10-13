@@ -168,10 +168,13 @@ export function OnboardingScreen() {
 
   // Boolean(): a plain boolean, so `trip` is not narrowed by the type guard below.
   const tripValid = trip === "" || Boolean(isIsoDate(trip));
+  // While a typed date is partial or invalid there is no trip date: the panel and the preset
+  // chips clear rather than keep showing the previous one.
+  const typing = trip !== "" && !tripValid;
+  const tripPast = trip !== "" && tripValid && today !== null && trip < today;
   const setTripText = (text: string) => {
     setTrip(text);
-    if (text === "") updateProfile({ tripDate: null });
-    else if (isIsoDate(text)) updateProfile({ tripDate: text });
+    updateProfile({ tripDate: isIsoDate(text) ? text : null });
   };
 
   const stops = startingStops(profile);
@@ -339,14 +342,14 @@ export function OnboardingScreen() {
                         <ToggleChip
                           key={p.label}
                           label={p.label}
-                          selected={date !== null && profile.tripDate === date}
+                          selected={!typing && date !== null && profile.tripDate === date}
                           onPress={() => date && setTripText(date)}
                         />
                       );
                     })}
                     <ToggleChip
                       label="No date yet"
-                      selected={profile.tripDate === null}
+                      selected={!typing && profile.tripDate === null}
                       onPress={() => setTripText("")}
                     />
                   </View>
@@ -365,6 +368,11 @@ export function OnboardingScreen() {
                   {!tripValid && trip.length === 10 ? (
                     <Text role="alert" style={[ui(13), { color: colors.mistake }]}>
                       That isn&apos;t a calendar date. Use YYYY-MM-DD, like 2026-11-14.
+                    </Text>
+                  ) : null}
+                  {tripPast ? (
+                    <Text role="alert" style={[ui(13), { color: colors.mistake }]}>
+                      That date has already passed. Pick an upcoming one, or leave it empty.
                     </Text>
                   ) : null}
                 </View>
@@ -499,7 +507,7 @@ function Previous({ label, onChange }: { label: string; onChange: () => void }) 
         accessibilityRole="button"
         accessibilityLabel={`Change ${(label.split(":")[0] ?? label).toLowerCase()}`}
         onPress={onChange}
-        hitSlop={12}
+        style={styles.change}
       >
         <Text style={[ui(13, 600), { color: colors.foreground }]}>Change</Text>
       </Pressable>
@@ -511,6 +519,14 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   scroll: { flexGrow: 1 },
   tap: { minHeight: 44, justifyContent: "center" },
+  // A 44pt tap target that keeps the design's 28pt chip: the padding is taken back by margins.
+  change: {
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: 8,
+    marginHorizontal: -8,
+    marginVertical: -14,
+  },
   top: {
     height: 72,
     flexDirection: "row",

@@ -213,6 +213,7 @@ export function LandingScreen() {
               icon={ShieldCheck}
               tone="correct"
               label="Practice only · no real-money wagering, ever"
+              labelColor={colors.foreground}
               style={styles.eyebrowBadge}
             />
             <Text
@@ -307,7 +308,7 @@ export function LandingScreen() {
               >
                 <Text style={[display(28, 400), styles.stepNum]}>{step.num}</Text>
                 <View style={styles.stepCopy}>
-                  <Text style={[ui(21, 600, { lineHeight: 28 }), styles.ink]}>{step.title}</Text>
+                  <Text style={[ui(21, 600, { lineHeight: 25 }), styles.ink]}>{step.title}</Text>
                   <Text
                     style={[ui(16, 400, { lineHeight: 16 * 1.55 }), { color: colors.inkMuted }]}
                   >
@@ -419,7 +420,12 @@ export function LandingScreen() {
                   {EXAMPLE_FORK.lineage}
                 </Text>
               </View>
-              <Badge icon={ArrowBigUp} tone="primary" label={EXAMPLE_FORK.badge} />
+              <Badge
+                icon={ArrowBigUp}
+                tone="primary"
+                labelColor={colors.foreground}
+                label={EXAMPLE_FORK.badge}
+              />
             </View>
             <Text style={[ui(12), { color: colors.mutedForeground }]}>
               Example strategies, shown to illustrate the library. They are sample data, not live
@@ -457,7 +463,7 @@ export function LandingScreen() {
               No chips to buy, no ads, no real-money wagering, now or later.
             </Text>
           </View>
-          <View style={[wide || layout === "mid" ? styles.row : styles.column, { gap: 16 }]}>
+          <View style={[wide || layout === "mid" ? styles.planRow : styles.column, { gap: 16 }]}>
             {PLANS.map((plan) => {
               const featured = "featured" in plan;
               const fg = featured ? colors.paper : colors.ink;
@@ -750,6 +756,7 @@ const styles = StyleSheet.create({
     borderColor: colors.paperBorder,
     backgroundColor: marketing.paperCard,
   },
+  planRow: { flexDirection: "row", alignItems: "flex-start" },
   planFeatured: { backgroundColor: colors.ink, borderColor: colors.ink },
   planTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   planPrice: { flexDirection: "row", alignItems: "flex-end", gap: 8 },

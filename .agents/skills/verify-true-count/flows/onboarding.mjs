@@ -37,6 +37,8 @@ export default async ({ page, url, shot, check }) => {
   check(await checked(page.getByRole("checkbox", { name: "Craps" })), "Craps toggled on");
   await visible(page.getByText("Craps · Pass line & odds")).waitFor();
   check(true, "panel adds the Craps lesson");
+  const change = await visible(page.getByRole("button", { name: "Change skill" })).boundingBox();
+  check(change && change.height >= 44, `"Change" tap target ≥44 (${change?.height})`);
   await visible(page.getByRole("radio", { name: "Every decision" })).click();
   check(
     await checked(page.getByRole("radio", { name: "Every decision" })),
@@ -58,6 +60,24 @@ export default async ({ page, url, shot, check }) => {
 
   // Step 3: trip date and name.
   await visible(page.getByRole("progressbar", { name: "Step 3 of 3" })).waitFor();
+  // A preset sets a date; typing over it clears the date (and the chip) until the text is valid.
+  await visible(page.getByRole("checkbox", { name: "In a month" })).click();
+  check(await checked(page.getByRole("checkbox", { name: "In a month" })), "preset chosen");
+  await visible(page.getByText(/^Trip on [A-Z][a-z]{2} \d+ · 30 days away$/)).waitFor();
+  check(true, "preset date shows in the panel");
+  await visible(page.getByRole("textbox", { name: "Trip date" })).fill("2030-1");
+  await visible(page.getByText("No trip date yet")).waitFor();
+  check(true, "a partial typed date clears the panel's trip");
+  check(
+    !(await checked(page.getByRole("checkbox", { name: "In a month" }))) &&
+      !(await checked(page.getByRole("checkbox", { name: "No date yet" }))),
+    "a partial typed date clears the preset chips",
+  );
+  await visible(page.getByRole("textbox", { name: "Trip date" })).fill("2020-01-01");
+  check(
+    await visible(page.getByText(/That date has already passed/)).isVisible(),
+    "a past date is warned about",
+  );
   await visible(page.getByRole("textbox", { name: "Trip date" })).fill("2030-02-30");
   check(
     await visible(page.getByText(/That isn't a calendar date/)).isVisible(),

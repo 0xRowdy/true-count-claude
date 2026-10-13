@@ -67,6 +67,17 @@ export default async ({ page, url, shot, check }) => {
     "responsible box",
   );
 
+  // Tap targets: the billing toggle and each FAQ row are at least 44pt tall.
+  for (const [role, name] of [
+    ["radio", "Monthly"],
+    ["radio", "Yearly"],
+    ["button", "Can I win real money here?"],
+    ["button", "Do I need Plus to get ready for a trip?"],
+  ]) {
+    const box = await visible(page.getByRole(role, { name })).boundingBox();
+    check(box && box.height >= 44, `"${name}" tap target ≥44 (${box?.height})`);
+  }
+
   // FAQ accordion.
   const q = visible(page.getByRole("button", { name: "Do I need Plus to get ready for a trip?" }));
   check((await q.getAttribute("aria-expanded")) === "false", "FAQ 2 starts closed");

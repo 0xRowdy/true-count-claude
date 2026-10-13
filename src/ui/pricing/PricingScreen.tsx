@@ -197,13 +197,16 @@ export function PricingScreen() {
                     accessibilityLabel={item.q}
                     aria-expanded={expanded}
                     onPress={() => setOpen(expanded ? null : i)}
-                    style={styles.qHead}
+                    // The whole padded row is the tap target (≥44pt); the answer sits below it.
+                    style={[styles.qHead, expanded && styles.qHeadOpen]}
                   >
                     <Text style={[ui(16, 600), styles.fg, styles.flex]}>{item.q}</Text>
                     <Chevron size={18} color={colors.mutedForeground} strokeWidth={2} />
                   </Pressable>
                   {expanded ? (
-                    <Text style={[ui(14, 400, { lineHeight: 14 * 1.55 }), styles.muted]}>
+                    <Text
+                      style={[ui(14, 400, { lineHeight: 14 * 1.55 }), styles.muted, styles.answer]}
+                    >
                       {item.a}
                     </Text>
                   ) : null}
@@ -338,7 +341,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
-    minHeight: 36,
+    minHeight: 44,
   },
   toggleOn: { backgroundColor: colors.muted },
   save: {
@@ -377,8 +380,16 @@ const styles = StyleSheet.create({
   features: { gap: 8, paddingLeft: 38 },
   feature: { flexDirection: "row", alignItems: "center", gap: 10 },
   faq: { paddingTop: 16 },
-  q: { gap: 8, paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: colors.border },
-  qHead: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 24 },
+  q: { borderBottomWidth: 1, borderBottomColor: colors.border },
+  qHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    minHeight: 44,
+    paddingVertical: 18,
+  },
+  qHeadOpen: { paddingBottom: 8 },
+  answer: { paddingBottom: 18 },
 
   checkout: {
     gap: 20,
