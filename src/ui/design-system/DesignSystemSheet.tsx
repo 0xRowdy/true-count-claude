@@ -306,12 +306,13 @@ function Variants() {
     <View style={{ gap: 24 }}>
       <SectionTitle>Variants & primitives</SectionTitle>
 
-      <Label>Button sizes · without icon</Label>
+      <Label>Button sizes · without icon · disabled (unavailable, never a legal action)</Label>
       <Row gap={16}>
         <Button label="Small" size="sm" variant="secondary" />
         <Button label="Medium" />
         <Button label="Continue" size="lg" />
         <Button label="Back" size="lg" variant="secondary" icon={icons.ArrowLeft} />
+        <Button label="Deal" disabled accessibilityHint="Place a bet first" />
       </Row>
 
       <Label>Badge tones</Label>

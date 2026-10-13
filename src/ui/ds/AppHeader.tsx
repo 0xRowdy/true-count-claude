@@ -43,11 +43,11 @@ const COMPACT = 640;
  */
 export function AppHeader({
   active,
-  chips = 12450,
+  chips,
   onNotifications,
 }: {
   active?: NavKey;
-  /** Practice chip balance shown in the pill. */
+  /** Practice chip balance shown in the pill; the pill is hidden until one is passed. */
   chips?: number;
   onNotifications?: () => void;
 }) {
@@ -77,7 +77,11 @@ export function AppHeader({
         </Pressable>
       </Link>
 
-      <View style={[styles.nav, compact && styles.navCompact]} accessibilityRole="menubar">
+      <View
+        style={[styles.nav, compact && styles.navCompact]}
+        role="navigation"
+        accessibilityLabel="Main"
+      >
         {NAV_ITEMS.map((item) => {
           const on = item.key === active;
           const fg = on ? colors.foreground : colors.mutedForeground;
@@ -105,16 +109,18 @@ export function AppHeader({
       </View>
 
       <View style={[styles.right, compact && styles.rightCompact]}>
-        <View
-          style={styles.pill}
-          accessible
-          accessibilityLabel={`${formatThousands(chips)} practice chips`}
-        >
-          <View style={styles.chipDot} />
-          <Text style={[ui(13, 600), { color: colors.foreground }]}>
-            {compact ? formatThousands(chips) : `${formatThousands(chips)} practice chips`}
-          </Text>
-        </View>
+        {chips === undefined ? null : (
+          <View
+            style={styles.pill}
+            accessible
+            accessibilityLabel={`${formatThousands(chips)} practice chips`}
+          >
+            <View style={styles.chipDot} />
+            <Text style={[ui(13, 600), { color: colors.foreground }]}>
+              {compact ? formatThousands(chips) : `${formatThousands(chips)} practice chips`}
+            </Text>
+          </View>
+        )}
         {compact ? null : (
           <Pressable
             accessibilityRole="button"

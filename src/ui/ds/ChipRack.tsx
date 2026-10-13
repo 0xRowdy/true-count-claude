@@ -25,7 +25,11 @@ export function ChipRack({
       ? `${formatMoney(selected)} selected · tap a spot to bet, long-press to remove`
       : "Pick a chip, then tap a spot to bet");
   return (
-    <View style={styles.rack} accessibilityRole="radiogroup" accessibilityLabel="Chip rack">
+    <View
+      style={styles.rack}
+      role={onSelect ? "radiogroup" : "group"}
+      accessibilityLabel="Chip rack"
+    >
       <Gradient from={surfaces.rackFrom} to={surfaces.rackTo} angle={180} />
       <View style={styles.chips}>
         {values.map((value) => (

@@ -33,6 +33,7 @@ export function StatCard({
   const fg = TONE[deltaTone];
   return (
     <View
+      role="group"
       accessibilityLabel={`${label}: ${value}`}
       style={[styles.card, width === "auto" ? styles.fill : { width }, style]}
     >

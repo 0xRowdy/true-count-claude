@@ -61,7 +61,10 @@ export function CoachNote({
   const Icon = v.icon;
   return (
     <View
+      role="note"
       accessibilityLabel={`Coach note: ${title}`}
+      // A caught mistake arrives mid-hand; announce it without stealing focus.
+      aria-live={variant === "mistake" ? "polite" : undefined}
       style={[styles.note, { width, maxWidth: "100%", borderLeftColor: v.accent }]}
     >
       <View style={styles.header}>

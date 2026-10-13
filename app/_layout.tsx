@@ -21,6 +21,7 @@ export default function RootLayout() {
       >
         <Stack.Screen name="index" options={{ title: "True Count" }} />
         <Stack.Screen name="play" options={{ title: "Play" }} />
+        {/* The sheet is not an AppShell page (it mirrors frame bi8Au), so it hides the header here. */}
         <Stack.Screen
           name="design-system"
           options={{ title: "Design system · Tableside", headerShown: false }}

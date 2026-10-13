@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { Stack } from "expo-router";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { AppHeader, type NavKey } from "./AppHeader";
 import { colors } from "./tokens";
@@ -10,7 +11,7 @@ const NARROW = 640;
 /**
  * Page wrapper for the app's desktop screens (Lobby, Progress, Strategies…): the App Header
  * with `active` highlighted, then a scrolling content column on `--background`, padded and
- * capped at the design's 1440 width. Routes using it set `headerShown: false`.
+ * capped at the design's 1440 width. It hides the stack header itself.
  */
 export function AppShell({
   active,
@@ -26,6 +27,8 @@ export function AppShell({
   const [narrow, setNarrow] = useState(false);
   return (
     <View style={styles.root} onLayout={(e) => setNarrow(e.nativeEvent.layout.width < NARROW)}>
+      {/* The shell is the page chrome: no stack header above it, whichever route uses it. */}
+      <Stack.Screen options={{ headerShown: false }} />
       <AppHeader active={active} chips={chips} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         <View style={[styles.page, narrow && styles.pageNarrow]}>{children}</View>

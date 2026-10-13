@@ -33,6 +33,12 @@ export interface ButtonProps {
   accessibilityLabel?: string;
   accessibilityHint?: string;
   fullWidth?: boolean;
+  /**
+   * Only for actions that are genuinely unavailable (e.g. Deal with no bet placed).
+   * CONTEXT.md invariant 7: a *legal* player action is never disabled — if an action is not
+   * legal, do not render it; if it is legal, it stays pressable.
+   */
+  disabled?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }
@@ -48,6 +54,7 @@ export function Button({
   accessibilityLabel,
   accessibilityHint,
   fullWidth,
+  disabled = false,
   style,
   testID,
 }: ButtonProps) {
@@ -58,7 +65,9 @@ export function Button({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityHint={accessibilityHint}
-      onPress={onPress}
+      onPress={disabled ? undefined : onPress}
+      disabled={disabled}
+      aria-disabled={disabled}
       testID={testID}
       hitSlop={s.height < MIN_TAP ? (MIN_TAP - s.height) / 2 : undefined}
       style={({ pressed }) => [
@@ -70,7 +79,8 @@ export function Button({
           borderColor: v.border ?? surfaces.transparent,
         },
         fullWidth && styles.full,
-        pressed && styles.pressed,
+        pressed && !disabled && styles.pressed,
+        disabled && styles.disabled,
         style,
       ]}
     >
@@ -95,4 +105,5 @@ const styles = StyleSheet.create({
   },
   full: { alignSelf: "stretch" },
   pressed: { opacity: 0.85 },
+  disabled: { opacity: 0.45 },
 });

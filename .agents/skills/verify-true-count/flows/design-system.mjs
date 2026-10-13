@@ -91,6 +91,19 @@ export default async ({ page, url, shot, log, check }) => {
     "active nav item is aria-current=page",
   );
   check(await visible(page.getByText("12,450 practice chips")).isVisible(), "practice chip pill");
+  check(
+    (await visible(page.getByRole("navigation", { name: "Main" })).count()) === 1,
+    "App Header nav is a navigation landmark",
+  );
+  const deal = visible(page.getByRole("button", { name: "Deal" }));
+  check((await deal.getAttribute("aria-disabled")) === "true", "disabled Button is aria-disabled");
+  check(
+    (await page
+      .getByRole("note", { name: /Coach note: You stood on soft 17/ })
+      .first()
+      .getAttribute("aria-live")) === "polite",
+    "mistake Coach Note is a polite live region",
+  );
   await shot("sheet-1440");
 
   // The whole sheet at the design's 2180 width, for side-by-side with frame bi8Au.
