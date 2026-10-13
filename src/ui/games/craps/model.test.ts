@@ -169,7 +169,23 @@ describe("the coach", () => {
     expect(breakageCheck(s, "asked", 1000)).toBeNull();
     s = fixAmount(caught, { kind: "place", number: 6 }, 12);
     const { effects } = roll(s, 2, 3, "mistakes");
-    expect(effects.decisions).toContainEqual({ category: "place", correct: true, coached: true });
+    expect(effects.decisions).toContainEqual({ category: "place", correct: false, coached: true });
+  });
+
+  it("still records a caught mistake that is undone or cleared", () => {
+    for (const out of [undo, clearWindow]) {
+      let s = designTable("mistakes");
+      s = bet(s, { kind: "anySeven" }, 5, "mistakes");
+      expect(s.note?.variant).toBe("mistake");
+      s = out(s);
+      expect(betsOf(s.table).some((b) => b.kind === "anySeven")).toBe(false);
+      const { effects } = roll(s, 2, 3, "mistakes");
+      expect(effects.decisions).toContainEqual({
+        category: "place",
+        correct: false,
+        coached: true,
+      });
+    }
   });
 
   it("stays quiet at coach level 'asked' but still grades the decision", () => {

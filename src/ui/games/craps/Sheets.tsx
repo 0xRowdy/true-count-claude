@@ -22,7 +22,7 @@ import {
 } from "@/games/craps";
 import { colors, display, radius, ui } from "@/ui/ds/tokens";
 import { Info, X } from "./icons";
-import { type Spot, CENTER_KINDS, spotEdge, spotName, stakeOn } from "./model";
+import { type Spot, CENTER_KINDS, betAt, spotEdge, spotName, spotOf, stakeOn } from "./model";
 import { craps } from "./theme";
 
 function Sheet({
@@ -105,7 +105,7 @@ export function CenterBetsSheet({
         key={name}
         accessibilityRole="button"
         accessibilityLabel={`${name}, pays ${payout}, house edge ${spotEdge(table.rules, spot)}${stake > 0 ? `, your bet ${formatDollars(stake)}` : ""}`}
-        accessibilityHint={`Tap to bet ${formatDollars(chip)}, long-press to take it off`}
+        accessibilityHint={`Tap to bet ${formatDollars(chip)}, long-press or Edit bets to take it off`}
         onPress={() => onSpot(spot)}
         onLongPress={() => onRemove(spot)}
         style={({ pressed }) => [
@@ -165,12 +165,17 @@ function betDetail(table: CrapsTable, bet: Bet): string {
 export function EditBetsSheet({
   visible,
   table,
+  chip,
   onEdit,
+  onRemove,
   onClose,
 }: {
   visible: boolean;
   table: CrapsTable;
+  /** The selected chip: "Take $5 off" is the button alternative to a long-press on the felt. */
+  chip: number;
   onEdit: (action: TableAction) => void;
+  onRemove: (spot: Spot) => void;
   onClose: () => void;
 }) {
   const mine = betsOf(table);
@@ -189,6 +194,14 @@ export function EditBetsSheet({
         const odds = hasOdds ? bet.odds : 0;
         const toggles = !isLineBet(bet) && bet.kind !== "dontCome" && (!isComeBet(bet) || odds > 0);
         const working = isWorking(bet, table.point, table.rules);
+        const spot = spotOf(bet);
+        // Chip by chip, where the felt's long-press would take a chip off this very bet.
+        const chipOff =
+          spot !== null &&
+          betAt(table, spot)?.id === bet.id &&
+          bet.amount > chip &&
+          !(isLineBet(bet) && table.point !== null) &&
+          !(isComeBet(bet) && bet.point !== null);
         return (
           <View
             key={bet.id}
@@ -221,6 +234,13 @@ export function EditBetsSheet({
                   label={working ? "Call it off" : "Call it on"}
                   accessibilityLabel={`${name}: ${working ? "call it off" : "call it on"}`}
                   onPress={() => onEdit({ type: "working", betId: bet.id, working: !working })}
+                />
+              ) : null}
+              {chipOff && spot ? (
+                <SmallButton
+                  label={`Take ${formatDollars(chip)} off`}
+                  accessibilityLabel={`${name}: take ${formatDollars(chip)} off`}
+                  onPress={() => onRemove(spot)}
                 />
               ) : null}
               {canTakeDown(table, bet) ? (

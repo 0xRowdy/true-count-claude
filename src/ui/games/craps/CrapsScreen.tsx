@@ -259,7 +259,9 @@ export function CrapsScreen({ seed }: { seed?: string }) {
       <EditBetsSheet
         visible={sheet === "edit"}
         table={state.table}
+        chip={chip}
         onEdit={g.edit}
+        onRemove={onRemove}
         onClose={() => setSheet(null)}
       />
       <RulesSheet visible={sheet === "rules"} table={state.table} onClose={() => setSheet(null)} />

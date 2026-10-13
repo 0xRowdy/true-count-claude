@@ -594,7 +594,8 @@ export function clearWindow(state: GameState): GameState {
     ...state,
     table: state.windowStart,
     undo: [],
-    pending: {},
+    // A mistake the coach caught still counts once the chips come off.
+    pending: Object.fromEntries(Object.entries(state.pending).filter(([, e]) => e.coached)),
     error: null,
     notice: null,
     note: null,
@@ -731,7 +732,9 @@ export function throwDice(
       decisions.push({ category: "odds", correct: true, coached: entry.coached });
       continue;
     }
-    if (entry.takenBack && !betAt(before, entry.spot)) {
+    if (entry.coached) {
+      // The coach caught this bet as a mistake. Whether it was taken back, fixed, undone,
+      // cleared or kept, the decision made was the mistake: graded wrong, coached.
       decisions.push({ category: entry.category, correct: false, coached: true });
       continue;
     }

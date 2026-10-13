@@ -91,6 +91,26 @@ export default async ({ page, url, shot, log, check }) => {
     "place 8 for $12",
   );
   check(await button("Edit bets, $52 on the table").isVisible(), "Edit bets · $52");
+  // Keyboard only: bet with Enter, and take the chip off again through Edit bets (the button
+  // alternative to the felt's long-press, which react-native-web never fires from a keyboard).
+  const press = async (loc) => {
+    await loc.focus();
+    await page.keyboard.press("Enter");
+  };
+  await press(spot("Place 8"));
+  check(
+    (await spot("Place 8").getAttribute("aria-label")) === "Place 8, your bet $13",
+    "keyboard: Enter on Place 8 bets $1",
+  );
+  await press(button("Edit bets, $53 on the table"));
+  await visible(page.getByRole("dialog", { name: "Your bets" })).waitFor();
+  await press(button("Place 8: take $1 off"));
+  await press(button("Close your bets"));
+  await page.waitForTimeout(400);
+  check(
+    (await spot("Place 8").getAttribute("aria-label")) === "Place 8, your bet $12",
+    "keyboard: Edit bets takes the $1 back off",
+  );
 
   await chip(5).click();
   await button("Center bets").click();

@@ -132,7 +132,7 @@ export function CrapsFelt({
         key={spotKey(s)}
         accessibilityRole="button"
         accessibilityLabel={label}
-        accessibilityHint={`Tap to bet ${formatDollars(chip)}, long-press to take it off`}
+        accessibilityHint={`Tap to bet ${formatDollars(chip)}, long-press or Edit bets to take it off`}
         onPress={() => onSpot(s)}
         onLongPress={() => onRemove(s)}
         delayLongPress={450}
