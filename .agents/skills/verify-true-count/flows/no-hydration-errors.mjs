@@ -25,6 +25,7 @@ const ROUTES = [
   "/strategies/craps",
   "/strategies/roulette",
   "/games/video-poker",
+  "/games/roulette",
   "/games/craps",
 ];
 const HYDRATION = /Minified React error #(418|423|425)|hydrat/i;
