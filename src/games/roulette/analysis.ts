@@ -8,6 +8,7 @@
  */
 
 import { type BetType, PAYOUTS, getLayout, getSpot, isEvenMoneyBet } from "./layout";
+import { toCents } from "./format";
 import { type Bet, settleBets, totalStake } from "./spin";
 import { type Pocket, type RouletteRules, isZero, sortPockets } from "./wheel";
 
@@ -60,9 +61,9 @@ export function outcomesByPocket(rules: RouletteRules, bets: readonly Bet[]): Po
   });
 }
 
-/** Floats from different summation orders can differ in the last bit; group on cents. */
+/** Settled nets are whole cents; key groups on the cent value. */
 function netKey(net: number): string {
-  return (Math.round(net * 100) / 100).toFixed(2);
+  return String(toCents(net));
 }
 
 /** Outside bets whose pockets are not one run, so their name reads better than a list. */
@@ -137,7 +138,8 @@ export function analyzeBets(rules: RouletteRules, bets: readonly Bet[]): BetAnal
     (a, b) => Number(a.net < 0) - Number(b.net < 0) || b.count - a.count || b.net - a.net,
   );
 
-  const expectedValue = byPocket.reduce((sum, o) => sum + o.net, 0) / n;
+  // Nets are whole cents, so summing in cents is exact; only the final division rounds.
+  const expectedValue = byPocket.reduce((sum, o) => sum + toCents(o.net), 0) / 100 / n;
   const covered = byPocket.filter((o) => o.winningSpotIds.length > 0).map((o) => o.pocket);
   const uncovered = byPocket.filter((o) => o.winningSpotIds.length === 0).map((o) => o.pocket);
   const nets = byPocket.map((o) => o.net);

@@ -11,16 +11,13 @@ import {
   explainLowestEdgeBets,
   explainMartingaleRisk,
   explainNoMemory,
-  formatDollars,
-  formatHouseEdge,
-  formatPercent,
-  formatSignedDollars,
   loupeCaption,
   outcomeGroupCopy,
   pocketsEquallyLikely,
   uncoveredNote,
 } from "./coach";
 import { analyzeBets } from "./analysis";
+import { formatDollars, formatHouseEdge, formatPercent, formatSignedDollars } from "./format";
 import { betsTouching, getSpot } from "./layout";
 import type { Bet } from "./spin";
 import { AMERICAN_RULES, EUROPEAN_RULES, FRENCH_RULES } from "./wheel";
@@ -128,6 +125,14 @@ describe("teaching moments", () => {
     );
     expect(explainMartingaleRisk(5, 1000)).toContain("8 losses in a row ask for a $1,280 bet");
     expect(explainMartingaleRisk(5, 1000)).toContain("past this table's $1,000 limit");
+    expect(explainMartingaleRisk(600, 1000)).toContain("1 loss asks for a $1,200 bet");
+  });
+
+  it("handles a base bet already over the table max", () => {
+    const text = explainMartingaleRisk(2000, 1000);
+    expect(text).toContain("A $2,000 base bet is already past this table's $1,000 limit");
+    expect(text).not.toMatch(/0 losses/);
+    expect(explainMartingaleRisk(6000)).toContain("already past most table limits");
   });
 
   it("explains that the house edge is the same on every bet", () => {

@@ -5,12 +5,14 @@
  * from its seed: spin `i` is drawn from an Rng derived from `(seed, i)`, so a seed plus the
  * recorded bets replays a session exactly and any single spin can be re-derived on its own.
  *
- * Settlement works in exact, unrounded chips. La Partage can return half of an odd chip
- * amount; rounding that for display is a presentation concern.
+ * Settlement works in whole cents, so a long session's bankroll never drifts by float
+ * noise. La Partage on an odd number of cents rounds the half returned down to the cent,
+ * as a casino rounds down to the chip.
  */
 
 import { type Rng, createRng } from "../../engine/rng";
 import { type BetSpot, getLayout, getSpot, isEvenMoneyBet, isInsideBet } from "./layout";
+import { formatDollars, fromCents, toCents } from "./format";
 import { type Pocket, type RouletteRules, isZero } from "./wheel";
 
 /** Chips on one spot. Serialisable: the spot is referenced by id. */
@@ -21,20 +23,24 @@ export interface Bet {
 
 /** Total staked across a set of bets. */
 export function totalStake(bets: readonly Bet[]): number {
-  return bets.reduce((sum, b) => sum + b.amount, 0);
+  return fromCents(bets.reduce((sum, b) => sum + toCents(b.amount), 0));
 }
 
 /** Add chips to a spot, merging with chips already there. Returns a new bet list. */
 export function addChips(bets: readonly Bet[], spotId: string, amount: number): Bet[] {
   const existing = bets.find((b) => b.spotId === spotId);
   if (!existing) return [...bets, { spotId, amount }];
-  return bets.map((b) => (b.spotId === spotId ? { spotId, amount: b.amount + amount } : b));
+  return bets.map((b) =>
+    b.spotId === spotId ? { spotId, amount: fromCents(toCents(b.amount) + toCents(amount)) } : b,
+  );
 }
 
 /** Remove up to `amount` chips from a spot; the spot disappears when it reaches zero. */
 export function removeChips(bets: readonly Bet[], spotId: string, amount: number): Bet[] {
   return bets
-    .map((b) => (b.spotId === spotId ? { spotId, amount: b.amount - amount } : b))
+    .map((b) =>
+      b.spotId === spotId ? { spotId, amount: fromCents(toCents(b.amount) - toCents(amount)) } : b,
+    )
     .filter((b) => b.amount > 0);
 }
 
@@ -47,7 +53,7 @@ export function normalizeBets(bets: readonly Bet[]): Bet[] {
 
 /** Scale every bet by a factor (progressions, or adapting a layout to a new budget). */
 export function scaleBets(bets: readonly Bet[], factor: number): Bet[] {
-  return bets.map((b) => ({ spotId: b.spotId, amount: b.amount * factor }));
+  return bets.map((b) => ({ spotId: b.spotId, amount: fromCents(toCents(b.amount * factor)) }));
 }
 
 export type BetIssueCode =
@@ -97,23 +103,23 @@ export function validateBets(rules: RouletteRules, bets: readonly Bet[]): BetIss
       issues.push({
         code: "above-table-max",
         spotId: bet.spotId,
-        message: `${spot.label} is over the $${max} table maximum.`,
+        message: `${spot.label} is over the ${formatDollars(max)} table maximum.`,
       });
     }
     if (isInsideBet(spot.type)) {
-      insideTotal += bet.amount;
+      insideTotal = fromCents(toCents(insideTotal) + toCents(bet.amount));
     } else if (bet.amount < min) {
       issues.push({
         code: "below-table-min",
         spotId: bet.spotId,
-        message: `${spot.label} is under the $${min} minimum for outside bets.`,
+        message: `${spot.label} is under the ${formatDollars(min)} minimum for outside bets.`,
       });
     }
   }
   if (insideTotal > 0 && insideTotal < insideMin) {
     issues.push({
       code: "below-inside-min",
-      message: `Inside bets total $${insideTotal}, under the $${insideMin} inside minimum.`,
+      message: `Inside bets total ${formatDollars(insideTotal)}, under the ${formatDollars(insideMin)} inside minimum.`,
     });
   }
   return issues;
@@ -165,15 +171,19 @@ export function settleSpot(
   amount: number,
   pocket: Pocket,
 ): BetResult {
-  if (spot.pockets.includes(pocket)) {
-    const returned = amount * (spot.payout + 1);
-    return { spotId: spot.id, amount, outcome: "win", returned, net: returned - amount };
-  }
+  const stake = toCents(amount);
+  const result = (outcome: BetOutcome, returnedCents: number): BetResult => ({
+    spotId: spot.id,
+    amount,
+    outcome,
+    returned: fromCents(returnedCents),
+    net: fromCents(returnedCents - stake),
+  });
+  if (spot.pockets.includes(pocket)) return result("win", stake * (spot.payout + 1));
   if (rules.laPartage && isZero(pocket) && isEvenMoneyBet(spot.type)) {
-    const returned = amount / 2;
-    return { spotId: spot.id, amount, outcome: "halfBack", returned, net: returned - amount };
+    return result("halfBack", Math.floor(stake / 2));
   }
-  return { spotId: spot.id, amount, outcome: "lose", returned: 0, net: -amount };
+  return result("lose", 0);
 }
 
 /** Settle a set of bets against the pocket the ball landed in. Unknown spots throw. */
@@ -187,9 +197,15 @@ export function settleBets(
     if (!spot) throw new Error(`Unknown bet spot "${bet.spotId}" on a ${rules.wheel} layout.`);
     return settleSpot(rules, spot, bet.amount, pocket);
   });
-  const staked = totalStake(bets);
-  const returned = results.reduce((sum, r) => sum + r.returned, 0);
-  return { pocket, results, staked, returned, net: returned - staked };
+  const stakedCents = bets.reduce((sum, b) => sum + toCents(b.amount), 0);
+  const returnedCents = results.reduce((sum, r) => sum + toCents(r.returned), 0);
+  return {
+    pocket,
+    results,
+    staked: fromCents(stakedCents),
+    returned: fromCents(returnedCents),
+    net: fromCents(returnedCents - stakedCents),
+  };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -240,12 +256,14 @@ export function playSpin(session: RouletteSession, bets: readonly Bet[]): Roulet
   const placed = normalizeBets(bets);
   const staked = totalStake(placed);
   if (staked > session.bankroll) {
-    throw new Error(`Bets total $${staked}, more than the $${session.bankroll} bankroll.`);
+    throw new Error(
+      `Bets total ${formatDollars(staked)}, more than the ${formatDollars(session.bankroll)} bankroll.`,
+    );
   }
   const index = session.history.length;
   const pocket = spinPocket(session.rules, session.seed, index);
   const settlement = settleBets(session.rules, placed, pocket);
-  const bankrollAfter = session.bankroll + settlement.net;
+  const bankrollAfter = fromCents(toCents(session.bankroll) + toCents(settlement.net));
   return {
     ...session,
     bankroll: bankrollAfter,
@@ -263,5 +281,5 @@ export function recentPockets(session: RouletteSession, count = 8): Pocket[] {
 
 /** Net result across the whole session. */
 export function sessionNet(session: RouletteSession): number {
-  return session.bankroll - session.startingBankroll;
+  return fromCents(toCents(session.bankroll) - toCents(session.startingBankroll));
 }

@@ -104,16 +104,23 @@ describe("simulatePlan", () => {
     }
   });
 
-  it("stops when the next stake exceeds the bankroll", () => {
-    const r = simulatePlan(
-      plan({ progression: "martingale", bankroll: 70, session: { maxSpins: 1000 } }),
-      1,
-    );
-    if (r.stopReason === "bankroll") {
-      const next = (r.spins.at(-1)?.net ?? 0) < 0 ? (r.spins.at(-1)?.staked ?? 0) * 2 : 10;
-      expect(next).toBeGreaterThan(70 + r.finalNet);
-    } else {
-      expect(r.stopReason).toBe("maxSpins");
+  it("stops before a spin it cannot afford", () => {
+    const r = simulatePlan(plan({ bankroll: 5, session: { maxSpins: 10 } }), 1);
+    expect(r.stopReason).toBe("bankroll");
+    expect(r.spins).toEqual([]);
+  });
+
+  it("stops a Martingale when the next doubled stake exceeds the bankroll", () => {
+    for (let seed = 0; seed < 10; seed++) {
+      const r = simulatePlan(
+        plan({ progression: "martingale", bankroll: 70, session: { maxSpins: 10_000 } }),
+        seed,
+      );
+      expect(r.stopReason).toBe("bankroll");
+      const last = r.spins.at(-1);
+      if (!last) throw new Error("expected at least one spin");
+      expect(last.net).toBeLessThan(0);
+      expect(last.staked * 2).toBeGreaterThan(70 + r.finalNet);
     }
   });
 

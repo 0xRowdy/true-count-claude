@@ -1,8 +1,7 @@
 /**
- * Plain-language copy for roulette's teaching moments, plus the small formatters it needs.
+ * Plain-language copy for roulette's teaching moments.
  *
- * Formatting is done by hand rather than with `toLocaleString`: the web export is
- * prerendered, and locale-dependent output is a hydration mismatch waiting to happen. These
+ * Formatting lives in `format.ts`, done by hand rather than with `toLocaleString` so these
  * strings read the same on the server, in the browser, and in tests.
  */
 
@@ -10,51 +9,15 @@ import { analyzeBets, describePockets, houseEdgeOf, wheelHouseEdge } from "./ana
 import { BET_TYPE_NAMES, type BetSpot, getLayout, getSpot } from "./layout";
 import { lossesUntilOverMax, martingaleBet } from "./plan";
 import type { Bet } from "./spin";
+import {
+  formatDollars,
+  formatHouseEdge,
+  formatPayoutOdds,
+  formatPayoutRatio,
+  formatPercent,
+  formatSignedDollars,
+} from "./format";
 import { type Pocket, type RouletteRules, pocketColor } from "./wheel";
-
-const MINUS = "−";
-
-function groupThousands(digits: string): string {
-  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
-
-/** "$6,400", "$2.70", "$12.50". Cents shown only when the amount is not whole. */
-export function formatDollars(amount: number): string {
-  const cents = Math.round(Math.abs(amount) * 100);
-  const whole = Math.floor(cents / 100);
-  const frac = cents % 100;
-  const body = `$${groupThousands(String(whole))}${frac === 0 ? "" : `.${String(frac).padStart(2, "0")}`}`;
-  return amount < 0 && cents !== 0 ? `${MINUS}${body}` : body;
-}
-
-/** "+$40", "−$100", "$0". Uses a true minus sign, as the design does. */
-export function formatSignedDollars(amount: number): string {
-  const cents = Math.round(amount * 100);
-  if (cents === 0) return "$0";
-  return cents > 0 ? `+${formatDollars(amount)}` : formatDollars(amount);
-}
-
-/** "48.6%", "2.7%", "5.26%" (with `digits = 2`). Trailing zeros are kept to `digits`. */
-export function formatPercent(probability: number, digits = 1): string {
-  return `${(probability * 100).toFixed(digits)}%`;
-}
-
-/** A house edge the way casinos publish it: 2.7%, 5.26%, 1.35%, 7.89%. */
-export function formatHouseEdge(edge: number): string {
-  const pct = edge * 100;
-  const two = pct.toFixed(2);
-  return two.endsWith("0") ? `${pct.toFixed(1)}%` : `${two}%`;
-}
-
-/** "35:1" for the bet loupe. */
-export function formatPayoutRatio(payout: number): string {
-  return `${payout}:1`;
-}
-
-/** "5 to 1" for the Strategy Builder. */
-export function formatPayoutOdds(payout: number): string {
-  return `${payout} to 1`;
-}
 
 /** "European · single zero · $5–$1,000". */
 export function describeTable(rules: RouletteRules): string {
@@ -198,11 +161,12 @@ export function explainHouseEdgeIsTheSame(rules: RouletteRules): string {
 
 /** What La Partage does and what it is worth. */
 export function explainLaPartage(rules: RouletteRules): string {
-  const half = formatHouseEdge(houseEdgeOf({ ...rules, laPartage: true }, "red"));
-  const full = formatHouseEdge(houseEdgeOf({ ...rules, laPartage: false }, "red"));
-  const zero = rules.wheel === "american" ? "0 or 00" : "zero";
+  // A single-zero rule: explain it on the European wheel whatever table is open.
+  const single: RouletteRules = { ...rules, wheel: "european" };
+  const half = formatHouseEdge(houseEdgeOf({ ...single, laPartage: true }, "red"));
+  const full = formatHouseEdge(houseEdgeOf({ ...single, laPartage: false }, "red"));
   return (
-    `La Partage: when the ball lands on ${zero}, even-money bets (red/black, odd/even, ` +
+    `La Partage: when the ball lands on zero, even-money bets (red/black, odd/even, ` +
     `1–18/19–36) get half the stake back instead of losing it all. ` +
     `That cuts their house edge from ${full} to ${half}, the lowest on the table.`
   );
@@ -227,21 +191,24 @@ export function explainDoubleZero(): string {
 
 /**
  * The Martingale warning. Without a table maximum it uses a typical $5,000 high-limit cap and
- * says "past most table limits": with a $100 base, 6 losses in a row ask for $6,400.
+ * says "past most table limits": with a $100 base, 6 losses in a row ask for $6,400. A base
+ * bet already over the cap gets its own line rather than "0 losses in a row".
  */
 export function explainMartingaleRisk(base: number, tableMax?: number): string {
   const max = tableMax ?? 5000;
-  const losses = lossesUntilOverMax(base, max);
-  const ask = formatDollars(martingaleBet(base, losses));
+  const lead = "Progressions change how you lose, not how much on average.";
+  const tail = "Flat betting is the honest default.";
   const limit =
     tableMax === undefined
       ? "past most table limits"
       : `past this table's ${formatDollars(max)} limit`;
-  return (
-    `Progressions change how you lose, not how much on average. ` +
-    `With Martingale, ${losses} losses in a row ask for a ${ask} bet, ${limit}. ` +
-    `Flat betting is the honest default.`
-  );
+  if (base > max) {
+    return `${lead} A ${formatDollars(base)} base bet is already ${limit}, so Martingale has no room to double even once. ${tail}`;
+  }
+  const losses = lossesUntilOverMax(base, max);
+  const streak = losses === 1 ? "1 loss" : `${losses} losses in a row`;
+  const ask = formatDollars(martingaleBet(base, losses));
+  return `${lead} With Martingale, ${streak} ${losses === 1 ? "asks" : "ask"} for a ${ask} bet, ${limit}. ${tail}`;
 }
 
 /** The gambler's fallacy, anchored on the current streak in the history (newest first). */

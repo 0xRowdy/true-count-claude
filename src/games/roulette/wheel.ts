@@ -144,7 +144,8 @@ export interface RouletteRules {
   /**
    * La Partage: when the ball lands on a zero, even-money bets (red/black, odd/even,
    * 1–18/19–36) return half their stake instead of losing it all. Halves the edge on those
-   * bets to 1.35% on a single-zero wheel.
+   * bets to 1.35%. A single-zero (European) rule only: `validateRouletteRules` rejects it
+   * on the American wheel.
    */
   readonly laPartage: boolean;
   readonly limits: TableLimits;
@@ -193,5 +194,8 @@ export function validateRouletteRules(rules: RouletteRules): string[] {
   }
   if (max < min) problems.push("Table maximum must be at least the table minimum.");
   if (max < insideMin) problems.push("Table maximum must be at least the inside minimum.");
+  if (rules.laPartage && rules.wheel !== "european") {
+    problems.push("La Partage is a single-zero rule; American tables do not offer it.");
+  }
   return problems;
 }

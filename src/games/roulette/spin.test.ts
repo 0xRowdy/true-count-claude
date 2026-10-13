@@ -18,11 +18,10 @@ import {
 } from "./spin";
 import {
   AMERICAN_RULES,
-  DOUBLE_ZERO,
   EUROPEAN_RULES,
   FRENCH_RULES,
   type Pocket,
-  type RouletteRules,
+  validateRouletteRules,
 } from "./wheel";
 
 const bet = (spotId: string, amount: number): Bet => ({ spotId, amount });
@@ -95,10 +94,16 @@ describe("La Partage", () => {
     expect(settleBets(EUROPEAN_RULES, [bet("red", 10)], 0).net).toBe(-10);
   });
 
-  it("applies to both zeros when switched on for an American wheel", () => {
-    const rules: RouletteRules = { ...AMERICAN_RULES, laPartage: true };
-    expect(settleBets(rules, [bet("even", 10)], DOUBLE_ZERO).net).toBe(-5);
-    expect(settleBets(rules, [bet("even", 10)], 0).net).toBe(-5);
+  it("is a single-zero rule the American wheel rejects", () => {
+    expect(validateRouletteRules({ ...AMERICAN_RULES, laPartage: true })).toEqual([
+      "La Partage is a single-zero rule; American tables do not offer it.",
+    ]);
+    expect(validateRouletteRules(FRENCH_RULES)).toEqual([]);
+  });
+
+  it("rounds the half returned down to the cent", () => {
+    const s = settleBets(FRENCH_RULES, [bet("red", 0.05)], 0);
+    expect(s.results[0]).toMatchObject({ outcome: "halfBack", returned: 0.02, net: -0.03 });
   });
 });
 
@@ -140,6 +145,19 @@ describe("bet building and validation", () => {
     expect(
       validateBets(EUROPEAN_RULES, [bet("red", 600), bet("red", 600)]).map((i) => i.code),
     ).toEqual(["above-table-max"]);
+  });
+
+  it("writes amounts in the messages as formatted dollars", () => {
+    const rules = { ...EUROPEAN_RULES, limits: { min: 2.5, max: 5000, insideMin: 10 } };
+    expect(validateBets(rules, [bet("red", 6000)])[0]?.message).toBe(
+      "Red is over the $5,000 table maximum.",
+    );
+    expect(validateBets(rules, [bet("red", 1)])[0]?.message).toBe(
+      "Red is under the $2.50 minimum for outside bets.",
+    );
+    expect(validateBets(rules, [bet("straight:17", 2.5)])[0]?.message).toBe(
+      "Inside bets total $2.50, under the $10 inside minimum.",
+    );
   });
 
   it("rejects illegal spots and non-positive amounts", () => {
@@ -199,6 +217,24 @@ describe("spinning", () => {
     const r1 = createRng(9);
     const r2 = createRng(9);
     expect(spinWheel(AMERICAN_RULES, r1)).toBe(spinWheel(AMERICAN_RULES, r2));
+  });
+});
+
+describe("money in cents", () => {
+  it("settles without float noise", () => {
+    const bets = [bet("red", 0.1), bet("black", 0.2)];
+    expect(totalStake(bets)).toBe(0.3);
+    expect(settleBets(EUROPEAN_RULES, bets, 0).net).toBe(-0.3);
+    expect(addChips([bet("red", 0.1)], "red", 0.2)).toEqual([bet("red", 0.3)]);
+  });
+
+  it("keeps a long session's bankroll on exact cents", () => {
+    const rules = { ...EUROPEAN_RULES, limits: { min: 0.1, max: 1000, insideMin: 0.1 } };
+    let s = createRouletteSession({ rules, seed: 3, bankroll: 100 });
+    for (let i = 0; i < 500; i++) s = playSpin(s, [bet("red", 0.1), bet("straight:7", 0.1)]);
+    const cents = s.history.reduce((sum, r) => sum + Math.round(r.settlement.net * 100), 0);
+    expect(s.bankroll).toBe((10000 + cents) / 100);
+    expect(Math.round(s.bankroll * 100) / 100).toBe(s.bankroll);
   });
 });
 

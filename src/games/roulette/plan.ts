@@ -18,6 +18,7 @@
 import { type Rng, createRng } from "../../engine/rng";
 import { getSpot } from "./layout";
 import { type Bet, scaleBets, settleBets, spinWheel, totalStake } from "./spin";
+import { fromCents, toCents } from "./format";
 import type { Pocket, RouletteRules } from "./wheel";
 
 export type ProgressionKind = "flat" | "martingale" | "dalembert";
@@ -151,13 +152,16 @@ export function simulatePlanWith(plan: StrategyPlan, rng: Rng): PlanResult {
     }
     const { bets, capped } = stakeForSpin(plan.rules, plan.bets, progression.multiplier);
     const staked = totalStake(bets);
-    if (plan.bankroll !== undefined && staked > plan.bankroll + cumulative) {
+    if (
+      plan.bankroll !== undefined &&
+      toCents(staked) > toCents(plan.bankroll) + toCents(cumulative)
+    ) {
       stopReason = "bankroll";
       break;
     }
     const pocket = spinWheel(plan.rules, rng);
     const { net } = settleBets(plan.rules, bets, pocket);
-    cumulative += net;
+    cumulative = fromCents(toCents(cumulative) + toCents(net));
     peak = Math.max(peak, cumulative);
     trough = Math.min(trough, cumulative);
     largestStake = Math.max(largestStake, staked);
@@ -219,9 +223,9 @@ export function simulatePlanMany(plan: StrategyPlan, seed: number, sessions: num
   let hitMax = 0;
   for (let i = 0; i < sessions; i++) {
     const r = simulatePlan(plan, (seed + i) >>> 0);
-    totalNet += r.finalNet;
+    totalNet = fromCents(toCents(totalNet) + toCents(r.finalNet));
     totalSpins += r.spins.length;
-    totalStaked += r.spins.reduce((s, x) => s + x.staked, 0);
+    totalStaked = fromCents(r.spins.reduce((s, x) => s + toCents(x.staked), toCents(totalStaked)));
     if (r.finalNet > 0) winning++;
     if (r.hitTableMax) hitMax++;
     worstNet = Math.min(worstNet, r.finalNet);
