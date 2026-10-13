@@ -134,7 +134,7 @@ function HoldButton({
     </Text>
   );
   if (!interactive || !card) {
-    return <View style={[styles.hold, held && styles.holdOn, styles.holdIdle]}>{text}</View>;
+    return <View style={[styles.hold, held ? styles.holdOn : styles.holdIdle]}>{text}</View>;
   }
   const name = `${RANK_WORD[card.rank] ?? card.rank} of ${SUIT_WORD[card.suit]}`;
   return (

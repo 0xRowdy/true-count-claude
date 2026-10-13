@@ -128,7 +128,10 @@ function GameOption({
               </Text>
               <Text style={[ui(12, 600), styles.cell]}>{r.pays}</Text>
               <Text style={[ui(12, 600), styles.cell]}>
-                {(r.paysAtMaxCoins ?? r.pays) * MAX_COINS}
+                {String((r.paysAtMaxCoins ?? r.pays) * MAX_COINS).replace(
+                  /\B(?=(\d{3})+(?!\d))/g,
+                  ",",
+                )}
               </Text>
             </View>
           ))}

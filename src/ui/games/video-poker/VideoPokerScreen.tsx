@@ -356,7 +356,7 @@ export function VideoPokerScreen() {
             {state.phase === "payout" ? (
               <Button
                 variant="secondary"
-                size="lg"
+                size="md"
                 label="Change bet"
                 onPress={() => setState(changeBet)}
                 style={styles.side}
@@ -364,7 +364,7 @@ export function VideoPokerScreen() {
             ) : (
               <Button
                 variant="secondary"
-                size="lg"
+                size="md"
                 icon={Gauge}
                 label={speed === "fast" ? "Fast" : "Speed"}
                 accessibilityLabel={`Deal speed: ${speed}. Switch to ${speed === "fast" ? "normal" : "fast"}`}
@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
   },
   actions: { flexDirection: "row", gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
-  side: { width: 130 },
+  side: { width: 130, height: 52, paddingHorizontal: 14 },
   main: { flex: 1 },
   sheetLayer: {
     position: "absolute",
