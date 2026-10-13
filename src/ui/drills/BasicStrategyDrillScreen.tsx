@@ -32,17 +32,9 @@ import {
 } from "@/drills/basicStrategy";
 import { getDrill } from "@/drills/types";
 import { ExplanationPanel } from "@/ui/explanation/ExplanationPanel";
-import { colors, surfaces, ui } from "@/ui/ds";
+import { colors, surfaces, ui, Panel } from "@/ui/ds";
 import { DealerHand, Felt, PlayerHand } from "@/ui/trainer/Felt";
-import {
-  ActionButton,
-  Panel,
-  StatCards,
-  StatRow,
-  TrainerPage,
-  text,
-  type Tone,
-} from "@/ui/trainer/kit";
+import { ActionButton, StatCards, StatRow, TrainerPage, text, type Tone } from "@/ui/trainer/kit";
 import {
   DrillHeader,
   PendingTablePanel,

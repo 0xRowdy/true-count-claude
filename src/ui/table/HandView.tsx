@@ -16,7 +16,7 @@ import { colors, radius, spacing, type } from "@/ui/theme";
 import { type CardSize, CardRow } from "./CardView";
 import { formatChips, formatNet } from "./format";
 
-const RESULT_LABEL: Record<HandResult, string> = {
+export const RESULT_LABEL: Record<HandResult, string> = {
   blackjack: "Blackjack",
   win: "Win",
   push: "Push",

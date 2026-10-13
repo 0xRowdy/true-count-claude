@@ -17,8 +17,8 @@ import type { Card } from "@/engine/cards";
 import type { CountingSystem } from "@/engine/counting";
 import { tagFor } from "@/engine/counting";
 import { formatSigned, isRedSuit, suitGlyph } from "./integrity";
-import { colors, radius, surfaces, ui } from "@/ui/ds";
-import { Panel, SecondaryButton, text } from "@/ui/trainer/kit";
+import { colors, radius, surfaces, ui, Panel } from "@/ui/ds";
+import { SecondaryButton, text } from "@/ui/trainer/kit";
 
 /** How many cards show before the history has to be opened. */
 const COLLAPSED_LIMIT = 40;

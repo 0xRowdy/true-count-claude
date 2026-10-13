@@ -27,9 +27,9 @@ import {
 } from "react-native";
 import X from "lucide-react-native/icons/x";
 import Copy from "lucide-react-native/icons/copy";
-import { ActionButton, Panel, SecondaryButton, inputStyle, text } from "@/ui/trainer/kit";
+import { ActionButton, SecondaryButton, inputStyle, text } from "@/ui/trainer/kit";
 import { type ExportOutcome, copyText, exportReportFile } from "@/ui/shoe-integrity/share";
-import { colors, display, radius, ui } from "@/ui/ds";
+import { colors, display, radius, ui, Panel } from "@/ui/ds";
 import {
   type BugReport,
   KNOWN_ISSUES_URL,

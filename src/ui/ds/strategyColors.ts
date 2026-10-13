@@ -9,8 +9,7 @@
 
 import { colors, surfaces } from "./tokens";
 
-/** The design's literal for the "Ds" swatch and its ink. */
-const DOUBLE_STAND = "#7FA8F2";
+/** The design's "Ds" swatch is the information blue; its ink is a literal of the legend. */
 const DOUBLE_STAND_INK = "#0B1A3A";
 
 export type StrategySwatch = "hit" | "stand" | "double" | "doubleStand" | "split" | "surrender";
@@ -19,13 +18,7 @@ export const strategyColors: Readonly<Record<StrategySwatch, { bg: string; fg: s
   hit: { bg: colors.paper2, fg: colors.ink },
   stand: { bg: colors.chip1k, fg: colors.ink },
   double: { bg: colors.coachAccent, fg: surfaces.chipInkLight },
-  doubleStand: { bg: DOUBLE_STAND, fg: DOUBLE_STAND_INK },
+  doubleStand: { bg: surfaces.infoInk, fg: DOUBLE_STAND_INK },
   split: { bg: colors.chip500, fg: surfaces.chipInkLight },
   surrender: { bg: colors.inkMuted, fg: surfaces.chipInkLight },
 };
-
-/**
- * Informational text on the dark app surfaces. `--coach-accent` is too dark to read as text on
- * `--card`, so information reads in the chart's lighter blue instead.
- */
-export const infoInk = DOUBLE_STAND;

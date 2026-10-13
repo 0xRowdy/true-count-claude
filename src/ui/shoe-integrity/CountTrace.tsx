@@ -13,8 +13,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import type { TracePoint, TraceRange } from "./integrity";
 import { formatSigned } from "./integrity";
-import { colors, radius, ui } from "@/ui/ds";
-import { infoInk } from "@/ui/ds/strategyColors";
+import { colors, radius, ui, surfaces } from "@/ui/ds";
 
 const FRAME_HEIGHT = 132;
 const DOT = 3;
@@ -53,7 +52,7 @@ export function CountTrace({
     ? last && last.count === range.home
       ? colors.correct
       : colors.mistake
-    : infoInk;
+    : surfaces.infoInk;
 
   return (
     <View style={styles.wrapper}>
@@ -171,7 +170,7 @@ const styles = StyleSheet.create({
     borderRadius: DOT / 2,
     marginLeft: -DOT / 2,
     marginTop: -DOT / 2,
-    backgroundColor: infoInk,
+    backgroundColor: surfaces.infoInk,
   },
   endDot: {
     position: "absolute",

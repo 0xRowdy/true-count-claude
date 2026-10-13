@@ -18,8 +18,8 @@ import { type Rank, RANKS } from "@/engine/cards";
 import type { TagTable } from "@/engine/counting";
 import type { RankComposition } from "@/engine/shoe";
 import { formatSigned } from "./integrity";
-import { colors, radius, ui } from "@/ui/ds";
-import { Panel, ToneBadge, signColor, text } from "@/ui/trainer/kit";
+import { colors, radius, ui, Panel } from "@/ui/ds";
+import { ToneBadge, signColor, text } from "@/ui/trainer/kit";
 
 const ROW_HEIGHT = 32;
 const COLUMN_WIDTH = 44;

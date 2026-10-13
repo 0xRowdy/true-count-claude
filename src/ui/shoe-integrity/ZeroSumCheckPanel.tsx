@@ -23,8 +23,8 @@ import { StyleSheet, Text, View } from "react-native";
 import type { TracePoint, TraceRange, ZeroSumCheck } from "./integrity";
 import { formatSigned } from "./integrity";
 import { CountTrace } from "./CountTrace";
-import { colors, display, radius, ui } from "@/ui/ds";
-import { Panel, StatRow, ToneBadge, text } from "@/ui/trainer/kit";
+import { colors, display, radius, ui, Panel } from "@/ui/ds";
+import { StatRow, ToneBadge, text } from "@/ui/trainer/kit";
 
 export function ZeroSumCheckPanel({
   check,

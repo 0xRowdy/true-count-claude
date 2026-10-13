@@ -10,13 +10,12 @@
  */
 
 import { StyleSheet, Text, View } from "react-native";
-import { colors, radius, ui } from "@/ui/ds";
-import { infoInk } from "@/ui/ds/strategyColors";
+import { colors, radius, ui, surfaces } from "@/ui/ds";
 import { type EvRowView, ROW_TIER_LABEL, TIER_TONE, type TierTone } from "./explanationFormat";
 
 export const TONE_COLOR: Readonly<Record<TierTone, string>> = {
   good: colors.correct,
-  info: infoInk,
+  info: surfaces.infoInk,
   warn: colors.primary,
   bad: colors.mistake,
 };

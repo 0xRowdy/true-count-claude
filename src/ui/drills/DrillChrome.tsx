@@ -21,14 +21,13 @@ import { type RuleSet, describeRules } from "@/engine/rules";
 import { type Session, type SessionStats, computeStats } from "@/state";
 import type { DrillDefinition } from "@/drills/types";
 import { ReportBugButton, type ReportBugButtonProps } from "@/ui/bug-report/ReportBugButton";
-import { colors, display, ui } from "@/ui/ds";
+import { colors, display, ui, Panel } from "@/ui/ds";
 import { matchingPreset } from "@/ui/rules/presets";
 import {
   ActionButton,
   Choice,
   Group,
   PageHeader,
-  Panel,
   SecondaryButton,
   StatRow,
   ToneBadge,

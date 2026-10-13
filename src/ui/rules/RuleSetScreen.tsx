@@ -27,8 +27,9 @@ import { StyleSheet, Text, View } from "react-native";
 import RotateCcw from "lucide-react-native/icons/rotate-ccw";
 import { DEFAULT_RULES } from "@/engine/rules";
 import { type StrategyChart, strategyChart } from "@/engine/strategy";
-import { Button, colors } from "@/ui/ds";
-import { PageHeader, Panel, ToneBadge, TrainerPage, text, useWide } from "@/ui/trainer/kit";
+import { ReportBugButton } from "@/ui/bug-report/ReportBugButton";
+import { Button, colors, Panel } from "@/ui/ds";
+import { PageHeader, ToneBadge, TrainerPage, text, useWide } from "@/ui/trainer/kit";
 import { HouseEdgePanel } from "./HouseEdgePanel";
 import { PresetPanel } from "./PresetPanel";
 import { RuleFields } from "./RuleFields";
@@ -78,6 +79,10 @@ export function RuleSetScreen() {
         eyebrow="Trainer · Rule Set"
         title="Your table"
         lede="Basic Strategy is not one chart, it is a chart per rule set. Tell us the table you play and every verdict, drill and explanation in the app is generated for that table — not for a generic one that happens to be close."
+        actions={
+          // A table that charts or prices wrongly is reported with the rules on screen.
+          <ReportBugButton screen="Your table" rules={rules} />
+        }
       >
         <StorageNote status={status} />
       </PageHeader>
@@ -85,17 +90,9 @@ export function RuleSetScreen() {
       {problems.length > 0 ? <ProblemPanel problems={problems} /> : null}
 
       <View onLayout={onLayout} style={wide ? styles.columns : styles.stack}>
-        {wide ? (
-          <>
-            <View style={styles.left}>{fields}</View>
-            <View style={styles.right}>{chartAndReset}</View>
-          </>
-        ) : (
-          <>
-            {fields}
-            {chartAndReset}
-          </>
-        )}
+        {/* One tree at every width, so nothing remounts when the layout changes. */}
+        <View style={wide ? styles.left : styles.stack}>{fields}</View>
+        <View style={wide ? styles.right : styles.stack}>{chartAndReset}</View>
       </View>
     </TrainerPage>
   );

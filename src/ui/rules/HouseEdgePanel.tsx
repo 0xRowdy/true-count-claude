@@ -20,8 +20,8 @@ import type { RuleSet } from "@/engine/rules";
 import { describeRules } from "@/engine/rules";
 import ChevronDown from "lucide-react-native/icons/chevron-down";
 import ChevronUp from "lucide-react-native/icons/chevron-up";
-import { colors, display, radius, ui } from "@/ui/ds";
-import { Panel, StatRow, ToneBadge, text, toneColor, type Tone } from "@/ui/trainer/kit";
+import { colors, display, radius, ui, Panel } from "@/ui/ds";
+import { StatRow, ToneBadge, text, toneColor, type Tone } from "@/ui/trainer/kit";
 import {
   EDGE_NEUTRAL_RULES,
   EDGE_PRECISION_NOTE,

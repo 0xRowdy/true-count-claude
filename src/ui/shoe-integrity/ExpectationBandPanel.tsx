@@ -20,8 +20,8 @@
 
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { type ExpectationBand, describeExpectation, formatUnits } from "./integrity";
-import { colors, radius, ui } from "@/ui/ds";
-import { Panel, SecondaryButton, StatRow, ToneBadge, inputStyle, text } from "@/ui/trainer/kit";
+import { colors, radius, ui, Panel } from "@/ui/ds";
+import { SecondaryButton, StatRow, ToneBadge, inputStyle, text } from "@/ui/trainer/kit";
 
 const FRAME_HEIGHT = 72;
 /** How far out the axis reaches, in standard deviations either side of expectation. */

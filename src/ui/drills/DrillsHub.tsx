@@ -15,11 +15,12 @@ import Divide from "lucide-react-native/icons/divide";
 import GitBranch from "lucide-react-native/icons/git-branch";
 import Grid3x3 from "lucide-react-native/icons/grid-3x3";
 import Hash from "lucide-react-native/icons/hash";
+import { ReportBugButton } from "@/ui/bug-report/ReportBugButton";
 import { COUNTING_SYSTEMS } from "@/engine/counting";
 import { DRILLS, type DrillDefinition, type DrillId } from "@/drills/types";
-import { colors, display, radius, ui, type LucideIcon } from "@/ui/ds";
+import { colors, display, radius, ui, type LucideIcon, Panel } from "@/ui/ds";
 import { useConfiguredRules } from "@/ui/rules/rulesStore";
-import { PageHeader, Panel, TrainerPage, text, useWide } from "@/ui/trainer/kit";
+import { PageHeader, TrainerPage, text, useWide } from "@/ui/trainer/kit";
 import { TableLine } from "./DrillChrome";
 
 export const DRILL_HREF: Readonly<Record<DrillId, string>> = {
@@ -54,6 +55,7 @@ export function DrillsHub() {
         eyebrow="Trainer"
         title="Drills"
         lede="Focused practice with every answer graded and explained while the cards are still in front of you — right answers included. All four are part of the app; none is sold separately."
+        actions={<ReportBugButton screen="Drills" rules={configured.rules} />}
       >
         <TableLine rules={configured.rules} />
       </PageHeader>

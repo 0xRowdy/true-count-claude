@@ -21,9 +21,7 @@ import {
   Text,
   View,
   type LayoutChangeEvent,
-  type StyleProp,
   type TextStyle,
-  type ViewStyle,
 } from "react-native";
 import CircleAlert from "lucide-react-native/icons/circle-alert";
 import Info from "lucide-react-native/icons/info";
@@ -32,7 +30,6 @@ import {
   AppShell,
   Badge,
   Button,
-  Panel as DsPanel,
   SegmentedControl,
   StatCard,
   colors,
@@ -44,11 +41,10 @@ import {
   type ButtonVariant,
   type DeltaTone,
   type LucideIcon,
-  type NavKey,
   MIN_TAP,
+  surfaces,
   ui,
 } from "@/ui/ds";
-import { infoInk } from "@/ui/ds/strategyColors";
 
 // ---------------------------------------------------------------------------
 // Tone
@@ -63,7 +59,7 @@ export const toneColor: Readonly<Record<Tone, string>> = {
   good: colors.correct,
   bad: colors.mistake,
   warn: colors.primary,
-  info: infoInk,
+  info: surfaces.infoInk,
 };
 
 /** Signed numbers: positive green, negative orange, zero muted (count tags, nets). */
@@ -88,7 +84,7 @@ export const text = StyleSheet.create({
   strong: { fontFamily: fontFamily.ui[700], color: colors.foreground },
   muted: { color: colors.mutedForeground },
   num: { ...NUM, fontFamily: fontFamily.ui[600], color: colors.foreground },
-  info: { ...ui(13, 400, { lineHeight: 19 }), color: infoInk, flexShrink: 1 },
+  info: { ...ui(13, 400, { lineHeight: 19 }), color: surfaces.infoInk, flexShrink: 1 },
   warn: { ...ui(13, 400, { lineHeight: 19 }), color: colors.primary, flexShrink: 1 },
   bad: { ...ui(13, 400, { lineHeight: 19 }), color: colors.mistake, flexShrink: 1 },
   /** Muted uppercase group title, the design's "HARD TOTALS" (10/700, tracked). */
@@ -109,15 +105,9 @@ export const text = StyleSheet.create({
  * A trainer page: the App Header with `active` lit, then the page head and the panels, 24
  * apart (the Progress page's rhythm).
  */
-export function TrainerPage({
-  active = "trainer",
-  children,
-}: {
-  active?: NavKey;
-  children: ReactNode;
-}) {
+export function TrainerPage({ children }: { children: ReactNode }) {
   return (
-    <AppShell active={active}>
+    <AppShell active="trainer">
       <View style={styles.page}>{children}</View>
     </AppShell>
   );
@@ -150,27 +140,6 @@ export function PageHeader({
       </View>
       {actions ? <View style={styles.headActions}>{actions}</View> : null}
     </View>
-  );
-}
-
-/** The design's panel (`--card`, 16 radius, 24 padding), with a 12pt rhythm inside. */
-export function Panel({
-  title,
-  aside,
-  children,
-  style,
-  gap = 12,
-}: {
-  title?: string;
-  aside?: ReactNode;
-  children?: ReactNode;
-  style?: StyleProp<ViewStyle>;
-  gap?: number;
-}) {
-  return (
-    <DsPanel {...(title ? { title } : {})} {...(aside ? { aside } : {})} gap={gap} style={style}>
-      {children}
-    </DsPanel>
   );
 }
 
@@ -249,7 +218,6 @@ export function StatCards({
     value: string;
     delta?: string;
     tone?: Tone;
-    icon?: LucideIcon;
   }>;
 }) {
   return (
@@ -263,7 +231,7 @@ export function StatCards({
           style={styles.statCard}
           {...(card.delta ? { delta: card.delta } : {})}
           deltaTone={STAT_TONE[card.tone ?? "neutral"]}
-          deltaIcon={card.icon ?? icons.Target}
+          deltaIcon={icons.Target}
         />
       ))}
     </View>
@@ -328,12 +296,10 @@ export function ActionButton({
 export function SecondaryButton({
   label,
   onPress,
-  disabled,
   icon,
 }: {
   label: string;
   onPress: () => void;
-  disabled?: boolean;
   icon?: LucideIcon;
 }) {
   return (
@@ -344,10 +310,12 @@ export function SecondaryButton({
       size="sm"
       style={styles.secondary}
       {...(icon ? { icon } : {})}
-      {...(disabled ? { disabled } : {})}
     />
   );
 }
+
+/** Characters a row of segments can show at 360pt before a label truncates. */
+const SEGMENT_BUDGET = 26;
 
 /**
  * A row of mutually exclusive choices. Up to four short options sit in the design's Segmented
@@ -365,8 +333,10 @@ export function Choice<T extends string>({
   onChange: (next: T) => void;
   accessibilityLabel?: string;
 }) {
+  // Equal-width segments only when every label fits its share of a 360pt phone; "Any two
+  // cards" beside two others would be cut off, so long or many labels wrap as pills.
   const longest = Math.max(...options.map((o) => o.label.length));
-  if (options.length <= 4 && longest * options.length <= 44) {
+  if (options.length <= 4 && longest * options.length <= SEGMENT_BUDGET) {
     return (
       <SegmentedControl
         options={options}

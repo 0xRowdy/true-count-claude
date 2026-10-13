@@ -25,8 +25,8 @@ import type {
   RuleSet,
   SurrenderRule,
 } from "@/engine/rules";
-import { colors, ui } from "@/ui/ds";
-import { Choice, Panel, inputStyle, text } from "@/ui/trainer/kit";
+import { colors, ui, Panel } from "@/ui/ds";
+import { Choice, inputStyle, text } from "@/ui/trainer/kit";
 import { SOURCED_DECK_COUNTS } from "./houseEdge";
 
 const YES_NO = [

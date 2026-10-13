@@ -10,7 +10,7 @@
 import type { ReactNode } from "react";
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import type { Card } from "@/engine/cards";
-import { type Hand, evaluate, isBlackjack } from "@/engine/hand";
+import { type Hand, evaluate } from "@/engine/hand";
 import type { HandOutcome, HandResult } from "@/engine/round";
 import {
   Badge,
@@ -24,7 +24,9 @@ import {
   type BadgeTone,
   type CardSize,
 } from "@/ui/ds";
+import { RESULT_LABEL, describeTotal } from "@/ui/table/HandView";
 import { formatChips, formatNet } from "@/ui/table/format";
+import { signColor } from "./kit";
 
 /** The felt surface: felt fading to deep felt, 16 radius, a faint felt-line edge. */
 export function Felt({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
@@ -70,15 +72,6 @@ export function CardFan({
   );
 }
 
-const RESULT_LABEL: Record<HandResult, string> = {
-  blackjack: "Blackjack",
-  win: "Win",
-  push: "Push",
-  lose: "Lose",
-  bust: "Bust",
-  surrender: "Surrendered",
-};
-
 const RESULT_TONE: Record<HandResult, BadgeTone> = {
   blackjack: "correct",
   win: "correct",
@@ -87,14 +80,6 @@ const RESULT_TONE: Record<HandResult, BadgeTone> = {
   bust: "mistake",
   surrender: "primary",
 };
-
-/** A hand total in the words a player uses: "Soft 18", "20", "Bust 23", "Blackjack". */
-export function describeTotal(hand: Hand): string {
-  if (isBlackjack(hand)) return "Blackjack";
-  const value = evaluate(hand.cards);
-  if (value.busted) return `Bust ${value.total}`;
-  return value.soft ? `Soft ${value.total}` : `${value.total}`;
-}
 
 export function DealerHand({
   cards,
@@ -158,7 +143,9 @@ export function PlayerHand({
               tone={RESULT_TONE[outcome.result]}
               showIcon={false}
             />
-            <Text style={styles.net}>{formatNet(outcome.net)}</Text>
+            <Text style={[styles.net, { color: signColor(outcome.net) }]}>
+              {formatNet(outcome.net)}
+            </Text>
           </View>
         ) : null}
       </View>
@@ -214,5 +201,5 @@ const styles = StyleSheet.create({
   footer: { gap: 6 },
   wager: { ...ui(12, 500), color: surfaces.feltTextMuted, fontVariant: ["tabular-nums"] },
   outcome: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
-  net: { ...ui(13, 700), color: colors.feltText, fontVariant: ["tabular-nums"] },
+  net: { ...ui(13, 700), fontVariant: ["tabular-nums"] },
 });

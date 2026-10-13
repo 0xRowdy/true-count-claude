@@ -35,12 +35,11 @@ import {
   totalCards,
 } from "@/drills/counting";
 import { getDrill } from "@/drills/types";
-import { PlayingCard, colors, surfaces, ui } from "@/ui/ds";
+import { PlayingCard, colors, surfaces, ui, Panel } from "@/ui/ds";
 import { Felt } from "@/ui/trainer/Felt";
 import {
   ActionButton,
   Choice,
-  Panel,
   SecondaryButton,
   StatCards,
   StatRow,

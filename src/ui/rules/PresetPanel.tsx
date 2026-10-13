@@ -12,9 +12,8 @@
 
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { RuleSet } from "@/engine/rules";
-import { colors, radius, surfaces, ui } from "@/ui/ds";
-import { infoInk } from "@/ui/ds/strategyColors";
-import { Panel, ToneBadge, text } from "@/ui/trainer/kit";
+import { colors, radius, surfaces, ui, Panel } from "@/ui/ds";
+import { ToneBadge, text } from "@/ui/trainer/kit";
 import { RULE_PRESETS, type RulePreset, matchingPreset } from "./presets";
 import { edgeVerdict, formatEdge, houseEdge } from "./houseEdge";
 
@@ -70,7 +69,7 @@ function PresetCard({
       : verdict === "player-advantage" || verdict === "excellent"
         ? colors.correct
         : verdict === "fair"
-          ? infoInk
+          ? surfaces.infoInk
           : verdict === "poor"
             ? colors.primary
             : colors.mistake;

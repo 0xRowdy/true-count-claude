@@ -19,9 +19,8 @@ import { StyleSheet, Text, View } from "react-native";
 import { getCountingSystem } from "@/engine/counting";
 import type { CountCheckResult } from "@/drills/counting";
 import type { TrueCountResult } from "@/drills/trueCount";
-import { CoachNote, PlayingCard, colors, radius, ui } from "@/ui/ds";
-import { infoInk } from "@/ui/ds/strategyColors";
-import { Group, Panel, StatRow, signColor, text } from "@/ui/trainer/kit";
+import { CoachNote, PlayingCard, colors, radius, ui, surfaces, Panel } from "@/ui/ds";
+import { Group, StatRow, signColor, text } from "@/ui/trainer/kit";
 import {
   ROUNDING_NAME,
   ROUNDING_SHORT,
@@ -279,7 +278,7 @@ const styles = StyleSheet.create({
   mono: { ...NUM, fontFamily: ui(15, 600).fontFamily, color: colors.foreground },
   muted: text.muted,
   note: text.note,
-  refusal: { ...ui(13, 400, { lineHeight: 19 }), color: infoInk },
+  refusal: { ...ui(13, 400, { lineHeight: 19 }), color: surfaces.infoInk },
   trail: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   trailStep: { alignItems: "center", gap: 3, minWidth: 44 },
   tag: { ...ui(12, 700), ...NUM },

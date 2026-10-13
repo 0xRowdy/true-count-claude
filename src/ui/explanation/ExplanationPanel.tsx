@@ -39,19 +39,18 @@ import type {
   HandSnapshot,
   InsuranceExplanation,
 } from "@/drills/explanation";
-import { CoachNote, colors, radius, ui } from "@/ui/ds";
-import { infoInk } from "@/ui/ds/strategyColors";
+import { CoachNote, type CoachVariant, colors, radius, ui, surfaces, Panel } from "@/ui/ds";
 import { upcardLabel } from "@/ui/rules/chartChanges";
 import { CardFan } from "@/ui/trainer/Felt";
-import { Group, Panel, text } from "@/ui/trainer/kit";
+import { Group, text } from "@/ui/trainer/kit";
 import { EvLadder, TONE_COLOR } from "./EvLadder";
 import { GoverningCellChart } from "./GoverningCellChart";
 import { IndexScale } from "./IndexScale";
 import {
   type ExplanationVerdict,
   type IndexView,
+  type TierTone,
   type VerdictView,
-  cellView,
   closeness,
   countView,
   dealerOddsView,
@@ -132,16 +131,7 @@ export function DecisionExplanationPanel({
         <Text style={styles.handTitle}>{handTitle(explanation)}</Text>
       )}
 
-      {verdict ? (
-        <VerdictBox view={decisionVerdict(explanation, verdict)} />
-      ) : (
-        <CoachNote
-          variant="hint"
-          title={handTitle(explanation)}
-          body={cellView(explanation).sentence}
-          width="100%"
-        />
-      )}
+      {verdict ? <VerdictBox view={decisionVerdict(explanation, verdict)} /> : null}
 
       <Section title="Every legal action" subtitle="Expected result per bet, for this exact shoe">
         {rows.length > 0 ? (
@@ -313,16 +303,26 @@ function HandHeader({
 }
 
 /**
- * The verdict as the dealer's coach note (the design's Coach Note, p3Ojh3): a good call in
- * green, a mistake in orange, with what it cost and what it was graded against.
+ * The verdict as the dealer's coach note (the design's Coach Note, p3Ojh3), toned as the verdict
+ * is: a good call in green, a near-tie or close miss as the blue information note — a coin flip
+ * is information, not a blunder — and a clear mistake in orange. Then what it cost and what it
+ * was graded against.
  */
+const VERDICT_NOTE: Readonly<Record<TierTone, { variant: CoachVariant; kind: string }>> = {
+  good: { variant: "good", kind: "Good call" },
+  info: { variant: "hint", kind: "Close call" },
+  warn: { variant: "hint", kind: "Close call" },
+  bad: { variant: "mistake", kind: "Here is the miss" },
+};
+
 function VerdictBox({ view }: { view: VerdictView }) {
   const body = [view.detail, view.standard].filter((line): line is string => !!line).join(" ");
+  const note = VERDICT_NOTE[view.tone];
   return (
     <View accessibilityRole="summary">
       <CoachNote
-        variant={view.correct ? "good" : "mistake"}
-        kind={view.correct ? "Good call" : "Here is the miss"}
+        variant={note.variant}
+        kind={note.kind}
         title={view.headline}
         body={body}
         width="100%"
@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
   mono: { ...NUM, fontFamily: ui(15, 600).fontFamily },
   muted: text.muted,
   note: text.note,
-  refusal: { ...ui(13, 400, { lineHeight: 19 }), color: infoInk },
+  refusal: { ...ui(13, 400, { lineHeight: 19 }), color: surfaces.infoInk },
   countBlock: { gap: 4 },
   indexBlock: { gap: 8 },
   bullets: { gap: 6 },

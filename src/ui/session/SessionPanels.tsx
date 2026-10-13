@@ -19,9 +19,9 @@ import { StyleSheet, Text, View } from "react-native";
 import type { DrillId } from "@/drills/types";
 import type { Session, SessionStats, SessionSummary } from "@/state";
 import { DRILL_HREF } from "@/ui/drills/DrillsHub";
-import { colors, radius, ui } from "@/ui/ds";
+import { colors, radius, ui, Panel } from "@/ui/ds";
 import { formatChips, formatNet } from "@/ui/table/format";
-import { ActionButton, Panel, StatRow, ToneBadge, signColor, text } from "@/ui/trainer/kit";
+import { ActionButton, StatRow, ToneBadge, signColor, text } from "@/ui/trainer/kit";
 import {
   NO_VALUE,
   bankrollTopUp,

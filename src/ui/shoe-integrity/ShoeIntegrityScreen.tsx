@@ -66,11 +66,11 @@ import { RankTable } from "./RankTable";
 import { SeedPanel } from "./SeedPanel";
 import { ZeroSumCheckPanel } from "./ZeroSumCheckPanel";
 import Pause from "lucide-react-native/icons/pause";
+import { Panel } from "@/ui/ds";
 import {
   ActionButton,
   Choice,
   PageHeader,
-  Panel,
   SecondaryButton,
   StatCards,
   TrainerPage,
@@ -274,105 +274,6 @@ export function ShoeIntegrityScreen({ session: played }: ShoeIntegrityScreenProp
 
   const [wide, onLayout] = useWide(1100);
 
-  const proofs = (
-    <>
-      <ZeroSumCheckPanel
-        check={check}
-        points={points}
-        range={range}
-        totalCards={shoe.cards.length}
-        cutIndex={shoe.cutIndex}
-        {...(trueCountValue === undefined ? {} : { trueCount: trueCountValue })}
-        {...(keyCountValue === undefined ? {} : { keyCount: keyCountValue })}
-        controls={
-          <ShoeControls
-            running={running}
-            exhausted={exhausted}
-            cutCardReached={isCutCardReached(shoe)}
-            dealtCount={shoe.dealtCount}
-            onDeal={dealCards}
-            onDealToCutCard={dealToCutCard}
-            onRunOut={() => setRunning(true)}
-            onStop={() => setRunning(false)}
-            onReset={() => loadSeed(shoe.seed)}
-          />
-        }
-      />
-      <RankTable
-        remaining={remaining}
-        dealt={dealtByRank}
-        tags={system.tags}
-        systemName={system.name}
-        expectedPerRank={rules.decks * 4}
-        intact={intact}
-      />
-      <DealtHistoryPanel
-        cards={history}
-        system={system}
-        expanded={historyExpanded}
-        onToggleExpanded={() => setHistoryExpanded((current) => !current)}
-      />
-    </>
-  );
-  const tools = (
-    <>
-      <SeedPanel
-        shoe={shoe}
-        rules={rules}
-        seedText={seedText}
-        onSeedTextChange={(next) => {
-          setSeedText(next);
-          setSeedNotice(undefined);
-        }}
-        {...(canLoadSeed ? { onLoadSeed: () => loadSeed(typedSeed) } : {})}
-        onNewSeed={() => loadSeed(randomSeed())}
-        onCopySeed={onCopySeed}
-        {...(seedNotice ? { notice: seedNotice } : {})}
-      />
-      <Panel title="Counting System">
-        <Choice
-          options={SYSTEM_OPTIONS}
-          value={systemId}
-          onChange={setSystemId}
-          accessibilityLabel="Counting System"
-        />
-        <Text style={text.note}>{system.source}</Text>
-      </Panel>
-      <ExpectationBandPanel
-        handsText={handsValue}
-        netUnitsText={netUnitsValue}
-        onHandsChange={(next) => {
-          setTypedResult(true);
-          setHandsText(next);
-        }}
-        onNetUnitsChange={(next) => {
-          setTypedResult(true);
-          setNetUnitsText(next);
-        }}
-        band={band}
-        {...(readingPlay
-          ? { source: "These are the hands you actually played, in your own betting unit." }
-          : {})}
-        {...(played !== undefined && typedResult
-          ? {
-              onUseRecorded: () => {
-                setTypedResult(false);
-              },
-            }
-          : {})}
-      />
-      <ExportPanel
-        fileName={fileName}
-        {...(preview === undefined ? {} : { contents: preview })}
-        onExport={onExport}
-        onCopy={onCopyReport}
-        {...(outcome ? { outcome } : {})}
-        previewOpen={preview !== undefined}
-        onTogglePreview={onTogglePreview}
-      />
-    </>
-  );
-
   return (
     <TrainerPage>
       <PageHeader
@@ -421,106 +322,103 @@ export function ShoeIntegrityScreen({ session: played }: ShoeIntegrityScreenProp
         ]}
       />
 
+      {/* One tree at every width, so nothing remounts when the layout changes: the seed and
+          system come first on a phone and sit in the right-hand column on a desktop. */}
       <View onLayout={onLayout} style={wide ? styles.columns : styles.stack}>
-        {wide ? (
-          <>
-            <View style={styles.main}>{proofs}</View>
-            <View style={styles.side}>{tools}</View>
-          </>
-        ) : (
-          <>
-            <SeedPanel
-              shoe={shoe}
-              rules={rules}
-              seedText={seedText}
-              onSeedTextChange={(next) => {
-                setSeedText(next);
-                setSeedNotice(undefined);
-              }}
-              {...(canLoadSeed ? { onLoadSeed: () => loadSeed(typedSeed) } : {})}
-              onNewSeed={() => loadSeed(randomSeed())}
-              onCopySeed={onCopySeed}
-              {...(seedNotice ? { notice: seedNotice } : {})}
+        <View style={wide ? styles.side : styles.stack}>
+          <SeedPanel
+            shoe={shoe}
+            rules={rules}
+            seedText={seedText}
+            onSeedTextChange={(next) => {
+              setSeedText(next);
+              setSeedNotice(undefined);
+            }}
+            {...(canLoadSeed ? { onLoadSeed: () => loadSeed(typedSeed) } : {})}
+            onNewSeed={() => loadSeed(randomSeed())}
+            onCopySeed={onCopySeed}
+            {...(seedNotice ? { notice: seedNotice } : {})}
+          />
+          <Panel title="Counting System">
+            <Choice
+              options={SYSTEM_OPTIONS}
+              value={systemId}
+              onChange={setSystemId}
+              accessibilityLabel="Counting System"
             />
-            <Panel title="Counting System">
-              <Choice
-                options={SYSTEM_OPTIONS}
-                value={systemId}
-                onChange={setSystemId}
-                accessibilityLabel="Counting System"
+            <Text style={text.note}>{system.source}</Text>
+          </Panel>
+        </View>
+        <View style={wide ? styles.main : styles.stack}>
+          <ZeroSumCheckPanel
+            check={check}
+            points={points}
+            range={range}
+            totalCards={shoe.cards.length}
+            cutIndex={shoe.cutIndex}
+            {...(trueCountValue === undefined ? {} : { trueCount: trueCountValue })}
+            {...(keyCountValue === undefined ? {} : { keyCount: keyCountValue })}
+            controls={
+              <ShoeControls
+                running={running}
+                exhausted={exhausted}
+                cutCardReached={isCutCardReached(shoe)}
+                dealtCount={shoe.dealtCount}
+                onDeal={dealCards}
+                onDealToCutCard={dealToCutCard}
+                onRunOut={() => setRunning(true)}
+                onStop={() => setRunning(false)}
+                onReset={() => loadSeed(shoe.seed)}
               />
-              <Text style={text.note}>{system.source}</Text>
-            </Panel>
-            <ZeroSumCheckPanel
-              check={check}
-              points={points}
-              range={range}
-              totalCards={shoe.cards.length}
-              cutIndex={shoe.cutIndex}
-              {...(trueCountValue === undefined ? {} : { trueCount: trueCountValue })}
-              {...(keyCountValue === undefined ? {} : { keyCount: keyCountValue })}
-              controls={
-                <ShoeControls
-                  running={running}
-                  exhausted={exhausted}
-                  cutCardReached={isCutCardReached(shoe)}
-                  dealtCount={shoe.dealtCount}
-                  onDeal={dealCards}
-                  onDealToCutCard={dealToCutCard}
-                  onRunOut={() => setRunning(true)}
-                  onStop={() => setRunning(false)}
-                  onReset={() => loadSeed(shoe.seed)}
-                />
-              }
-            />
-            <RankTable
-              remaining={remaining}
-              dealt={dealtByRank}
-              tags={system.tags}
-              systemName={system.name}
-              expectedPerRank={rules.decks * 4}
-              intact={intact}
-            />
-            <ExpectationBandPanel
-              handsText={handsValue}
-              netUnitsText={netUnitsValue}
-              onHandsChange={(next) => {
-                setTypedResult(true);
-                setHandsText(next);
-              }}
-              onNetUnitsChange={(next) => {
-                setTypedResult(true);
-                setNetUnitsText(next);
-              }}
-              band={band}
-              {...(readingPlay
-                ? { source: "These are the hands you actually played, in your own betting unit." }
-                : {})}
-              {...(played !== undefined && typedResult
-                ? {
-                    onUseRecorded: () => {
-                      setTypedResult(false);
-                    },
-                  }
-                : {})}
-            />
-            <DealtHistoryPanel
-              cards={history}
-              system={system}
-              expanded={historyExpanded}
-              onToggleExpanded={() => setHistoryExpanded((current) => !current)}
-            />
-            <ExportPanel
-              fileName={fileName}
-              {...(preview === undefined ? {} : { contents: preview })}
-              onExport={onExport}
-              onCopy={onCopyReport}
-              {...(outcome ? { outcome } : {})}
-              previewOpen={preview !== undefined}
-              onTogglePreview={onTogglePreview}
-            />
-          </>
-        )}
+            }
+          />
+          <RankTable
+            remaining={remaining}
+            dealt={dealtByRank}
+            tags={system.tags}
+            systemName={system.name}
+            expectedPerRank={rules.decks * 4}
+            intact={intact}
+          />
+          <ExpectationBandPanel
+            handsText={handsValue}
+            netUnitsText={netUnitsValue}
+            onHandsChange={(next) => {
+              setTypedResult(true);
+              setHandsText(next);
+            }}
+            onNetUnitsChange={(next) => {
+              setTypedResult(true);
+              setNetUnitsText(next);
+            }}
+            band={band}
+            {...(readingPlay
+              ? { source: "These are the hands you actually played, in your own betting unit." }
+              : {})}
+            {...(played !== undefined && typedResult
+              ? {
+                  onUseRecorded: () => {
+                    setTypedResult(false);
+                  },
+                }
+              : {})}
+          />
+          <DealtHistoryPanel
+            cards={history}
+            system={system}
+            expanded={historyExpanded}
+            onToggleExpanded={() => setHistoryExpanded((current) => !current)}
+          />
+          <ExportPanel
+            fileName={fileName}
+            {...(preview === undefined ? {} : { contents: preview })}
+            onExport={onExport}
+            onCopy={onCopyReport}
+            {...(outcome ? { outcome } : {})}
+            previewOpen={preview !== undefined}
+            onTogglePreview={onTogglePreview}
+          />
+        </View>
       </View>
 
       <Text style={styles.footer}>
@@ -611,7 +509,8 @@ function randomSeed(): number {
 
 const styles = StyleSheet.create({
   stack: { gap: 24 },
-  columns: { flexDirection: "row", alignItems: "flex-start", gap: 24 },
+  // Side column first in the tree, drawn on the right.
+  columns: { flexDirection: "row-reverse", alignItems: "flex-start", gap: 24 },
   main: { flexGrow: 1.5, flexShrink: 1, flexBasis: 0, minWidth: 0, gap: 24 },
   side: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0, maxWidth: 520, gap: 24 },
   footer: { ...text.small, textAlign: "center" },

@@ -17,9 +17,9 @@ import { Link } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { type LoadResult, type SessionStats, type SessionSummary, aggregateStats } from "@/state";
 import { ReportBugButton } from "@/ui/bug-report/ReportBugButton";
+import { Panel } from "@/ui/ds";
 import {
   PageHeader,
-  Panel,
   SecondaryButton,
   StatCards,
   StatRow,
@@ -152,22 +152,18 @@ export function SessionScreen() {
       />
 
       <View onLayout={onLayout} style={wide ? styles.columns : styles.stack}>
-        {wide ? (
-          <>
-            <View style={styles.column}>{playColumn}</View>
-            <View style={styles.column}>{bandColumn}</View>
-          </>
-        ) : (
-          <>
-            {playColumn}
-            {bandColumn}
-          </>
-        )}
+        {/* One tree at every width, so nothing remounts when the layout changes. */}
+        <View style={wide ? styles.column : styles.stack}>{playColumn}</View>
+        <View style={wide ? styles.column : styles.stack}>{bandColumn}</View>
       </View>
 
       <Panel
         title="History"
-        aside={summaries.length > 0 ? `${summaries.length} sessions` : undefined}
+        aside={
+          summaries.length > 0
+            ? `${summaries.length} session${summaries.length === 1 ? "" : "s"}`
+            : undefined
+        }
       >
         {summaries.length === 0 ? (
           <Text style={text.note}>

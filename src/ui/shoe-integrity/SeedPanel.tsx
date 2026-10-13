@@ -17,8 +17,8 @@ import type { Shoe } from "@/engine/shoe";
 import { cardsRemaining, decksRemaining, isCutCardReached } from "@/engine/shoe";
 import Copy from "lucide-react-native/icons/copy";
 import Shuffle from "lucide-react-native/icons/shuffle";
-import { colors, display, ui } from "@/ui/ds";
-import { ActionButton, Panel, SecondaryButton, StatRow, inputStyle, text } from "@/ui/trainer/kit";
+import { colors, display, ui, Panel } from "@/ui/ds";
+import { ActionButton, SecondaryButton, StatRow, inputStyle, text } from "@/ui/trainer/kit";
 
 export function SeedPanel({
   shoe,

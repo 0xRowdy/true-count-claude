@@ -36,12 +36,11 @@ import {
   trueCountReport,
 } from "@/drills/trueCount";
 import { getDrill } from "@/drills/types";
-import { display, surfaces, ui, colors } from "@/ui/ds";
+import { display, surfaces, ui, colors, Panel } from "@/ui/ds";
 import { Felt, FeltLabel } from "@/ui/trainer/Felt";
 import {
   ActionButton,
   Choice,
-  Panel,
   StatCards,
   StatRow,
   ToneBadge,

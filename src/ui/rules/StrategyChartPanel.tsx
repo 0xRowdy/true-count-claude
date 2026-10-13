@@ -24,9 +24,9 @@ import {
   type DealerUpcard,
   type StrategyChart,
 } from "@/engine/strategy";
-import { Tabs, colors, radius, ui } from "@/ui/ds";
+import { Tabs, colors, radius, ui, Panel } from "@/ui/ds";
 import { strategyColors, type StrategySwatch } from "@/ui/ds/strategyColors";
-import { Panel, ToneBadge, text } from "@/ui/trainer/kit";
+import { ToneBadge, text } from "@/ui/trainer/kit";
 import {
   CHART_CODE_LABEL,
   CHART_CODE_TEXT,
@@ -265,6 +265,8 @@ export function StrategyChartGrid({
                         { backgroundColor: palette.bg },
                         dimmed && styles.dimmedCell,
                         moved && styles.movedCell,
+                        // Gold on the amber Stand swatch would vanish: outline it in ink there.
+                        moved && CODE_SWATCH[code] === "stand" && styles.movedOnAmber,
                         target && styles.targetCell,
                       ]}
                     >
@@ -379,16 +381,18 @@ const styles = StyleSheet.create({
   headerText: { ...ui(13, 700), color: colors.foreground },
   cellText: { ...ui(12, 800) },
   movedCell: { borderColor: colors.primary },
+  movedOnAmber: { borderColor: colors.ink },
+  // Gold with an ink ring, so it reads on every swatch, amber included.
   movedDot: {
     position: "absolute",
     top: 2,
     left: 2,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
     backgroundColor: colors.primary,
-    borderWidth: 1.5,
-    borderColor: colors.card,
+    borderWidth: 2,
+    borderColor: colors.ink,
   },
   litLabel: { backgroundColor: colors.muted, borderRadius: 5 },
   litLabelText: { color: colors.primary },

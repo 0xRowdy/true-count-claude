@@ -46,11 +46,10 @@ import {
 import type { DrillAction } from "@/drills/explanation";
 import { getDrill } from "@/drills/types";
 import { ExplanationPanel } from "@/ui/explanation/ExplanationPanel";
-import { colors, display, surfaces, ui } from "@/ui/ds";
+import { colors, display, surfaces, ui, Panel } from "@/ui/ds";
 import { CardFan, Felt, FeltLabel } from "@/ui/trainer/Felt";
 import {
   ActionButton,
-  Panel,
   SecondaryButton,
   StatCards,
   StatRow,

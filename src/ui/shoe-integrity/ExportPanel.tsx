@@ -14,8 +14,8 @@
 
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import Download from "lucide-react-native/icons/download";
-import { colors, radius, ui } from "@/ui/ds";
-import { ActionButton, Panel, SecondaryButton, text } from "@/ui/trainer/kit";
+import { colors, radius, ui, Panel } from "@/ui/ds";
+import { ActionButton, SecondaryButton, text } from "@/ui/trainer/kit";
 
 export function ExportPanel({
   fileName,
