@@ -12,6 +12,9 @@ const ROUTES = [
   "/shoe-integrity",
   "/session",
   "/design-system",
+  "/lobby",
+  "/progress",
+  "/progress?demo=1",
 ];
 const HYDRATION = /Minified React error #(418|423|425)|hydrat/i;
 
