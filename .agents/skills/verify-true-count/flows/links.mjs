@@ -47,12 +47,16 @@ export default async ({ page, url, shot, log, check }) => {
   }
   if (broken.length) await shot("broken-link");
 
-  // The fallback really is detected, so a clean run above means something.
-  const missing = await page.goto(url("/no-such-route"), { waitUntil: "networkidle" });
+  // The fallback really is detected, so a clean run above means something. A separate tab, so
+  // its intended 404 is not reported among this flow's console errors.
+  const probe = await page.context().browser().newPage();
+  const missing = await probe.goto(url("/no-such-route"), { waitUntil: "networkidle" });
   check(
-    missing?.status() === 404 && NOT_FOUND.test(await page.evaluate(() => document.body.innerText)),
+    missing?.status() === 404 &&
+      NOT_FOUND.test(await probe.evaluate(() => document.body.innerText)),
     "an unknown path is reported as not found (the check can fail)",
   );
+  await probe.close();
 
   check(
     broken.length === 0,
