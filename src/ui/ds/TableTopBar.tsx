@@ -12,6 +12,7 @@ export function TableTopBar({
   subtitle,
   bankroll,
   bankrollLabel = "Practice",
+  bankrollColor = colors.primary,
   onBack,
   onBook,
   bookLabel = "Rules and strategy",
@@ -22,6 +23,8 @@ export function TableTopBar({
   /** Practice chips; omitted until known (e.g. read from storage after mount). */
   bankroll?: number;
   bankrollLabel?: string;
+  /** The amount's colour: gold by default, `--correct` while a payout lands (w7wLdL). */
+  bankrollColor?: string;
   onBack?: () => void;
   onBook?: () => void;
   bookLabel?: string;
@@ -55,7 +58,7 @@ export function TableTopBar({
           <Text style={[ui(9, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
             {bankrollLabel.toUpperCase()}
           </Text>
-          <Text style={[ui(16, 700), { color: colors.primary }]}>{formatMoney(bankroll)}</Text>
+          <Text style={[ui(16, 700), { color: bankrollColor }]}>{formatMoney(bankroll)}</Text>
         </View>
       ) : null}
       <Pressable

@@ -160,10 +160,15 @@ export function syncCountingSystem(session: Session, table: PlayTable, at: numbe
 // Decisions
 // ---------------------------------------------------------------------------
 
-/** What the user just pressed. Insurance is a Decision but not a play on the hand. */
+/**
+ * What the user just pressed. Insurance is a Decision but not a play on the hand.
+ *
+ * `playedInstead` is set when the coach caught the choice and the player took it back: the
+ * Decision is scored on what they chose, and the cards follow the replacement.
+ */
 export type ObservedAction =
-  | { readonly kind: "play"; readonly action: Action }
-  | { readonly kind: "insurance"; readonly take: boolean };
+  | { readonly kind: "play"; readonly action: Action; readonly playedInstead?: Action }
+  | { readonly kind: "insurance"; readonly take: boolean; readonly playedInstead?: boolean };
 
 /**
  * Buffers one Decision, taken with the table as it stood *before* the action was applied —
@@ -220,6 +225,7 @@ function describeDecision(
     correctAction: verdict.correctAction,
     basicStrategyAction: verdict.basicStrategyAction,
     verdict: verdict.actionTaken === verdict.correctAction ? "correct" : "incorrect",
+    ...replacement(action),
     count: {
       system: table.system.name,
       runningCount: readout.running,
@@ -230,6 +236,13 @@ function describeDecision(
     },
     at,
   };
+}
+
+/** The `playedInstead` field of a taken-back Decision, or nothing for an ordinary one. */
+function replacement(action: ObservedAction): { playedInstead?: DecisionAction } {
+  if (action.playedInstead === undefined) return {};
+  if (action.kind === "play") return { playedInstead: action.playedInstead };
+  return { playedInstead: action.playedInstead ? "insurance" : "decline-insurance" };
 }
 
 interface DecisionVerdict {
