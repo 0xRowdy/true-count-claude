@@ -7,8 +7,8 @@
  * clock have answered (and always in the prerendered HTML) the page shows its loading state.
  */
 
-import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Pressable, StyleSheet, Text, View, type Role } from "react-native";
 import { GAMES, GAME_NAMES } from "@/state/profile";
 import {
   type Mastery,
@@ -127,11 +127,34 @@ export function ProgressScreen({ demo }: { demo: boolean }) {
   );
 }
 
+/** ARIA role for a checkable menu item; React Native's `Role` type predates it, RN Web passes it through. */
+const MENU_ITEM_RADIO = "menuitemradio" as Role;
+
 function RangePicker({ value, onChange }: { value: RangeId; onChange: (r: RangeId) => void }) {
   const [open, setOpen] = useState(false);
+  const wrap = useRef<View>(null);
   const label = RANGES.find((r) => r.id === value)!.label;
+
+  // Web: Escape or a press outside the picker closes the menu.
+  useEffect(() => {
+    if (!open || typeof document === "undefined") return;
+    const node = wrap.current as unknown as { contains?: (n: unknown) => boolean } | null;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    const onDown = (e: PointerEvent) => {
+      if (!node?.contains?.(e.target)) setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onDown);
+    };
+  }, [open]);
+
   return (
-    <View style={styles.rangeWrap}>
+    <View ref={wrap} style={styles.rangeWrap}>
       <Button
         variant="secondary"
         size="sm"
@@ -146,7 +169,7 @@ function RangePicker({ value, onChange }: { value: RangeId; onChange: (r: RangeI
           {RANGES.map((r) => (
             <Pressable
               key={r.id}
-              role="menuitem"
+              role={MENU_ITEM_RADIO}
               accessibilityLabel={r.label}
               aria-checked={r.id === value}
               onPress={() => {

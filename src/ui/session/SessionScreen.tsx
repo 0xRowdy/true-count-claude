@@ -14,25 +14,36 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "expo-router";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { type LoadResult, type SessionStats, type SessionSummary, aggregateStats } from "@/state";
 import { ReportBugButton } from "@/ui/bug-report/ReportBugButton";
-import { Panel, Screen, SecondaryButton, StatRow } from "@/ui/primitives";
+import { Panel } from "@/ui/ds";
+import {
+  PageHeader,
+  SecondaryButton,
+  StatCards,
+  StatRow,
+  TrainerPage,
+  text,
+  useWide,
+} from "@/ui/trainer/kit";
 import { ExpectationBandPanel } from "@/ui/shoe-integrity/ExpectationBandPanel";
 import { expectationBand } from "@/ui/shoe-integrity/integrity";
-import { formatChips } from "@/ui/table/format";
-import { colors, spacing, type } from "@/ui/theme";
+import { formatChips, formatNet } from "@/ui/table/format";
 import { useDrillSessions } from "@/ui/drills/drillSessionStore";
 import {
   LatestDrillPanel,
   SessionControlBar,
   SessionHistoryRow,
+  SessionHistoryTable,
   SessionStatsPanel,
 } from "./SessionPanels";
 import {
   EMPTY_STATS,
   NO_VALUE,
   bettingUnit,
+  formatRate,
+  formatRatio,
   latestDrillSummary,
   sessionResultFor,
 } from "./sessionFormat";
@@ -68,77 +79,115 @@ export function SessionScreen() {
     };
   }, [signature]);
 
+  const [wide, onLayout] = useWide(1000);
+
+  const playColumn = (
+    <>
+      <SessionStatsPanel
+        session={overview.session}
+        stats={overview.stats}
+        title="This Play session"
+      />
+      <LatestDrillPanel summary={latestDrill} />
+      <SessionStatsPanel
+        session={null}
+        stats={lifetime}
+        title="Every session on this device"
+        showDrillRecords
+      />
+    </>
+  );
+  const bandColumn = <SessionExpectation stats={overview.stats} />;
+
   return (
-    <ScrollView
-      style={styles.page}
-      contentContainerStyle={styles.pageContent}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Screen>
-        <Panel>
-          <Text style={styles.title}>Statistics</Text>
-          <Text style={styles.lede}>
-            Everything here is computed from hands you actually played, and every rate is shown next
-            to the counts it was divided from. A rate with nothing to divide reads {NO_VALUE} — a
-            fresh Session has no accuracy, not 0% accuracy.
-          </Text>
-          <View style={styles.headerActions}>
+    <TrainerPage>
+      <PageHeader
+        eyebrow="Trainer · Statistics"
+        title="Statistics"
+        lede={`Everything here is computed from hands you actually played, and every rate is shown next to the counts it was divided from. A rate with nothing to divide reads ${NO_VALUE} — a fresh Session has no accuracy, not 0% accuracy.`}
+        actions={
+          <>
+            {/* No Shoe of its own: the report reads the Session's current Shoe off its log. */}
+            <ReportBugButton screen="Statistics" />
             <Link href="/play" style={styles.link}>
               Back to the table →
             </Link>
-            {/* No Shoe of its own: the report reads the Session's current Shoe off its log. */}
-            <ReportBugButton screen="Statistics" />
-          </View>
-        </Panel>
+          </>
+        }
+      />
 
-        <SessionControlBar
-          session={overview.session}
-          recording={overview.recording}
-          error={overview.error}
-          onEnd={() => overview.end()}
-          onStartNew={overview.dismiss}
-        />
+      <SessionControlBar
+        session={overview.session}
+        recording={overview.recording}
+        error={overview.error}
+        onEnd={() => overview.end()}
+        onStartNew={overview.dismiss}
+      />
 
-        <SessionStatsPanel
-          session={overview.session}
-          stats={overview.stats}
-          title="This Play session"
-        />
+      {/* Every session on this device, at a glance — the Progress page's stat cards. */}
+      <StatCards
+        cards={[
+          {
+            label: "Basic Strategy accuracy",
+            value: formatRate(lifetime.basicStrategyAccuracy),
+            delta: `${formatRatio(lifetime.correctDecisions, lifetime.decisionsMade)} decisions`,
+          },
+          {
+            label: "Counting accuracy",
+            value: formatRate(lifetime.countingAccuracy),
+            delta: `${formatRatio(lifetime.correctCountChecks, lifetime.countChecks)} checks`,
+          },
+          {
+            label: "Hands played",
+            value: String(lifetime.handsPlayed),
+            delta: `${summaries.length} session${summaries.length === 1 ? "" : "s"} recorded`,
+          },
+          {
+            label: "Net result",
+            value: formatNet(lifetime.netResult),
+            delta: "practice chips, all sessions",
+            tone: lifetime.netResult > 0 ? "good" : lifetime.netResult < 0 ? "bad" : "neutral",
+          },
+        ]}
+      />
 
-        <SessionExpectation stats={overview.stats} />
+      <View onLayout={onLayout} style={wide ? styles.columns : styles.stack}>
+        {/* One tree at every width, so nothing remounts when the layout changes. */}
+        <View style={wide ? styles.column : styles.stack}>{playColumn}</View>
+        <View style={wide ? styles.column : styles.stack}>{bandColumn}</View>
+      </View>
 
-        <LatestDrillPanel summary={latestDrill} />
+      <Panel
+        title="History"
+        aside={
+          summaries.length > 0
+            ? `${summaries.length} session${summaries.length === 1 ? "" : "s"}`
+            : undefined
+        }
+      >
+        {summaries.length === 0 ? (
+          <Text style={text.note}>
+            No Sessions recorded yet. One opens the first time you deal.
+          </Text>
+        ) : wide ? (
+          <SessionHistoryTable summaries={summaries} />
+        ) : (
+          summaries.map((summary) => <SessionHistoryRow key={summary.id} summary={summary} />)
+        )}
+        {unreadable.length > 0 ? (
+          <Text style={text.warn}>
+            {unreadable.length} stored record{unreadable.length === 1 ? "" : "s"} could not be read
+            and {unreadable.length === 1 ? "is" : "are"} left out of these totals:{" "}
+            {unreadable.map((entry) => entry.reason).join("; ")}
+          </Text>
+        ) : null}
+      </Panel>
 
-        <SessionStatsPanel
-          session={null}
-          stats={lifetime}
-          title="Every session on this device"
-          showDrillRecords
-        />
-
-        <Panel title="History">
-          {summaries.length === 0 ? (
-            <Text style={styles.note}>
-              No Sessions recorded yet. One opens the first time you deal.
-            </Text>
-          ) : (
-            summaries.map((summary) => <SessionHistoryRow key={summary.id} summary={summary} />)
-          )}
-          {unreadable.length > 0 ? (
-            <Text style={styles.warning}>
-              {unreadable.length} stored record{unreadable.length === 1 ? "" : "s"} could not be
-              read and {unreadable.length === 1 ? "is" : "are"} left out of these totals:{" "}
-              {unreadable.map((entry) => entry.reason).join("; ")}
-            </Text>
-          ) : null}
-        </Panel>
-
-        <Text style={styles.footer}>
-          All of this lives on this device and nowhere else. No account, no sync, no network
-          (ADR-0003).
-        </Text>
-      </Screen>
-    </ScrollView>
+      <Text style={styles.footer}>
+        All of this lives on this device and nowhere else. No account, no sync, no network
+        (ADR-0003).
+      </Text>
+    </TrainerPage>
   );
 }
 
@@ -221,27 +270,12 @@ function parseNumber(text: string): number {
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: colors.background },
-  pageContent: { flexGrow: 1, paddingBottom: spacing.xl },
-  group: { gap: spacing.md },
-  title: { ...type.title, color: colors.text },
-  lede: { ...type.body, color: colors.textMuted },
-  note: { ...type.caption, color: colors.textMuted, lineHeight: 18 },
-  warning: { ...type.caption, color: colors.warning, lineHeight: 18 },
-  controls: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.xs },
-  headerActions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-  },
-  link: {
-    ...type.body,
-    color: colors.accent,
-    marginTop: spacing.sm,
-    minHeight: 44,
-    paddingTop: spacing.sm,
-  },
-  footer: { ...type.caption, color: colors.textMuted, textAlign: "center" },
+  stack: { gap: 24 },
+  columns: { flexDirection: "row", alignItems: "flex-start", gap: 24 },
+  column: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0, gap: 24 },
+  group: { gap: 24 },
+  note: text.note,
+  controls: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
+  link: { ...text.link, paddingTop: 0, paddingVertical: 12, paddingHorizontal: 8 },
+  footer: { ...text.small, textAlign: "center" },
 });

@@ -13,8 +13,9 @@
  */
 
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { ActionButton, Panel, SecondaryButton } from "@/ui/primitives";
-import { colors, radius, spacing, type } from "@/ui/theme";
+import Download from "lucide-react-native/icons/download";
+import { colors, radius, ui, Panel } from "@/ui/ds";
+import { ActionButton, SecondaryButton, text } from "@/ui/trainer/kit";
 
 export function ExportPanel({
   fileName,
@@ -46,7 +47,7 @@ export function ExportPanel({
       </Text>
 
       <View style={styles.row}>
-        <ActionButton label="Export report" onPress={onExport} tone="good" />
+        <ActionButton label="Export report" icon={Download} onPress={onExport} tone="good" />
         <SecondaryButton label="Copy report" onPress={onCopy} />
         <SecondaryButton
           label={previewOpen ? "Hide the report" : "Read the report"}
@@ -55,7 +56,7 @@ export function ExportPanel({
       </View>
 
       {outcome ? (
-        <Text style={[styles.outcome, { color: outcome.ok ? colors.accent : colors.warning }]}>
+        <Text style={[styles.outcome, { color: outcome.ok ? colors.correct : colors.primary }]}>
           {outcome.message}
         </Text>
       ) : null}
@@ -77,17 +78,17 @@ export function ExportPanel({
 }
 
 const styles = StyleSheet.create({
-  prose: { ...type.caption, color: colors.textMuted, lineHeight: 19 },
-  row: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  outcome: { ...type.caption },
-  meta: { ...type.mono, fontSize: 11, color: colors.textMuted },
+  prose: text.note,
+  row: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  outcome: { ...ui(13, 500) },
+  meta: { ...ui(12, 500), color: colors.mutedForeground },
   preview: {
     maxHeight: 260,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.sm,
+    borderRadius: radius.md,
     backgroundColor: colors.background,
-    padding: spacing.sm,
+    padding: 12,
   },
-  previewText: { ...type.mono, fontSize: 11, color: colors.textMuted, lineHeight: 16 },
+  previewText: { ...ui(11, 400, { lineHeight: 16 }), color: colors.mutedForeground },
 });

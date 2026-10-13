@@ -36,6 +36,8 @@ export function SegmentedControl<T extends string>({
             accessibilityLabel={o.label}
             aria-checked={on}
             onPress={() => onChange?.(o.value)}
+            // 40pt segments on a 4pt-padded track: the slop makes each one a 44pt target.
+            hitSlop={2}
             style={[styles.segment, on && styles.on]}
           >
             <Text

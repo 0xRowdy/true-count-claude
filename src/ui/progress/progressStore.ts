@@ -15,6 +15,9 @@
  * endProgressSession(id);
  * ```
  *
+ * A programming error (an unknown game or category, a non-finite net) throws synchronously
+ * from these calls and records nothing; the store keeps working.
+ *
  * Hydration: the server snapshot is the fixed loading state and nothing here reads a clock
  * during render, so prerendered pages always show the loading layout.
  */

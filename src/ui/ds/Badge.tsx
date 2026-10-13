@@ -17,19 +17,22 @@ export function Badge({
   icon: Icon = Circle,
   tone = "muted",
   showIcon = true,
+  labelColor,
   style,
 }: {
   label: string;
   icon?: LucideIcon;
   tone?: BadgeTone;
   showIcon?: boolean;
+  /** Label colour when it differs from the tone (the design's foreground label beside a toned icon). */
+  labelColor?: string;
   style?: StyleProp<ViewStyle>;
 }) {
   const fg = TONE[tone];
   return (
     <View style={[styles.badge, style]}>
       {showIcon ? <Icon size={12} color={fg} strokeWidth={2} /> : null}
-      <Text style={[ui(12, 500), { color: fg }]}>{label}</Text>
+      <Text style={[ui(12, 500), { color: labelColor ?? fg }]}>{label}</Text>
     </View>
   );
 }
