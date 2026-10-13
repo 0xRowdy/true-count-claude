@@ -9,7 +9,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { TableAction } from "@/games/craps";
-import { PRACTICE_BANKROLL_START } from "@/state/progress";
 import { bankroll as gameBankroll } from "@/state/progressSelectors";
 import { useProfile } from "@/ui/profile/profileStore";
 import {
@@ -17,6 +16,7 @@ import {
   makeSessionId,
   recordDecision,
   recordHand,
+  resetBankroll,
   startProgressSession,
   useProgressView,
 } from "@/ui/progress/progressStore";
@@ -137,14 +137,7 @@ export function useCrapsGame(seedParam: string | undefined) {
         update(next);
       },
       /** Invariant 6: a bankroll at zero always offers a one-tap reset in place. */
-      resetBankroll() {
-        if (stored === undefined) return;
-        recordHand({
-          game: "craps",
-          net: PRACTICE_BANKROLL_START - stored,
-          strategyName: "Bankroll reset",
-        });
-      },
+      resetBankroll: () => resetBankroll("craps"),
     }),
     [available, coach, stored, update],
   );

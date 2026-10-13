@@ -102,6 +102,7 @@ export default async ({ page, url, shot, log, check }) => {
     ).isVisible(),
     "mistake note suggests odds instead",
   );
+  await page.waitForTimeout(400); // the sheet fades out
   await shot("coach-mistake");
   await button("Take it back").click();
   check(
@@ -175,6 +176,30 @@ export default async ({ page, url, shot, log, check }) => {
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
   check(overflow <= 0, `no horizontal page scroll at 390 wide (overflow ${overflow}px)`);
+
+  // Invariant 6: at zero, a one-tap reset in place.
+  await page.evaluate(() =>
+    localStorage.setItem(
+      "tableside/progress/v1",
+      JSON.stringify({
+        version: 1,
+        decisions: [],
+        hands: [],
+        sessions: [],
+        bankrollBase: { craps: -2000 },
+      }),
+    ),
+  );
+  await page.goto(url("/games/craps?seed=337"), { waitUntil: "networkidle" });
+  await visible(page.getByLabel("Practice bankroll $0")).waitFor();
+  await spot("Pass line").click();
+  check(
+    await visible(page.getByText("You're out of practice chips.")).isVisible(),
+    "no bet at zero",
+  );
+  await button("Reset bankroll").click();
+  await visible(page.getByLabel("Practice bankroll $2,000")).waitFor();
+  log("bankroll reset to $2,000");
 
   // Desktop: the table sits in a phone-width column.
   await page.setViewportSize({ width: 1440, height: 1100 });
