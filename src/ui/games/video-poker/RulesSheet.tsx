@@ -2,7 +2,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { MAX_COINS, getPayTable, type PayTableId } from "@/games/video-poker";
 import { colors, radius, ui } from "@/ui/ds";
 import { VP_GAMES, houseEdgeText, returnText } from "./model";
-import { X } from "./icons";
+import { X } from "@/ui/ds/icons";
 
 const GAME_NOTES: Record<PayTableId, string> = {
   "job-9-6": "Full pay: 9 for a full house, 6 for a flush. Pays from a pair of Jacks.",

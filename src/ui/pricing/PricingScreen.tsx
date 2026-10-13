@@ -2,12 +2,19 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { localIsoDate } from "@/state/profile";
-import { AppShell, Badge, Button, colors, display, radius, ui } from "@/ui/ds";
-import { Check } from "@/ui/ds/icons";
-import { Apple, ChevronDown, ChevronUp, CreditCard, ShieldCheck } from "@/ui/marketing/icons";
-import { Notice } from "@/ui/marketing/Notice";
-import { marketing } from "@/ui/marketing/surfaces";
-import { Tag } from "@/ui/marketing/Tag";
+import {
+  AppShell,
+  Badge,
+  Button,
+  colors,
+  display,
+  marketing,
+  Notice,
+  radius,
+  Tag,
+  ui,
+} from "@/ui/ds";
+import { Apple, Check, ChevronDown, ChevronUp, CreditCard, ShieldCheck } from "@/ui/ds/icons";
 import { order, planView, yearlySaving, type Billing, type PlanId } from "./pricing";
 
 const PLANS: ReadonlyArray<{ id: PlanId; name: string; features: readonly string[] }> = [

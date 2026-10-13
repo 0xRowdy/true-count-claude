@@ -64,7 +64,7 @@ import {
   Lock,
   ShieldCheck,
   TrendingDown,
-} from "./icons";
+} from "@/ui/ds/icons";
 import { AccuracyBar, BankrollChart, LevelRing, LinkBox, SampleBanner, WeeklyBars } from "./parts";
 import { useChipBalance, useProgressView } from "./progressStore";
 

@@ -4,11 +4,11 @@
  * colours reuse the design's own tokens, as the frame does.
  */
 
-import { colors } from "@/ui/ds";
+import { colors, surfaces } from "@/ui/ds";
 
 export const baccaratPalette = {
   /** Felt: radial glow (centre, 30% down) fading to `--felt-deep`. */
-  feltGlow: "#22704F",
+  feltGlow: surfaces.feltGlow,
   feltDeep: colors.feltDeep,
   /** Bead road fills. */
   beadPlayer: colors.coachAccent,

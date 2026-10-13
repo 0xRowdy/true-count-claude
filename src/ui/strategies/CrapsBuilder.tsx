@@ -58,7 +58,7 @@ import {
   withRules,
 } from "./craps";
 import { Felt, FeltChip } from "./felt";
-import { ArrowDown, ArrowUp, ChevronDown, GripVertical, Plus } from "./icons";
+import { ArrowDown, ArrowUp, ChevronDown, GripVertical, Plus } from "@/ui/ds/icons";
 import { exportDraft, testInTrainerHref } from "./library";
 import { builder } from "./palette";
 import {

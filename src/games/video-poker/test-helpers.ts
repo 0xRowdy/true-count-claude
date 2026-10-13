@@ -30,3 +30,12 @@ export function cards(text: string): Card[] {
       return { rank, suit };
     });
 }
+
+/**
+ * Wall-clock limit for the whole-deck enumerations: none. They are synchronous, finite and
+ * deterministic, so they cannot hang; a wall-clock limit only measures how busy (or asleep)
+ * the machine was, and vitest fails a synchronous test that overran it after the fact. CI's
+ * job timeout still bounds the run, and the speed that matters is asserted by the holds
+ * benchmark, which compares batches rather than a single wall-clock reading.
+ */
+export const ENUMERATION_TIMEOUT = 0;

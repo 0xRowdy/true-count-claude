@@ -20,7 +20,7 @@ import {
   Radio,
   UserPlus,
   X,
-} from "./icons";
+} from "@/ui/ds/icons";
 import { OpenSeat, SeatCard } from "./Seats";
 import {
   BET_WINDOW_SECONDS,

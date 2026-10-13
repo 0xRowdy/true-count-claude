@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { AppShell } from "@/ui/ds/AppShell";
 import { colors, display, radius, ui } from "@/ui/ds/tokens";
-import { Armchair, Bot, CircleDot, Dices, Spade } from "./icons";
+import { Armchair, Bot, CircleDot, Dices, Spade } from "@/ui/ds/icons";
 import { type LiveTableEntry, type TableIcon, liveTables, withReplayParams } from "./tables";
 
 const ICONS: Record<TableIcon, typeof Dices> = {

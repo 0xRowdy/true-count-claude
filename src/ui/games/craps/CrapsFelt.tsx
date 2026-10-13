@@ -13,7 +13,7 @@ import {
 import { Die, type DieValue } from "@/ui/ds/Die";
 import { CHIP_VALUES, chipColors, type ChipValue } from "@/ui/ds/format";
 import { colors, display, radius, surfaces, ui } from "@/ui/ds/tokens";
-import { LayoutGrid } from "./icons";
+import { LayoutGrid } from "@/ui/ds/icons";
 import {
   type Call,
   type FeltChip,

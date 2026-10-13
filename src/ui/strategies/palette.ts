@@ -17,7 +17,7 @@ const literal = {
   mistakeWash: "#E07A5F1A",
   primaryWashStrong: "#D4AE621F",
   primaryEdge: "#D4AE6240",
-  feltHighlight: "#22704F",
+  feltHighlight: surfaces.feltGlow,
   feltLabel: "#0B2A20",
   feltCellEdge: "#EDE4CC55",
   chipShadow: "0px 2px 3px #00000088",

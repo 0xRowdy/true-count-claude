@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { encodeHand, decodeCard, encodeCard, choose } from "./cards";
 import { HAND_RANKS, evaluateCodes, evaluateHand, type HandRank } from "./evaluate";
-import { cards } from "./test-helpers";
+import { ENUMERATION_TIMEOUT, cards } from "./test-helpers";
 
 describe("card codes", () => {
   it("round-trips every card of the deck", () => {
@@ -180,6 +180,6 @@ describe("hand frequencies over the whole deck", () => {
       );
       expect(actual).toEqual(FREQUENCIES[game]);
     },
-    180_000,
+    ENUMERATION_TIMEOUT,
   );
 });

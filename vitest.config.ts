@@ -21,6 +21,10 @@ export default defineConfig({
       "src/ui/**/*.test.ts",
     ],
     environment: "node",
+    // Several suites enumerate whole decks or every rule set and take one to three seconds on
+    // a laptop. A shared CI runner can be several times slower, so the 5 s default would turn a
+    // busy machine into a red build. Speed is asserted by the benchmarks themselves.
+    testTimeout: 60_000,
   },
   resolve: {
     alias: { "@": resolve(__dirname, "src") },

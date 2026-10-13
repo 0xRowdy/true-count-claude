@@ -21,7 +21,7 @@ import {
   tableLabel,
 } from "@/games/craps";
 import { colors, display, radius, ui } from "@/ui/ds/tokens";
-import { Info, X } from "./icons";
+import { Info, X } from "@/ui/ds/icons";
 import {
   type Spot,
   CENTER_KINDS,

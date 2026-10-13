@@ -11,11 +11,12 @@ import {
   subsetSums,
   type DealClasses,
 } from "./returns";
+import { ENUMERATION_TIMEOUT } from "./test-helpers";
 
 let classes: DealClasses;
 beforeAll(() => {
   classes = dealClasses();
-}, 180_000);
+}, ENUMERATION_TIMEOUT);
 
 describe("deal classes", () => {
   it("collapses 2,598,960 deals into 134,459 suit-isomorphism classes", () => {
@@ -38,7 +39,7 @@ describe("exact return to player under perfect play", () => {
       expect(distinctDeals).toBe(134_459);
       expect(Math.abs(returnRate - table.publishedReturn)).toBeLessThan(5e-7);
     },
-    180_000,
+    ENUMERATION_TIMEOUT,
   );
 
   it("pins the headline figures the app prints", () => {
@@ -81,6 +82,6 @@ describe("cross-check: rank combinatorics vs inclusion–exclusion", () => {
         }
       }
     },
-    180_000,
+    ENUMERATION_TIMEOUT,
   );
 });

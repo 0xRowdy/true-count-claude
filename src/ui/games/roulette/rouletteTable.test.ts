@@ -22,6 +22,7 @@ import {
   stackLabel,
   tableReducer,
   totalBetLabel,
+  wheelOf,
   winningSpotIds,
 } from "./rouletteTable";
 
@@ -184,6 +185,29 @@ describe("coach", () => {
     s = tableReducer(s, { type: "rebet", coach: "mistakes" });
     expect(s.coach?.variant).toBe("mistake");
     expect(gradeBets(s)).toEqual([{ category: "inside", correct: false, coached: true }]);
+  });
+
+  it("lays a strategy's wheel and bets on the felt (Test in trainer), coach included", () => {
+    const bets = [
+      { spotId: "red", amount: 10 },
+      { spotId: "topLine:0-00-1-2-3", amount: 5 },
+    ];
+    const s = run(ready(), add("straight:17"), {
+      type: "layout",
+      wheel: wheelOf(WHEEL_RULES.american),
+      bets,
+      coach: "mistakes",
+    });
+    expect(s.wheel).toBe("american");
+    expect(s.bets).toEqual(bets);
+    expect(s.coach?.variant).toBe("mistake"); // the top line is still caught
+    expect(wheelOf(WHEEL_RULES.french)).toBe("french");
+    expect(wheelOf(WHEEL_RULES.european)).toBe("european");
+    // Only between spins.
+    const spinning = run(s, { type: "spin" });
+    expect(
+      tableReducer(spinning, { type: "layout", wheel: "european", bets: [], coach: "asked" }),
+    ).toBe(spinning);
   });
 
   it("counts an asked-for mistake note as coached", () => {

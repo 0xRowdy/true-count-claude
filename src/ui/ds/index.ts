@@ -10,7 +10,7 @@ export type { LucideIcon } from "./icons";
 
 export { AppHeader, NAV_ITEMS, type NavKey } from "./AppHeader";
 export { AppShell, PAGE_MAX_WIDTH } from "./AppShell";
-export { Avatar, portraits } from "./Avatar";
+export { Avatar, imageUri, portraits, usePrefetchPortraits } from "./Avatar";
 export { Badge, type BadgeTone } from "./Badge";
 export { BetSpot } from "./BetSpot";
 export { Button, type ButtonProps, type ButtonSize, type ButtonVariant } from "./Button";
@@ -34,3 +34,7 @@ export { StrategyCard, type StrategyCardProps } from "./StrategyCard";
 export { TableTopBar } from "./TableTopBar";
 export { Tabs } from "./Tabs";
 export { ToggleChip } from "./ToggleChip";
+export { Logo } from "./Logo";
+export { Notice } from "./Notice";
+export { RadialFill } from "./RadialFill";
+export { Tag } from "./Tag";

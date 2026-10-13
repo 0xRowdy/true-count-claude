@@ -1491,11 +1491,19 @@ describe("benchmark", () => {
       actionEvs(playerHand, upcard, rules, composition);
     }
 
+    // Each hand is timed in several batches and keeps its fastest: a garbage-collection pause
+    // or a starved CI runner only ever adds time, so one stall cannot fail the budget, while a
+    // real regression is slow in every batch.
     const REPEATS = 20;
+    const BATCHES = 5;
     const timings = cases.map(({ playerHand, upcard, composition, ranks, up }) => {
-      const started = clock();
-      for (let i = 0; i < REPEATS; i++) actionEvs(playerHand, upcard, rules, composition);
-      return { label: `${ranks.join(",")} vs ${up}`, ms: (clock() - started) / REPEATS };
+      let best = Infinity;
+      for (let batch = 0; batch < BATCHES; batch++) {
+        const started = clock();
+        for (let i = 0; i < REPEATS; i++) actionEvs(playerHand, upcard, rules, composition);
+        best = Math.min(best, (clock() - started) / REPEATS);
+      }
+      return { label: `${ranks.join(",")} vs ${up}`, ms: best };
     });
 
     const slowest = timings.reduce((worst, entry) => (entry.ms > worst.ms ? entry : worst));

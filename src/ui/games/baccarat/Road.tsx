@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { Coup } from "@/games/baccarat";
 import { colors, ui } from "@/ui/ds";
 import { type RoadCell, type RoadView, beadRoadView, bigRoadView } from "./baccaratTable";
-import { ArrowLeftRight } from "./icons";
+import { ArrowLeftRight } from "@/ui/ds/icons";
 import { baccaratPalette as pal } from "./palette";
 
 export type RoadKind = "bead" | "big";

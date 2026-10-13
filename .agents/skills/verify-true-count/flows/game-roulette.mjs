@@ -34,6 +34,17 @@ export default async ({ page, url, shot, log, check }) => {
 
   // Round 1: the design's layout, 17 straight · Red · 2nd dozen = $40.
   const n17 = () => visible(page.getByRole("button", { name: /^17 black/ }));
+  // The cells share one description instead of repeating it in all 37 names.
+  check(
+    (await n17().getAttribute("aria-label")) === "17 black" &&
+      /"Bets touching" button/.test(
+        await page.evaluate(
+          (id) => document.getElementById(id)?.textContent ?? "",
+          await n17().getAttribute("aria-describedby"),
+        ),
+      ),
+    "number cells: short name + shared description pointing at the Bets touching button",
+  );
   await n17().click();
   await visible(page.getByRole("radio", { name: "$25 chip" })).click();
   await visible(page.getByRole("button", { name: /^RED,/ })).click();
@@ -165,7 +176,10 @@ export default async ({ page, url, shot, log, check }) => {
   // Coach (default "mistakes"): the top line is caught while the bet is on the felt.
   await visible(page.getByRole("button", { name: /^1 red/ })).click({ delay: 700 });
   await visible(page.getByRole("dialog", { name: "Bets touching 1" })).waitFor();
-  await visible(page.getByRole("button", { name: /^Top line 0 · 00 · 1 · 2 · 3/ })).click();
+  // An explicit timeout: if the loupe ever stops offering the top line, fail fast, not at 30 s.
+  await visible(page.getByRole("button", { name: /^Top line 0 · 00 · 1 · 2 · 3/ })).click({
+    timeout: 5000,
+  });
   const note = visible(page.getByRole("note", { name: "Coach note: The top line costs 7.89%" }));
   await note.waitFor();
   check(await note.isVisible(), "coach catches the top line");

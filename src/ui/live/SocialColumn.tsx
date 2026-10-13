@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { type LeaderboardMode, type LiveTableState, QUICK_REPLIES } from "@/games/craps";
 import { colors, display, radius, surfaces, ui } from "@/ui/ds/tokens";
-import { Bell, BellOff, Flag, Send } from "./icons";
+import { Bell, BellOff, Flag, Send } from "@/ui/ds/icons";
 import { LEADERBOARD_TABS, chatItems, leaderRows } from "./session";
 import { Initials } from "./Seats";
 

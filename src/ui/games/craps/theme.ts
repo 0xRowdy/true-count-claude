@@ -7,7 +7,7 @@ import { colors, surfaces } from "@/ui/ds/tokens";
 
 export const craps = {
   /** The felt's radial gradient: a lit centre falling off to `--felt-deep`. */
-  feltGlow: "#22704F",
+  feltGlow: surfaces.feltGlow,
   feltDeep: colors.feltDeep,
   /** The roll call's sub-line on a result. */
   callSub: "#9FE3BF",

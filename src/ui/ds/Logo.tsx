@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors, display, ui } from "@/ui/ds";
+import { colors, display, ui } from "./tokens";
 
 /** The Tableside mark and wordmark (the design's Logo frame, used on the marketing pages). */
 export function Logo({ wordmark = true }: { wordmark?: boolean }) {

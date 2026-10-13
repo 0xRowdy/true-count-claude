@@ -1,21 +1,30 @@
-import { Stack } from "expo-router";
+import { Stack, usePathname } from "expo-router";
+import Head from "expo-router/head";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { colors as ds } from "@/ui/ds/tokens";
+import { pageTitle } from "@/ui/pageTitle";
 import { useTablesideFonts } from "@/ui/ds/fonts";
-import { colors } from "@/ui/theme";
+import { usePrefetchPortraits } from "@/ui/ds/Avatar";
 
 export default function RootLayout() {
   // Fraunces + Inter for the Tableside design system. Deliberately not awaited (hydration).
   useTablesideFonts();
+  // The coach's portrait is in every Coach Note: fetched once here, before any note shows.
+  usePrefetchPortraits();
+  const pathname = usePathname();
 
   return (
     <SafeAreaProvider style={{ backgroundColor: ds.background }}>
+      {/* Every tab title from one map (src/ui/pageTitle.ts), prerendered into each page. */}
+      <Head>
+        <title>{pageTitle(pathname)}</title>
+      </Head>
       <StatusBar style="light" />
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: colors.surface },
-          headerTintColor: colors.text,
+          headerStyle: { backgroundColor: ds.card },
+          headerTintColor: ds.foreground,
           contentStyle: { backgroundColor: ds.background },
         }}
       >

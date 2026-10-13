@@ -7,7 +7,7 @@ import { colors, surfaces } from "@/ui/ds/tokens";
 
 export const live = {
   /** The felt's radial gradient: a lit centre falling off to `--felt-deep`. */
-  feltGlow: "#22704F",
+  feltGlow: surfaces.feltGlow,
   feltDeep: colors.feltDeep,
   /** The center-bets panel: deep felt at 60%. */
   centerPanel: "#0B2A2099",

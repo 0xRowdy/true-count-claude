@@ -14,7 +14,7 @@ import {
   optionForMask,
 } from "./holds";
 import { getPayTable, type PayTableId } from "./paytables";
-import { cards } from "./test-helpers";
+import { ENUMERATION_TIMEOUT, cards } from "./test-helpers";
 
 /** Brute force: every draw, card by card. Independent of the rank-multiset walk. */
 function bruteForceCounts(game: VideoPokerGame, dealt: number[], mask: number): number[] {
@@ -55,7 +55,7 @@ describe("holdOutcomeCounts", () => {
         );
       }
     },
-    180_000,
+    ENUMERATION_TIMEOUT,
   );
 
   it("brute-force matches on seeded random deals for the cheaper holds", () => {
