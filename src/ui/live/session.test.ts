@@ -22,6 +22,7 @@ import {
   timerLabel,
   yourLineTag,
   yourSeat,
+  yourLine,
   yourStakeOn,
 } from "./session";
 import { liveTables, withReplayParams } from "./tables";
@@ -144,6 +145,19 @@ describe("your actions", () => {
     expect(full.notice?.text).toMatch(/^Full odds \(\$125\)/);
     expect(canAddOdds(full.state.table)).toBe(false);
     expect(coachHint(full.state, null).tone).toBe("good");
+  });
+
+  it("full-odds wording follows the side: lay odds on the don't pass", () => {
+    // Seed 5 sevens out: the table comes out with no line bet of yours.
+    let s = closeBets(reseed(openingTable(), 5)).state;
+    s = placeYourBet(s, specFor({ kind: "dontPass" }, 25)).state;
+    while (s.table.point === null) s = closeBets(s).state;
+    expect(yourLine(s.table)?.kind).toBe("dontPass");
+    expect(coachHint(s, null).text).toMatch(/you can lay up to/);
+    while (canAddOdds(s.table)) s = addOdds(s, 500).state;
+    const text = coachHint(s, null).text;
+    expect(text).toMatch(/your don't pass has full lay odds/);
+    expect(text).not.toMatch(/A come bet|full odds\./);
   });
 
   it("closing bets rolls the seeded dice, settles bankrolls and re-bets the bots", () => {

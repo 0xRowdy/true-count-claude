@@ -298,10 +298,15 @@ export function coachHint(state: LiveTableState, notice: Notice | null): Notice 
         };
   }
   if (line) {
-    return {
-      tone: "good",
-      text: `Point is ${table.point} and you have full odds. A come bet (${min}) works like a second pass line.`,
-    };
+    return line.kind === "dontPass"
+      ? {
+          tone: "good",
+          text: `Point is ${table.point} and your don't pass has full lay odds. A don't come bet (${min}) works like a second don't pass.`,
+        }
+      : {
+          tone: "good",
+          text: `Point is ${table.point} and you have full odds. A come bet (${min}) works like a second pass line.`,
+        };
   }
   return {
     tone: "hint",

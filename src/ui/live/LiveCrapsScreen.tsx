@@ -149,6 +149,7 @@ export function LiveCrapsScreen() {
             accessibilityRole="button"
             accessibilityLabel="Back to live tables"
             onPress={back}
+            hitSlop={2}
             style={styles.back}
           >
             <ArrowLeft size={18} color={colors.foreground} strokeWidth={2} />

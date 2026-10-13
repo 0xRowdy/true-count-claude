@@ -1,6 +1,6 @@
-import { useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useReducer, useRef } from "react";
-import { Platform, Share } from "react-native";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { AppState, Platform, Share } from "react-native";
 import type { LeaderboardMode, LiveTableState } from "@/games/craps";
 import type { ChipValue } from "@/ui/ds/format";
 import {
@@ -134,7 +134,7 @@ function inviteUrl(): string {
 export function useLiveCraps() {
   const [state, dispatch] = useReducer(reducer, undefined, initial);
   const params = useLocalSearchParams<{ seed?: string; pace?: string }>();
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
 
   // After mount: pick the seed, start the clock.
   const seedParam = params.seed;
@@ -144,17 +144,58 @@ export function useLiveCraps() {
     dispatch({ type: "start", seed, manual: paceParam === "manual" });
   }, [seedParam, paceParam]);
 
+  // The table only runs while you can see it: the bet countdown and the bots' replies pause
+  // while the tab is hidden, the app is in the background, or another screen is on top.
+  const [focused, setFocused] = useState(true);
+  const [visible, setVisible] = useState(true);
+  useFocusEffect(
+    useCallback(() => {
+      setFocused(true);
+      return () => setFocused(false);
+    }, []),
+  );
   useEffect(() => {
+    if (Platform.OS === "web") {
+      if (typeof document === "undefined") return;
+      const sync = () => setVisible(document.visibilityState !== "hidden");
+      sync();
+      document.addEventListener("visibilitychange", sync);
+      return () => document.removeEventListener("visibilitychange", sync);
+    }
+    const sub = AppState.addEventListener("change", (s) => setVisible(s === "active"));
+    return () => sub.remove();
+  }, []);
+  const active = focused && visible;
+  const activeRef = useRef(active);
+  const deferred = useRef<(() => void)[]>([]);
+
+  // The countdown ticks only while active; pausing keeps the seconds left, and resuming waits
+  // a full second before the next tick.
+  useEffect(() => {
+    activeRef.current = active;
+    if (!active) return;
+    const queued = deferred.current.splice(0);
+    queued.forEach((f) => f());
     const id = setInterval(() => dispatch({ type: "tick" }), 1000);
+    return () => clearInterval(id);
+  }, [active]);
+
+  useEffect(() => {
     const pending = timers.current;
     return () => {
-      clearInterval(id);
       pending.forEach(clearTimeout);
+      pending.clear();
     };
   }, []);
 
-  const later = useCallback((ms: number, f: () => void) => {
-    timers.current.push(setTimeout(f, ms));
+  /** Runs `f` after `ms`; table activity (`whileActive`) waits for the table to be visible. */
+  const later = useCallback((ms: number, f: () => void, whileActive = false) => {
+    const id = setTimeout(() => {
+      timers.current.delete(id);
+      if (whileActive && !activeRef.current) deferred.current.push(f);
+      else f();
+    }, ms);
+    timers.current.add(id);
   }, []);
 
   const say = useCallback(
@@ -162,7 +203,7 @@ export function useLiveCraps() {
       const trimmed = text.trim();
       if (!trimmed) return;
       dispatch({ type: "chat", text: trimmed });
-      later(900, () => dispatch({ type: "reply", text: trimmed }));
+      later(900, () => dispatch({ type: "reply", text: trimmed }), true);
     },
     [later],
   );
@@ -191,6 +232,7 @@ export function useLiveCraps() {
 
   return {
     ...state,
+    paused: !active,
     place: (spot: Spot) => dispatch({ type: "place", spot }),
     addOdds: () => dispatch({ type: "odds" }),
     confirm: () => dispatch({ type: "close" }),

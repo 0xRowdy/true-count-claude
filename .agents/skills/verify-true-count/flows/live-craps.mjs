@@ -130,5 +130,28 @@ export default async ({ page, url, shot, log, check }) => {
   const t1 = await visible(page.getByText(/^Bets close in 0:\d\d$/)).innerText();
   check(t0 !== t1, `bet timer counts down (${t0} → ${t1})`);
 
+  // Hidden tab: the countdown pauses, then resumes from where it stopped.
+  const setHidden = (hidden) =>
+    page.evaluate((h) => {
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        get: () => (h ? "hidden" : "visible"),
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    }, hidden);
+  await setHidden(true);
+  const p0 = await visible(page.getByText(/^Bets close in 0:\d\d$/)).innerText();
+  await page.waitForTimeout(2500);
+  const p1 = await visible(page.getByText(/^Bets close in 0:\d\d$/)).innerText();
+  check(p0 === p1, `timer paused while the tab is hidden (${p0} → ${p1})`);
+  await setHidden(false);
+  await page.waitForTimeout(2200);
+  const p2 = await visible(page.getByText(/^Bets close in 0:\d\d$/)).innerText();
+  const secs = (t) => Number(t.split(":")[1]);
+  check(
+    secs(p2) < secs(p1) && secs(p1) - secs(p2) <= 3,
+    `timer resumes from the paused value (${p1} → ${p2})`,
+  );
+
   check(errors.length === 0, `no console errors${errors.length ? `: ${errors.join(" | ")}` : ""}`);
 };

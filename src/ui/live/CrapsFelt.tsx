@@ -41,7 +41,7 @@ function ChipStack({ chips, max = 3 }: { chips: readonly ChipView[]; max?: numbe
   );
 }
 
-function Puck({ on }: { on: boolean }) {
+function Puck({ on, size = 30 }: { on: boolean; size?: number }) {
   return (
     <View
       accessible
@@ -49,12 +49,13 @@ function Puck({ on }: { on: boolean }) {
       accessibilityLabel={on ? "Puck on" : "Puck off"}
       style={[
         styles.puck,
+        { width: size, height: size, borderRadius: size / 2 },
         on
           ? { backgroundColor: live.puckOn, borderColor: live.puckOff }
           : { backgroundColor: live.puckOff, borderColor: live.puckOn },
       ]}
     >
-      <Text style={[ui(10, 800), { color: on ? live.puckOff : live.puckOn }]}>
+      <Text style={[ui(size < 30 ? 8 : 10, 800), { color: on ? live.puckOff : live.puckOn }]}>
         {on ? "ON" : "OFF"}
       </Text>
     </View>
@@ -362,8 +363,10 @@ export function CrapsFelt({
                   label={`Place ${n}`}
                   mine={b.mine}
                   onPress={() => onSpot(spot)}
-                  style={styles.number}
+                  style={[styles.number, narrow && styles.numberNarrow]}
                 >
+                  {/* Phones: the puck and chips sit in the flow, above and below the number. */}
+                  {narrow && point === n ? <Puck on size={22} /> : null}
                   <Text
                     style={[
                       word ? display(narrow ? 15 : 20, 600) : display(narrow ? 22 : 28, 600),
@@ -375,12 +378,12 @@ export function CrapsFelt({
                   <Text style={[ui(narrow ? 9 : 11), { color: surfaces.feltTextFaint }]}>
                     {narrow ? payoutLabel("place", n) : `place ${payoutLabel("place", n)}`}
                   </Text>
-                  {point === n ? (
+                  {!narrow && point === n ? (
                     <View style={styles.puckSpot}>
                       <Puck on />
                     </View>
                   ) : null}
-                  <View style={styles.numberChips} pointerEvents="none">
+                  <View style={narrow ? styles.inflow : styles.numberChips} pointerEvents="none">
                     <ChipStack chips={b.chips} max={narrow ? 1 : 3} />
                   </View>
                 </SpotBox>
@@ -510,6 +513,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 2,
   },
+  numberNarrow: { height: undefined, minHeight: 84, paddingVertical: 6 },
   numberChips: { position: "absolute", left: 6, bottom: 6 },
   puckSpot: { position: "absolute", left: 6, top: 6 },
   strip: {
@@ -546,9 +550,6 @@ const styles = StyleSheet.create({
     boxShadow: live.chipShadow,
   },
   puck: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
     borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
