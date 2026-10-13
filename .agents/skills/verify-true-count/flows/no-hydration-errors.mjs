@@ -10,6 +10,10 @@ const ROUTES = [
   "/shoe-integrity",
   "/session",
   "/design-system",
+  "/strategies",
+  "/strategies/blackjack",
+  "/strategies/craps",
+  "/strategies/roulette",
 ];
 const HYDRATION = /Minified React error #(418|423|425)|hydrat/i;
 

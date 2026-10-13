@@ -114,7 +114,8 @@ function cleanNotes(v: unknown): Record<string, string> {
   if (!isObject(v)) return {};
   const out: Record<string, string> = {};
   for (const [k, note] of Object.entries(v)) {
-    if (isString(note) && note.trim() !== "") out[k] = Array.from(note).slice(0, NOTE_LIMIT).join("");
+    if (isString(note) && note.trim() !== "")
+      out[k] = Array.from(note).slice(0, NOTE_LIMIT).join("");
   }
   return out;
 }
@@ -129,7 +130,9 @@ function cleanCredit(v: unknown): StrategyCredit | null {
 function isRuleSet(v: unknown): v is RuleSet {
   if (!isObject(v)) return false;
   try {
-    return validateRules(v as unknown as RuleSet).length === 0 && typeof v.dealerSoft17 === "string";
+    return (
+      validateRules(v as unknown as RuleSet).length === 0 && typeof v.dealerSoft17 === "string"
+    );
   } catch {
     return false;
   }
@@ -164,7 +167,8 @@ function cleanLayout(v: unknown): RouletteLayoutPlan | undefined {
       getSpot(rules, b.spotId) !== undefined,
   );
   const session = isObject(v.session) ? v.session : {};
-  const maxSpins = typeof session.maxSpins === "number" && session.maxSpins > 0 ? session.maxSpins : 60;
+  const maxSpins =
+    typeof session.maxSpins === "number" && session.maxSpins > 0 ? session.maxSpins : 60;
   return {
     rules,
     bets: bets.map((b) => ({ spotId: b.spotId, amount: b.amount })),

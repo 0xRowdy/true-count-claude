@@ -95,11 +95,29 @@ function blackjack(id: string, title: string, rules: RuleSet): BlackjackDraft {
 }
 
 function craps(id: string, plan: BetPlan): CrapsDraft {
-  return { id, game: "craps", title: plan.name, forkedFrom: null, notes: {}, savedAt: null, plan, original: plan };
+  return {
+    id,
+    game: "craps",
+    title: plan.name,
+    forkedFrom: null,
+    notes: {},
+    savedAt: null,
+    plan,
+    original: plan,
+  };
 }
 
 function roulette(id: string, title: string, layout: RouletteLayoutPlan): RouletteDraft {
-  return { id, game: "roulette", title, forkedFrom: null, notes: {}, savedAt: null, layout, original: layout };
+  return {
+    id,
+    game: "roulette",
+    title,
+    forkedFrom: null,
+    notes: {},
+    savedAt: null,
+    layout,
+    original: layout,
+  };
 }
 
 /** "Low-Edge Place 6 & 8" as @rail_rita published it: place both numbers, collect every hit. */
@@ -129,7 +147,8 @@ export const LIBRARY: readonly LibraryStrategy[] = [
     title: "Basic Strategy · 6 deck, S17",
     author: "Tableside Curated",
     version: 4,
-    description: "The full chart for a six-deck shoe where the dealer stands on soft 17. Every cell checked by the EV engine.",
+    description:
+      "The full chart for a six-deck shoe where the dealer stands on soft 17. Every cell checked by the EV engine.",
     votes: 4812,
     forks: 1240,
     accuracy: 91,
@@ -142,7 +161,8 @@ export const LIBRARY: readonly LibraryStrategy[] = [
     title: "Basic Strategy · 6 deck, H17",
     author: "Tableside Curated",
     version: 3,
-    description: "Six decks, dealer hits soft 17. Six cells move from the S17 chart, mostly against an ace.",
+    description:
+      "Six decks, dealer hits soft 17. Six cells move from the S17 chart, mostly against an ace.",
     votes: 3920,
     forks: 980,
     accuracy: 89,
@@ -155,7 +175,8 @@ export const LIBRARY: readonly LibraryStrategy[] = [
     title: "Pass + Full Odds",
     author: "Tableside Curated",
     version: 2,
-    description: "The lowest-edge way to play: a pass line bet with full odds behind it. Nothing else.",
+    description:
+      "The lowest-edge way to play: a pass line bet with full odds behind it. Nothing else.",
     votes: 2210,
     forks: 640,
     accuracy: 94,
@@ -168,7 +189,8 @@ export const LIBRARY: readonly LibraryStrategy[] = [
     title: "Even Money with La Partage",
     author: "Tableside Curated",
     version: 1,
-    description: "Flat $10 on red at a French table. La Partage halves the edge on even-money bets to 1.35%.",
+    description:
+      "Flat $10 on red at a French table. La Partage halves the edge on even-money bets to 1.35%.",
     votes: 1430,
     forks: 210,
     accuracy: 96,
@@ -186,7 +208,8 @@ export const LIBRARY: readonly LibraryStrategy[] = [
     title: "Low-Edge Place 6 & 8",
     author: "@rail_rita",
     version: 2,
-    description: "Pass line with full odds, then place the 6 and 8 for $12 each and collect every hit.",
+    description:
+      "Pass line with full odds, then place the 6 and 8 for $12 each and collect every hit.",
     votes: 1876,
     forks: 512,
     accuracy: 88,
@@ -199,7 +222,8 @@ export const LIBRARY: readonly LibraryStrategy[] = [
     title: "Classic Bond Spread",
     author: "@wheelwatcher",
     version: 5,
-    description: "$140 on 19–36, $50 on the 13–18 six line and $10 on zero. Wins on 25 of 37 numbers; the edge is still 2.7%.",
+    description:
+      "$140 on 19–36, $50 on the 13–18 six line and $10 on zero. Wins on 25 of 37 numbers; the edge is still 2.7%.",
     votes: 1544,
     forks: 377,
     accuracy: 84,
@@ -212,7 +236,8 @@ export const LIBRARY: readonly LibraryStrategy[] = [
     title: "Double Deck S17 Chart",
     author: "@deckcounter",
     version: 3,
-    description: "Basic strategy for the two-deck pitch game: more doubles on soft hands and 9 vs 2.",
+    description:
+      "Basic strategy for the two-deck pitch game: more doubles on soft hands and 9 vs 2.",
     votes: 1180,
     forks: 301,
     accuracy: 86,
@@ -225,7 +250,8 @@ export const LIBRARY: readonly LibraryStrategy[] = [
     title: "Iron Cross",
     author: "@dice_doc",
     version: 1,
-    description: "Field every roll plus place 5, 6 and 8: a win on every number but 7, at a higher blended edge.",
+    description:
+      "Field every roll plus place 5, 6 and 8: a win on every number but 7, at a higher blended edge.",
     votes: 905,
     forks: 188,
     accuracy: 79,
@@ -238,7 +264,8 @@ export const LIBRARY: readonly LibraryStrategy[] = [
     title: "Two Dozens, Double Zero",
     author: "@vegasvic",
     version: 2,
-    description: "$10 on each of the first two dozens. Covers 24 of 38 pockets, at the American wheel's 5.26%.",
+    description:
+      "$10 on each of the first two dozens. Covers 24 of 38 pockets, at the American wheel's 5.26%.",
     votes: 612,
     forks: 95,
     accuracy: 81,
@@ -307,7 +334,12 @@ export const EXAMPLE_IDS: Readonly<Record<StrategyGame, string>> = {
   roulette: "example-roulette",
 };
 
-const credit = (s: LibraryStrategy) => ({ id: s.id, title: s.title, author: s.author, version: s.version });
+const credit = (s: LibraryStrategy) => ({
+  id: s.id,
+  title: s.title,
+  author: s.author,
+  version: s.version,
+});
 
 function mustFind(id: string): LibraryStrategy {
   const s = libraryStrategy(id);
@@ -328,7 +360,8 @@ export function exampleBlackjack(): BlackjackDraft {
     notes: {
       "hard:11:11":
         "When the dealer hits soft 17, an ace up busts a little more. Your 11 is worth doubling even here.",
-      "hard:15:11": "Against an ace on an H17 table, 15 loses so often that giving up half is cheaper.",
+      "hard:15:11":
+        "Against an ace on an H17 table, 15 loses so often that giving up half is cheaper.",
       "hard:17:11": "The one time a made 17 is given up: H17, late surrender, dealer ace.",
       "soft:19:6":
         "On tables where the dealer hits soft 17, a 6 is even weaker. Your soft 19 can't bust on one card, so put more money out.",
@@ -346,7 +379,8 @@ export function exampleCraps(): CrapsDraft {
     title: "Pass, Odds & Press the 6/8",
     forkedFrom: credit(original),
     notes: {
-      "point.1": "Placing the point number twice doubles your risk on one number. Place only the other one.",
+      "point.1":
+        "Placing the point number twice doubles your risk on one number. Place only the other one.",
       "hit.2":
         "Press once, then lock it in. You keep part of every win and only grow the bet with the house's money.",
     },
@@ -385,7 +419,11 @@ export function exampleRoulette(): RouletteDraft {
 }
 
 export function exampleDraft(game: StrategyGame): StrategyDraft {
-  return game === "blackjack" ? exampleBlackjack() : game === "craps" ? exampleCraps() : exampleRoulette();
+  return game === "blackjack"
+    ? exampleBlackjack()
+    : game === "craps"
+      ? exampleCraps()
+      : exampleRoulette();
 }
 
 export function isExampleId(id: string): boolean {
@@ -405,7 +443,16 @@ export function forkStrategy(s: LibraryStrategy, taken: Iterable<string>): Strat
   switch (d.game) {
     case "blackjack":
       // The original's chart becomes the base, so "Compare" starts at 0 changes.
-      return { ...d, id, title, forkedFrom, notes: {}, savedAt: null, base: { rules: d.rules, cells: draftOverrides(d) }, cells: {} };
+      return {
+        ...d,
+        id,
+        title,
+        forkedFrom,
+        notes: {},
+        savedAt: null,
+        base: { rules: d.rules, cells: draftOverrides(d) },
+        cells: {},
+      };
     case "craps":
       return { ...d, id, title, forkedFrom, notes: {}, savedAt: null, original: d.plan };
     case "roulette":
@@ -420,7 +467,10 @@ export function newStrategy(game: StrategyGame, taken: Iterable<string>): Strate
     case "blackjack":
       return blackjack(id, "New blackjack strategy", DEFAULT_RULES);
     case "craps":
-      return { ...craps(id, { ...passAndOddsPlan(CRAPS_PRESETS["3-4-5x"]), name: "New craps plan" }), title: "New craps plan" };
+      return {
+        ...craps(id, { ...passAndOddsPlan(CRAPS_PRESETS["3-4-5x"]), name: "New craps plan" }),
+        title: "New craps plan",
+      };
     case "roulette":
       return roulette(id, "New roulette layout", {
         rules: EUROPEAN_RULES,
@@ -448,7 +498,10 @@ export function exportDraft(draft: StrategyDraft): string {
   };
   const body =
     draft.game === "blackjack"
-      ? { rules: draft.rules, chart: { basicStrategyFor: "rules", overrides: draftOverrides(draft) } }
+      ? {
+          rules: draft.rules,
+          chart: { basicStrategyFor: "rules", overrides: draftOverrides(draft) },
+        }
       : draft.game === "craps"
         ? { plan: draft.plan }
         : { layout: draft.layout };

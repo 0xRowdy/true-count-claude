@@ -15,7 +15,10 @@ import {
 
 describe("library fixtures", () => {
   it("every fixture and example survives a storage round trip", () => {
-    const all = [...LIBRARY.map((s) => s.draft), ...(["blackjack", "craps", "roulette"] as const).map(exampleDraft)];
+    const all = [
+      ...LIBRARY.map((s) => s.draft),
+      ...(["blackjack", "craps", "roulette"] as const).map(exampleDraft),
+    ];
     for (const d of all) expect(normalizeDraft(JSON.parse(JSON.stringify(d)))).toEqual(d);
   });
 
@@ -38,7 +41,12 @@ describe("fork, new, share", () => {
     const s = LIBRARY.find((x) => x.id === "community-roulette-bond")!;
     const fork = forkStrategy(s, ["fork-community-roulette-bond"]);
     expect(fork.id).toBe("fork-community-roulette-bond-2");
-    expect(fork.forkedFrom).toEqual({ id: s.id, title: s.title, author: "@wheelwatcher", version: 5 });
+    expect(fork.forkedFrom).toEqual({
+      id: s.id,
+      title: s.title,
+      author: "@wheelwatcher",
+      version: 5,
+    });
     expect(draftChangeCount(fork)).toBe(0);
     expect(testInTrainerHref(fork)).toBe("/games/roulette?strategy=fork-community-roulette-bond-2");
   });

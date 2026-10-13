@@ -28,7 +28,10 @@ describe("parsing", () => {
   it("drops unusable drafts and fields, keeps the rest", () => {
     const raw = JSON.stringify({
       drafts: [
-        draft("a", { cells: { "hard:16:10": "S", "hard:12:2": "Z" as never }, notes: { x: "", y: "ok" } }),
+        draft("a", {
+          cells: { "hard:16:10": "S", "hard:12:2": "Z" as never },
+          notes: { x: "", y: "ok" },
+        }),
         { id: "b", game: "poker", title: "x" },
         draft("a"),
         { ...draft("c"), rules: { ...DEFAULT_RULES, decks: 99 } },
@@ -76,7 +79,10 @@ describe("the draft store", () => {
     expect(store.snapshot().ready).toBe(false);
     await saving;
     expect(store.snapshot().drafts.map((d) => d.id)).toEqual(["early", "kept"]);
-    expect(parseDrafts(await kv.getItem(STRATEGIES_KEY))?.map((d) => d.id)).toEqual(["early", "kept"]);
+    expect(parseDrafts(await kv.getItem(STRATEGIES_KEY))?.map((d) => d.id)).toEqual([
+      "early",
+      "kept",
+    ]);
   });
 
   it("keeps working in memory when storage fails", async () => {

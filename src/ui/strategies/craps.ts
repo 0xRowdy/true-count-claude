@@ -139,7 +139,10 @@ export function allRows(phases: readonly Phase[]): RuleRow[] {
 }
 
 /** Rows that differ from the original, plus original rules this plan dropped. */
-export function planChanges(plan: BetPlan, original: BetPlan): { rows: RuleRow[]; removed: number } {
+export function planChanges(
+  plan: BetPlan,
+  original: BetPlan,
+): { rows: RuleRow[]; removed: number } {
   const rows = allRows(planPhases(plan, original)).filter((r) => r.changed);
   const mine = new Set(keyedRows(plan).map(({ key }) => ruleKeyId(key)));
   const removed = keyedRows(original).filter(({ key }) => !mine.has(ruleKeyId(key))).length;
@@ -292,7 +295,11 @@ function withHit(plan: BetPlan, hit: 1 | 2 | 3, action: HitAction): BetPlan {
   if (!plan.placeWins) return plan;
   const w: PlaceWinRule = { ...plan.placeWins };
   const next =
-    hit === 1 ? { ...w, first: action } : hit === 2 ? { ...w, second: action } : { ...w, thirdPlus: action };
+    hit === 1
+      ? { ...w, first: action }
+      : hit === 2
+        ? { ...w, second: action }
+        : { ...w, thirdPlus: action };
   return { ...plan, placeWins: next };
 }
 
@@ -344,7 +351,8 @@ export function amountStep(plan: BetPlan, key: RuleKey): number {
   if (key.kind === "hit") return placeStep(plan).step;
   if (key.kind === "point") {
     const r = plan.pointOn[key.index];
-    if (r?.kind === "place") return r.numbers.reduce((s, n) => Math.max(s, exactStep("place", n)), 1);
+    if (r?.kind === "place")
+      return r.numbers.reduce((s, n) => Math.max(s, exactStep("place", n)), 1);
   }
   if (key.kind === "money") return 50;
   return 5;
@@ -379,13 +387,19 @@ export function stepRuleAmount(plan: BetPlan, key: RuleKey, dir: 1 | -1): BetPla
     return updateComeOut(
       plan,
       key.index,
-      r.kind === "line" ? { ...r, amount: bump(r.amount) } : { ...r, spec: { ...r.spec, amount: bump(r.spec.amount) } },
+      r.kind === "line"
+        ? { ...r, amount: bump(r.amount) }
+        : { ...r, spec: { ...r.spec, amount: bump(r.spec.amount) } },
     );
   }
   if (key.kind === "point") {
     const r = plan.pointOn[key.index];
     if (!r || r.kind === "odds") return plan;
-    if (r.kind === "bet") return updatePoint(plan, key.index, { ...r, spec: { ...r.spec, amount: bump(r.spec.amount) } });
+    if (r.kind === "bet")
+      return updatePoint(plan, key.index, {
+        ...r,
+        spec: { ...r.spec, amount: bump(r.spec.amount) },
+      });
     return updatePoint(plan, key.index, { ...r, amount: bump(r.amount) });
   }
   return plan;
@@ -401,7 +415,9 @@ export function togglePlaceNumber(plan: BetPlan, index: number, n: PointNumber):
   const r = plan.pointOn[index];
   if (!r || r.kind !== "place") return plan;
   const has = r.numbers.includes(n);
-  const numbers = has ? r.numbers.filter((x) => x !== n) : POINT_NUMBERS.filter((x) => x === n || r.numbers.includes(x));
+  const numbers = has
+    ? r.numbers.filter((x) => x !== n)
+    : POINT_NUMBERS.filter((x) => x === n || r.numbers.includes(x));
   if (numbers.length === 0) return plan;
   return updatePoint(plan, index, { ...r, numbers });
 }
@@ -439,36 +455,67 @@ export function addRule(plan: BetPlan, template: RuleTemplate): { plan: BetPlan;
   switch (template.label) {
     case "Pass line":
     case "Don't pass": {
-      const rule: ComeOutRule = { kind: "line", side: template.label === "Pass line" ? "pass" : "dontPass", amount: min };
-      return { plan: { ...plan, comeOut: [...plan.comeOut, rule] }, key: { kind: "comeOut", index: plan.comeOut.length } };
+      const rule: ComeOutRule = {
+        kind: "line",
+        side: template.label === "Pass line" ? "pass" : "dontPass",
+        amount: min,
+      };
+      return {
+        plan: { ...plan, comeOut: [...plan.comeOut, rule] },
+        key: { kind: "comeOut", index: plan.comeOut.length },
+      };
     }
     case "Field":
       return {
-        plan: { ...plan, comeOut: [...plan.comeOut, { kind: "bet", spec: { kind: "field", amount: min } }] },
+        plan: {
+          ...plan,
+          comeOut: [...plan.comeOut, { kind: "bet", spec: { kind: "field", amount: min } }],
+        },
         key: { kind: "comeOut", index: plan.comeOut.length },
       };
     case "Take odds":
-      return { plan: { ...plan, pointOn: [...plan.pointOn, { kind: "odds", multiple: "max" }] }, key: { kind: "point", index: plan.pointOn.length } };
+      return {
+        plan: { ...plan, pointOn: [...plan.pointOn, { kind: "odds", multiple: "max" }] },
+        key: { kind: "point", index: plan.pointOn.length },
+      };
     case "Place bets":
       return {
-        plan: { ...plan, pointOn: [...plan.pointOn, { kind: "place", numbers: [6, 8], amount: Math.ceil(min / 6) * 6, skipPoint: true }] },
+        plan: {
+          ...plan,
+          pointOn: [
+            ...plan.pointOn,
+            { kind: "place", numbers: [6, 8], amount: Math.ceil(min / 6) * 6, skipPoint: true },
+          ],
+        },
         key: { kind: "point", index: plan.pointOn.length },
       };
     case "Come bets":
       return {
-        plan: { ...plan, pointOn: [...plan.pointOn, { kind: "come", side: "come", amount: min, maxBets: 2 }] },
+        plan: {
+          ...plan,
+          pointOn: [...plan.pointOn, { kind: "come", side: "come", amount: min, maxBets: 2 }],
+        },
         key: { kind: "point", index: plan.pointOn.length },
       };
     case "Field every roll":
       return {
-        plan: { ...plan, pointOn: [...plan.pointOn, { kind: "bet", spec: { kind: "field", amount: min } }] },
+        plan: {
+          ...plan,
+          pointOn: [...plan.pointOn, { kind: "bet", spec: { kind: "field", amount: min } }],
+        },
         key: { kind: "point", index: plan.pointOn.length },
       };
     case "Hit rules":
       return {
         plan: {
           ...plan,
-          placeWins: { numbers: placeNumbersOf(plan), first: { kind: "collect" }, second: { kind: "collect" }, thirdPlus: { kind: "collect" }, takeDownAfterHits: null },
+          placeWins: {
+            numbers: placeNumbersOf(plan),
+            first: { kind: "collect" },
+            second: { kind: "collect" },
+            thirdPlus: { kind: "collect" },
+            takeDownAfterHits: null,
+          },
         },
         key: { kind: "hit", hit: 1 },
       };
@@ -492,7 +539,11 @@ export function removeRule(plan: BetPlan, key: RuleKey): BetPlan {
 }
 
 /** Moves a come-out or point rule up or down within its phase (rules run top to bottom). */
-export function moveRule(plan: BetPlan, key: RuleKey, dir: -1 | 1): { plan: BetPlan; key: RuleKey } {
+export function moveRule(
+  plan: BetPlan,
+  key: RuleKey,
+  dir: -1 | 1,
+): { plan: BetPlan; key: RuleKey } {
   if (key.kind !== "comeOut" && key.kind !== "point") return { plan, key };
   const list = key.kind === "comeOut" ? [...plan.comeOut] : [...plan.pointOn];
   const to = key.index + dir;
@@ -536,7 +587,8 @@ export const PREVIEW_HITS = [0, 1, 2, 3, 4] as const;
 
 /** "Point is 6, after 2 hits". */
 export function previewLabel(c: PreviewChoice): string {
-  const hits = c.hits === 0 ? "before any hits" : `after ${c.hits} ${c.hits === 1 ? "hit" : "hits"}`;
+  const hits =
+    c.hits === 0 ? "before any hits" : `after ${c.hits} ${c.hits === 1 ? "hit" : "hits"}`;
   return `Point is ${c.point}, ${hits}`;
 }
 
@@ -578,7 +630,11 @@ export function planStats(plan: BetPlan, choice: PreviewChoice): PlanStats {
   let come = 0;
   let field = 0;
   for (const b of p.bets) {
-    if (isBoxBet(b)) place[b.number] = { amount: (place[b.number]?.amount ?? 0) + b.amount, pressed: b.amount > base && base > 0 };
+    if (isBoxBet(b))
+      place[b.number] = {
+        amount: (place[b.number]?.amount ?? 0) + b.amount,
+        pressed: b.amount > base && base > 0,
+      };
     else if (isLineBet(b) && b.kind === "pass") {
       passFlat += b.amount;
       passOdds += b.odds;

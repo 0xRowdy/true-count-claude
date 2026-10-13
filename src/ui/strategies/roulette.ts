@@ -51,10 +51,18 @@ const NAMED_INSIDE: ReadonlySet<string> = new Set<InsideBetType>([
   "sixLine",
 ]);
 
-export function coverage(layout: RouletteLayoutPlan): { covered: number; total: number; label: string } {
+export function coverage(layout: RouletteLayoutPlan): {
+  covered: number;
+  total: number;
+  label: string;
+} {
   const a = analyzeBets(layout.rules, layout.bets);
   const total = getLayout(layout.rules).pockets.length;
-  return { covered: a.covered.length, total, label: `Covers ${a.covered.length} of ${total} numbers` };
+  return {
+    covered: a.covered.length,
+    total,
+    label: `Covers ${a.covered.length} of ${total} numbers`,
+  };
 }
 
 export interface OutcomeRow {
@@ -84,8 +92,10 @@ export function outcomeTable(layout: RouletteLayoutPlan): OutcomeTable {
   let shade = 0;
   const rows = a.groups.map((g) => {
     const copy = outcomeGroupCopy(g);
-    const only = g.winningSpotIds.length === 1 ? getSpot(rules, g.winningSpotIds[0] ?? "") : undefined;
-    const suffix = only && NAMED_INSIDE.has(only.type) ? ` (${BET_TYPE_NAMES[only.type].toLowerCase()})` : "";
+    const only =
+      g.winningSpotIds.length === 1 ? getSpot(rules, g.winningSpotIds[0] ?? "") : undefined;
+    const suffix =
+      only && NAMED_INSIDE.has(only.type) ? ` (${BET_TYPE_NAMES[only.type].toLowerCase()})` : "";
     return {
       title: `${copy.title}${suffix}`,
       pockets: copy.pockets,
@@ -134,7 +144,11 @@ export interface BetPanel {
   readonly matchesOriginalShare: boolean;
 }
 
-export function betPanel(layout: RouletteLayoutPlan, original: RouletteLayoutPlan, spotId: string): BetPanel | null {
+export function betPanel(
+  layout: RouletteLayoutPlan,
+  original: RouletteLayoutPlan,
+  spotId: string,
+): BetPanel | null {
   const spot = getSpot(layout.rules, spotId);
   const bet = layout.bets.find((b) => b.spotId === spotId);
   if (!spot || !bet) return null;
@@ -149,9 +163,13 @@ export function betPanel(layout: RouletteLayoutPlan, original: RouletteLayoutPla
     wins: d.wins,
     ifItHits: d.ifItHits,
     amount: formatDollars(bet.amount),
-    original: orig ? `Original: ${formatDollars(orig.amount)} of ${formatDollars(origTotal)}` : "Original: not in the layout",
+    original: orig
+      ? `Original: ${formatDollars(orig.amount)} of ${formatDollars(origTotal)}`
+      : "Original: not in the layout",
     yours: `Yours: ${formatDollars(bet.amount)} of ${formatDollars(total)}`,
-    matchesOriginalShare: orig ? Math.abs(bet.amount / total - orig.amount / origTotal) < 1e-9 : false,
+    matchesOriginalShare: orig
+      ? Math.abs(bet.amount / total - orig.amount / origTotal) < 1e-9
+      : false,
   };
 }
 
@@ -162,7 +180,10 @@ export function unitFor(rules: RouletteRules, spot: BetSpot): number {
 
 function setAmount(layout: RouletteLayoutPlan, spotId: string, amount: number): RouletteLayoutPlan {
   const clean = Math.max(1, Math.round(amount));
-  return { ...layout, bets: layout.bets.map((b) => (b.spotId === spotId ? { ...b, amount: clean } : b)) };
+  return {
+    ...layout,
+    bets: layout.bets.map((b) => (b.spotId === spotId ? { ...b, amount: clean } : b)),
+  };
 }
 
 export type AmountPreset = "half" | "unit" | "double" | "match";
@@ -203,7 +224,11 @@ export function applyPreset(
 }
 
 /** Steps a bet by one unit (removing it below one unit is "Remove bet", not the stepper). */
-export function stepBet(layout: RouletteLayoutPlan, spotId: string, dir: 1 | -1): RouletteLayoutPlan {
+export function stepBet(
+  layout: RouletteLayoutPlan,
+  spotId: string,
+  dir: 1 | -1,
+): RouletteLayoutPlan {
   const spot = getSpot(layout.rules, spotId);
   const bet = layout.bets.find((b) => b.spotId === spotId);
   if (!spot || !bet) return layout;
@@ -241,7 +266,10 @@ export function widenOptions(layout: RouletteLayoutPlan, spotId: string): BetSpo
 
 /** Moves a bet's chips to another spot (keeping its amount). */
 export function moveBet(layout: RouletteLayoutPlan, from: string, to: string): RouletteLayoutPlan {
-  return { ...layout, bets: layout.bets.map((b) => (b.spotId === from ? { spotId: to, amount: b.amount } : b)) };
+  return {
+    ...layout,
+    bets: layout.bets.map((b) => (b.spotId === from ? { spotId: to, amount: b.amount } : b)),
+  };
 }
 
 export interface BetCheck {
@@ -256,12 +284,19 @@ export function wheelName(rules: RouletteRules): string {
   return rules.laPartage ? "French roulette" : "European roulette";
 }
 
-export function checkBet(layout: RouletteLayoutPlan, original: RouletteLayoutPlan, spotId: string): BetCheck {
-  const issues = validateBets(layout.rules, layout.bets).filter((i) => !i.spotId || i.spotId === spotId);
+export function checkBet(
+  layout: RouletteLayoutPlan,
+  original: RouletteLayoutPlan,
+  spotId: string,
+): BetCheck {
+  const issues = validateBets(layout.rules, layout.bets).filter(
+    (i) => !i.spotId || i.spotId === spotId,
+  );
   const spot = getSpot(layout.rules, spotId);
   const bet = layout.bets.find((b) => b.spotId === spotId);
   if (!spot || !bet) return { ok: false, title: "Pick a bet", body: "" };
-  if (issues.length) return { ok: false, title: "Check this bet", body: issues.map((i) => i.message).join(" ") };
+  if (issues.length)
+    return { ok: false, title: "Check this bet", body: issues.map((i) => i.message).join(" ") };
   const min = isInsideBet(spot.type)
     ? `Meets the ${formatDollars(layout.rules.limits.insideMin)} inside minimum.`
     : `Meets the ${formatDollars(layout.rules.limits.min)} outside minimum.`;
@@ -277,14 +312,20 @@ export function checkBet(layout: RouletteLayoutPlan, original: RouletteLayoutPla
         ? `Same ${pct(share)} share of the spin as the original, so the payouts scale exactly.`
         : `${pct(share)} of the spin; the original put ${pct(origShare)} here.`;
   }
-  return { ok: true, title: `Rules-checked for ${wheelName(layout.rules)}`, body: `${min} ${tail}` };
+  return {
+    ok: true,
+    title: `Rules-checked for ${wheelName(layout.rules)}`,
+    body: `${min} ${tail}`,
+  };
 }
 
 /** The whole layout's check, for Test & submit. */
 export function checkLayout(layout: RouletteLayoutPlan): BetCheck {
-  if (layout.bets.length === 0) return { ok: false, title: "Add a bet first", body: "The layout is empty." };
+  if (layout.bets.length === 0)
+    return { ok: false, title: "Add a bet first", body: "The layout is empty." };
   const issues = validateBets(layout.rules, layout.bets);
-  if (issues.length) return { ok: false, title: "Check these bets", body: issues.map((i) => i.message).join(" ") };
+  if (issues.length)
+    return { ok: false, title: "Check these bets", body: issues.map((i) => i.message).join(" ") };
   return {
     ok: true,
     title: `Rules-checked for ${wheelName(layout.rules)}`,
@@ -314,15 +355,28 @@ export type SessionField = "stopWhenUp" | "stopWhenDown" | "maxSpins";
 export function sessionCards(layout: RouletteLayoutPlan) {
   const s = layout.session;
   return [
-    { field: "stopWhenUp" as const, label: "Stop when up", value: s.stopWhenUp === undefined ? "Off" : formatSignedDollars(s.stopWhenUp) },
-    { field: "stopWhenDown" as const, label: "Stop when down", value: s.stopWhenDown === undefined ? "Off" : formatSignedDollars(-s.stopWhenDown) },
+    {
+      field: "stopWhenUp" as const,
+      label: "Stop when up",
+      value: s.stopWhenUp === undefined ? "Off" : formatSignedDollars(s.stopWhenUp),
+    },
+    {
+      field: "stopWhenDown" as const,
+      label: "Stop when down",
+      value: s.stopWhenDown === undefined ? "Off" : formatSignedDollars(-s.stopWhenDown),
+    },
     { field: "maxSpins" as const, label: "Max spins", value: String(s.maxSpins) },
   ];
 }
 
-export function stepSession(layout: RouletteLayoutPlan, field: SessionField, dir: 1 | -1): RouletteLayoutPlan {
+export function stepSession(
+  layout: RouletteLayoutPlan,
+  field: SessionField,
+  dir: 1 | -1,
+): RouletteLayoutPlan {
   const s = layout.session;
-  if (field === "maxSpins") return { ...layout, session: { ...s, maxSpins: Math.max(10, s.maxSpins + dir * 10) } };
+  if (field === "maxSpins")
+    return { ...layout, session: { ...s, maxSpins: Math.max(10, s.maxSpins + dir * 10) } };
   const next = Math.max(0, (s[field] ?? 0) + dir * 50);
   const session = { ...s };
   if (next === 0) delete session[field];
@@ -345,7 +399,10 @@ export interface LayoutChange {
  * What differs from the original. A layout that is the original scaled up or down is one
  * change ("Spin size"), not one per bet: every share of the spin is the same.
  */
-export function layoutChanges(layout: RouletteLayoutPlan, original: RouletteLayoutPlan): LayoutChange[] {
+export function layoutChanges(
+  layout: RouletteLayoutPlan,
+  original: RouletteLayoutPlan,
+): LayoutChange[] {
   const out: LayoutChange[] = [];
   const total = totalStake(layout.bets);
   const origTotal = totalStake(original.bets);
@@ -353,8 +410,16 @@ export function layoutChanges(layout: RouletteLayoutPlan, original: RouletteLayo
     const s = getSpot(layout.rules, id) ?? getSpot(original.rules, id);
     return s ? spotTitle(s) : id;
   };
-  if (layout.rules.wheel !== original.rules.wheel || layout.rules.laPartage !== original.rules.laPartage) {
-    out.push({ key: "rules", title: "Table", from: wheelName(original.rules), to: wheelName(layout.rules) });
+  if (
+    layout.rules.wheel !== original.rules.wheel ||
+    layout.rules.laPartage !== original.rules.laPartage
+  ) {
+    out.push({
+      key: "rules",
+      title: "Table",
+      from: wheelName(original.rules),
+      to: wheelName(layout.rules),
+    });
   }
   const sameSpots =
     layout.bets.length === original.bets.length &&
@@ -368,30 +433,61 @@ export function layoutChanges(layout: RouletteLayoutPlan, original: RouletteLayo
     });
   if (scaled) {
     if (total !== origTotal) {
-      out.push({ key: "spin", title: "Spin size", from: `${formatDollars(origTotal)} per spin`, to: `${formatDollars(total)} per spin` });
+      out.push({
+        key: "spin",
+        title: "Spin size",
+        from: `${formatDollars(origTotal)} per spin`,
+        to: `${formatDollars(total)} per spin`,
+      });
     }
   } else {
     for (const b of layout.bets) {
       const o = original.bets.find((x) => x.spotId === b.spotId);
-      if (!o) out.push({ key: `bet:${b.spotId}`, title: name(b.spotId), from: "Not in the layout", to: formatDollars(b.amount) });
+      if (!o)
+        out.push({
+          key: `bet:${b.spotId}`,
+          title: name(b.spotId),
+          from: "Not in the layout",
+          to: formatDollars(b.amount),
+        });
       else if (o.amount !== b.amount) {
-        out.push({ key: `bet:${b.spotId}`, title: name(b.spotId), from: formatDollars(o.amount), to: formatDollars(b.amount) });
+        out.push({
+          key: `bet:${b.spotId}`,
+          title: name(b.spotId),
+          from: formatDollars(o.amount),
+          to: formatDollars(b.amount),
+        });
       }
     }
     for (const o of original.bets) {
       if (!layout.bets.some((b) => b.spotId === o.spotId)) {
-        out.push({ key: `bet:${o.spotId}`, title: name(o.spotId), from: formatDollars(o.amount), to: "Removed" });
+        out.push({
+          key: `bet:${o.spotId}`,
+          title: name(o.spotId),
+          from: formatDollars(o.amount),
+          to: "Removed",
+        });
       }
     }
   }
   if (layout.progression !== original.progression) {
-    out.push({ key: "progression", title: "After each spin", from: PROGRESSION_NAMES[original.progression], to: PROGRESSION_NAMES[layout.progression] });
+    out.push({
+      key: "progression",
+      title: "After each spin",
+      from: PROGRESSION_NAMES[original.progression],
+      to: PROGRESSION_NAMES[layout.progression],
+    });
   }
   const before = sessionCards(original);
   for (const card of sessionCards(layout)) {
     const was = before.find((c) => c.field === card.field);
     if (was && was.value !== card.value) {
-      out.push({ key: `session:${card.field}`, title: card.label, from: was.value, to: card.value });
+      out.push({
+        key: `session:${card.field}`,
+        title: card.label,
+        from: was.value,
+        to: card.value,
+      });
     }
   }
   return out;
@@ -411,7 +507,10 @@ export function spinTotal(layout: RouletteLayoutPlan): string {
 // ---------------------------------------------------------------------------
 
 export function testLayout(layout: RouletteLayoutPlan, seed: number) {
-  const plan = { ...layout, session: { ...layout.session, maxSpins: Math.min(50, layout.session.maxSpins) } };
+  const plan = {
+    ...layout,
+    session: { ...layout.session, maxSpins: Math.min(50, layout.session.maxSpins) },
+  };
   const one = simulatePlan(plan, seed);
   const many = simulatePlanMany(layout, seed, 200);
   const reason: Record<typeof one.stopReason, string> = {

@@ -62,10 +62,9 @@ describe("the D0h320 example: High Side + Six Line + Zero", () => {
   });
 
   it("has two changes: spin size and the stop-loss", () => {
-    expect(layoutChanges(draft.layout, draft.original).map((c) => `${c.title}: ${c.from} → ${c.to}`)).toEqual([
-      "Spin size: $200 per spin → $100 per spin",
-      "Stop when down: −$600 → −$300",
-    ]);
+    expect(
+      layoutChanges(draft.layout, draft.original).map((c) => `${c.title}: ${c.from} → ${c.to}`),
+    ).toEqual(["Spin size: $200 per spin → $100 per spin", "Stop when down: −$600 → −$300"]);
   });
 });
 
@@ -73,7 +72,9 @@ describe("editing", () => {
   it("steps a bet and the outcome table follows", () => {
     const more = stepBet(draft.layout, SIX, 1);
     expect(outcomeTable(more).rows[1]?.net).toBe("+$75");
-    expect(checkBet(more, draft.original, SIX).body).toMatch(/29% of the spin; the original put 25% here/);
+    expect(checkBet(more, draft.original, SIX).body).toMatch(
+      /29% of the spin; the original put 25% here/,
+    );
     const back = applyPreset(more, draft.original, SIX, "match");
     expect(back.bets.find((b) => b.spotId === SIX)?.amount).toBe(25);
     expect(applyPreset(draft.layout, draft.original, SIX, "half").bets[1]?.amount).toBe(13);
@@ -83,7 +84,12 @@ describe("editing", () => {
     const next = tapSpot(draft.layout, "straight:7");
     expect(next.bets.at(-1)).toEqual({ spotId: "straight:7", amount: 5 });
     expect(coverage(next).covered).toBe(26);
-    expect(widenOptions(next, "straight:7").map((s) => s.type)).toEqual(["split", "street", "corner", "sixLine"]);
+    expect(widenOptions(next, "straight:7").map((s) => s.type)).toEqual([
+      "split",
+      "street",
+      "corner",
+      "sixLine",
+    ]);
   });
 
   it("simulates 50 spins reproducibly", () => {

@@ -75,7 +75,10 @@ describe("editing", () => {
   });
 
   it("adds, moves and removes rules", () => {
-    expect(templatesFor(draft.plan, "come-out").map((t) => t.label)).toEqual(["Don't pass", "Field"]);
+    expect(templatesFor(draft.plan, "come-out").map((t) => t.label)).toEqual([
+      "Don't pass",
+      "Field",
+    ]);
     const added = addRule(draft.plan, { label: "Field every roll", section: "point" });
     expect(added.key).toEqual({ kind: "point", index: 2 });
     const moved = moveRule(added.plan, added.key, -1);
@@ -86,7 +89,10 @@ describe("editing", () => {
 
   it("flags broken payouts", () => {
     const plan = stepHitAmount(draft.plan, 2, 1);
-    const broken = { ...plan, placeWins: { ...plan.placeWins!, second: { kind: "press" as const, to: 20 } } };
+    const broken = {
+      ...plan,
+      placeWins: { ...plan.placeWins!, second: { kind: "press" as const, to: 20 } },
+    };
     expect(checkRule(broken, { kind: "hit", hit: 2 }).ok).toBe(false);
   });
 
