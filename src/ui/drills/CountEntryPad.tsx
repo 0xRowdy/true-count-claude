@@ -8,8 +8,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import { ActionButton } from "@/ui/primitives";
-import { colors, radius, spacing, type } from "@/ui/theme";
+import { colors, display, radius, ui } from "@/ui/ds";
+import { ActionButton, text } from "@/ui/trainer/kit";
 import {
   type CountEntry,
   EMPTY_ENTRY,
@@ -148,23 +148,25 @@ function Key({ label, hint, onPress }: { label: string; hint: string; onPress: (
   );
 }
 
+const NUM = { fontVariant: ["tabular-nums" as const] };
+
 const styles = StyleSheet.create({
-  wrap: { gap: spacing.sm, width: "100%", maxWidth: 360 },
-  prompt: { ...type.body, color: colors.text, fontWeight: "600" },
+  wrap: { gap: 10, width: "100%", maxWidth: 360 },
+  prompt: { ...ui(15, 600), color: colors.foreground },
   display: {
-    minHeight: 56,
+    minHeight: 64,
     justifyContent: "center",
     alignItems: "flex-end",
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: 16,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.accent,
+    borderColor: colors.primary,
     backgroundColor: colors.background,
   },
-  displayText: { ...type.mono, fontSize: 30, fontWeight: "700", color: colors.text },
-  placeholder: { color: colors.textMuted },
-  pad: { gap: spacing.xs },
-  row: { flexDirection: "row", gap: spacing.xs },
+  displayText: { ...display(36, 500), ...NUM, color: colors.foreground },
+  placeholder: { color: colors.mutedForeground },
+  pad: { gap: 6 },
+  row: { flexDirection: "row", gap: 6 },
   key: {
     flexGrow: 1,
     flexBasis: 0,
@@ -174,10 +176,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surfaceRaised,
+    backgroundColor: colors.secondary,
   },
-  pressed: { opacity: 0.6 },
-  keyLabel: { ...type.mono, fontSize: 20, fontWeight: "700", color: colors.text },
+  pressed: { opacity: 0.7 },
+  keyLabel: { ...ui(18, 600), ...NUM, color: colors.foreground },
   submit: { minHeight: 44, justifyContent: "center", alignItems: "flex-start" },
-  hint: { ...type.caption, color: colors.textMuted },
+  hint: text.note,
 });

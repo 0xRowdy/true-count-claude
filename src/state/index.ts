@@ -15,3 +15,4 @@ export * from "./schema";
 export * from "./archive";
 export * from "./store";
 export * from "./repository";
+export * from "./profile";

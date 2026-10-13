@@ -18,4 +18,5 @@ Home → Drills → "True Count drill" link, or `/drills/true-count`.
 ## Gotchas
 
 - The drills hub stays mounted underneath: filter to visible, anchor on `^Question 1$` and `^Running Count · `.
+- The question sits on felt; its labels are uppercased by CSS, so match the source text ("Running Count · ").
 - The Answer button's accessible name includes the typed value ("Answer: 2") — use it to prove entry reached the pad.

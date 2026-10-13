@@ -8,7 +8,7 @@
 
 import { StyleSheet, Text, View } from "react-native";
 import { signed } from "@/engine/deviations";
-import { colors, spacing, type } from "@/ui/theme";
+import { colors, surfaces, ui } from "@/ui/ds";
 import { formatSignedCount, indexScaleGeometry, type IndexView } from "./explanationFormat";
 
 export function IndexScale({
@@ -70,67 +70,70 @@ export function IndexScale({
 
 const LABEL_WIDTH = 72;
 
+const NUM = { fontVariant: ["tabular-nums" as const] };
+
 const styles = StyleSheet.create({
-  wrap: { gap: 2, paddingHorizontal: LABEL_WIDTH / 2 - 4, paddingVertical: spacing.xs },
+  wrap: { gap: 2, paddingHorizontal: LABEL_WIDTH / 2 - 4, paddingVertical: 4 },
   labels: { height: 16 },
   indexLabel: {
-    ...type.mono,
+    ...ui(11, 600),
+    ...NUM,
     position: "absolute",
     width: LABEL_WIDTH,
     marginLeft: -LABEL_WIDTH / 2,
     textAlign: "center",
-    fontSize: 11,
-    color: colors.warning,
+    color: colors.primary,
   },
   countLabel: {
-    ...type.mono,
+    ...ui(11, 700),
+    ...NUM,
     position: "absolute",
     width: LABEL_WIDTH,
     marginLeft: -LABEL_WIDTH / 2,
     textAlign: "center",
-    fontSize: 11,
-    color: colors.text,
-    fontWeight: "700",
+    color: colors.foreground,
   },
   track: {
     height: 14,
     borderRadius: 7,
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: colors.muted,
+    overflow: "hidden",
   },
   zone: {
     position: "absolute",
     top: 0,
     bottom: 0,
-    backgroundColor: "rgba(251, 191, 36, 0.22)",
+    backgroundColor: surfaces.primaryWash,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: colors.primary,
   },
   indexTick: {
     position: "absolute",
-    top: -4,
-    bottom: -4,
+    top: 0,
+    bottom: 0,
     width: 2,
     marginLeft: -1,
-    backgroundColor: colors.warning,
+    backgroundColor: colors.primary,
   },
   countDot: {
     position: "absolute",
-    top: 1,
+    top: 2,
     width: 10,
     height: 10,
     marginLeft: -5,
     borderRadius: 5,
-    backgroundColor: colors.text,
+    backgroundColor: colors.foreground,
   },
   ticks: { height: 14 },
   tick: {
-    ...type.mono,
+    ...ui(10, 500),
+    ...NUM,
     position: "absolute",
     width: 24,
     marginLeft: -12,
     textAlign: "center",
-    fontSize: 10,
-    color: colors.textMuted,
+    color: colors.mutedForeground,
   },
-  legend: { ...type.caption, fontSize: 11, color: colors.textMuted, marginTop: 2 },
+  legend: { ...ui(11), color: colors.mutedForeground, marginTop: 2 },
 });

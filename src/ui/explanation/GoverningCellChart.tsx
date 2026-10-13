@@ -16,10 +16,9 @@ import { useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { strategyChart } from "@/engine/strategy";
 import type { DecisionExplanation } from "@/drills/explanation";
-import { SecondaryButton } from "@/ui/primitives";
 import { sectionRows } from "@/ui/rules/chartChanges";
 import { ChartLegend, StrategyChartGrid } from "@/ui/rules/StrategyChartPanel";
-import { colors, spacing, type } from "@/ui/theme";
+import { SecondaryButton, text } from "@/ui/trainer/kit";
 import { cellView, chartWindow, unprintedRowNote } from "./explanationFormat";
 
 /** Rows either side of the governing one in the default, compact view. */
@@ -67,15 +66,15 @@ export function GoverningCellChart({ explanation }: { explanation: DecisionExpla
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: spacing.sm },
-  sentence: { ...type.body, color: colors.text },
-  note: { ...type.caption, color: colors.textMuted, lineHeight: 18 },
+  wrap: { gap: 10 },
+  sentence: text.body,
+  note: text.note,
   footer: {
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: spacing.sm,
+    gap: 8,
   },
-  caption: { ...type.caption, fontSize: 12, color: colors.textMuted, flexShrink: 1 },
+  caption: text.small,
 });
