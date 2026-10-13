@@ -75,7 +75,7 @@ describe("dealCoup", () => {
     }
     const cutCoup = state.cutCardCoup as number;
     expect(cutCoup).toBe(state.coups.length - 1);
-    expect(state.shoe.dealtCount).toBeGreaterThanOrEqual(state.shoe.cutIndex);
+    expect(state.shoe.dealtCount).toBeGreaterThan(state.shoe.cutIndex);
     expect(isLastCoup(state)).toBe(true);
     expect(isShoeComplete(state)).toBe(false);
 
@@ -83,6 +83,30 @@ describe("dealCoup", () => {
     expect(state.cutCardCoup).toBe(cutCoup);
     expect(isShoeComplete(state)).toBe(true);
     expect(() => dealCoup(state)).toThrow(/Shoe complete/);
+  });
+
+  it("the cut card comes out only when the card behind it is drawn", () => {
+    // Find a coup that ends exactly on the last card before the cut card.
+    let found: ReturnType<typeof createBaccaratShoe> | null = null;
+    for (let seed = 0; !found && seed < 50; seed++) {
+      const fresh = createBaccaratShoe({ ...PUNTO_BANCO, burn: false }, seed);
+      for (let k = 4; k <= 6 && !found; k++) {
+        const start = { ...fresh, shoe: { ...fresh.shoe, dealtCount: fresh.shoe.cutIndex - k } };
+        if (dealCoup(start).state.shoe.dealtCount === fresh.shoe.cutIndex) found = start;
+      }
+    }
+    if (!found) throw new Error("no coup ended exactly at the cut card in 50 shoes");
+
+    const endsAtCut = dealCoup(found).state;
+    expect(isCutCardOut(endsAtCut)).toBe(false);
+    const next = dealCoup(endsAtCut).state;
+    expect(next.cutCardCoup).toBe(1);
+    expect(isLastCoup(next)).toBe(true);
+
+    // One card past the cut and the cut card came out during that coup.
+    const fresh = createBaccaratShoe({ ...PUNTO_BANCO, burn: false }, 0);
+    const past = { ...fresh, shoe: { ...fresh.shoe, dealtCount: fresh.shoe.cutIndex - 1 } };
+    expect(dealCoup(past).state.cutCardCoup).toBe(0);
   });
 
   it("over many whole shoes: never runs dry, conserves cards, and follows the tableau every coup", () => {

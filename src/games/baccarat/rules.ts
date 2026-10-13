@@ -146,9 +146,7 @@ export function describeRules(rules: BaccaratRules): string {
   const name = rules.variant === "ez" ? "EZ Baccarat" : "Punto Banco";
   const decks = `${rules.decks} deck${rules.decks === 1 ? "" : "s"}`;
   const commission =
-    rules.variant === "ez"
-      ? "no commission"
-      : `${formatPercent(rules.commission * 100, 0)} commission`;
+    rules.variant === "ez" ? "no commission" : `${formatPercent(rules.commission, 0)} commission`;
   return `${name} · ${decks} · ${commission}`;
 }
 
@@ -177,9 +175,12 @@ export const BET_LABELS: Readonly<Record<BetKind, string>> = {
   panda8: "Panda 8",
 };
 
-/** Locale-free percent formatting, so prerendered and hydrated text match. */
-export function formatPercent(value: number, digits = 2): string {
-  return `${value.toFixed(digits)}%`;
+/**
+ * A probability (0–1) as a percent: `formatPercent(0.0106, 2)` → "1.06%". Same signature as
+ * roulette's helper. Locale-free, so prerendered and hydrated text match.
+ */
+export function formatPercent(probability: number, digits = 1): string {
+  return `${(probability * 100).toFixed(digits)}%`;
 }
 
 function formatRatio(value: number): string {

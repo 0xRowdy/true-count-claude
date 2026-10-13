@@ -29,7 +29,7 @@ export interface CoachNote {
 }
 
 function pct(edge: number): string {
-  return formatPercent(edge * 100, 2);
+  return formatPercent(edge, 2);
 }
 
 /**
@@ -45,7 +45,7 @@ export function bankerEdgeTip(rules: BaccaratRules): string {
       `the house takes its share by pushing a Banker win on a three-card 7. ${STREAK_FALLACY}`
     );
   }
-  const commission = formatPercent(rules.commission * 100, 0);
+  const commission = formatPercent(rules.commission, 0);
   return `Banker carries the lower house edge (${banker} vs ${player}), even after the ${commission} commission. ${STREAK_FALLACY}`;
 }
 

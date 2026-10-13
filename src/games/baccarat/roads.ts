@@ -128,6 +128,9 @@ export function bigRoad(coups: readonly Coup[], rows = ROAD_ROWS): BigRoad {
   let leadingTies = 0;
   let streak = -1;
   let streakStartColumn = -1;
+  // Once a streak turns right (bottom row, or the cell below is taken), it keeps going
+  // right on that row — it never drops back down into a free cell.
+  let turned = false;
   let last: (typeof cells)[number] | undefined;
 
   coups.forEach((coup, i) => {
@@ -144,12 +147,14 @@ export function bigRoad(coups: readonly Coup[], rows = ROAD_ROWS): BigRoad {
       while (occupied.has(key(column, 0))) column++;
       row = 0;
       streakStartColumn = column;
-    } else if (last.row + 1 < rows && !occupied.has(key(last.column, last.row + 1))) {
+      turned = false;
+    } else if (!turned && last.row + 1 < rows && !occupied.has(key(last.column, last.row + 1))) {
       column = last.column;
       row = last.row + 1;
     } else {
       column = last.column + 1;
       row = last.row;
+      turned = true;
     }
     occupied.add(key(column, row));
     const cell = { coup: i, column, row, winner: coup.winner, ties: 0, streak };

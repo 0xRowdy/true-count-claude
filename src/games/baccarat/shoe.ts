@@ -7,8 +7,10 @@
  *
  * - **Burn.** The first card is turned face up and that many cards (court cards and tens
  *   count as ten) are burned face down.
- * - **Cut card.** The cut card sits `cardsBehindCut` cards from the back. When it comes out
- *   during a coup, that coup is finished and exactly one more coup is dealt.
+ * - **Cut card.** The cut card sits `cardsBehindCut` cards from the back, just before card
+ *   `shoe.cutIndex`. It comes out when that card is drawn; the coup in progress is finished
+ *   and exactly one more coup is dealt. A coup that ends on the card just before the cut
+ *   card has not brought it out.
  *
  * Every shoe is reproducible from its seed (ADR-0004). Randomness comes only from the
  * seeded `Rng`.
@@ -101,8 +103,9 @@ export function dealCoup(state: BaccaratShoe): CoupDeal {
     return next.card;
   });
   const coups = [...state.coups, coup];
+  // The cut card comes out with card `cutIndex`, i.e. once more than `cutIndex` cards are dealt.
   const cutCardCoup =
-    state.cutCardCoup ?? (shoe.dealtCount >= shoe.cutIndex ? coups.length - 1 : null);
+    state.cutCardCoup ?? (shoe.dealtCount > shoe.cutIndex ? coups.length - 1 : null);
   return { coup, state: { ...state, shoe, coups, cutCardCoup } };
 }
 

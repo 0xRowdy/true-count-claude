@@ -122,7 +122,7 @@ export function settleBet(
       }
       return win(
         1 - rules.commission,
-        `Banker wins — pays ${cents(1 - rules.commission)}:1 after the ${formatPercent(rules.commission * 100, 0)} commission`,
+        `Banker wins — pays ${cents(1 - rules.commission)}:1 after the ${formatPercent(rules.commission, 0)} commission`,
       );
 
     case "tie":

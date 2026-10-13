@@ -12,7 +12,13 @@
  * closed forms instead.
  */
 
-import { SIDE_BET_PAYS, type BaccaratRules, type BetKind, isBetOffered } from "./rules";
+import {
+  SIDE_BET_PAYS,
+  type BaccaratRules,
+  type BetKind,
+  formatPercent,
+  isBetOffered,
+} from "./rules";
 import { bankerDraws, playerDraws } from "./coup";
 
 export interface OutcomeProbabilities {
@@ -163,7 +169,7 @@ export function houseEdgeTable(rules: BaccaratRules): HouseEdgeRow[] {
     .filter((bet) => isBetOffered(rules, bet))
     .map((bet) => {
       const edge = houseEdge(rules, bet);
-      return { bet, edge, label: `${(edge * 100).toFixed(2)}%` };
+      return { bet, edge, label: formatPercent(edge, 2) };
     })
     .sort((a, b) => a.edge - b.edge);
 }

@@ -5,6 +5,7 @@ import {
   EZ_BACCARAT,
   PUNTO_BANCO,
   describeRules,
+  formatPercent,
   isBetOffered,
   payLabel,
   validateBaccaratRules,
@@ -49,6 +50,12 @@ describe("baccarat rules", () => {
       "dragon7",
       "panda8",
     ]);
+  });
+
+  it("formatPercent takes a probability (0–1), like roulette's helper", () => {
+    expect(formatPercent(0.0106, 2)).toBe("1.06%");
+    expect(formatPercent(0.05, 0)).toBe("5%");
+    expect(formatPercent(0.486)).toBe("48.6%");
   });
 
   it("rejects unsound rules", () => {

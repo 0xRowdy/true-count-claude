@@ -125,6 +125,30 @@ describe("big road", () => {
     expect(bigRoad(seq("BBBBBBBB PPPPPPP")).columns).toBe(4);
   });
 
+  it("a streak that turned early keeps moving right and never drops back down", () => {
+    // Banker's tail fills (1,5) and (2,5). Player takes (1,0). The second Banker streak
+    // starts at (2,0), turns at row 4 because (2,5) is taken, and then stays on row 4
+    // even though (3,5) is free.
+    expect(at("BBBBBBBB P BBBBBBB")).toEqual([
+      "b0,0",
+      "b0,1",
+      "b0,2",
+      "b0,3",
+      "b0,4",
+      "b0,5",
+      "b1,5",
+      "b2,5",
+      "p1,0",
+      "b2,0",
+      "b2,1",
+      "b2,2",
+      "b2,3",
+      "b2,4",
+      "b3,4",
+      "b4,4",
+    ]);
+  });
+
   it("numbers streaks", () => {
     expect(bigRoad(seq("BBPB")).cells.map((c) => c.streak)).toEqual([0, 0, 1, 2]);
   });
