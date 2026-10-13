@@ -15,8 +15,10 @@ import type { RuleSet } from "@/engine/rules";
 import { describeRules } from "@/engine/rules";
 import type { Shoe } from "@/engine/shoe";
 import { cardsRemaining, decksRemaining, isCutCardReached } from "@/engine/shoe";
-import { ActionButton, Panel, SecondaryButton, StatRow } from "@/ui/primitives";
-import { colors, radius, spacing, type } from "@/ui/theme";
+import Copy from "lucide-react-native/icons/copy";
+import Shuffle from "lucide-react-native/icons/shuffle";
+import { colors, display, ui, Panel } from "@/ui/ds";
+import { ActionButton, SecondaryButton, StatRow, inputStyle, text } from "@/ui/trainer/kit";
 
 export function SeedPanel({
   shoe,
@@ -53,8 +55,8 @@ export function SeedPanel({
       </Text>
 
       <View style={styles.row}>
-        <ActionButton label="Copy seed" onPress={onCopySeed} tone="info" />
-        <SecondaryButton label="New Shoe" onPress={onNewSeed} />
+        <ActionButton label="Copy seed" icon={Copy} onPress={onCopySeed} tone="info" />
+        <SecondaryButton label="New Shoe" icon={Shuffle} onPress={onNewSeed} />
       </View>
 
       <View style={styles.loadRow}>
@@ -64,7 +66,7 @@ export function SeedPanel({
             value={seedText}
             onChangeText={onSeedTextChange}
             placeholder={String(shoe.seed)}
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.mutedForeground}
             inputMode="numeric"
             accessibilityLabel="Seed to load"
             style={styles.input}
@@ -94,26 +96,18 @@ export function SeedPanel({
   );
 }
 
+const NUM = { fontVariant: ["tabular-nums" as const] };
+
 const styles = StyleSheet.create({
-  seedLabel: { ...type.caption, color: colors.textMuted },
-  seed: { ...type.mono, fontSize: 30, fontWeight: "700", color: colors.text, letterSpacing: 1 },
-  prose: { ...type.caption, color: colors.textMuted, lineHeight: 19 },
-  row: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  loadRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, alignItems: "flex-end" },
-  field: { flexGrow: 1, flexBasis: 160, gap: spacing.xs },
-  fieldLabel: { ...type.caption, color: colors.textMuted },
-  input: {
-    minHeight: 44,
-    paddingHorizontal: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.sm,
-    backgroundColor: colors.background,
-    color: colors.text,
-    ...type.mono,
-    fontSize: 15,
-  },
-  notice: { ...type.caption, color: colors.info },
-  rules: { ...type.mono, ...type.caption, color: colors.text, marginBottom: spacing.xs },
-  stats: { gap: spacing.xs, marginTop: spacing.xs },
+  seedLabel: text.overline,
+  seed: { ...display(40, 500), ...NUM, color: colors.foreground, letterSpacing: 1 },
+  prose: text.note,
+  row: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  loadRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, alignItems: "flex-end" },
+  field: { flexGrow: 1, flexBasis: 160, gap: 6 },
+  fieldLabel: text.label,
+  input: inputStyle,
+  notice: text.info,
+  rules: { ...ui(13, 500), color: colors.foreground, marginBottom: 4 },
+  stats: { gap: 8, marginTop: 4, paddingTop: 14, borderTopWidth: 1, borderTopColor: colors.border },
 });

@@ -24,16 +24,15 @@ import {
   type DealerUpcard,
   type StrategyChart,
 } from "@/engine/strategy";
-import { Badge, Panel, SegmentedControl } from "@/ui/primitives";
-import { colors, radius, spacing, type } from "@/ui/theme";
+import { Tabs, colors, radius, ui, Panel } from "@/ui/ds";
+import { strategyColors, type StrategySwatch } from "@/ui/ds/strategyColors";
+import { ToneBadge, text } from "@/ui/trainer/kit";
 import {
   CHART_CODE_LABEL,
   CHART_CODE_TEXT,
   CHART_SECTIONS,
   type ChartChange,
   type ChartRowView,
-  type CodeFamily,
-  CODE_FAMILY,
   SECTION_TITLE,
   cellKey,
   describeChange,
@@ -42,26 +41,38 @@ import {
   upcardLabel,
 } from "./chartChanges";
 
-/** Cell geometry. `compact` is for a chart embedded in another surface, like an Explanation. */
+/**
+ * Cell geometry. `compact` is for a chart embedded in another surface, like an Explanation.
+ * Columns grow to fill the panel up to `maxColumnWidth` (the Strategy Builder's cells fill
+ * their row), and never shrink below `columnWidth` — narrower than that, the table scrolls.
+ */
 const DENSITY = {
-  regular: { rowHeight: 30, columnWidth: 38, labelWidth: 58 },
-  compact: { rowHeight: 28, columnWidth: 32, labelWidth: 48 },
+  regular: { rowHeight: 33, columnWidth: 40, maxColumnWidth: 64, labelWidth: 58 },
+  compact: { rowHeight: 30, columnWidth: 34, maxColumnWidth: 48, labelWidth: 48 },
 } as const;
+
+/** The cell gap: the design's chart rows and columns sit 3pt apart. */
+const GAP = 3;
 
 export type ChartDensity = keyof typeof DENSITY;
 
 /**
- * Five colours for five families of play, so the shape of the chart is readable before a
- * single letter is. Defined here rather than in `theme.ts` because they are this table's
- * semantics — hit, stand, double, split, surrender — and not app-wide tokens.
+ * Each code's swatch, from the Strategy Builder's legend (RYP9O): Hit on paper, Stand amber,
+ * Double blue, Double-else-stand light blue, Surrender grey. Split, which that legend does not
+ * show, is violet. The shape of the chart reads before a single letter does.
  */
-const FAMILY_STYLE: Readonly<Record<CodeFamily, { bg: string; fg: string }>> = {
-  hit: { bg: "#3A2A1C", fg: "#FBBF24" },
-  stand: { bg: "#1F3D2B", fg: "#4ADE80" },
-  double: { bg: "#1B2C44", fg: "#60A5FA" },
-  split: { bg: "#2E2440", fg: "#C4B5FD" },
-  surrender: { bg: "#3B1F22", fg: "#F87171" },
+const CODE_SWATCH: Readonly<Record<ChartCode, StrategySwatch>> = {
+  H: "hit",
+  S: "stand",
+  D: "double",
+  Ds: "doubleStand",
+  P: "split",
+  Rh: "surrender",
+  Rs: "surrender",
+  Rp: "surrender",
 };
+
+const swatch = (code: ChartCode) => strategyColors[CODE_SWATCH[code]];
 
 const LEGEND_ORDER: readonly ChartCode[] = ["H", "S", "D", "Ds", "P", "Rh", "Rs", "Rp"];
 
@@ -98,14 +109,19 @@ export function StrategyChartPanel({
 
       <ChangeReport changes={changes} />
 
-      <SegmentedControl options={SECTION_OPTIONS} value={section} onChange={setSection} />
+      <Tabs
+        options={SECTION_OPTIONS}
+        value={section}
+        onChange={setSection}
+        accessibilityLabel="Chart section"
+      />
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionCaption}>
           {SECTION_TITLE[section]} · dealer upcard across the top
         </Text>
         {changedInSection > 0 ? (
-          <Badge label={`${changedInSection} MOVED HERE`} tone="info" />
+          <ToneBadge label={`${changedInSection} moved here`} tone="warn" />
         ) : null}
       </View>
 
@@ -162,17 +178,26 @@ export function StrategyChartGrid({
 
   // Re-run whenever the highlighted column or the available width changes, so a panel that
   // switches between decisions keeps its cell in view without remounting the table.
+  // Measured after mount, so the prerendered chart and the first client render agree.
+  const columnWidth =
+    viewport > 0
+      ? Math.min(
+          size.maxColumnWidth,
+          Math.max(size.columnWidth, Math.floor(viewport / DEALER_UPCARDS.length)),
+        )
+      : size.columnWidth;
+
   useEffect(() => {
     if (highlightColumn < 0 || viewport <= 0) return;
-    const content = DEALER_UPCARDS.length * size.columnWidth;
+    const content = DEALER_UPCARDS.length * columnWidth;
     if (content <= viewport) return;
-    const centred = highlightColumn * size.columnWidth - (viewport - size.columnWidth) / 2;
+    const centred = highlightColumn * columnWidth - (viewport - columnWidth) / 2;
     const x = Math.max(0, Math.min(centred, content - viewport));
     scroller.current?.scrollTo({ x, animated: false });
-  }, [highlightColumn, viewport, size.columnWidth]);
+  }, [highlightColumn, viewport, columnWidth]);
 
   const cellSize = { height: size.rowHeight };
-  const column = { width: size.columnWidth };
+  const column = { width: columnWidth };
 
   return (
     <View style={styles.table}>
@@ -195,7 +220,13 @@ export function StrategyChartGrid({
         })}
       </View>
 
-      <ScrollView ref={scroller} horizontal showsHorizontalScrollIndicator onLayout={onLayout}>
+      <ScrollView
+        ref={scroller}
+        horizontal
+        showsHorizontalScrollIndicator
+        onLayout={onLayout}
+        style={styles.scroller}
+      >
         <View>
           <View style={styles.headerRow}>
             {DEALER_UPCARDS.map((upcard) => {
@@ -214,7 +245,7 @@ export function StrategyChartGrid({
               {DEALER_UPCARDS.map((upcard) => {
                 const code = row.cells[upcard];
                 const moved = changedKeys?.has(cellKey(row.key, upcard)) ?? false;
-                const palette = FAMILY_STYLE[CODE_FAMILY[code]];
+                const palette = swatch(code);
                 const inRow = highlight?.rowLabel === row.label;
                 const inColumn = highlight?.upcard === upcard;
                 const target = inRow && inColumn;
@@ -226,19 +257,24 @@ export function StrategyChartGrid({
                     accessibilityLabel={`${row.label} versus ${upcardLabel(upcard)}: ${
                       CHART_CODE_LABEL[code]
                     }${moved ? ", changed" : ""}${target ? ", the cell behind this decision" : ""}`}
-                    style={[
-                      styles.cell,
-                      cellSize,
-                      column,
-                      { backgroundColor: palette.bg },
-                      dimmed && styles.dimmedCell,
-                      moved && styles.movedCell,
-                      target && styles.targetCell,
-                    ]}
+                    style={[styles.cell, cellSize, column]}
                   >
-                    <Text style={[styles.cellText, { color: palette.fg }]}>
-                      {CHART_CODE_TEXT[code]}
-                    </Text>
+                    <View
+                      style={[
+                        styles.swatch,
+                        { backgroundColor: palette.bg },
+                        dimmed && styles.dimmedCell,
+                        moved && styles.movedCell,
+                        // Gold on the amber Stand swatch would vanish: outline it in ink there.
+                        moved && CODE_SWATCH[code] === "stand" && styles.movedOnAmber,
+                        target && styles.targetCell,
+                      ]}
+                    >
+                      <Text style={[styles.cellText, { color: palette.fg }]}>
+                        {CHART_CODE_TEXT[code]}
+                      </Text>
+                      {moved ? <View style={styles.movedDot} /> : null}
+                    </View>
                   </View>
                 );
               })}
@@ -283,7 +319,7 @@ export function ChartLegend() {
   return (
     <View style={styles.legend}>
       {LEGEND_ORDER.map((code) => {
-        const palette = FAMILY_STYLE[CODE_FAMILY[code]];
+        const palette = swatch(code);
         return (
           <View key={code} style={styles.legendItem}>
             <View style={[styles.legendSwatch, { backgroundColor: palette.bg }]}>
@@ -300,67 +336,78 @@ export function ChartLegend() {
 }
 
 const styles = StyleSheet.create({
-  intro: { ...type.caption, color: colors.textMuted, lineHeight: 19 },
+  intro: text.note,
   changes: {
-    gap: 2,
-    padding: spacing.sm,
-    borderRadius: radius.sm,
+    gap: 4,
+    padding: 14,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.info,
-    backgroundColor: colors.background,
+    borderColor: colors.primary,
+    backgroundColor: colors.muted,
   },
-  changesHeadline: { ...type.caption, color: colors.info, fontWeight: "700" },
-  changeLine: { ...type.caption, color: colors.text, fontSize: 12, lineHeight: 18 },
-  changeMore: { ...type.caption, color: colors.textMuted, fontSize: 12 },
+  changesHeadline: { ...ui(14, 600), color: colors.primary },
+  changeLine: { ...ui(13, 400, { lineHeight: 19 }), color: colors.foreground },
+  changeMore: { ...ui(12), color: colors.mutedForeground },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: 8,
     flexWrap: "wrap",
   },
-  sectionCaption: { ...type.caption, color: colors.textMuted, flexShrink: 1 },
-  table: {
-    flexDirection: "row",
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.sm,
-    overflow: "hidden",
-    backgroundColor: colors.background,
+  sectionCaption: {
+    ...ui(11, 700, { letterSpacing: 1.2, textTransform: "uppercase" }),
+    color: colors.mutedForeground,
+    flexShrink: 1,
   },
-  labelColumn: {
-    borderRightWidth: 1,
-    borderRightColor: colors.border,
-    backgroundColor: colors.surfaceRaised,
-  },
-  headerRow: { flexDirection: "row", backgroundColor: colors.surfaceRaised },
+  table: { flexDirection: "row" },
+  scroller: { flex: 1 },
+  labelColumn: {},
+  headerRow: { flexDirection: "row" },
   bodyRow: { flexDirection: "row" },
-  cell: {
+  cell: { justifyContent: "center", alignItems: "center", padding: GAP / 2 },
+  swatch: {
+    alignSelf: "stretch",
+    flex: 1,
+    borderRadius: 5,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderWidth: 2,
+    borderColor: "transparent",
   },
-  cornerCell: { backgroundColor: colors.surfaceRaised },
-  cornerText: { ...type.caption, color: colors.textMuted, fontSize: 11 },
-  labelText: { ...type.mono, ...type.caption, color: colors.text, fontWeight: "700" },
-  headerText: { ...type.mono, ...type.caption, color: colors.text, fontWeight: "700" },
-  cellText: { ...type.mono, fontSize: 12, fontWeight: "700" },
-  movedCell: { borderWidth: 2, borderColor: colors.text },
-  litLabel: { backgroundColor: colors.accentMuted },
-  litLabelText: { color: colors.accent },
-  dimmedCell: { opacity: 0.35 },
-  targetCell: { borderWidth: 3, borderColor: colors.text },
-  legend: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  legendItem: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  cornerCell: { alignItems: "flex-start" },
+  cornerText: { ...ui(10, 600), color: colors.mutedForeground },
+  labelText: { ...ui(13, 600), color: colors.foreground, alignSelf: "flex-start", paddingLeft: 2 },
+  headerText: { ...ui(13, 700), color: colors.foreground },
+  cellText: { ...ui(12, 800) },
+  movedCell: { borderColor: colors.primary },
+  movedOnAmber: { borderColor: colors.ink },
+  // Gold with an ink ring, so it reads on every swatch, amber included.
+  movedDot: {
+    position: "absolute",
+    top: 2,
+    left: 2,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: colors.primary,
+    borderWidth: 2,
+    borderColor: colors.ink,
+  },
+  litLabel: { backgroundColor: colors.muted, borderRadius: 5 },
+  litLabelText: { color: colors.primary },
+  dimmedCell: { opacity: 0.3 },
+  targetCell: { borderColor: colors.foreground, borderWidth: 3 },
+  legend: { flexDirection: "row", flexWrap: "wrap", columnGap: 14, rowGap: 8 },
+  legendItem: { flexDirection: "row", alignItems: "center", gap: 6 },
   legendSwatch: {
-    width: 26,
-    height: 22,
+    width: 24,
+    height: 20,
     borderRadius: 4,
     justifyContent: "center",
     alignItems: "center",
   },
-  legendCode: { ...type.mono, fontSize: 11, fontWeight: "700" },
-  legendLabel: { ...type.caption, color: colors.textMuted, fontSize: 12 },
-  footnote: { ...type.caption, color: colors.textMuted, fontSize: 12, lineHeight: 17 },
+  legendCode: { ...ui(10, 800) },
+  legendLabel: { ...ui(12), color: colors.mutedForeground },
+  footnote: text.small,
 });

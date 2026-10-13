@@ -158,6 +158,11 @@ export const surfaces = {
   diePip: "#FFFFFF",
   /** Swatch hex captions on the design sheet. */
   caption: "#7E8882",
+  /**
+   * Information text on the dark surfaces (the strategy chart's "Ds" light blue): `--coach-accent`
+   * is too dark to read as text on `--card`.
+   */
+  infoInk: "#7FA8F2",
   transparent: "transparent",
 } as const;
 

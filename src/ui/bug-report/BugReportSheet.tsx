@@ -25,9 +25,11 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { ActionButton, Panel, SecondaryButton } from "@/ui/primitives";
+import X from "lucide-react-native/icons/x";
+import Copy from "lucide-react-native/icons/copy";
+import { ActionButton, SecondaryButton, inputStyle, text } from "@/ui/trainer/kit";
 import { type ExportOutcome, copyText, exportReportFile } from "@/ui/shoe-integrity/share";
-import { colors, radius, spacing, type } from "@/ui/theme";
+import { colors, display, radius, ui, Panel } from "@/ui/ds";
 import {
   type BugReport,
   KNOWN_ISSUES_URL,
@@ -98,7 +100,7 @@ export function BugReportSheet({ report, onClose }: { report: BugReport; onClose
           <Panel style={styles.sheet}>
             <View style={styles.header}>
               <Text style={styles.title}>Report a bug</Text>
-              <SecondaryButton label="Close" onPress={onClose} />
+              <SecondaryButton label="Close" icon={X} onPress={onClose} />
             </View>
 
             <Text style={styles.prose}>
@@ -114,21 +116,21 @@ export function BugReportSheet({ report, onClose }: { report: BugReport; onClose
               value={note}
               onChangeText={setNote}
               placeholder="e.g. Split was not offered on a pair of 8s"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.mutedForeground}
               multiline
               style={styles.input}
               accessibilityLabel="What went wrong"
             />
 
             <View style={styles.row}>
-              <ActionButton label="Copy report" tone="good" onPress={onCopy} />
+              <ActionButton label="Copy report" icon={Copy} tone="good" onPress={onCopy} />
               <SecondaryButton label={web ? "Download report" : "Share report"} onPress={onShare} />
               <SecondaryButton label="Open a GitHub issue" onPress={onOpenIssue} />
             </View>
 
             {outcome ? (
               <Text
-                style={[styles.outcome, { color: outcome.ok ? colors.accent : colors.warning }]}
+                style={[styles.outcome, { color: outcome.ok ? colors.correct : colors.primary }]}
               >
                 {outcome.message}
               </Text>
@@ -162,12 +164,13 @@ export function BugReportSheet({ report, onClose }: { report: BugReport; onClose
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.7)" },
+  // The scrim: the page background at 80%.
+  backdrop: { flex: 1, backgroundColor: `${colors.background}CC` },
   scroll: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
     justifyContent: "center",
-    padding: spacing.md,
+    padding: 16,
   },
   sheet: { width: "100%", maxWidth: 720, alignSelf: "center" },
   header: {
@@ -175,33 +178,29 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: 8,
   },
-  title: { ...type.heading, color: colors.text },
-  prose: { ...type.body, color: colors.textMuted },
-  label: { ...type.caption, color: colors.text, fontWeight: "600", marginTop: spacing.xs },
-  note: { ...type.caption, color: colors.textMuted, lineHeight: 18 },
+  title: { ...display(28, 500), color: colors.foreground },
+  prose: text.bodyMuted,
+  label: { ...text.overline, marginTop: 6 },
+  note: text.note,
   input: {
-    ...type.body,
-    color: colors.text,
-    minHeight: 64,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.sm,
-    backgroundColor: colors.background,
-    padding: spacing.sm,
+    ...inputStyle,
+    ...ui(15, 400),
+    minHeight: 72,
+    paddingVertical: 10,
     textAlignVertical: "top",
   },
-  row: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  outcome: { ...type.caption },
+  row: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  outcome: { ...ui(13, 500) },
   preview: {
     maxHeight: 320,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.sm,
+    borderRadius: radius.md,
     backgroundColor: colors.background,
-    padding: spacing.sm,
+    padding: 12,
   },
-  previewText: { ...type.mono, fontSize: 11, color: colors.textMuted, lineHeight: 16 },
-  meta: { ...type.mono, fontSize: 11, color: colors.textMuted },
+  previewText: { ...ui(11, 400, { lineHeight: 16 }), color: colors.mutedForeground },
+  meta: { ...ui(12, 500), color: colors.mutedForeground },
 });
