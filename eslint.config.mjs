@@ -216,9 +216,11 @@ export default tseslint.config(
 
   // ---------------------------------------------------------------------------
   // The engine boundary. This block is the enforcement of ADR-0002 and ADR-0004.
+  // src/games holds the engines for the other table games (roulette, craps, video poker,
+  // baccarat). They make the same promises as the blackjack engine, so the same rules apply.
   // ---------------------------------------------------------------------------
   {
-    files: ["src/engine/**/*.ts"],
+    files: ["src/engine/**/*.ts", "src/games/**/*.ts"],
     languageOptions: {
       // The engine targets no host. It gets the language and nothing else — which is
       // why an undeclared `window` or `fetch` is a no-undef error here.
@@ -235,7 +237,7 @@ export default tseslint.config(
   // clock. See ENGINE_TEST_FORBIDDEN_SYNTAX for why this exception is stated rather
   // than left as an accident of selector shape.
   {
-    files: ["src/engine/**/*.test.ts"],
+    files: ["src/engine/**/*.test.ts", "src/games/**/*.test.ts"],
     languageOptions: {
       globals: { ...globals.es2024, performance: "readonly" },
     },
