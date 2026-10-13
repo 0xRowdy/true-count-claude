@@ -20,8 +20,8 @@
 
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { type ExpectationBand, describeExpectation, formatUnits } from "./integrity";
-import { Badge, Panel, SecondaryButton, StatRow } from "@/ui/primitives";
-import { colors, radius, spacing, type } from "@/ui/theme";
+import { colors, radius, ui, Panel } from "@/ui/ds";
+import { SecondaryButton, StatRow, ToneBadge, inputStyle, text } from "@/ui/trainer/kit";
 
 const FRAME_HEIGHT = 72;
 /** How far out the axis reaches, in standard deviations either side of expectation. */
@@ -36,9 +36,9 @@ const VERDICT_TONE = {
 } as const;
 
 const VERDICT_LABEL = {
-  ordinary: "ORDINARY VARIANCE",
-  uncommon: "UNCOMMON",
-  "report-it": "WORTH REPORTING",
+  ordinary: "Ordinary variance",
+  uncommon: "Uncommon",
+  "report-it": "Worth reporting",
 } as const;
 
 export function ExpectationBandPanel({
@@ -95,12 +95,12 @@ export function ExpectationBandPanel({
       {hasSession ? (
         <>
           <View style={styles.badges}>
-            <Badge label={VERDICT_LABEL[band.verdict]} tone={VERDICT_TONE[band.verdict]} />
+            <ToneBadge label={VERDICT_LABEL[band.verdict]} tone={VERDICT_TONE[band.verdict]} />
           </View>
 
           <BandChart band={band} />
 
-          <View>
+          <View style={styles.stats}>
             <StatRow label="Expected over these hands" value={`${formatUnits(band.expected)} u`} />
             <StatRow label="One standard deviation" value={`${band.sd.toFixed(1)} u`} />
             <StatRow
@@ -166,8 +166,8 @@ function BandChart({ band }: { band: ExpectationBand }) {
 }
 
 function markerColor(verdict: ExpectationBand["verdict"]): string {
-  if (verdict === "ordinary") return colors.accent;
-  return verdict === "uncommon" ? colors.warning : colors.danger;
+  if (verdict === "ordinary") return colors.correct;
+  return verdict === "uncommon" ? colors.primary : colors.mistake;
 }
 
 function Field({
@@ -188,7 +188,7 @@ function Field({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={colors.textMuted}
+        placeholderTextColor={colors.mutedForeground}
         inputMode="numeric"
         accessibilityLabel={label}
         style={styles.input}
@@ -197,31 +197,24 @@ function Field({
   );
 }
 
+const NUM = { fontVariant: ["tabular-nums" as const] };
+
 const styles = StyleSheet.create({
-  prose: { ...type.body, color: colors.textMuted },
-  source: { ...type.caption, color: colors.accent, lineHeight: 18 },
-  controls: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  note: { ...type.caption, color: colors.textMuted, lineHeight: 18 },
-  verdict: { ...type.body, color: colors.text },
-  badges: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  inputs: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  field: { flexGrow: 1, flexBasis: 140, gap: spacing.xs },
-  fieldLabel: { ...type.caption, color: colors.textMuted },
-  input: {
-    minHeight: 44,
-    paddingHorizontal: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.sm,
-    backgroundColor: colors.background,
-    color: colors.text,
-    ...type.mono,
-    fontSize: 15,
-  },
-  chartWrapper: { gap: spacing.xs },
+  prose: text.bodyMuted,
+  source: { ...ui(13, 500, { lineHeight: 19 }), color: colors.correct },
+  controls: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  note: text.small,
+  verdict: text.body,
+  badges: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  inputs: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  field: { flexGrow: 1, flexBasis: 140, gap: 6 },
+  fieldLabel: text.label,
+  input: inputStyle,
+  stats: { gap: 8 },
+  chartWrapper: { gap: 6 },
   frame: {
     height: FRAME_HEIGHT,
-    borderRadius: radius.sm,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.background,
@@ -234,17 +227,16 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 14,
     bottom: 14,
-    backgroundColor: colors.accentMuted,
-    opacity: 0.45,
+    backgroundColor: colors.feltDeep,
   },
   bandOne: {
     position: "absolute",
     top: 8,
     bottom: 8,
-    backgroundColor: colors.accentMuted,
+    backgroundColor: colors.felt,
     borderLeftWidth: 1,
     borderRightWidth: 1,
-    borderColor: colors.accent,
+    borderColor: colors.correct,
   },
   expectedLine: {
     position: "absolute",
@@ -252,20 +244,20 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: 1,
     marginLeft: -0.5,
-    backgroundColor: colors.accent,
-    opacity: 0.6,
+    backgroundColor: colors.correct,
+    opacity: 0.7,
   },
   marker: { position: "absolute", top: 0, bottom: 16, width: 3, marginLeft: -1.5 },
   markerLabel: {
-    ...type.caption,
-    color: colors.text,
+    ...ui(11, 600),
+    color: colors.foreground,
     position: "absolute",
     bottom: 0,
     marginLeft: -12,
     width: 24,
     textAlign: "center",
   },
-  axis: { flexDirection: "row", justifyContent: "space-between", gap: spacing.xs },
-  axisLabel: { ...type.mono, fontSize: 11, color: colors.textMuted },
-  legend: { ...type.caption, color: colors.textMuted },
+  axis: { flexDirection: "row", justifyContent: "space-between", gap: 4 },
+  axisLabel: { ...ui(11, 500), ...NUM, color: colors.mutedForeground },
+  legend: text.small,
 });
