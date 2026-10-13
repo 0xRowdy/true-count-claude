@@ -15,6 +15,7 @@ export default defineConfig({
     // A test that needs to render a component does not belong in this project.
     include: [
       "src/engine/**/*.test.ts",
+      "src/games/**/*.test.ts",
       "src/drills/**/*.test.ts",
       "src/state/**/*.test.ts",
       "src/ui/**/*.test.ts",
