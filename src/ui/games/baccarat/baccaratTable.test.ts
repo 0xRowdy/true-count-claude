@@ -10,6 +10,8 @@ import {
 import { cards, fixed, winnerCoup } from "@/games/baccarat/test-helpers";
 import {
   type BaccaratTable,
+  abandonedNet,
+  hintVisible,
   beadRoadView,
   bigRoadView,
   chasingStreak,
@@ -225,6 +227,50 @@ describe("coach", () => {
     const ez = setRules(fresh(), EZ_BACCARAT);
     const t = bet(ez, ["banker", 25], ["panda8", 5]);
     expect(setRules(t, PUNTO_BANCO).bets).toEqual({ banker: 25 });
+  });
+});
+
+describe("review fixes", () => {
+  it("lets Undo and Clear work while a caught note is open, dismissing it", () => {
+    const caught = deal(bet(fresh(), ["banker", 25], ["tie", 10]), "mistakes").table;
+    expect(caught.caught).not.toBeNull();
+    const undone = undoChip(caught);
+    expect(undone.bets).toEqual({ banker: 25 });
+    expect(undone.caught).toBeNull();
+    expect(clearBets(caught)).toMatchObject({ bets: {}, caught: null });
+    // Dealing the same mistake again after an edit does not count it twice.
+    const again = deal(bet(undone, ["tie", 10]), "mistakes");
+    expect(again.table.caught).not.toBeNull();
+    expect(again.decisions).toEqual([]);
+  });
+
+  it("rebets chip by chip, so Undo and remove lift one chip", () => {
+    const { table } = deal(bet(fresh(), ["banker", 25], ["banker", 25], ["banker", 5]), "asked");
+    const next = rebet(nextHand(settle(playThrough(table))!.table));
+    expect(next.bets).toEqual({ banker: 55 });
+    expect(next.placements).toHaveLength(3);
+    expect(undoChip(next).bets).toEqual({ banker: 50 });
+    expect(removeChip(next, "banker").bets).toEqual({ banker: 50 });
+  });
+
+  it("marks a deal coached when the hint was on screen", () => {
+    const t = bet(fresh(), ["player", 10]);
+    expect(hintVisible(t, "every", false)).toBe(true);
+    expect(hintVisible(t, "mistakes", false)).toBe(false);
+    expect(hintVisible(t, "asked", true)).toBe(true);
+    expect(deal(t, "every", { hintShown: true }).decisions).toEqual([
+      { category: "bet-choice", correct: false, coached: true },
+    ]);
+    expect(deal(t, "mistakes").decisions[0]!.coached).toBe(false);
+  });
+
+  it("settles a coup the player walks away from, and nothing otherwise", () => {
+    expect(abandonedNet(bet(fresh(), ["banker", 50]))).toBeNull();
+    const { table } = deal(bet(fresh(), ["banker", 50]), "asked");
+    const net = settle(playThrough(table))!.net;
+    expect(abandonedNet(table)).toBe(net);
+    expect(abandonedNet(playThrough(table))).toBe(net);
+    expect(abandonedNet(settle(playThrough(table))!.table)).toBeNull();
   });
 });
 

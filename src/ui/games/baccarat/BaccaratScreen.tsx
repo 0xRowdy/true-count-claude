@@ -10,7 +10,13 @@
 import { useState } from "react";
 import { Stack, router } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { describeRules, describeHand, describeResult, explainDraws } from "@/games/baccarat";
+import {
+  describeHand,
+  describeResult,
+  describeRules,
+  explainDraws,
+  isLastCoup,
+} from "@/games/baccarat";
 import type { ChipValue } from "@/ui/ds/format";
 import {
   Button,
@@ -57,7 +63,11 @@ export function BaccaratScreen({ seed }: { seed?: string }) {
   const complete = coup !== null && (phase === "result" || phase === "payout");
   const staked = totalStaked(table.bets);
   const settled = new Map(table.settlement?.bets.map((s) => [s.bet, s]) ?? []);
-  const betting = phase === "bet" && !table.caught;
+  // Chips stay movable while a caught note is open: the mistake is already recorded.
+  const betting = phase === "bet";
+  // The amount turns --correct while a winning payout lands (gu3Mf), as on the blackjack table.
+  const bankrollColor =
+    phase === "payout" && (table.settlement?.net ?? 0) > 0 ? colors.correct : colors.primary;
   const broke =
     phase === "bet" &&
     staked === 0 &&
@@ -87,6 +97,7 @@ export function BaccaratScreen({ seed }: { seed?: string }) {
             title="Baccarat"
             subtitle={describeRules(rules)}
             bankroll={bankroll}
+            bankrollColor={bankrollColor}
             onBack={() => (router.canGoBack() ? router.back() : router.replace("/lobby"))}
             onBook={() => setRulesOpen(true)}
             bookLabel="Rules and payouts"
@@ -95,11 +106,11 @@ export function BaccaratScreen({ seed }: { seed?: string }) {
           <Road coups={table.shoe.coups} kind={road} onToggle={setRoad} />
 
           <FeltSurface>
-            {table.freshShoe || table.shoe.cutCardCoup !== null ? (
+            {table.freshShoe || isLastCoup(table.shoe) ? (
               <Text style={[ui(12, 600), styles.shoeLine]}>
                 {table.freshShoe
                   ? `New shoe #${table.shoeIndex + 1}: shuffled, burned and cut`
-                  : "Cut card is out: last coup of this shoe"}
+                  : "Cut card is out: one more coup, then a fresh shoe"}
               </Text>
             ) : null}
             <Pressable
@@ -237,7 +248,7 @@ export function BaccaratScreen({ seed }: { seed?: string }) {
                   size="sm"
                   icon={Eraser}
                   onPress={actions.clear}
-                  disabled={staked === 0 || !!table.caught}
+                  disabled={staked === 0}
                 />
                 <Button
                   label="Undo"
@@ -245,7 +256,7 @@ export function BaccaratScreen({ seed }: { seed?: string }) {
                   size="sm"
                   icon={Undo2}
                   onPress={actions.undo}
-                  disabled={staked === 0 || !!table.caught}
+                  disabled={staked === 0}
                 />
                 {table.lastBets ? (
                   <Button
@@ -254,7 +265,6 @@ export function BaccaratScreen({ seed }: { seed?: string }) {
                     size="sm"
                     icon={Repeat}
                     onPress={actions.rebet}
-                    disabled={!!table.caught}
                   />
                 ) : null}
                 {coach === "asked" ? (
@@ -271,7 +281,6 @@ export function BaccaratScreen({ seed }: { seed?: string }) {
                 <View style={styles.dealRow}>
                   <Button
                     label={staked > 0 ? `Deal · ${formatAmount(staked)}` : "Deal"}
-                    accessibilityLabel="Deal"
                     icon={icons.Play}
                     fullWidth
                     style={styles.tall}

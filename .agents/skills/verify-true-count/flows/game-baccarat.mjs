@@ -1,4 +1,4 @@
-/* global document, innerWidth -- page.evaluate callbacks run in the browser */
+/* global document, innerWidth, getComputedStyle -- page.evaluate callbacks run in the browser */
 // Baccarat table (/games/baccarat, frame gu3Mf). Proves: with a fixed ?seed the table plays full
 // coups through Bet → Deal → Result → Payout; the coach (default "mistakes") catches a Tie bet
 // before the deal and takes it back; the practice bankroll settles each coup (Banker pays 0.95:1)
@@ -76,9 +76,17 @@ export default async ({ page, url, shot, log, check }) => {
     "remove button only shows on a spot with chips",
   );
 
+  // The Deal button's accessible name is its visible label (WCAG 2.5.3).
+  const dealButton = () => visible(page.getByRole("button", { name: /^Deal · \$[\d,.]+$/ }));
+
   // A deliberate mistake: Tie. The coach catches it before the deal.
   await spot("Tie").click();
-  await visible(page.getByRole("button", { name: "Deal" })).click();
+  check(
+    (await dealButton().innerText()).trim() === "Deal · $25" &&
+      (await dealButton().getAttribute("aria-label")) === "Deal · $25",
+    "Deal button: accessible name = visible label (Deal · $25)",
+  );
+  await dealButton().click();
   const note = visible(page.getByRole("note", { name: /Tie carries a 14\.36% house edge/ }));
   await note.waitFor();
   check(
@@ -110,6 +118,25 @@ export default async ({ page, url, shot, log, check }) => {
     `taken-back Tie recorded as a coached mistake (${JSON.stringify(coached)})`,
   );
 
+  // Undo still works while a caught note is open (the mistake is already recorded once).
+  await spot("Tie").click();
+  await dealButton().click();
+  await note.waitFor();
+  await visible(page.getByRole("button", { name: "Undo" })).click();
+  await note.waitFor({ state: "detached" });
+  check(
+    !(await spot("Tie").getAttribute("aria-label")).includes("bet"),
+    "Undo with the caught note open lifted the Tie and dismissed the note",
+  );
+  const baccaratDecisions = () =>
+    page.evaluate(
+      () =>
+        (JSON.parse(localStorage.getItem("tableside/progress/v1") ?? "{}").decisions ?? []).filter(
+          (x) => x.game === "baccarat",
+        ).length,
+    );
+  check((await baccaratDecisions()) === 1, "the repeated Tie mistake was not counted twice");
+
   // Round 1: $50 on Banker (two $25 chips).
   await spot("Banker").click();
   await spot("Banker").click();
@@ -119,7 +146,7 @@ export default async ({ page, url, shot, log, check }) => {
   );
   await visible(page.getByLabel("Practice bankroll $1,950")).waitFor();
   check(true, "chips on the layout leave the bankroll: $1,950");
-  await visible(page.getByRole("button", { name: "Deal" })).click();
+  await dealButton().click();
   await visible(page.getByRole("progressbar", { name: /Step 2 of 4: Deal/ })).waitFor();
   check(true, "phase: Deal");
   await shot("dealing");
@@ -208,10 +235,60 @@ export default async ({ page, url, shot, log, check }) => {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
   check(overflow <= 0, `no horizontal page scroll at 390 wide (overflow ${overflow}px)`);
 
-  // The bankroll is the progress store's: it survives a reload.
+  // The bankroll is the progress store's: it survives a reload (seed 7 starts the same shoe again).
   await page.reload({ waitUntil: "networkidle" });
   await visible(page.getByLabel(`Practice bankroll ${money(expected)}`)).waitFor();
   check(true, `bankroll persisted across reload: ${money(expected)}`);
+
+  // Seed 7 deals Tie, Player, Tie, Player 7–1, Banker 8–3. Burn the first two coups, then a
+  // winning payout turns the bankroll green (gu3Mf).
+  const amountColor = () =>
+    visible(page.getByLabel(/^Practice bankroll /)).evaluate(
+      (e) => getComputedStyle(e.lastElementChild).color,
+    );
+  const playCoup = async (side) => {
+    await spot(side).click();
+    await spot(side).click();
+    await dealButton().click();
+    await visible(page.getByRole("button", { name: "Next hand" })).waitFor({ timeout: 8000 });
+    return outcome();
+  };
+  for (const side of ["Banker", "Banker", "Player"]) {
+    const result = await playCoup(side);
+    expected += side === "Banker" ? bankerNet(result) : 0; // coup 3 is a tie: Player pushes
+    log(`${side}: ${result}`);
+    if ((await amountColor()) === "rgb(63, 168, 119)") check(false, "green only after a win");
+    await visible(page.getByRole("button", { name: "Next hand" })).click();
+  }
+  const win = await playCoup("Player");
+  check(win === "Player wins 7 over 1", `coup 4: ${win}`);
+  expected += 50;
+  check(
+    (await bankrollLabel()) === `Practice bankroll ${money(expected)}`,
+    `winning payout: ${money(expected)}`,
+  );
+  check((await amountColor()) === "rgb(63, 168, 119)", "bankroll shows --correct after a win");
+  await shot("payout-win-green");
+  await visible(page.getByRole("button", { name: "Next hand" })).click();
+  check((await amountColor()) === "rgb(212, 174, 98)", "back to gold when betting");
+
+  // Leaving mid-coup settles the hand (coup 5: Banker 8–3), it is never refunded.
+  await spot("Banker").click();
+  await spot("Banker").click();
+  await dealButton().click();
+  await visible(page.getByRole("progressbar", { name: /Step 2 of 4: Deal/ })).waitFor();
+  await page.goto(url("/lobby"), { waitUntil: "networkidle" });
+  expected += 47.5;
+  await page.goto(url("/games/baccarat?seed=7"), { waitUntil: "networkidle" });
+  await visible(page.getByLabel(`Practice bankroll ${money(expected)}`)).waitFor();
+  check(true, `left mid-coup: the Banker win was still recorded (${money(expected)})`);
+  const hands = await page.evaluate(
+    () =>
+      (JSON.parse(localStorage.getItem("tableside/progress/v1") ?? "{}").hands ?? []).filter(
+        (h) => h.game === "baccarat",
+      ).length,
+  );
+  check(hands === 7, `seven coups recorded once each (${hands})`);
 
   check(errors.length === 0, `no console errors${errors.length ? `: ${errors.join(" | ")}` : ""}`);
 };

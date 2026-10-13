@@ -191,7 +191,7 @@ export function placeChip(
   value: number,
   available?: number,
 ): BaccaratTable {
-  if (table.phase !== "bet" || table.caught) return table;
+  if (table.phase !== "bet") return table;
   if (!isBetOffered(table.rules, bet)) {
     return { ...table, error: `${BET_LABELS[bet]} is not offered at this table` };
   }
@@ -211,12 +211,13 @@ export function placeChip(
     bets: { ...table.bets, [bet]: next },
     placements: [...table.placements, { bet, value }],
     error: null,
+    caught: null,
   };
 }
 
 /** Takes the last chip placed on one spot back (long-press). */
 export function removeChip(table: BaccaratTable, bet: BetKind): BaccaratTable {
-  if (table.phase !== "bet" || table.caught) return table;
+  if (table.phase !== "bet") return table;
   let index = -1;
   for (let i = table.placements.length - 1; i >= 0; i--) {
     if (table.placements[i]?.bet === bet) {
@@ -227,7 +228,7 @@ export function removeChip(table: BaccaratTable, bet: BetKind): BaccaratTable {
   if (index < 0) return table;
   const chip = table.placements[index]!;
   const placements = table.placements.filter((_, i) => i !== index);
-  return { ...table, bets: subtract(table.bets, chip), placements, error: null };
+  return { ...table, bets: subtract(table.bets, chip), placements, error: null, caught: null };
 }
 
 function subtract(bets: Bets, chip: ChipPlacement): Bets {
@@ -240,7 +241,7 @@ function subtract(bets: Bets, chip: ChipPlacement): Bets {
 
 /** Takes back the last chip put down anywhere. */
 export function undoChip(table: BaccaratTable): BaccaratTable {
-  if (table.phase !== "bet" || table.caught) return table;
+  if (table.phase !== "bet") return table;
   const chip = table.placements[table.placements.length - 1];
   if (!chip) return table;
   return {
@@ -248,23 +249,25 @@ export function undoChip(table: BaccaratTable): BaccaratTable {
     bets: subtract(table.bets, chip),
     placements: table.placements.slice(0, -1),
     error: null,
+    caught: null,
   };
 }
 
 export function clearBets(table: BaccaratTable): BaccaratTable {
-  if (table.phase !== "bet" || table.caught) return table;
-  return { ...table, bets: {}, placements: [], error: null };
+  if (table.phase !== "bet") return table;
+  return { ...table, bets: {}, placements: [], error: null, caught: null };
 }
 
 /** Puts the last coup's bets back down (only the ones this table still offers). */
 export function rebet(table: BaccaratTable, available?: number): BaccaratTable {
-  if (table.phase !== "bet" || table.caught || !table.lastBets) return table;
+  if (table.phase !== "bet" || !table.lastBets) return table;
   const bets: Bets = {};
   const placements: ChipPlacement[] = [];
   for (const [bet, value] of Object.entries(table.lastBets) as [BetKind, number][]) {
     if (!value || !isBetOffered(table.rules, bet)) continue;
     bets[bet] = value;
-    placements.push({ bet, value });
+    // One placement per chip, so Undo and "Take a chip off" lift one chip, not the stake.
+    for (const chip of chipStack(value)) placements.push({ bet, value: chip });
   }
   if (available !== undefined && totalStaked(bets) > available) {
     return {
@@ -272,7 +275,7 @@ export function rebet(table: BaccaratTable, available?: number): BaccaratTable {
       error: `Not enough practice chips to rebet ${formatAmount(totalStaked(bets))}`,
     };
   }
-  return { ...table, bets, placements, error: null };
+  return { ...table, bets, placements, error: null, caught: null };
 }
 
 /** Changes the variant, tie payout or side bets. Bet phase only; drops bets no longer offered. */
@@ -439,7 +442,7 @@ export interface DealOutcome {
 export function deal(
   table: BaccaratTable,
   coach: CoachLevel,
-  options: { available?: number; force?: boolean } = {},
+  options: { available?: number; force?: boolean; hintShown?: boolean } = {},
 ): DealOutcome {
   if (table.phase !== "bet") return { table, decisions: [] };
   const staked = totalStaked(table.bets);
@@ -477,7 +480,8 @@ export function deal(
 
   const decisions = graded
     .filter((g) => !table.graded.includes(g.category))
-    .map((g) => ({ ...g, coached: false }));
+    // Same meaning as video poker: the coach was showing its hint when the bet was made.
+    .map((g) => ({ ...g, coached: options.hintShown ?? false }));
 
   let shoe = table.shoe;
   let shoeIndex = table.shoeIndex;
@@ -513,6 +517,21 @@ function noteCovers(note: TableNote, category: DecisionCategory): boolean {
   const backs = note.takeBack ?? [];
   if (category === "bet-choice") return backs.includes("tie");
   return backs.some((b) => SIDE_BET_KINDS.includes(b));
+}
+
+/** The coach's hint is on screen during betting ("every", or asked for with "asked"). */
+export function hintVisible(table: BaccaratTable, coach: CoachLevel, asked: boolean): boolean {
+  return table.phase === "bet" && table.caught === null && (coach === "every" || asked);
+}
+
+/**
+ * The net of a coup that was dealt but not yet paid, for a player who leaves mid-coup: the
+ * cards are already decided, so the hand is settled as it falls (the stake is never refunded).
+ * Null when nothing is in play.
+ */
+export function abandonedNet(table: BaccaratTable): number | null {
+  if ((table.phase !== "deal" && table.phase !== "result") || !table.coup) return null;
+  return settleBets(table.rules, table.coup, table.bets).net;
 }
 
 /** "Take it back": lifts the bets the caught mistake named, back to betting. */

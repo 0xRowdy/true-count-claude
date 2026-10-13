@@ -23,6 +23,8 @@ import {
 import {
   type BaccaratTable,
   type DecisionRecord,
+  abandonedNet,
+  hintVisible,
   clearBets,
   createBaccaratTable,
   deal,
@@ -81,10 +83,12 @@ export function useBaccaratTable(seedParam: string | undefined) {
     setSeeded(true);
   }, []);
 
+  // The session ends after a mid-coup hand is settled (see the leave effect below).
+  const sessionRef = useRef<string | null>(null);
   useEffect(() => {
     const id = makeSessionId("baccarat");
+    sessionRef.current = id;
     startProgressSession({ id, game: "baccarat" });
-    return () => endProgressSession(id);
   }, []);
 
   // The deal: turn one card at a time.
@@ -94,21 +98,43 @@ export function useBaccaratTable(seedParam: string | undefined) {
     return () => clearTimeout(timer);
   }, [table.phase, table.revealed]);
 
-  // The result sits a moment, then the dealer pays and the coup is recorded once.
-  const settledCoup = useRef<unknown>(null);
+  // Each coup's hand is recorded exactly once: at the payout, or when the player leaves mid-coup
+  // (the cards are already decided, so the stake is never refunded). The ref survives a
+  // bfcache restore, so a coup settled on `pagehide` is not recorded again when it pays out.
+  const recordedCoup = useRef<unknown>(null);
+  const recordOnce = useCallback((coup: unknown, net: number) => {
+    if (coup === null || recordedCoup.current === coup) return;
+    recordedCoup.current = coup;
+    recordHand({ game: "baccarat", net });
+  }, []);
+
+  // The result sits a moment, then the dealer pays.
   useEffect(() => {
     if (table.phase !== "result") return;
     const timer = setTimeout(() => {
       const current = tableRef.current;
-      if (current.phase !== "result" || settledCoup.current === current.coup) return;
       const out = settle(current);
       if (!out) return;
-      settledCoup.current = current.coup;
       setTable(out.table);
-      recordHand({ game: "baccarat", net: out.net });
+      recordOnce(current.coup, out.net);
     }, RESULT_MS);
     return () => clearTimeout(timer);
-  }, [table.phase]);
+  }, [table.phase, recordOnce]);
+
+  // Leaving during the deal or the result settles the coup as it falls.
+  useEffect(() => {
+    const settleAbandoned = () => {
+      const current = tableRef.current;
+      const net = abandonedNet(current);
+      if (net !== null) recordOnce(current.coup, net);
+    };
+    if (typeof window !== "undefined") window.addEventListener("pagehide", settleAbandoned);
+    return () => {
+      if (typeof window !== "undefined") window.removeEventListener("pagehide", settleAbandoned);
+      settleAbandoned();
+      if (sessionRef.current) endProgressSession(sessionRef.current);
+    };
+  }, [recordOnce]);
 
   const stored = view.ready ? gameBankroll(view.data, "baccarat") : undefined;
   // Chips on the felt have left the bankroll until the coup is paid.
@@ -128,7 +154,9 @@ export function useBaccaratTable(seedParam: string | undefined) {
       rebet: () => update((t) => rebet(t, available)),
       setRules: (rules: BaccaratRules) => update((t) => setRules(t, rules)),
       deal: (force = false) => {
-        const out = deal(tableRef.current, coach, { available, force });
+        const current = tableRef.current;
+        const hintShown = hintVisible(current, coach, hintAsked);
+        const out = deal(current, coach, { available, force, hintShown });
         record(out.decisions);
         setTable(out.table);
         setHintAsked(false);
@@ -159,7 +187,7 @@ export function useBaccaratTable(seedParam: string | undefined) {
       askHint: () => setHintAsked(true),
       resetBankroll: () => resetBankroll("baccarat"),
     }),
-    [update, available, coach],
+    [update, available, coach, hintAsked],
   );
 
   return {
