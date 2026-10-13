@@ -136,7 +136,7 @@ const RANDOM_MESSAGE =
   "ADR-0004: Math.random() is banned in src/engine and src/games. The shoe must be reproducible from its seed — take randomness from the injected Rng (src/engine/rng.ts).";
 
 const CLOCK_MESSAGE =
-  "ADR-0004: src/engine and src/games read no clock. A clock read makes the engine non-deterministic — pass the value in from the caller. (Benchmarks in src/engine/**/*.test.ts are exempt; see below.)";
+  "ADR-0004: src/engine and src/games read no clock. A clock read makes the engine non-deterministic — pass the value in from the caller. (Benchmarks in src/engine/**/*.test.ts and src/games/**/*.test.ts are exempt; see below.)";
 
 const ENGINE_FORBIDDEN_SYNTAX = [
   { selector: RANDOM_SELECTORS, message: RANDOM_MESSAGE },
