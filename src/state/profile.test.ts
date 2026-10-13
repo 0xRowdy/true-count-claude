@@ -120,6 +120,32 @@ describe("createProfileStore", () => {
     expect(parseProfile(await kv.getItem(PROFILE_KEY))?.name).toBe("Dee");
   });
 
+  it("an early change then an early reset clears the stored profile", async () => {
+    const { kv, release, repo } = slowRepo(carol);
+    const store = createProfileStore(repo);
+    void store.update({ name: "Dee" });
+    const resetting = store.reset();
+    release();
+    await resetting;
+    expect(store.snapshot()).toEqual({ profile: DEFAULT_PROFILE, ready: true, status: "default" });
+    expect(await kv.getItem(PROFILE_KEY)).toBeNull();
+  });
+
+  it("a listener's synchronous follow-up change is the one that lands on disk", async () => {
+    const kv = createMemoryStore();
+    const store = createProfileStore(createProfileRepository(kv));
+    await store.load();
+    let followed = false;
+    store.subscribe(() => {
+      if (followed) return;
+      followed = true;
+      void store.update({ coach: "every" });
+    });
+    await store.update({ coach: "asked" });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(parseProfile(await kv.getItem(PROFILE_KEY))?.coach).toBe("every");
+  });
+
   it("normalises writes the same way it normalises reads", async () => {
     const store = createProfileStore(createProfileRepository(createMemoryStore()));
     await store.load();

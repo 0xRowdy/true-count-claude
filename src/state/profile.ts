@@ -193,6 +193,10 @@ export function createProfileStore(repo: ProfileRepository): ProfileStore {
     state = next;
     for (const listener of listeners) listener();
   };
+  /**
+   * Queues a write. Callers queue *before* publishing, so a listener that reacts to the
+   * publish with a newer change queues its write after this one and wins on disk.
+   */
   const persist = (work: () => Promise<void>) => {
     writes = writes.then(work).catch(() => publish({ ...state, status: "unavailable" }));
     return writes.then(() => undefined);
@@ -210,12 +214,14 @@ export function createProfileStore(repo: ProfileRepository): ProfileStore {
         pendingReset = false;
         if (change) {
           const profile = merge(base, change);
+          const saved = persist(() => repo.save(profile));
           publish({ profile, ready: true, status: "stored" });
-          return persist(() => repo.save(profile));
+          return saved;
         }
         if (reset) {
+          const cleared = persist(() => repo.clear());
           publish({ profile: DEFAULT_PROFILE, ready: true, status: "default" });
-          return persist(() => repo.clear());
+          return cleared;
         }
         publish({ profile: base, ready: true, status: stored ? "stored" : "default" });
         return undefined;
@@ -246,12 +252,13 @@ export function createProfileStore(repo: ProfileRepository): ProfileStore {
         return load();
       }
       const profile = merge(state.profile, change);
+      const saved = persist(() => repo.save(profile));
       publish({
         ...state,
         profile,
         status: state.status === "unavailable" ? "unavailable" : "stored",
       });
-      return persist(() => repo.save(profile));
+      return saved;
     },
     reset() {
       if (!state.ready) {
@@ -260,12 +267,13 @@ export function createProfileStore(repo: ProfileRepository): ProfileStore {
         publish({ ...state, profile: DEFAULT_PROFILE });
         return load();
       }
+      const cleared = persist(() => repo.clear());
       publish({
         profile: DEFAULT_PROFILE,
         ready: true,
         status: state.status === "unavailable" ? "unavailable" : "default",
       });
-      return persist(() => repo.clear());
+      return cleared;
     },
   };
 }
