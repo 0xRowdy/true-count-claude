@@ -176,46 +176,96 @@ export default async ({ page, url, shot, log, check }) => {
     "Take it back removes the bet",
   );
 
-  // Keyboard only (invariant 7): no pointer, no long-press. Tab onto 17, open its loupe with the
-  // "Bets touching 17" button, add a split with Enter, then remove it with its Remove button.
+  // The bankroll survives a reload (progress store).
+  await page.reload({ waitUntil: "networkidle" });
+  await visible(page.getByLabel(/^Practice bankroll /)).waitFor();
+  const reloaded = money((await bankrollLabel()).replace("Practice bankroll", ""));
+  check(Math.abs(reloaded - bank2) < 0.001, `bankroll persisted (${reloaded})`);
+
+  // Keyboard only (invariant 7): page.keyboard alone, no pointer, no .focus(), no long-press.
   await page.mouse.move(0, 0);
-  await visible(page.getByRole("button", { name: /^16 red/ })).focus();
-  await page.keyboard.press("Tab");
-  const focused = await page.evaluate(() => document.activeElement?.getAttribute("aria-label"));
-  check(/^17 black/.test(focused ?? ""), `Tab reaches 17 (${focused})`);
-  const loupeButton = visible(page.getByRole("button", { name: "Bets touching 17", exact: true }));
-  await loupeButton.waitFor();
-  await loupeButton.focus();
-  await page.keyboard.press("Enter");
+  const active = () =>
+    page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? "");
+  const tabTo = async (re, key = "Tab", max = 120) => {
+    let a = await active();
+    for (let i = 0; i < max && !re.test(a); i++) {
+      await page.keyboard.press(key);
+      a = await active();
+    }
+    return a;
+  };
+  check(/^17 black/.test(await tabTo(/^17 black/)), "Tab reaches 17");
+  // L opens 17's loupe in place, with focus on its first option.
+  await page.keyboard.press("l");
   await visible(page.getByRole("dialog", { name: "Bets touching 17" })).waitFor();
-  check(true, "Enter on 'Bets touching 17' opens the loupe");
-  await visible(page.getByRole("button", { name: /^Split 16 \| 17, pays 17 to 1$/ })).focus();
+  check(
+    /^Straight 17, pays 35 to 1$/.test(await active()),
+    `L opens the loupe, focus inside (${await active()})`,
+  );
+  await page.keyboard.press("Tab");
+  check(/^Split 16 \| 17/.test(await active()), `Tab moves to the next option (${await active()})`);
   await page.keyboard.press("Enter");
   check(
     await visible(page.getByText("Total bet $5", { exact: true })).isVisible(),
     "Enter adds the split",
   );
-  await visible(page.getByRole("button", { name: "Remove $5 from Split 16 | 17" })).focus();
+  await page.keyboard.press("Tab");
+  check(
+    /^Remove \$5 from Split 16 \| 17$/.test(await active()),
+    `Tab reaches its Remove button (${await active()})`,
+  );
   await page.keyboard.press("Enter");
   check(
     await visible(page.getByText("Total bet $0", { exact: true })).isVisible(),
-    "Remove button takes it off",
+    "Remove takes it off",
   );
-  await visible(page.getByRole("button", { name: /^Black, pays 1 to 1$/ })).focus();
+  await page
+    .waitForFunction(
+      () => /^Split 16 \| 17/.test(document.activeElement?.getAttribute("aria-label") ?? ""),
+      null,
+      { timeout: 2000 },
+    )
+    .catch(() => {});
+  check(/^Split 16 \| 17/.test(await active()), `focus stays on the option (${await active()})`);
+  await tabTo(/^Black, pays 1 to 1/);
   await page.keyboard.press("Enter");
   check(
     await visible(page.getByText("Total bet $5", { exact: true })).isVisible(),
     "outside bets from the loupe too",
   );
   await shot("keyboard-loupe");
-  await visible(page.getByRole("button", { name: "Close bet loupe" })).focus();
+  await page.keyboard.press("Escape");
+  check(
+    (await page.getByRole("dialog", { name: "Bets touching 17" }).count()) === 0,
+    "Escape closes the loupe",
+  );
+  check(/^17 black/.test(await active()), `focus returns to 17 (${await active()})`);
+  // The Bets touching button follows the last number pressed, not the last one focused.
+  await page.keyboard.press("Shift+Tab");
+  await page.keyboard.press("Enter"); // 16: a $5 straight, picks 16
+  check(
+    await visible(page.getByText("Total bet $10", { exact: true })).isVisible(),
+    "Enter bets 16 straight up",
+  );
+  const button = await tabTo(/^Bets touching /);
+  check(button === "Bets touching 16", `tabbing past 17–36 keeps 'Bets touching 16' (${button})`);
   await page.keyboard.press("Enter");
-
-  // The bankroll survives a reload (progress store).
-  await page.reload({ waitUntil: "networkidle" });
-  await visible(page.getByLabel(/^Practice bankroll /)).waitFor();
-  const reloaded = money((await bankrollLabel()).replace("Practice bankroll", ""));
-  check(Math.abs(reloaded - bank2) < 0.001, `bankroll persisted (${reloaded})`);
+  await visible(page.getByRole("dialog", { name: "Bets touching 16" })).waitFor();
+  check(
+    /^Straight 16, pays 35 to 1, \$5 bet$/.test(await active()),
+    `button opens 16's loupe (${await active()})`,
+  );
+  await page.keyboard.press("Escape");
+  check(
+    /^Bets touching 16$/.test(await active()),
+    `focus returns to the button (${await active()})`,
+  );
+  // Shift+Tab walks back through the felt; the button still names 16.
+  await tabTo(/^20 black/, "Shift+Tab");
+  check(
+    await visible(page.getByRole("button", { name: "Bets touching 16", exact: true })).isVisible(),
+    "Shift+Tab does not move the button",
+  );
 
   const width = await page.evaluate(() => document.documentElement.scrollWidth);
   check(width <= 390, `no sideways scroll at 390 (${width})`);

@@ -4,7 +4,7 @@
  * their spots (splits and corners on the grid lines) and the bet loupe.
  */
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -157,17 +157,23 @@ export function RouletteFelt({ state, winners, onAdd, onRemove, onLoupe, onPick 
       <Pressable
         key={String(n)}
         accessibilityRole="button"
-        accessibilityLabel={`${pocketName(n)}${amount ? `, ${stackLabelMoney(amount)} straight up` : ""}`}
+        accessibilityLabel={`${pocketName(n)}${amount ? `, ${stackLabelMoney(amount)} straight up` : ""}${betting ? ". Press L for the bets touching it" : ""}`}
         accessibilityHint={
           betting
-            ? "Tap to bet straight up. Long-press, or use the Bets touching button, for the bet loupe"
+            ? "Tap to bet straight up. Long-press, right-click or press L for the bet loupe"
             : undefined
         }
+        // Native screen readers: the loupe as an accessibility action.
         accessibilityActions={betting ? [{ name: "longpress", label: "Open bet loupe" }] : []}
         onAccessibilityAction={(e) =>
           e.nativeEvent.actionName === "longpress" ? onLoupe(n) : undefined
         }
-        onFocus={betting ? () => onPick?.(n) : undefined}
+        // Web keyboards (invariant 7): L, or the context-menu key / Shift+F10, opens this
+        // number's loupe in place. React Native Web never long-presses from the keyboard.
+        {...webLoupeKeys(betting, () => {
+          onPick?.(n);
+          onLoupe(n);
+        })}
         onPress={
           betting
             ? () => {
@@ -315,6 +321,7 @@ export function RouletteFelt({ state, winners, onAdd, onRemove, onLoupe, onPick 
 
       {state.loupe !== null && gridW && feltW ? (
         <Loupe
+          key={String(state.loupe)}
           state={state}
           pocket={state.loupe}
           gridW={gridW}
@@ -326,6 +333,31 @@ export function RouletteFelt({ state, winners, onAdd, onRemove, onLoupe, onPick 
       ) : null}
     </View>
   );
+}
+
+interface WebKeyEvent {
+  readonly key?: string;
+  readonly altKey?: boolean;
+  readonly ctrlKey?: boolean;
+  readonly metaKey?: boolean;
+  preventDefault(): void;
+}
+
+/** onKeyDown / onContextMenu, which React Native Web forwards to the cell's element. */
+function webLoupeKeys(enabled: boolean, open: () => void): object {
+  if (!enabled) return {};
+  return {
+    onKeyDown: (e: WebKeyEvent) => {
+      if ((e.key === "l" || e.key === "L") && !e.altKey && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        open();
+      }
+    },
+    onContextMenu: (e: WebKeyEvent) => {
+      e.preventDefault();
+      open();
+    },
+  };
 }
 
 function stackLabelMoney(amount: number): string {
@@ -375,6 +407,38 @@ function Loupe({
 }) {
   const rules = rulesOf(state);
   const options = loupeOptions(state, pocket);
+
+  // Focus moves into the loupe when it opens and back to whatever opened it when it closes;
+  // Escape closes it (web; native screen readers move by the dialog role).
+  const firstRef = useRef<View | null>(null);
+  const optionRefs = useRef(new Map<string, View>());
+  // When a Remove button takes the last chip off, it disappears: keep focus on its option.
+  const removeFrom = (spotId: string, last: boolean) => {
+    onRemove(spotId);
+    if (!last) return;
+    setTimeout(() => {
+      (optionRefs.current.get(spotId) as unknown as HTMLElement | undefined)?.focus?.();
+    }, 0);
+  };
+  const closeRef = useRef(onClose);
+  useEffect(() => {
+    closeRef.current = onClose;
+  });
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const opener = document.activeElement as HTMLElement | null;
+    (firstRef.current as unknown as HTMLElement | null)?.focus?.();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      closeRef.current();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      if (opener && opener !== document.body && opener.isConnected) opener.focus();
+    };
+  }, []);
   const rows: (typeof options)[] = [];
   for (let i = 0; i < options.length; i += 2) rows.push(options.slice(i, i + 2));
   const visibleRows = Math.min(rows.length, 3);
@@ -444,6 +508,11 @@ function Loupe({
                 return (
                   <View key={o.spotId} style={styles.optionSlot}>
                     <Pressable
+                      ref={(el: View | null) => {
+                        if (o === options[0]) firstRef.current = el;
+                        if (el) optionRefs.current.set(o.spotId, el);
+                        else optionRefs.current.delete(o.spotId);
+                      }}
                       accessibilityRole="button"
                       accessibilityLabel={o.accessibilityLabel}
                       onPress={() => onAdd(o.spotId)}
@@ -469,7 +538,7 @@ function Loupe({
                       <Pressable
                         accessibilityRole="button"
                         accessibilityLabel={`Remove $${Math.min(state.chip, o.amount)} from ${o.name}`}
-                        onPress={() => onRemove(o.spotId)}
+                        onPress={() => removeFrom(o.spotId, o.amount <= state.chip)}
                         hitSlop={10}
                         style={styles.minus}
                       >
