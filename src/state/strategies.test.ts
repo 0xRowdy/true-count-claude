@@ -85,6 +85,27 @@ describe("the draft store", () => {
     ]);
   });
 
+  it("a save made by a listener reacting to the load replay wins on disk", async () => {
+    const kv = createMemoryStore({ [STRATEGIES_KEY]: JSON.stringify({ drafts: [draft("kept")] }) });
+    const store = createDraftStore(createDraftRepository(kv));
+    let fired = false;
+    let reacted: Promise<void> | undefined;
+    store.subscribe(() => {
+      if (store.snapshot().ready && !fired) {
+        fired = true;
+        reacted = store.save(draft("late"));
+      }
+    });
+    await store.save(draft("early"));
+    await reacted;
+    expect(store.snapshot().drafts.map((d) => d.id)).toEqual(["late", "early", "kept"]);
+    expect(parseDrafts(await kv.getItem(STRATEGIES_KEY))?.map((d) => d.id)).toEqual([
+      "late",
+      "early",
+      "kept",
+    ]);
+  });
+
   it("keeps working in memory when storage fails", async () => {
     const broken = {
       load: () => Promise.reject(new Error("no storage")),

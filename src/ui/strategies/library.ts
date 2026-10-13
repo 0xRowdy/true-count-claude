@@ -30,6 +30,7 @@ import {
   uniqueDraftId,
 } from "@/state/strategies";
 import { chartChanges, draftOverrides, resetToBasic, rulesCardLine } from "./blackjack";
+import { rampOf } from "./betRamp";
 import { changeCount } from "./craps";
 import { layoutChanges } from "./roulette";
 
@@ -501,6 +502,7 @@ export function exportDraft(draft: StrategyDraft): string {
       ? {
           rules: draft.rules,
           chart: { basicStrategyFor: "rules", overrides: draftOverrides(draft) },
+          betRamp: rampOf(draft),
         }
       : draft.game === "craps"
         ? { plan: draft.plan }

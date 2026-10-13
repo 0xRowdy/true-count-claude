@@ -65,6 +65,7 @@ describe("fork, new, share", () => {
     expect(json.forkedFrom.author).toBe("Tableside Curated");
     expect(json.changes).toBe(6);
     expect(json.chart.overrides).toEqual({});
+    expect(json.betRamp).toEqual({ unit: 10, units: [1, 1, 2, 4, 6, 8] });
     expect(compactCount(4812)).toBe("4.8k");
     expect(compactCount(905)).toBe("905");
   });

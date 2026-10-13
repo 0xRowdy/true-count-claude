@@ -1,3 +1,4 @@
+/* global document, innerWidth -- page.evaluate callbacks run in the browser */
 // Strategies: library → fork a curated chart → edit a cell in the blackjack builder.
 // Proves: the library lists curated/community examples (labelled as examples), Fork makes a
 // credited local draft and opens it in /strategies/blackjack, changing a cell moves the
@@ -101,6 +102,31 @@ export default async ({ page, url, shot, log, check }) => {
   );
   check(true, "cell change persisted across reload");
 
+  // Bet sizing (the 4th chart tab): a bet ramp by true count with a rules check, kept in the draft.
+  await visible(page.getByRole("tab", { name: "Bet sizing" })).click();
+  check(await visible(page.getByText("1–8 spread")).isVisible(), "default ramp: 1–8 spread");
+  check(
+    await visible(page.getByText("Rules-checked for $10–$1,000 tables")).isVisible(),
+    "ramp rules-checked",
+  );
+  for (let i = 0; i < 8; i++)
+    await visible(
+      page.getByRole("button", { name: "More: Units at true count +5 or more" }),
+    ).click();
+  await visible(page.getByText("1–16 spread")).first().waitFor();
+  check(
+    await visible(page.getByText("Aggressive for a 6-deck shoe")).isVisible(),
+    "an aggressive spread is flagged",
+  );
+  await visible(page.getByRole("textbox", { name: "Coach note" })).fill(
+    "Ramp up only when the count is real.",
+  );
+  await page.reload({ waitUntil: "networkidle" });
+  await visible(page.getByRole("tab", { name: "Bet sizing" })).click();
+  check(await visible(page.getByText("1–16 spread")).first().isVisible(), "the ramp persisted");
+  await shot("bet-sizing");
+  await visible(page.getByRole("tab", { name: "Totals" })).click();
+
   // Steps 3 and 4 are real screens.
   await visible(page.getByRole("tab", { name: "Step 3: Explain your changes" })).click();
   check(
@@ -140,4 +166,20 @@ export default async ({ page, url, shot, log, check }) => {
   );
   check(await visible(page.getByText("Change 5 of 6")).isVisible(), "example: Change 5 of 6");
   await shot("example-rpy9o");
+  check(
+    await visible(page.getByText(/practice chips/)).isVisible(),
+    "header shows the practice-chip balance",
+  );
+
+  // Phone width: no sideways page scroll, and chart cells are 44pt tap targets.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(400);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+  check(overflow <= 0, `no horizontal page scroll at 390 (${overflow}px)`);
+  const box = await visible(page.getByRole("button", { name: /^A,8 vs 6:/ })).boundingBox();
+  check(
+    box && box.height >= 44 && box.width >= 44,
+    `chart cell is a 44pt target at 390 (${box?.width}×${box?.height})`,
+  );
+  await shot("blackjack-390");
 };

@@ -5,9 +5,10 @@
  */
 
 import { useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { type ChartCode, type RuleSet, DEALER_UPCARDS } from "@/engine";
-import { AppShell, Button, SegmentedControl, colors, ui } from "@/ui/ds";
+import { formatDollars } from "@/games/craps";
+import { Badge, Button, SegmentedControl, StatCard, colors, ui } from "@/ui/ds";
 import type { BlackjackDraft } from "@/state/strategies";
 import {
   type CellRef,
@@ -40,6 +41,15 @@ import {
   testDraft,
   upcardLabel,
 } from "./blackjack";
+import {
+  RAMP_LABELS,
+  checkRamp,
+  rampOf,
+  rampRows,
+  spreadLabel,
+  stepUnit,
+  stepUnits,
+} from "./betRamp";
 import { exportDraft, testInTrainerHref } from "./library";
 import { CELL, builder, cellColors } from "./palette";
 import {
@@ -55,21 +65,23 @@ import {
   InspectorHead,
   Label,
   SharePanel,
-  StatTile,
   StepRail,
+  Stepper,
   SubmitPanel,
   styles as p,
 } from "./parts";
 import { BuilderMissing, BuilderLoading } from "./states";
+import { StrategyShell } from "./StrategyShell";
 import { useBuilderDraft } from "./useBuilderDraft";
 
-type Tab = "totals" | "pairs" | "surrender";
+type Tab = "totals" | "pairs" | "surrender" | "sizing";
 type Panel = "none" | "compare" | "share" | "submit";
 
 const TABS: readonly { value: Tab; label: string }[] = [
   { value: "totals", label: "Totals" },
   { value: "pairs", label: "Pairs" },
   { value: "surrender", label: "Surrender" },
+  { value: "sizing", label: "Bet sizing" },
 ];
 
 const LEGEND: readonly { glyph: keyof typeof CELL; label: string }[] = [
@@ -84,7 +96,7 @@ const LEGEND: readonly { glyph: keyof typeof CELL; label: string }[] = [
 export function BlackjackBuilder() {
   const state = useBuilderDraft("blackjack");
   return (
-    <AppShell active="strategies">
+    <StrategyShell>
       {state.status === "loading" ? (
         <BuilderLoading />
       ) : state.status === "missing" ? (
@@ -97,7 +109,7 @@ export function BlackjackBuilder() {
           fork={state.fork}
         />
       )}
-    </AppShell>
+    </StrategyShell>
   );
 }
 
@@ -201,7 +213,9 @@ function Editor({
         />
       }
       inspector={
-        step === 1 ? (
+        step === 1 && tab === "sizing" ? (
+          <RampInspector draft={draft} readOnly={readOnly} onNote={setNote} />
+        ) : step === 1 ? (
           <Inspector
             draft={draft}
             selected={selected}
@@ -223,6 +237,8 @@ function Editor({
           onTab={setTab}
           selected={selected}
           onSelect={(ref) => setSelectedKey(cellKey(ref))}
+          readOnly={readOnly}
+          update={update}
         />
       ) : step === 2 ? (
         <ExplainStep
@@ -248,13 +264,36 @@ function ChartEditor({
   onTab,
   selected,
   onSelect,
+  readOnly,
+  update,
 }: {
   draft: BlackjackDraft;
   tab: Tab;
   onTab: (t: Tab) => void;
   selected: CellRef;
   onSelect: (ref: CellRef) => void;
+  readOnly: boolean;
+  update: (d: BlackjackDraft) => void;
 }) {
+  // Measured after mount: on a phone the chart scrolls sideways and its cells grow to 44pt.
+  const [width, setWidth] = useState<number | null>(null);
+  const tall = width !== null && width < 600;
+  const table = (title: string, rows: readonly { section: CellSection; row: string }[]) => (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={s.chartScroll}
+    >
+      <ChartTable
+        title={title}
+        draft={draft}
+        rows={rows}
+        selected={selected}
+        onSelect={onSelect}
+        tall={tall}
+      />
+    </ScrollView>
+  );
   return (
     <Card style={s.editor}>
       <View style={s.editorHead}>
@@ -283,40 +322,36 @@ function ChartEditor({
             );
           })}
         </View>
-        <View style={s.legend}>
-          {LEGEND.filter((l) => l.glyph !== "P" || tab !== "totals").map((l) => (
-            <View key={l.glyph} style={s.legendItem}>
-              <Swatch glyph={l.glyph} />
-              <Text style={[ui(12), { color: colors.mutedForeground }]}>{l.label}</Text>
-            </View>
-          ))}
-        </View>
+        {tab === "sizing" ? null : (
+          <View style={s.legend}>
+            {LEGEND.filter((l) => l.glyph !== "P" || tab !== "totals").map((l) => (
+              <View key={l.glyph} style={s.legendItem}>
+                <Swatch glyph={l.glyph} />
+                <Text style={[ui(12), { color: colors.mutedForeground }]}>{l.label}</Text>
+              </View>
+            ))}
+          </View>
+        )}
       </View>
-      {tab === "totals" ? (
+      <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} />
+      {tab === "sizing" ? (
+        <RampEditor draft={draft} readOnly={readOnly} update={update} />
+      ) : tab === "totals" ? (
         <>
-          <ChartTable
-            title="Hard totals"
-            draft={draft}
-            rows={HARD_ROWS.map((row) => ({ section: "hard", row }))}
-            selected={selected}
-            onSelect={onSelect}
-          />
-          <ChartTable
-            title="Soft totals"
-            draft={draft}
-            rows={SOFT_ROWS.map((row) => ({ section: "soft", row }))}
-            selected={selected}
-            onSelect={onSelect}
-          />
+          {table(
+            "Hard totals",
+            HARD_ROWS.map((row) => ({ section: "hard" as const, row })),
+          )}
+          {table(
+            "Soft totals",
+            SOFT_ROWS.map((row) => ({ section: "soft" as const, row })),
+          )}
         </>
       ) : tab === "pairs" ? (
-        <ChartTable
-          title="Pairs"
-          draft={draft}
-          rows={PAIR_ROWS.map((row) => ({ section: "pairs", row }))}
-          selected={selected}
-          onSelect={onSelect}
-        />
+        table(
+          "Pairs",
+          PAIR_ROWS.map((row) => ({ section: "pairs" as const, row })),
+        )
       ) : (
         <>
           <Text style={[ui(13, 400, { lineHeight: 19 }), { color: colors.mutedForeground }]}>
@@ -324,13 +359,7 @@ function ChartEditor({
               ? "This table offers no surrender, so these cells play their second choice. Change the rules in step 1 to allow it."
               : "Late surrender: give up half the bet on your first two cards, after the dealer checks for blackjack. These are the only rows where it is ever right."}
           </Text>
-          <ChartTable
-            title="Surrender rows"
-            draft={draft}
-            rows={SURRENDER_ROWS}
-            selected={selected}
-            onSelect={onSelect}
-          />
+          {table("Surrender rows", SURRENDER_ROWS)}
         </>
       )}
     </Card>
@@ -352,16 +381,19 @@ function ChartTable({
   rows,
   selected,
   onSelect,
+  tall,
 }: {
   title: string;
   draft: BlackjackDraft;
   rows: readonly { section: CellSection; row: string }[];
   selected: CellRef;
   onSelect: (ref: CellRef) => void;
+  /** Phone layout: 44pt cells (the minimum tap target) in a sideways-scrolling chart. */
+  tall: boolean;
 }) {
   const selKey = cellKey(selected);
   return (
-    <View style={s.table} accessibilityLabel={title}>
+    <View style={[s.table, tall && s.tableTall]} accessibilityLabel={title}>
       <Text style={[ui(10, 700, { letterSpacing: 1.2 }), { color: colors.mutedForeground }]}>
         {title.toUpperCase()}
       </Text>
@@ -397,6 +429,7 @@ function ChartTable({
                 onPress={() => onSelect(ref)}
                 style={[
                   s.cell,
+                  tall && s.cellTall,
                   { backgroundColor: c.bg },
                   changed && s.changed,
                   flagged && s.flagged,
@@ -412,6 +445,112 @@ function ChartTable({
         </View>
       ))}
     </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Bet sizing (the 4th tab, Pencil node QQRzH)
+// ---------------------------------------------------------------------------
+
+function RampEditor({
+  draft,
+  readOnly,
+  update,
+}: {
+  draft: BlackjackDraft;
+  readOnly: boolean;
+  update: (d: BlackjackDraft) => void;
+}) {
+  const ramp = rampOf(draft);
+  const set = (next: typeof ramp) => {
+    if (!readOnly) update({ ...draft, ramp: next });
+  };
+  return (
+    <View style={s.ramp}>
+      <View style={s.rampHead}>
+        <View style={[p.gap2, p.flex]}>
+          <Text accessibilityRole="header" style={[ui(15, 600), { color: colors.foreground }]}>
+            Bet by the true count
+          </Text>
+          <Text style={[ui(13), { color: colors.mutedForeground }]}>
+            Units to bet at each true count. Practice chips only.
+          </Text>
+        </View>
+        <Badge label={spreadLabel(ramp)} tone="primary" />
+      </View>
+      <View style={s.rampRow}>
+        <View style={s.rampWhen}>
+          <Text style={[ui(12, 600), { color: colors.mutedForeground }]}>One unit</Text>
+        </View>
+        <View style={p.flex}>
+          <Stepper
+            label="Unit size"
+            value={formatDollars(ramp.unit)}
+            onMinus={() => set(stepUnit(ramp, -1))}
+            onPlus={() => set(stepUnit(ramp, 1))}
+          />
+        </View>
+        <View style={s.rampDollars} />
+      </View>
+      {rampRows(ramp).map((r, i) => (
+        <View
+          key={r.label}
+          style={s.rampRow}
+          accessibilityLabel={`True count ${r.label}: ${r.units} units, ${r.dollars}`}
+        >
+          <View style={s.rampWhen}>
+            <Text style={[ui(12, 600), { color: colors.mutedForeground }]}>TC {r.label}</Text>
+          </View>
+          <View style={p.flex}>
+            <Stepper
+              label={`Units at true count ${RAMP_LABELS[i]}`}
+              value={`${r.units} ${r.units === 1 ? "unit" : "units"}`}
+              onMinus={() => set(stepUnits(ramp, i, -1))}
+              onPlus={() => set(stepUnits(ramp, i, 1))}
+            />
+          </View>
+          <Text style={[ui(14, 700), s.rampDollars, { color: colors.foreground }]}>
+            {r.dollars}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function RampInspector({
+  draft,
+  readOnly,
+  onNote,
+}: {
+  draft: BlackjackDraft;
+  readOnly: boolean;
+  onNote: (key: string, text: string) => void;
+}) {
+  const ramp = rampOf(draft);
+  const check = checkRamp(ramp, draft.rules);
+  const rows = rampRows(ramp);
+  return (
+    <Card>
+      <InspectorHead
+        eyebrow="Bet sizing"
+        title={spreadLabel(ramp)}
+        original={`Table: ${formatDollars(draft.rules.minBet)}–${formatDollars(draft.rules.maxBet)}`}
+        yours={`${rows[0]?.dollars ?? ""} to ${rows[rows.length - 1]?.dollars ?? ""}`}
+      />
+      <EngineCheck
+        ok={check.level === "ok"}
+        warn={check.level === "warn"}
+        title={check.title}
+        body={check.body}
+      />
+      <CoachNoteEditor
+        value={draft.notes.ramp ?? ""}
+        onChange={(t) => onNote("ramp", t)}
+        previewTitle={`Bet sizing: ${spreadLabel(ramp)}`}
+        readOnly={readOnly}
+      />
+    </Card>
   );
 }
 
@@ -671,17 +810,19 @@ function TestStep({
       {result ? (
         <>
           <View style={s.tiles}>
-            <StatTile
+            <StatCard
+              width="auto"
               label="Your chart"
               value={fmt(result.yours.net)}
-              sub={`${result.yours.wins} won · ${result.yours.losses} lost · ${result.yours.pushes} pushed`}
-              tone={result.yours.net < 0 ? "mistake" : "correct"}
+              delta={`${result.yours.wins} won · ${result.yours.losses} lost · ${result.yours.pushes} pushed`}
+              deltaTone="muted"
             />
-            <StatTile
+            <StatCard
+              width="auto"
               label="Basic strategy, same cards"
               value={fmt(result.basic.net)}
-              sub={`${result.basic.wins} won · ${result.basic.losses} lost · ${result.basic.pushes} pushed`}
-              tone={result.basic.net < 0 ? "mistake" : "correct"}
+              delta={`${result.basic.wins} won · ${result.basic.losses} lost · ${result.basic.pushes} pushed`}
+              deltaTone="muted"
             />
           </View>
           <InfoNote text="Fifty hands is luck, not proof: a strategy's worth shows over thousands of hands. The rules check above is the exact answer; this is a feel for how it plays." />
@@ -717,7 +858,10 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  table: { gap: 3 },
+  table: { gap: 3, flexGrow: 1 },
+  tableTall: { minWidth: 76 + 10 * 44 + 30 },
+  chartScroll: { flexGrow: 1 },
+  cellTall: { height: 44, minWidth: 44 },
   tr: { flexDirection: "row", alignItems: "center", gap: 3 },
   corner: { width: 76 },
   rowLabel: { width: 76 },
@@ -775,6 +919,27 @@ const s = StyleSheet.create({
     borderTopColor: colors.border,
   },
   tiles: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  ramp: { gap: 10 },
+  rampHead: { flexDirection: "row", alignItems: "center", gap: 12, paddingBottom: 6 },
+  rampRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  rampWhen: {
+    width: 120,
+    borderRadius: 6,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    backgroundColor: colors.muted,
+  },
+  rampDollars: { width: 64, textAlign: "right" },
 });
 
 export type { ChartCode };

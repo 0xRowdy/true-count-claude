@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from "react";
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
-import { colors, ui } from "@/ui/ds";
+import { CHIP_VALUES, chipColors, colors, ui } from "@/ui/ds";
 import { builder } from "./palette";
 
 /** The mini felt of the builders: a radial felt gradient inside the rail-coloured frame. */
@@ -31,22 +31,16 @@ export function Felt({
   );
 }
 
-/** A 30pt chip with its amount, coloured like the practice chips. */
+/**
+ * A 30pt chip carrying an arbitrary amount ("18", "70"), coloured like the design system's
+ * chips: the largest practice-chip denomination the amount covers ($5 red, $25 green…).
+ */
 export function FeltChip({ amount, style }: { amount: number; style?: StyleProp<ViewStyle> }) {
-  const bg =
-    amount <= 10
-      ? colors.chip1
-      : amount < 25
-        ? colors.chip5
-        : amount < 100
-          ? colors.chip25
-          : amount < 500
-            ? colors.chip100
-            : colors.chip500;
-  const ink = amount <= 10 ? colors.ink : colors.paper;
+  const denomination = [...CHIP_VALUES].reverse().find((v) => v <= amount) ?? 1;
+  const { fill, ink } = chipColors(denomination);
   const label = Number.isInteger(amount) ? String(amount) : amount.toFixed(1);
   return (
-    <View style={[styles.chip, { backgroundColor: bg }, style]} pointerEvents="none">
+    <View style={[styles.chip, { backgroundColor: fill }, style]} pointerEvents="none">
       <Text style={[ui(label.length > 3 ? 8 : 10, 800), { color: ink }]}>{label}</Text>
     </View>
   );

@@ -1,22 +1,41 @@
 /**
- * Colours the Strategy Builder frames (RYP9O, GYRRl, D0h320) use as literals rather than
- * design variables, named here so the screens never carry a raw hex value (as `surfaces` does
- * for the design system's components).
+ * Colours for the Strategy Builder frames (RYP9O, GYRRl, D0h320). Everything maps to a design
+ * token (`colors`, `surfaces`) where the design has one; the few the design file only uses as
+ * literals (the Ds swatch, translucent washes, the felt highlight) are named here once, so the
+ * screens never carry a raw hex value.
  */
 
 import type { ChartCode } from "@/engine";
-import { colors } from "@/ui/ds";
+import { colors, surfaces } from "@/ui/ds";
+
+/** Design literals with no variable in the .pen file. */
+const literal = {
+  doubleElseStand: "#7FA8F2",
+  doubleElseStandInk: "#0B1A3A",
+  splitInk: "#06140D",
+  correctWash: "#3FA8771A",
+  mistakeWash: "#E07A5F1A",
+  primaryWashStrong: "#D4AE621F",
+  primaryEdge: "#D4AE6240",
+  feltHighlight: "#22704F",
+  feltLabel: "#0B2A20",
+  feltCellEdge: "#EDE4CC55",
+  chipShadow: "0px 2px 3px #00000088",
+  uncoveredSwatch: "#1D1F2255",
+  winMid: "#2E8A5F",
+  winLight: "#7FD1A8",
+} as const;
 
 /** Chart cell fills and inks, per printed code. */
 export const CELL: Readonly<
   Record<"H" | "S" | "D" | "Ds" | "P" | "R", { bg: string; fg: string }>
 > = {
-  H: { bg: "#EDE6D4", fg: "#1E1A14" },
-  S: { bg: "#D99A2B", fg: "#1E1A14" },
-  D: { bg: "#2D6CDF", fg: "#FFFFFF" },
-  Ds: { bg: "#7FA8F2", fg: "#0B1A3A" },
-  P: { bg: "#3FA877", fg: "#06140D" },
-  R: { bg: "#5E574B", fg: "#FFFFFF" },
+  H: { bg: colors.paper2, fg: colors.ink },
+  S: { bg: colors.chip1k, fg: colors.ink },
+  D: { bg: colors.coachAccent, fg: surfaces.chipInkLight },
+  Ds: { bg: literal.doubleElseStand, fg: literal.doubleElseStandInk },
+  P: { bg: colors.correct, fg: literal.splitInk },
+  R: { bg: colors.inkMuted, fg: surfaces.chipInkLight },
 };
 
 export function cellColors(code: ChartCode) {
@@ -25,35 +44,32 @@ export function cellColors(code: ChartCode) {
 }
 
 export const builder = {
-  /** Primary at 8% (attribution bar, selected rule, felt highlight). */
-  primaryWash: "#D4AE6214",
-  primaryWashStrong: "#D4AE621F",
-  primaryEdge: "#D4AE6240",
-  /** Correct at 10%: the rules-checked panel. */
-  correctWash: "#3FA8771A",
-  mistakeWash: "#E07A5F1A",
+  primaryWash: surfaces.primaryWash,
+  primaryWashStrong: literal.primaryWashStrong,
+  primaryEdge: literal.primaryEdge,
+  correctWash: literal.correctWash,
+  mistakeWash: literal.mistakeWash,
   /** The check mark on a done step. */
-  doneInk: "#06140D",
+  doneInk: literal.splitInk,
   /** Changed-dot ring: the card colour. */
   dotRing: colors.card,
-  selectedCell: "#FFFFFF",
-  /** Felt gradient and details. */
-  feltFrom: "#22704F",
-  feltTo: "#123F2F",
-  feltLabel: "#0B2A20",
-  feltCaption: "#F1EAD6A6",
-  feltCellEdge: "#EDE4CC55",
-  chipEdge: "#FFFFFFCC",
-  chipShadow: "0px 2px 3px #00000088",
-  pressedPuck: "#FFFFFF",
-  puckInk: "#1D1F22",
-  /** Roulette pockets. */
-  red: "#B83A33",
-  black: "#1D1F22",
+  selectedCell: surfaces.chipInkLight,
+  feltFrom: literal.feltHighlight,
+  feltTo: colors.feltDeep,
+  feltLabel: literal.feltLabel,
+  feltCaption: surfaces.feltTextFaint,
+  feltCellEdge: literal.feltCellEdge,
+  chipEdge: surfaces.chipEdgeSpot,
+  chipShadow: literal.chipShadow,
+  pressedPuck: surfaces.chipInkLight,
+  puckInk: colors.chip100,
+  /** Roulette pockets: the chip reds and blacks, the $25 chip's green. */
+  red: colors.chip5,
+  black: colors.chip100,
   green: colors.chip25,
-  coverEdge: "#FFFFFF22",
-  swatchEdge: "#FFFFFF33",
-  uncoveredSwatch: "#1D1F2255",
+  coverEdge: surfaces.hairline,
+  swatchEdge: surfaces.dieEdge,
+  uncoveredSwatch: literal.uncoveredSwatch,
   /** Outcome shades: winners from strongest, then the loss colour. */
-  winShades: ["#3FA877", "#2E8A5F", "#7FD1A8", "#5FBF8F", "#246B4A"],
+  winShades: [colors.correct, literal.winMid, literal.winLight, colors.chip25, colors.correctInk],
 } as const;

@@ -7,7 +7,7 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { AppShell, Button, StrategyCard, Tabs, colors, display, ui, icons as ds } from "@/ui/ds";
+import { Button, StrategyCard, Tabs, colors, display, ui, icons as ds } from "@/ui/ds";
 import { STRATEGY_GAMES, type StrategyDraft, type StrategyGame } from "@/state/strategies";
 import { checkChart } from "./blackjack";
 import { checkPlan } from "@/games/craps";
@@ -30,6 +30,7 @@ import {
   newStrategy,
 } from "./library";
 import { InfoNote } from "./parts";
+import { StrategyShell } from "./StrategyShell";
 import { Plus } from "./icons";
 
 type Filter = "all" | StrategyGame;
@@ -80,7 +81,7 @@ export function StrategyLibrary() {
   const community = communityRanked().filter((s) => shown(s.draft.game));
 
   return (
-    <AppShell active="strategies">
+    <StrategyShell>
       <View style={styles.page}>
         <View style={styles.header}>
           <View style={styles.headText}>
@@ -192,7 +193,7 @@ export function StrategyLibrary() {
 
         <InfoNote text="Curated and community strategies here are examples: this build has no server, so their votes, forks and learner scores are illustrative, and forks and drafts are saved on this device only." />
       </View>
-    </AppShell>
+    </StrategyShell>
   );
 }
 

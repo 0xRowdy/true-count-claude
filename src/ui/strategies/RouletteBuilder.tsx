@@ -18,7 +18,7 @@ import {
   pocketColor,
   spotTitle,
 } from "@/games/roulette";
-import { AppShell, Badge, Button, SegmentedControl, colors, icons as ds, ui } from "@/ui/ds";
+import { Badge, Button, SegmentedControl, colors, icons as ds, ui, StatCard } from "@/ui/ds";
 import type { RouletteDraft, RouletteLayoutPlan } from "@/state/strategies";
 import { Felt, FeltChip } from "./felt";
 import { Grid3x3, Timer, TrendingDown } from "./icons";
@@ -39,7 +39,6 @@ import {
   Label,
   Pill,
   SharePanel,
-  StatTile,
   StepRail,
   Stepper,
   SubmitPanel,
@@ -70,6 +69,7 @@ import {
   widenOptions,
 } from "./roulette";
 import { BuilderLoading, BuilderMissing } from "./states";
+import { StrategyShell } from "./StrategyShell";
 import { useBuilderDraft } from "./useBuilderDraft";
 
 type Panel = "none" | "compare" | "share" | "submit";
@@ -77,7 +77,7 @@ type Panel = "none" | "compare" | "share" | "submit";
 export function RouletteBuilder() {
   const state = useBuilderDraft("roulette");
   return (
-    <AppShell active="strategies">
+    <StrategyShell>
       {state.status === "loading" ? (
         <BuilderLoading />
       ) : state.status === "missing" ? (
@@ -90,7 +90,7 @@ export function RouletteBuilder() {
           fork={state.fork}
         />
       )}
-    </AppShell>
+    </StrategyShell>
   );
 }
 
@@ -701,6 +701,7 @@ function OutsideSpot({
         amount !== undefined && s.betOn,
       ]}
     >
+      {fill ? <View style={[s.diamond, { backgroundColor: fill }]} /> : null}
       <Text
         style={[
           ui(id.startsWith("column") ? 10 : 11, 700, { letterSpacing: 0.5 }),
@@ -928,21 +929,26 @@ function TestStep({ layout, onSubmit }: { layout: RouletteLayoutPlan; onSubmit: 
       {result ? (
         <>
           <View style={s.tiles}>
-            <StatTile
+            <StatCard
+              width="auto"
               label={`${result.spins} spins`}
               value={result.net}
-              sub={result.stopped}
-              tone={result.netValue < 0 ? "mistake" : "correct"}
+              delta={result.stopped}
+              deltaTone={result.netValue < 0 ? "mistake" : "correct"}
             />
-            <StatTile
+            <StatCard
+              width="auto"
               label="Best and worst point"
               value={`${result.peak} / ${result.trough}`}
-              sub="Session high and low"
+              delta="Session high and low"
+              deltaTone="muted"
             />
-            <StatTile
+            <StatCard
+              width="auto"
               label={`${result.sessions} sessions`}
               value={result.averageNet}
-              sub={`${result.winning} finished ahead · realised edge ${result.realisedEdge}`}
+              delta={`${result.winning} finished ahead · realised edge ${result.realisedEdge}`}
+              deltaTone="muted"
             />
           </View>
           <InfoNote text="Any one session is luck. Across many sessions the realised edge settles near the house edge, whatever the progression." />
@@ -1001,7 +1007,16 @@ const s = StyleSheet.create({
   bracketChip: { position: "absolute", bottom: -16 },
   chipSel: { borderColor: colors.paper, borderWidth: 3 },
   outsideRow: { flexDirection: "row", gap: GAP, paddingLeft: 47, paddingRight: 55 },
+  diamond: {
+    width: 9,
+    height: 9,
+    borderWidth: 1.5,
+    borderColor: builder.chipEdge,
+    transform: [{ rotate: "45deg" }],
+  },
   outside: {
+    flexDirection: "row",
+    gap: 7,
     borderRadius: 4,
     borderWidth: 1,
     borderColor: colors.feltLine,

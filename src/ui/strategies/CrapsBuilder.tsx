@@ -16,7 +16,7 @@ import {
   formatDollars,
   oddsLabel,
 } from "@/games/craps";
-import { AppShell, Button, SegmentedControl, colors, display, ui } from "@/ui/ds";
+import { Button, SegmentedControl, colors, display, ui, StatCard } from "@/ui/ds";
 import type { CrapsDraft } from "@/state/strategies";
 import {
   type HitKind,
@@ -83,6 +83,7 @@ import {
   styles as p,
 } from "./parts";
 import { BuilderLoading, BuilderMissing } from "./states";
+import { StrategyShell } from "./StrategyShell";
 import { useBuilderDraft } from "./useBuilderDraft";
 
 type Panel = "none" | "compare" | "share" | "submit";
@@ -90,7 +91,7 @@ type Panel = "none" | "compare" | "share" | "submit";
 export function CrapsBuilder() {
   const state = useBuilderDraft("craps");
   return (
-    <AppShell active="strategies">
+    <StrategyShell>
       {state.status === "loading" ? (
         <BuilderLoading />
       ) : state.status === "missing" ? (
@@ -103,7 +104,7 @@ export function CrapsBuilder() {
           fork={state.fork}
         />
       )}
-    </AppShell>
+    </StrategyShell>
   );
 }
 
@@ -483,7 +484,16 @@ function PhaseList({
           </Pressable>
         );
       })}
-      {readOnly || templates.length === 0 ? null : adding ? (
+      {readOnly ? null : adding && templates.length === 0 ? (
+        <View style={s.addRow}>
+          <Text role="status" style={[ui(13), p.flex, { color: colors.mutedForeground }]}>
+            {section === "place-wins"
+              ? "Hit rules have one row per hit: pick a row and change what happens in the panel."
+              : "This plan already has its money rule: pick it to change the amounts."}
+          </Text>
+          <Pill label="OK" onPress={() => setAdding(false)} />
+        </View>
+      ) : adding ? (
         <View style={s.addRow}>
           {templates.map((t) => (
             <Pill
@@ -948,17 +958,26 @@ function TestStep({
       {result ? (
         <>
           <View style={s.tiles}>
-            <StatTile
+            <StatCard
+              width="auto"
               label="Net"
               value={result.net}
-              sub={result.stopped}
-              tone={result.netValue < 0 ? "mistake" : "correct"}
+              delta={result.stopped}
+              deltaTone={result.netValue < 0 ? "mistake" : "correct"}
             />
-            <StatTile label="Money bet" value={result.wagered} sub="Flats, odds and presses" />
-            <StatTile
+            <StatCard
+              width="auto"
+              label="Money bet"
+              value={result.wagered}
+              delta="Flats, odds and presses"
+              deltaTone="muted"
+            />
+            <StatCard
+              width="auto"
               label="Deepest dip"
               value={result.drawdown}
-              sub="Lowest point of the session"
+              delta="Lowest point of the session"
+              deltaTone="muted"
             />
           </View>
           {result.shooters.map((sh) => (

@@ -64,6 +64,31 @@ export interface BlackjackDraft extends DraftCommon {
   readonly base: ChartSource;
   /** Cells this draft sets, on top of the base chart. */
   readonly cells: Readonly<Record<string, ChartCode>>;
+  /** Bet sizing by true count; absent until the player sets one. */
+  readonly ramp?: BetRamp;
+}
+
+/** Bets by true count: `units[0]` at TC ≤ 0, then +1, +2 … `units[5]` at +5 or more. */
+export interface BetRamp {
+  /** One unit, in dollars. */
+  readonly unit: number;
+  readonly units: readonly number[];
+}
+
+export const RAMP_STEPS = 6;
+
+function cleanRamp(v: unknown): BetRamp | undefined {
+  if (!isObject(v) || typeof v.unit !== "number" || !(v.unit > 0) || !Array.isArray(v.units)) {
+    return undefined;
+  }
+  const units = v.units.slice(0, RAMP_STEPS);
+  if (
+    units.length !== RAMP_STEPS ||
+    !units.every((u) => Number.isInteger(u) && u >= 1 && u <= 100)
+  ) {
+    return undefined;
+  }
+  return { unit: v.unit, units: units as number[] };
 }
 
 export interface CrapsDraft extends DraftCommon {
@@ -202,12 +227,14 @@ export function normalizeDraft(v: unknown): StrategyDraft | undefined {
       if (!isRuleSet(v.rules) || !base || !isRuleSet(base.rules) || !cells || !baseCells) {
         return undefined;
       }
+      const ramp = cleanRamp(v.ramp);
       return {
         ...common,
         game: "blackjack",
         rules: v.rules,
         base: { rules: base.rules, cells: baseCells },
         cells,
+        ...(ramp ? { ramp } : {}),
       };
     }
     case "craps":
@@ -327,8 +354,11 @@ export function createDraftStore(repo: DraftRepository): DraftStore {
         const ops = pending;
         pending = [];
         const drafts = ops.reduce(applyOp, stored ?? []);
+        // Queue the replayed write *before* publishing: a listener that reacts to the publish
+        // with a newer save then queues after it, and the newer list wins on disk.
+        const saved = ops.length > 0 ? persist(drafts) : undefined;
         publish({ drafts, ready: true, status: drafts.length > 0 ? "stored" : "empty" });
-        return ops.length > 0 ? persist(drafts) : undefined;
+        return saved;
       },
       () => {
         const drafts = pending.reduce(applyOp, [] as StrategyDraft[]);

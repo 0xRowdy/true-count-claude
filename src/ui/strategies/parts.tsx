@@ -167,6 +167,7 @@ export function BuilderHead({
                 accessibilityRole="button"
                 accessibilityLabel={`Rename ${title}`}
                 disabled={readOnly}
+                style={styles.shrink}
                 onPress={() => {
                   setDraftTitle(title);
                   setEditing(true);
@@ -183,17 +184,31 @@ export function BuilderHead({
             <Badge label={savedLabel(savedAt, readOnly)} icon={Pencil} />
           </View>
           {forkedFrom || !readOnly ? (
-            <View style={styles.attribution}>
+            <View style={[styles.attribution, wide && styles.attributionWide]}>
               <ds.GitFork size={16} color={colors.primary} />
-              <Text style={[ui(13, 500), { color: colors.foreground }]}>
-                {forkedFrom
-                  ? `Forked from ${forkedFrom.title} by ${forkedFrom.author} · v${forkedFrom.version}`
-                  : "Your own strategy"}
-              </Text>
+              {forkedFrom ? (
+                <View style={[styles.credit, wide && styles.creditWide]}>
+                  <Text
+                    style={[ui(13, 500), styles.shrink, { color: colors.foreground }]}
+                    numberOfLines={wide ? 1 : undefined}
+                  >
+                    Forked from {forkedFrom.title}
+                  </Text>
+                  <Text style={[ui(13, 500), styles.noShrink, { color: colors.foreground }]}>
+                    {` by ${forkedFrom.author} · v${forkedFrom.version}`}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={[ui(13, 500), { color: colors.foreground }]}>Your own strategy</Text>
+              )}
               {forkedFrom ? (
                 <>
-                  <Text style={[ui(13), { color: colors.mutedForeground }]}>·</Text>
-                  <Text style={[ui(13), { color: colors.mutedForeground }]}>
+                  {/* The dot only joins two phrases on one line; wrapped, it would be orphaned. */}
+                  {wide ? <Text style={[ui(13), { color: colors.mutedForeground }]}>·</Text> : null}
+                  <Text
+                    style={[ui(13), styles.noShrink, { color: colors.mutedForeground }]}
+                    numberOfLines={1}
+                  >
                     Credit is shown on every copy
                   </Text>
                 </>
@@ -204,6 +219,7 @@ export function BuilderHead({
                 aria-expanded={compareOpen}
                 onPress={onCompare}
                 hitSlop={10}
+                style={styles.noShrink}
               >
                 <Text style={[ui(13, 600), { color: colors.primary }]}>
                   Compare ({changes} {changes === 1 ? "change" : "changes"})
@@ -574,13 +590,25 @@ export function Stepper({
   );
 }
 
-export function EngineCheck({ ok, title, body }: { ok: boolean; title: string; body: string }) {
-  const tone = ok ? colors.correct : colors.mistake;
+export function EngineCheck({
+  ok,
+  title,
+  body,
+  warn = false,
+}: {
+  ok: boolean;
+  title: string;
+  body: string;
+  /** Allowed, but worth knowing: amber instead of red. */
+  warn?: boolean;
+}) {
+  const tone = ok ? colors.correct : warn ? colors.primary : colors.mistake;
+  const wash = ok ? builder.correctWash : warn ? builder.primaryWash : builder.mistakeWash;
   return (
     <View
       role="status"
       accessibilityLabel={`${title}. ${body}`}
-      style={[styles.check, { backgroundColor: ok ? builder.correctWash : builder.mistakeWash }]}
+      style={[styles.check, { backgroundColor: wash }]}
     >
       {ok ? <ds.BadgeCheck size={18} color={tone} /> : <CircleAlert size={18} color={tone} />}
       <View style={[styles.flex, styles.gap2]}>
@@ -841,6 +869,11 @@ export const styles = StyleSheet.create({
     minWidth: 320,
     paddingVertical: 0,
   },
+  shrink: { flexShrink: 1 },
+  credit: { flexDirection: "row", flexWrap: "wrap", flexShrink: 1 },
+  creditWide: { flexWrap: "nowrap" },
+  noShrink: { flexShrink: 0 },
+  attributionWide: { flexWrap: "nowrap", maxWidth: "100%" },
   attribution: {
     flexDirection: "row",
     flexWrap: "wrap",
