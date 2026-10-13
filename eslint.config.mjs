@@ -143,7 +143,8 @@ const ENGINE_FORBIDDEN_SYNTAX = [
   { selector: CLOCK_SELECTORS, message: CLOCK_MESSAGE },
   {
     selector: "CallExpression[callee.name='setTimeout'], CallExpression[callee.name='setInterval']",
-    message: "ADR-0002: src/engine and src/games are synchronous. Timers belong in src/ui or src/state.",
+    message:
+      "ADR-0002: src/engine and src/games are synchronous. Timers belong in src/ui or src/state.",
   },
 ];
 
@@ -163,21 +164,31 @@ const ENGINE_TEST_FORBIDDEN_SYNTAX = [
   { selector: RANDOM_SELECTORS, message: RANDOM_MESSAGE },
   {
     selector: "CallExpression[callee.name='setTimeout'], CallExpression[callee.name='setInterval']",
-    message: "ADR-0002: src/engine and src/games are synchronous. Timers belong in src/ui or src/state.",
+    message:
+      "ADR-0002: src/engine and src/games are synchronous. Timers belong in src/ui or src/state.",
   },
 ];
 
 /** Ambient host APIs. Reaching for any of these means the engine stopped being pure. */
 const ENGINE_FORBIDDEN_GLOBALS = [
-  { name: "fetch", message: "ADR-0002: src/engine performs no network I/O." },
-  { name: "XMLHttpRequest", message: "ADR-0002: src/engine performs no network I/O." },
-  { name: "WebSocket", message: "ADR-0002: src/engine performs no network I/O." },
-  { name: "localStorage", message: "ADR-0002: src/engine performs no storage I/O." },
-  { name: "sessionStorage", message: "ADR-0002: src/engine performs no storage I/O." },
-  { name: "indexedDB", message: "ADR-0002: src/engine performs no storage I/O." },
-  { name: "window", message: "ADR-0002: src/engine is platform-agnostic — no DOM access." },
-  { name: "document", message: "ADR-0002: src/engine is platform-agnostic — no DOM access." },
-  { name: "navigator", message: "ADR-0002: src/engine is platform-agnostic — no host APIs." },
+  { name: "fetch", message: "ADR-0002: src/engine and src/games perform no network I/O." },
+  { name: "XMLHttpRequest", message: "ADR-0002: src/engine and src/games perform no network I/O." },
+  { name: "WebSocket", message: "ADR-0002: src/engine and src/games perform no network I/O." },
+  { name: "localStorage", message: "ADR-0002: src/engine and src/games perform no storage I/O." },
+  { name: "sessionStorage", message: "ADR-0002: src/engine and src/games perform no storage I/O." },
+  { name: "indexedDB", message: "ADR-0002: src/engine and src/games perform no storage I/O." },
+  {
+    name: "window",
+    message: "ADR-0002: src/engine and src/games are platform-agnostic — no DOM access.",
+  },
+  {
+    name: "document",
+    message: "ADR-0002: src/engine and src/games are platform-agnostic — no DOM access.",
+  },
+  {
+    name: "navigator",
+    message: "ADR-0002: src/engine and src/games are platform-agnostic — no host APIs.",
+  },
   { name: "performance", message: "ADR-0004: src/engine and src/games read no clock." },
 ];
 
