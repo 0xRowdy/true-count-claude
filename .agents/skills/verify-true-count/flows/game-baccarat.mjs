@@ -36,6 +36,19 @@ export default async ({ page, url, shot, log, check }) => {
     "rules line from the engine",
   );
   check(await visible(page.getByText("BEAD ROAD · THIS SHOE")).isVisible(), "bead road header");
+  // The bet spots keep the design's height (a `flex: 0` once collapsed them to their text).
+  for (const name of [/^Player, pays/, /^Tie, pays/, /^Banker, pays/]) {
+    const box = await visible(page.getByRole("button", { name })).boundingBox();
+    check(box && box.height >= 90, `${name.source.slice(1, -6)} spot is ${box?.height}px tall`);
+  }
+  // The whole rules line is readable at 390 (it wraps instead of ending in "…").
+  const subtitle = visible(page.getByText("Punto Banco · 8 decks · 5% commission"));
+  check(
+    await subtitle.evaluate(
+      (el) => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1,
+    ),
+    "rules line not truncated at 390",
+  );
   check(
     (await visible(page.getByRole("progressbar")).getAttribute("aria-label")) ===
       "Step 1 of 4: Bet",

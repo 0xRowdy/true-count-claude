@@ -275,7 +275,9 @@ const styles = StyleSheet.create({
   spotCompact: { height: 56, paddingBottom: 6, borderRadius: 10 },
   spotOn: { borderWidth: 2, borderColor: colors.primary },
   wrap: { flex: 1 },
-  spotInWrap: { flex: 0 },
+  // Not `flex: 0`: React Native Web expands that to `0 1 0%`, and a zero basis in the wrapper's
+  // column overrides `height`, collapsing the spot to its text (12px).
+  spotInWrap: { flexGrow: 0, flexShrink: 0, flexBasis: "auto" },
   remove: {
     position: "absolute",
     right: 5,
