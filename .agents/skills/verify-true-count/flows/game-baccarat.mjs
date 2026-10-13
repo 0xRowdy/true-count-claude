@@ -45,6 +45,37 @@ export default async ({ page, url, shot, log, check }) => {
   const spot = (name) => visible(page.getByRole("button", { name: new RegExp(`^${name}, pays`) }));
   const outcome = () => visible(page.getByTestId("outcome")).innerText();
 
+  // Keyboard only: Enter on a spot adds a chip; Tab reaches its "Take a chip off" button
+  // (long-press never fires from a keyboard on web, so it has a real button too).
+  await spot("Banker").focus();
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Enter");
+  check(
+    (await spot("Banker").getAttribute("aria-label")).includes("$50 bet"),
+    "keyboard: Enter twice put $50 on Banker",
+  );
+  await page.keyboard.press("Tab");
+  check(
+    (await page.evaluate(() => document.activeElement?.getAttribute("aria-label"))) ===
+      "Take a chip off Banker",
+    "keyboard: Tab reaches the spot's remove button",
+  );
+  await page.keyboard.press("Enter");
+  check(
+    (await spot("Banker").getAttribute("aria-label")).includes("$25 bet"),
+    "keyboard: Enter on remove took one $25 chip back",
+  );
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(100);
+  check(
+    !(await spot("Banker").getAttribute("aria-label")).includes("bet"),
+    "keyboard: second remove cleared the spot",
+  );
+  check(
+    (await page.getByRole("button", { name: "Take a chip off Banker" }).count()) === 0,
+    "remove button only shows on a spot with chips",
+  );
+
   // A deliberate mistake: Tie. The coach catches it before the deal.
   await spot("Tie").click();
   await visible(page.getByRole("button", { name: "Deal" })).click();
@@ -65,6 +96,18 @@ export default async ({ page, url, shot, log, check }) => {
     (await visible(page.getByRole("progressbar")).getAttribute("aria-label")) ===
       "Step 1 of 4: Bet",
     "still betting after the take-back",
+  );
+  // The caught mistake still counts: recorded as wrong and coached, even though it was taken back.
+  const coached = await page
+    .waitForFunction(() => {
+      const raw = localStorage.getItem("tableside/progress/v1");
+      const d = raw ? (JSON.parse(raw).decisions ?? []) : [];
+      return d.find((x) => x.game === "baccarat") ?? null;
+    })
+    .then((h) => h.jsonValue());
+  check(
+    coached.category === "bet-choice" && coached.correct === false && coached.coached === true,
+    `taken-back Tie recorded as a coached mistake (${JSON.stringify(coached)})`,
   );
 
   // Round 1: $50 on Banker (two $25 chips).

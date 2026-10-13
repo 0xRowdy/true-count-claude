@@ -13,6 +13,7 @@ import {
 } from "@/games/baccarat";
 import { Chip, PlayingCard, colors, display, surfaces, ui } from "@/ui/ds";
 import { chipStack, formatAmount } from "./baccaratTable";
+import { Minus } from "./icons";
 import { baccaratPalette as pal } from "./palette";
 
 /** The felt (design "Felt", pgZXh): radial glow, rounded bottom corners. */
@@ -182,19 +183,47 @@ export function Spot({
       </View>
     );
   }
-  return (
+  const spot = (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={a11y}
-      accessibilityHint="Tap to add the selected chip, long-press to take one back"
+      accessibilityHint="Adds the selected chip"
       onPress={onPress}
       onLongPress={onLongPress}
       delayLongPress={450}
       testID={`spot-${bet}`}
-      style={({ pressed }) => [...frame, pressed && { opacity: 0.85 }]}
+      style={({ pressed }) => [
+        ...frame,
+        onLongPress ? styles.spotInWrap : null,
+        pressed && { opacity: 0.85 },
+      ]}
     >
       {body}
     </Pressable>
+  );
+  if (!onLongPress) return spot;
+  // Long-press never fires from a keyboard or screen reader on web, so taking a chip back
+  // also has a real button (invariant 7: buttons, not gestures). The wrapper is always there,
+  // so the spot keeps keyboard focus when its first chip lands.
+  return (
+    <View style={styles.wrap}>
+      {spot}
+      {stake > 0 ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Take a chip off ${label}`}
+          onPress={onLongPress}
+          hitSlop={9}
+          style={({ pressed }) => [
+            styles.remove,
+            compact ? styles.removeCompact : null,
+            pressed && { opacity: 0.85 },
+          ]}
+        >
+          <Minus size={14} color={colors.feltText} strokeWidth={2.5} />
+        </Pressable>
+      ) : null}
+    </View>
   );
 }
 
@@ -245,6 +274,23 @@ const styles = StyleSheet.create({
   },
   spotCompact: { height: 56, paddingBottom: 6, borderRadius: 10 },
   spotOn: { borderWidth: 2, borderColor: colors.primary },
+  wrap: { flex: 1 },
+  spotInWrap: { flex: 0 },
+  remove: {
+    position: "absolute",
+    right: 5,
+    bottom: 5,
+    zIndex: 20,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.feltLine,
+    backgroundColor: pal.stakeTag,
+  },
+  removeCompact: { width: 22, height: 22, borderRadius: 11, right: 4, bottom: 4 },
   chip: { position: "absolute" },
   tag: {
     position: "absolute",
