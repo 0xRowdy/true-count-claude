@@ -9,6 +9,7 @@ const ROUTES = [
   "/rules",
   "/shoe-integrity",
   "/session",
+  "/design-system",
 ];
 const HYDRATION = /Minified React error #(418|423|425)|hydrat/i;
 
