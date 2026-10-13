@@ -15,7 +15,9 @@ import RotateCw from "lucide-react-native/icons/rotate-cw";
 import Undo2 from "lucide-react-native/icons/undo-2";
 import Repeat from "lucide-react-native/icons/repeat";
 import X from "lucide-react-native/icons/x";
-import { describeTable, formatDollars, pocketColor } from "@/games/roulette";
+import ZoomIn from "lucide-react-native/icons/zoom-in";
+import { type Pocket, describeTable, formatDollars, pocketColor } from "@/games/roulette";
+import type { CoachLevel } from "@/state/profile";
 import { PRACTICE_BANKROLL_START } from "@/state/progress";
 import { bankroll as gameBankroll } from "@/state/progressSelectors";
 import {
@@ -71,6 +73,8 @@ const POCKET_FILL = { red: colors.chip5, black: colors.chip100, green: colors.ch
 export function RouletteScreen({ seed }: { seed?: string }) {
   const [state, dispatch] = useReducer(tableReducer, undefined, () => initialTable());
   const [rulesOpen, setRulesOpen] = useState(false);
+  // The last number tapped or focused: "Bets touching N" opens its loupe without a long-press.
+  const [picked, setPicked] = useState<Pocket | null>(null);
   const { profile } = useProfile();
   const progress = useProgressView(false);
   const rules = rulesOf(state);
@@ -107,9 +111,23 @@ export function RouletteScreen({ seed }: { seed?: string }) {
       graded.current = spinNo;
       for (const g of gradeBets(stateRef.current)) recordDecision({ game: "roulette", ...g });
     }
-    const t = setTimeout(() => dispatch({ type: "reveal" }), SPIN_MS);
-    return () => clearTimeout(t);
   }, [state.phase, state.history.length]);
+
+  // The ball lands SPIN_MS after Spin. The timer belongs to the press, not to a render, so no
+  // re-render (a progress write, a profile load) can cancel it; `reveal` is a no-op outside the
+  // spin phase, so a refused Spin is harmless.
+  const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (revealTimer.current) clearTimeout(revealTimer.current);
+    },
+    [],
+  );
+  const onSpin = () => {
+    dispatch({ type: "spin" });
+    if (revealTimer.current) clearTimeout(revealTimer.current);
+    revealTimer.current = setTimeout(() => dispatch({ type: "reveal" }), SPIN_MS);
+  };
 
   useEffect(() => {
     if (state.phase !== "result" || !state.settlement) return;
@@ -193,6 +211,7 @@ export function RouletteScreen({ seed }: { seed?: string }) {
               onAdd={add}
               onRemove={(spotId) => dispatch({ type: "remove", spotId })}
               onLoupe={(pocket) => dispatch({ type: "loupe", pocket })}
+              onPick={setPicked}
             />
           </ScrollView>
           {state.coach ? (
@@ -223,7 +242,13 @@ export function RouletteScreen({ seed }: { seed?: string }) {
         </View>
 
         {state.phase === "bet" ? (
-          <BetControls state={state} dispatch={dispatch} />
+          <BetControls
+            state={state}
+            dispatch={dispatch}
+            coach={coachLevel}
+            picked={picked}
+            onSpin={onSpin}
+          />
         ) : (
           <RoundPanel state={state} dispatch={dispatch} />
         )}
@@ -238,7 +263,10 @@ export function RouletteScreen({ seed }: { seed?: string }) {
           <RouletteRulesSheet
             wheel={state.wheel}
             canChange={betting}
-            onWheel={(wheel) => dispatch({ type: "wheel", wheel })}
+            onWheel={(wheel) => {
+              setPicked(null);
+              dispatch({ type: "wheel", wheel });
+            }}
             onClose={() => setRulesOpen(false)}
           />
         ) : null}
@@ -249,7 +277,19 @@ export function RouletteScreen({ seed }: { seed?: string }) {
 
 type Dispatch = (a: Parameters<typeof tableReducer>[1]) => void;
 
-function BetControls({ state, dispatch }: { state: TableState; dispatch: Dispatch }) {
+function BetControls({
+  state,
+  dispatch,
+  coach,
+  picked,
+  onSpin,
+}: {
+  state: TableState;
+  dispatch: Dispatch;
+  coach: CoachLevel;
+  picked: Pocket | null;
+  onSpin: () => void;
+}) {
   const empty = state.bets.length === 0;
   const rebet = empty && state.lastBets.length > 0;
   const reset = needsReset(state);
@@ -262,6 +302,18 @@ function BetControls({ state, dispatch }: { state: TableState; dispatch: Dispatc
             {betSummary(state)}
           </Text>
         </View>
+        {picked !== null ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Bets touching ${String(picked)}`}
+            accessibilityHint="Opens the bet loupe for the last number you picked"
+            onPress={() => dispatch({ type: "loupe", pocket: picked })}
+            hitSlop={4}
+            style={styles.loupeButton}
+          >
+            <ZoomIn size={18} color={colors.foreground} strokeWidth={2} />
+          </Pressable>
+        ) : null}
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`${edgeLabel(state)}. Ask the dealer why`}
@@ -307,7 +359,7 @@ function BetControls({ state, dispatch }: { state: TableState; dispatch: Dispatc
             label="Rebet"
             icon={Repeat}
             variant="secondary"
-            onPress={() => dispatch({ type: "rebet" })}
+            onPress={() => dispatch({ type: "rebet", coach })}
             style={styles.action}
           />
         ) : (
@@ -324,7 +376,7 @@ function BetControls({ state, dispatch }: { state: TableState; dispatch: Dispatc
           label="Spin"
           icon={RotateCw}
           disabled={empty || state.seed === null || state.bankroll === null}
-          onPress={() => dispatch({ type: "spin" })}
+          onPress={onSpin}
           style={styles.action}
         />
       </View>
@@ -463,6 +515,16 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingHorizontal: 16,
     paddingBottom: 4,
+  },
+  loupeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.secondary,
+    alignItems: "center",
+    justifyContent: "center",
   },
   edge: {
     flexDirection: "row",

@@ -47,6 +47,7 @@ import {
   settleBets,
   spinPocket,
   spotShortName,
+  spotTitle,
   streetOf,
   toCents,
   totalStake,
@@ -101,6 +102,11 @@ export interface CoachMessage {
   readonly takeBack?: string;
 }
 
+export interface Caught {
+  readonly spotId: string;
+  readonly category: "inside" | "outside";
+}
+
 export interface TableState {
   readonly wheel: WheelChoice;
   /** Null until drawn after mount (hydration). */
@@ -122,8 +128,11 @@ export interface TableState {
   /** The pocket the bet loupe is open on. */
   readonly loupe: Pocket | null;
   readonly coach: CoachMessage | null;
-  /** Spots the coach caught as mistakes this round (recorded as `coached`). */
-  readonly coached: readonly string[];
+  /**
+   * Bets the coach caught as mistakes this round. Each is graded at Spin as a coached decision
+   * whether the player kept it or took it back (Take it back, Undo, Clear, long-press).
+   */
+  readonly coached: readonly Caught[];
   /** Spots the "every" coach has already explained this round. */
   readonly hinted: readonly string[];
   /** An in-place error (limits, bankroll). */
@@ -165,7 +174,7 @@ export type TableAction =
   | { type: "removeSpot"; spotId: string }
   | { type: "undo" }
   | { type: "clear" }
-  | { type: "rebet" }
+  | { type: "rebet"; coach: CoachLevel }
   | { type: "spin" }
   | { type: "reveal" }
   | { type: "payout" }
@@ -196,10 +205,14 @@ export function tableReducer(state: TableState, action: TableAction): TableState
       const on = amountOn(state.bets, action.spotId);
       if (on <= 0) return state;
       const next = removeChips(state.bets, action.spotId, Math.min(on, state.chip));
-      return placed(state, next);
+      const out = placed(state, next);
+      // A note offering to take back a bet that is already gone has nothing left to do.
+      const gone = state.coach?.takeBack === action.spotId && amountOn(next, action.spotId) <= 0;
+      return gone ? { ...out, coach: null } : out;
     }
     case "removeSpot": {
-      if (state.phase !== "bet" || amountOn(state.bets, action.spotId) <= 0) return state;
+      if (state.phase !== "bet") return state;
+      if (amountOn(state.bets, action.spotId) <= 0) return { ...state, coach: null };
       const on = amountOn(state.bets, action.spotId);
       return { ...placed(state, removeChips(state.bets, action.spotId, on)), coach: null };
     }
@@ -227,7 +240,20 @@ export function tableReducer(state: TableState, action: TableAction): TableState
           error: `Rebet needs ${formatDollars(stake)}, more than your ${formatDollars(state.bankroll)} practice bankroll.`,
         };
       }
-      return placed(state, valid);
+      // The coach sees a rebet like any other bet: the first note wins, every mistake is caught.
+      let out = placed(state, valid);
+      for (const b of valid) {
+        const spot = getSpot(rules, b.spotId)!;
+        const note = coachOnBet(out, spot, action.coach);
+        if (!note) continue;
+        out = {
+          ...out,
+          coach: out.coach ?? note,
+          coached: note.variant === "mistake" ? catchSpot(out.coached, spot) : out.coached,
+          hinted: [...out.hinted, spot.id],
+        };
+      }
+      return out;
     }
     case "spin":
       return spin(state);
@@ -269,11 +295,21 @@ export function tableReducer(state: TableState, action: TableAction): TableState
         undo: [],
         loupe: null,
         coach: null,
+        // Hints restart on the new wheel; caught mistakes stay, they are decisions already made.
+        hinted: [],
         error: null,
       };
     }
-    case "hint":
-      return { ...state, coach: askedHint(state) };
+    case "hint": {
+      // Asking is still the coach stepping in: a mistake it names counts as coached.
+      const note = askedHint(state);
+      const spot = note.takeBack ? getSpot(rulesOf(state), note.takeBack) : undefined;
+      return {
+        ...state,
+        coach: note,
+        coached: spot ? catchSpot(state.coached, spot) : state.coached,
+      };
+    }
     case "dismissCoach":
       return { ...state, coach: null };
   }
@@ -309,11 +345,20 @@ function addBet(state: TableState, spotId: string, coach: CoachLevel): TableStat
     out = {
       ...out,
       coach: note,
-      coached: note.variant === "mistake" ? [...out.coached, spot.id] : out.coached,
+      coached: note.variant === "mistake" ? catchSpot(out.coached, spot) : out.coached,
       hinted: [...out.hinted, spot.id],
     };
   }
   return out;
+}
+
+function catchSpot(caught: readonly Caught[], spot: BetSpot): Caught[] {
+  if (caught.some((c) => c.spotId === spot.id)) return [...caught];
+  return [...caught, { spotId: spot.id, category: categoryOf(spot) }];
+}
+
+function categoryOf(spot: BetSpot): "inside" | "outside" {
+  return isInsideBet(spot.type) ? "inside" : "outside";
 }
 
 function spin(state: TableState): TableState {
@@ -424,20 +469,25 @@ export interface GradedBet {
   readonly coached: boolean;
 }
 
-/** One graded decision per bet on the felt when the ball is spun. */
+/**
+ * The graded decisions when the ball is spun: one per bet on the felt, plus one for each
+ * mistake the coach caught and the player took back (wrong, coached), so a corrected mistake
+ * still reaches progress.
+ */
 export function gradeBets(state: TableState): GradedBet[] {
   const rules = rulesOf(state);
-  return state.bets.flatMap((b) => {
+  const caught = (id: string) => state.coached.some((c) => c.spotId === id);
+  const onFelt: GradedBet[] = state.bets.flatMap((b) => {
     const spot = getSpot(rules, b.spotId);
     if (!spot) return [];
     return [
-      {
-        category: isInsideBet(spot.type) ? ("inside" as const) : ("outside" as const),
-        correct: !isWorseBet(rules, spot),
-        coached: state.coached.includes(spot.id),
-      },
+      { category: categoryOf(spot), correct: !isWorseBet(rules, spot), coached: caught(spot.id) },
     ];
   });
+  const takenBack: GradedBet[] = state.coached
+    .filter((c) => amountOn(state.bets, c.spotId) <= 0)
+    .map((c) => ({ category: c.category, correct: false, coached: true }));
+  return [...onFelt, ...takenBack];
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -505,7 +555,7 @@ export interface PayoutRow {
   readonly name: string;
   readonly amount: string;
   readonly outcome: "win" | "lose" | "halfBack";
-  /** "Pays 35:1 · +$175", "Lost", "Half back · −$5". */
+  /** "Pays 35:1 · returns $180", "Lost", "Half back · returns $5". */
   readonly detail: string;
   readonly net: string;
 }
@@ -546,24 +596,31 @@ export function needsReset(state: TableState): boolean {
 
 export interface LoupeOption {
   readonly spotId: string;
+  /** "Split 16 | 17", "Red". */
+  readonly name: string;
   readonly label: string;
   readonly caption: string;
   readonly amount: number;
   readonly accessibilityLabel: string;
 }
 
-/** The bet loupe's options for `pocket`: every inside bet that wins on it, in the engine's order. */
+/**
+ * The bet loupe's options for `pocket`: every bet that wins on it, in the engine's order (the
+ * inside bets first, as the design shows them, then the outside bets touching it, so every spot
+ * on the felt has a button path to add and remove chips).
+ */
 export function loupeOptions(state: TableState, pocket: Pocket): LoupeOption[] {
   const rules = rulesOf(state);
-  return betsTouching(rules, pocket, { insideOnly: true }).map((spot) => {
+  return betsTouching(rules, pocket).map((spot) => {
     const amount = amountOn(state.bets, spot.id);
     const caption = loupeCaption(spot);
     return {
       spotId: spot.id,
+      name: spotTitle(spot),
       label: amount > 0 ? `${spot.label}  · ${formatDollars(amount)}` : spot.label,
       caption,
       amount,
-      accessibilityLabel: `${caption.replace(/ (\d+):1$/, "")} ${spot.label}, pays ${spot.payout} to 1${amount > 0 ? `, ${formatDollars(amount)} bet` : ""}`,
+      accessibilityLabel: `${spotTitle(spot)}, pays ${spot.payout} to 1${amount > 0 ? `, ${formatDollars(amount)} bet` : ""}`,
     };
   });
 }
@@ -633,12 +690,17 @@ export function chipPoint(spot: BetSpot, wheel: RouletteRules["wheel"], width: n
       break;
   }
   if (spot.pockets.some(isZero)) {
-    if (spot.pockets.every(isZero)) return { x: width / 2, y: CELL_H / 2 };
+    // 0 | 00 sits high on its boundary, clear of the 0 · 00 · 2 trio on the line below.
+    if (spot.pockets.every(isZero)) return { x: width / 2, y: CELL_H / 2 - 6 };
     const xs =
       wheel === "european"
         ? spot.pockets.filter((p) => !isZero(p)).map((p) => center(pocketRect(p, wheel, width)).x)
         : rects.map((r) => center(r).x);
-    return { x: avg(xs), y: zeroLine };
+    // American trios beside a single zero sit up in the zero row, so the zero line keeps room
+    // for the four splits and the 0 · 00 · 2 trio.
+    const zeros = spot.pockets.filter(isZero).length;
+    const inRow = wheel === "american" && spot.type === "trio" && zeros === 1;
+    return { x: avg(xs), y: inRow ? CELL_H / 2 : zeroLine };
   }
   const cs = rects.map(center);
   return { x: avg(cs.map((c) => c.x)), y: avg(cs.map((c) => c.y)) };

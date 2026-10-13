@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getSpot, spinPocket } from "@/games/roulette";
+import { getLayout, getSpot, spinPocket } from "@/games/roulette";
 import {
   type TableAction,
   type TableState,
@@ -103,7 +103,7 @@ describe("a round", () => {
     s = tableReducer(s, { type: "next" });
     expect(s.phase).toBe("bet");
     expect(s.bets).toEqual([]);
-    s = tableReducer(s, { type: "rebet" });
+    s = tableReducer(s, { type: "rebet", coach: "mistakes" });
     expect(s.bets).toHaveLength(2);
     s = run(s, { type: "spin" }, { type: "reveal" });
     expect(s.settlement!.pocket).toBe(spinPocket(WHEEL_RULES.european, 42, 1));
@@ -141,6 +141,61 @@ describe("coach", () => {
     expect(gradeBets(s)).toEqual([{ category: "inside", correct: false, coached: true }]);
     s = tableReducer(s, { type: "removeSpot", spotId: "topLine:0-00-1-2-3" });
     expect(s.bets).toEqual([]);
+  });
+
+  it("grades a taken-back top line as a coached mistake, however it leaves the felt", () => {
+    const top = "topLine:0-00-1-2-3";
+    const wrong = { category: "inside", correct: false, coached: true };
+    const back = run(ready("american"), add(top), { type: "removeSpot", spotId: top }, add("red"));
+    expect(gradeBets(back)).toEqual([
+      { category: "outside", correct: true, coached: false },
+      wrong,
+    ]);
+    const undone = run(ready("american"), add(top), { type: "undo" });
+    expect(gradeBets(undone)).toEqual([wrong]);
+    const cleared = run(ready("american"), add(top), { type: "clear" });
+    expect(gradeBets(cleared)).toEqual([wrong]);
+    // Kept: graded once, on the felt.
+    expect(gradeBets(run(ready("american"), add(top), add(top)))).toEqual([wrong]);
+  });
+
+  it("dismisses the take-back note once the bet is removed some other way", () => {
+    const top = "topLine:0-00-1-2-3";
+    const s = run(ready("american"), add(top), { type: "remove", spotId: top });
+    expect(s.coach).toBeNull();
+    expect(
+      tableReducer(
+        { ...s, coach: { variant: "mistake", kind: "", title: "", body: "", takeBack: top } },
+        { type: "removeSpot", spotId: top },
+      ).coach,
+    ).toBeNull();
+  });
+
+  it("runs the coach on a rebet", () => {
+    const top = "topLine:0-00-1-2-3";
+    let s = run(
+      ready("american"),
+      add(top, "asked"),
+      { type: "spin" },
+      { type: "reveal" },
+      { type: "payout" },
+      { type: "next" },
+    );
+    s = tableReducer(s, { type: "rebet", coach: "mistakes" });
+    expect(s.coach?.variant).toBe("mistake");
+    expect(gradeBets(s)).toEqual([{ category: "inside", correct: false, coached: true }]);
+  });
+
+  it("counts an asked-for mistake note as coached", () => {
+    const top = "topLine:0-00-1-2-3";
+    const s = run(ready("american"), add(top, "asked"), { type: "hint" });
+    expect(gradeBets(s)).toEqual([{ category: "inside", correct: false, coached: true }]);
+  });
+
+  it("restarts hints on a wheel change", () => {
+    const s = run(ready(), add("red", "every"), { type: "wheel", wheel: "french" });
+    expect(s.hinted).toEqual([]);
+    expect(tableReducer(s, add("red", "every")).coach?.variant).toBe("good");
   });
 
   it("stays quiet on the top line when coach is 'asked', but grades it", () => {
@@ -190,8 +245,16 @@ describe("bet loupe and felt", () => {
       ["17 | 20", "Split 17:1"],
       ["16 · 17 · 18", "Street 11:1"],
     ]);
-    expect(opts).toHaveLength(12);
-    expect(opts.at(-1)!.caption).toBe("Six line 5:1");
+    expect(opts[11]!.caption).toBe("Six line 5:1");
+    // Then the outside bets touching 17, so every spot has a button path.
+    expect(opts.slice(12).map((o) => o.name)).toEqual([
+      "2nd column",
+      "2nd 12",
+      "Black",
+      "Odd",
+      "1–18",
+    ]);
+    expect(opts[0]!.accessibilityLabel).toBe("Straight 17, pays 35 to 1, $5 bet");
   });
 
   it("puts split and corner chips on the grid lines", () => {
@@ -204,6 +267,22 @@ describe("bet loupe and felt", () => {
     const corner = chipPoint(getSpot(eu, "corner:13-14-16-17")!, "european", w);
     expect(corner).toEqual({ x: split.x, y: vsplit.y });
     expect(chipPoint(getSpot(eu, "street:16-17-18")!, "european", w).x).toBe(0);
+  });
+
+  it("spreads the American zero-row stacks so none overlap", () => {
+    const us = WHEEL_RULES.american;
+    const w = 262;
+    const zeroRow =
+      us.wheel &&
+      getLayout(us).spots.filter(
+        (s) => s.type !== "straight" && s.pockets.some((p) => p === 0 || p === "00"),
+      );
+    const pts = zeroRow.map((s) => chipPoint(s, "american", w));
+    for (let i = 0; i < pts.length; i++)
+      for (let j = i + 1; j < pts.length; j++) {
+        const d = Math.hypot(pts[i]!.x - pts[j]!.x, pts[i]!.y - pts[j]!.y);
+        expect(d, `${zeroRow[i]!.id} vs ${zeroRow[j]!.id}`).toBeGreaterThanOrEqual(20);
+      }
   });
 
   it("colours and labels stacks", () => {

@@ -176,6 +176,41 @@ export default async ({ page, url, shot, log, check }) => {
     "Take it back removes the bet",
   );
 
+  // Keyboard only (invariant 7): no pointer, no long-press. Tab onto 17, open its loupe with the
+  // "Bets touching 17" button, add a split with Enter, then remove it with its Remove button.
+  await page.mouse.move(0, 0);
+  await visible(page.getByRole("button", { name: /^16 red/ })).focus();
+  await page.keyboard.press("Tab");
+  const focused = await page.evaluate(() => document.activeElement?.getAttribute("aria-label"));
+  check(/^17 black/.test(focused ?? ""), `Tab reaches 17 (${focused})`);
+  const loupeButton = visible(page.getByRole("button", { name: "Bets touching 17", exact: true }));
+  await loupeButton.waitFor();
+  await loupeButton.focus();
+  await page.keyboard.press("Enter");
+  await visible(page.getByRole("dialog", { name: "Bets touching 17" })).waitFor();
+  check(true, "Enter on 'Bets touching 17' opens the loupe");
+  await visible(page.getByRole("button", { name: /^Split 16 \| 17, pays 17 to 1$/ })).focus();
+  await page.keyboard.press("Enter");
+  check(
+    await visible(page.getByText("Total bet $5", { exact: true })).isVisible(),
+    "Enter adds the split",
+  );
+  await visible(page.getByRole("button", { name: "Remove $5 from Split 16 | 17" })).focus();
+  await page.keyboard.press("Enter");
+  check(
+    await visible(page.getByText("Total bet $0", { exact: true })).isVisible(),
+    "Remove button takes it off",
+  );
+  await visible(page.getByRole("button", { name: /^Black, pays 1 to 1$/ })).focus();
+  await page.keyboard.press("Enter");
+  check(
+    await visible(page.getByText("Total bet $5", { exact: true })).isVisible(),
+    "outside bets from the loupe too",
+  );
+  await shot("keyboard-loupe");
+  await visible(page.getByRole("button", { name: "Close bet loupe" })).focus();
+  await page.keyboard.press("Enter");
+
   // The bankroll survives a reload (progress store).
   await page.reload({ waitUntil: "networkidle" });
   await visible(page.getByLabel(/^Practice bankroll /)).waitFor();

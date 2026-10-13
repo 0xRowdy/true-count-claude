@@ -14,6 +14,7 @@ import {
   type LayoutChangeEvent,
 } from "react-native";
 import Svg, { Defs, Path, RadialGradient, Rect, Stop } from "react-native-svg";
+import Minus from "lucide-react-native/icons/minus";
 import X from "lucide-react-native/icons/x";
 import {
   type Bet,
@@ -71,9 +72,11 @@ export interface FeltProps {
   onAdd: (spotId: string) => void;
   onRemove: (spotId: string) => void;
   onLoupe: (pocket: Pocket | null) => void;
+  /** A number was tapped or focused: the "Bets touching N" button follows it (keyboard path). */
+  onPick?: (pocket: Pocket) => void;
 }
 
-export function RouletteFelt({ state, winners, onAdd, onRemove, onLoupe }: FeltProps) {
+export function RouletteFelt({ state, winners, onAdd, onRemove, onLoupe, onPick }: FeltProps) {
   const [gridW, setGridW] = useState(0);
   const [feltW, setFeltW] = useState(0);
   const gid = `felt${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
@@ -156,14 +159,31 @@ export function RouletteFelt({ state, winners, onAdd, onRemove, onLoupe }: FeltP
         accessibilityRole="button"
         accessibilityLabel={`${pocketName(n)}${amount ? `, ${stackLabelMoney(amount)} straight up` : ""}`}
         accessibilityHint={
-          betting ? "Tap to bet straight up, long-press for the bet loupe" : undefined
+          betting
+            ? "Tap to bet straight up. Long-press, or use the Bets touching button, for the bet loupe"
+            : undefined
         }
         accessibilityActions={betting ? [{ name: "longpress", label: "Open bet loupe" }] : []}
         onAccessibilityAction={(e) =>
           e.nativeEvent.actionName === "longpress" ? onLoupe(n) : undefined
         }
-        onPress={betting ? () => onAdd(id) : undefined}
-        onLongPress={betting ? () => onLoupe(n) : undefined}
+        onFocus={betting ? () => onPick?.(n) : undefined}
+        onPress={
+          betting
+            ? () => {
+                onPick?.(n);
+                onAdd(id);
+              }
+            : undefined
+        }
+        onLongPress={
+          betting
+            ? () => {
+                onPick?.(n);
+                onLoupe(n);
+              }
+            : undefined
+        }
         delayLongPress={450}
         style={[
           zero ? styles.zero : styles.cell,
@@ -422,28 +442,41 @@ function Loupe({
               {row.map((o) => {
                 const on = o.amount > 0;
                 return (
-                  <Pressable
-                    key={o.spotId}
-                    accessibilityRole="button"
-                    accessibilityLabel={o.accessibilityLabel}
-                    onPress={() => onAdd(o.spotId)}
-                    onLongPress={() => onRemove(o.spotId)}
-                    delayLongPress={450}
-                    style={[styles.option, on ? styles.optionOn : styles.optionOff]}
-                  >
-                    <Text
-                      style={[ui(13, 700), { color: on ? colors.paper : colors.ink }]}
-                      numberOfLines={1}
+                  <View key={o.spotId} style={styles.optionSlot}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={o.accessibilityLabel}
+                      onPress={() => onAdd(o.spotId)}
+                      onLongPress={() => onRemove(o.spotId)}
+                      delayLongPress={450}
+                      style={[styles.option, on ? styles.optionOn : styles.optionOff]}
                     >
-                      {o.label}
-                    </Text>
-                    <Text
-                      style={[ui(11), { color: on ? surfaces.loupeOnMuted : colors.inkMuted }]}
-                      numberOfLines={1}
-                    >
-                      {o.caption}
-                    </Text>
-                  </Pressable>
+                      <Text
+                        style={[ui(13, 700), { color: on ? colors.paper : colors.ink }]}
+                        numberOfLines={1}
+                      >
+                        {o.label}
+                      </Text>
+                      <Text
+                        style={[ui(11), { color: on ? surfaces.loupeOnMuted : colors.inkMuted }]}
+                        numberOfLines={1}
+                      >
+                        {o.caption}
+                      </Text>
+                    </Pressable>
+                    {on ? (
+                      // The button path for "hold to remove" (invariant 7).
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove $${Math.min(state.chip, o.amount)} from ${o.name}`}
+                        onPress={() => onRemove(o.spotId)}
+                        hitSlop={10}
+                        style={styles.minus}
+                      >
+                        <Minus size={14} color={colors.paper} strokeWidth={2.5} />
+                      </Pressable>
+                    ) : null}
+                  </View>
                 );
               })}
               {row.length === 1 ? <View style={{ flex: 1 }} /> : null}
@@ -545,8 +578,20 @@ const styles = StyleSheet.create({
   loupeHead: { flexDirection: "row", alignItems: "center", height: 36 },
   close: { width: 28, height: 28, alignItems: "center", justifyContent: "center" },
   loupeRow: { flexDirection: "row", gap: 6 },
+  optionSlot: { flex: 1 },
+  minus: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: surfaces.loupeOnMuted,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   option: {
-    flex: 1,
     height: LOUPE_ROW,
     borderRadius: 10,
     borderWidth: 1,
