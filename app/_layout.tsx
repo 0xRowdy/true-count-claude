@@ -1,21 +1,30 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { colors as ds } from "@/ui/ds/tokens";
+import { useTablesideFonts } from "@/ui/ds/fonts";
 import { colors } from "@/ui/theme";
 
 export default function RootLayout() {
+  // Fraunces + Inter for the Tableside design system. Deliberately not awaited (hydration).
+  useTablesideFonts();
+
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider style={{ backgroundColor: ds.background }}>
       <StatusBar style="light" />
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.text,
-          contentStyle: { backgroundColor: colors.background },
+          contentStyle: { backgroundColor: ds.background },
         }}
       >
         <Stack.Screen name="index" options={{ title: "True Count" }} />
         <Stack.Screen name="play" options={{ title: "Play" }} />
+        <Stack.Screen
+          name="design-system"
+          options={{ title: "Design system · Tableside", headerShown: false }}
+        />
       </Stack>
     </SafeAreaProvider>
   );
