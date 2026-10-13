@@ -1,35 +1,16 @@
-// Hydration: load every top-level route fresh and fail if React reports a hydration mismatch.
+// Hydration: load every route of the build fresh and fail if React reports a hydration mismatch.
 // Proves: the static HTML from `expo export` matches the client render on each page (issue #32).
 // Minified production React logs mismatches as error #418 (text), #423/#425 or "Hydration failed".
-const ROUTES = [
-  "/",
-  "/onboarding",
-  "/pricing",
-  "/play",
-  "/drills",
-  "/drills/basic-strategy",
-  "/drills/counting",
-  "/drills/true-count",
-  "/drills/deviation",
-  "/rules",
-  "/shoe-integrity",
-  "/session",
-  "/design-system",
-  "/live",
-  "/live/craps",
-  "/lobby",
-  "/progress",
-  "/progress?demo=1",
-  "/strategies",
-  "/strategies/blackjack",
-  "/strategies/craps",
-  "/strategies/roulette",
-  "/games/video-poker",
-  "/games/craps",
-];
+import { discoverRoutes } from "../scripts/routes.mjs";
+
+// Routes come from the build's own sitemap, so every screen is covered the day it lands.
+// These query variants render different first frames from their plain route.
+const EXTRA = ["/lobby?demo=1", "/progress?demo=1"];
 const HYDRATION = /Minified React error #(418|423|425)|hydrat/i;
 
 export default async ({ page, url, shot, log, check }) => {
+  const ROUTES = [...(await discoverRoutes(page, url)), ...EXTRA];
+  log(`routes (from /_sitemap): ${ROUTES.join(" ")}`);
   let errors = [];
   page.on("console", (m) => {
     if (m.type() === "error") errors.push(m.text());

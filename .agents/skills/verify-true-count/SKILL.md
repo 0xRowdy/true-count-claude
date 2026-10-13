@@ -54,4 +54,4 @@ The `e2e` job in `.github/workflows/ci.yml` runs launch → doctor → `drive` (
 ## Known state (2026-10-09)
 
 - All flows PASS on `main`, on Linux (pernilla) and macOS.
-- No route logs a hydration mismatch (React #418, fixed in #32); `no-hydration-errors` loads every top-level route and fails on one. Anything that differs between the prerendered HTML and the browser — a random seed, a clock, `toLocaleString`, stored state — must be produced after mount, not during the first render.
+- No route logs a hydration mismatch (React #418, fixed in #32); `no-hydration-errors` loads every route the build has (read from `/_sitemap` by `scripts/routes.mjs`) and fails on one. `links` crawls every route at 1440 and 390 and fails on any in-app link that 404s or lands on "Unmatched Route". Anything that differs between the prerendered HTML and the browser — a random seed, a clock, `toLocaleString`, stored state — must be produced after mount, not during the first render.
