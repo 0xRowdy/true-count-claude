@@ -38,7 +38,7 @@ import {
   Pencil,
   Plus,
   Send,
-} from "./icons";
+} from "@/ui/ds/icons";
 import { builder } from "./palette";
 
 // ---------------------------------------------------------------------------

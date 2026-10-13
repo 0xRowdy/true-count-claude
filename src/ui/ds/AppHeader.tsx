@@ -2,6 +2,7 @@ import { Link } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from "react-native";
 import { Avatar, portraits } from "./Avatar";
+import { Logo } from "./Logo";
 import { formatChips } from "./format";
 import {
   Bell,
@@ -12,7 +13,7 @@ import {
   Users,
   type LucideIcon,
 } from "./icons";
-import { colors, display, radius, surfaces, ui } from "./tokens";
+import { colors, radius, surfaces, ui } from "./tokens";
 
 export type NavKey = "lobby" | "trainer" | "strategies" | "live" | "progress";
 
@@ -68,12 +69,7 @@ export function AppHeader({
           accessibilityLabel="Tableside, lobby"
           style={styles.logo}
         >
-          <View style={styles.mark}>
-            <Text style={[ui(17), { color: colors.primaryForeground }]}>{"♠︎"}</Text>
-          </View>
-          {compact ? null : (
-            <Text style={[display(22, 600), { color: colors.foreground }]}>Tableside</Text>
-          )}
+          <Logo wordmark={!compact} />
         </Pressable>
       </Link>
 
@@ -150,14 +146,6 @@ const styles = StyleSheet.create({
   },
   barCompact: { gap: 8, paddingHorizontal: 12 },
   logo: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 44 },
-  mark: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   nav: { flex: 1, flexDirection: "row", alignItems: "center", gap: 4 },
   navCompact: { gap: 0 },
   navItem: {

@@ -9,7 +9,7 @@ import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } fro
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import type { GameId } from "@/state/profile";
 import { colors, display, icons, radius, surfaces, ui, type LucideIcon } from "@/ui/ds";
-import { CircleDot, Crown, Dices, FlaskConical, Spade } from "./icons";
+import { CircleDot, Crown, Dices, FlaskConical, Spade } from "@/ui/ds/icons";
 
 export const GAME_ICON: Readonly<Record<GameId, LucideIcon>> = {
   blackjack: Spade,

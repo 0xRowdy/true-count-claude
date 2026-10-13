@@ -1,10 +1,19 @@
 import { useRouter } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { CardBack, Chip, CoachNote, colors, display, PlayingCard, surfaces, ui } from "@/ui/ds";
+import {
+  CardBack,
+  Chip,
+  CoachNote,
+  colors,
+  display,
+  marketing,
+  PlayingCard,
+  RadialFill,
+  surfaces,
+  ui,
+} from "@/ui/ds";
 import { GraduationCap } from "@/ui/ds/icons";
-import { marketing } from "@/ui/marketing/surfaces";
-import { RadialFill } from "@/ui/marketing/RadialFill";
 
 /** The vignette's own coordinate space, as drawn in the design (frame NwWF2). */
 export const HERO_TABLE_WIDTH = 664;

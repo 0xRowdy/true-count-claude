@@ -16,6 +16,9 @@ import {
   Button,
   colors,
   display,
+  Logo,
+  marketing,
+  RadialFill,
   radius,
   SegmentedControl,
   SelectableCard,
@@ -25,17 +28,19 @@ import {
 } from "@/ui/ds";
 import {
   ArrowLeft,
+  CalendarDays,
   Check,
+  Dices,
   GraduationCap,
+  Hand,
   PartyPopper,
   Plane,
+  Spade,
+  Sprout,
   Target,
+  Trophy,
   type LucideIcon,
 } from "@/ui/ds/icons";
-import { CalendarDays, Dices, Hand, Spade, Sprout, Trophy } from "@/ui/marketing/icons";
-import { Logo } from "@/ui/marketing/Logo";
-import { RadialFill } from "@/ui/marketing/RadialFill";
-import { marketing } from "@/ui/marketing/surfaces";
 import { updateProfile, useProfile } from "@/ui/profile/profileStore";
 import {
   addDays,

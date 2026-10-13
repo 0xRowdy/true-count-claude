@@ -37,7 +37,7 @@ import {
   startProgressSession,
   useProgressView,
 } from "@/ui/progress/progressStore";
-import { Gauge, Layers } from "./icons";
+import { Gauge, Layers } from "@/ui/ds/icons";
 import {
   COIN_OPTIONS,
   DENOMINATION_OPTIONS,

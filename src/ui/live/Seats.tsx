@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { type LiveSeat, type LiveTableState, seatStatus, shooterOf } from "@/games/craps";
 import { formatMoney } from "@/ui/ds/format";
 import { colors, ui } from "@/ui/ds/tokens";
-import { Dices, Plus } from "./icons";
+import { Dices, Plus } from "@/ui/ds/icons";
 import { seatColor } from "./session";
 import { live } from "./theme";
 

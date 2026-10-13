@@ -31,7 +31,7 @@ import {
 } from "./library";
 import { InfoNote } from "./parts";
 import { StrategyShell } from "./StrategyShell";
-import { Plus } from "./icons";
+import { Plus } from "@/ui/ds/icons";
 
 type Filter = "all" | StrategyGame;
 

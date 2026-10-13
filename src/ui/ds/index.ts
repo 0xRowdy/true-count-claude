@@ -34,3 +34,7 @@ export { StrategyCard, type StrategyCardProps } from "./StrategyCard";
 export { TableTopBar } from "./TableTopBar";
 export { Tabs } from "./Tabs";
 export { ToggleChip } from "./ToggleChip";
+export { Logo } from "./Logo";
+export { Notice } from "./Notice";
+export { RadialFill } from "./RadialFill";
+export { Tag } from "./Tag";

@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
-import { colors, radius, ui } from "@/ui/ds";
+import { colors, radius, ui } from "./tokens";
 import { Info, X } from "./icons";
 
 /**

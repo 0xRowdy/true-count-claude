@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors, radius, ui } from "@/ui/ds";
+import { colors, radius, ui } from "./tokens";
 
 /** A gold pill with dark ink ("7-day free trial", "Best for trip prep"): the design's Badge on primary. */
 export function Tag({ label }: { label: string }) {

@@ -54,7 +54,7 @@ import {
   Shuffle,
   Timer,
   Trophy,
-} from "@/ui/progress/icons";
+} from "@/ui/ds/icons";
 import { GAME_ICON, GameIcon, LinkBox, SampleBanner, TextLink } from "@/ui/progress/parts";
 import { useChipBalance, useProgressView } from "@/ui/progress/progressStore";
 

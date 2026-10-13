@@ -6,6 +6,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import {
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -75,6 +76,15 @@ export interface FeltProps {
   /** A number was tapped or focused: the "Bets touching N" button follows it (keyboard path). */
   onPick?: (pocket: Pocket) => void;
 }
+
+/**
+ * What every number cell does, said once. Screen-reader browse modes swallow a bare "L", so
+ * the description points at the "Bets touching N" button first.
+ */
+const NUMBER_HELP =
+  'Tap to bet straight up. Once picked, the "Bets touching" button in the bet summary lists ' +
+  "every bet that covers this number. Long-press, right-click or the L key open it too.";
+const NUMBER_HELP_ID = "roulette-number-help";
 
 export function RouletteFelt({ state, winners, onAdd, onRemove, onLoupe, onPick }: FeltProps) {
   const [gridW, setGridW] = useState(0);
@@ -157,12 +167,16 @@ export function RouletteFelt({ state, winners, onAdd, onRemove, onLoupe, onPick 
       <Pressable
         key={String(n)}
         accessibilityRole="button"
-        accessibilityLabel={`${pocketName(n)}${amount ? `, ${stackLabelMoney(amount)} straight up` : ""}${betting ? ". Press L for the bets touching it" : ""}`}
-        accessibilityHint={
-          betting
-            ? "Tap to bet straight up. Long-press, right-click or press L for the bet loupe"
-            : undefined
-        }
+        accessibilityLabel={`${pocketName(n)}${amount ? `, ${stackLabelMoney(amount)} straight up` : ""}`}
+        // One shared description for all 37 cells (web), instead of repeating it in every name.
+        // Native has no describedby, so it keeps the hint.
+        {...(Platform.OS === "web"
+          ? betting
+            ? { "aria-describedby": NUMBER_HELP_ID }
+            : {}
+          : betting
+            ? { accessibilityHint: NUMBER_HELP }
+            : {})}
         // Native screen readers: the loupe as an accessibility action.
         accessibilityActions={betting ? [{ name: "longpress", label: "Open bet loupe" }] : []}
         onAccessibilityAction={(e) =>
@@ -256,6 +270,11 @@ export function RouletteFelt({ state, winners, onAdd, onRemove, onLoupe, onPick 
       style={styles.felt}
       onLayout={(e: LayoutChangeEvent) => setFeltW(e.nativeEvent.layout.width)}
     >
+      {Platform.OS === "web" ? (
+        <Text id={NUMBER_HELP_ID} style={styles.srOnly}>
+          {NUMBER_HELP}
+        </Text>
+      ) : null}
       <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
         <Defs>
           <RadialGradient id={gid} cx="0.5" cy="0.4" rx="0.8" ry="0.6">
@@ -561,6 +580,14 @@ function Loupe({
 }
 
 const styles = StyleSheet.create({
+  // Read by screen readers (as the cells' description), never seen.
+  srOnly: {
+    position: "absolute",
+    width: 1,
+    height: 1,
+    overflow: "hidden",
+    opacity: 0,
+  },
   felt: {
     flexGrow: 1,
     flexDirection: "row",

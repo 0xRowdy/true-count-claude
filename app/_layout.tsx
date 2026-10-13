@@ -3,7 +3,6 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { colors as ds } from "@/ui/ds/tokens";
 import { useTablesideFonts } from "@/ui/ds/fonts";
-import { colors } from "@/ui/theme";
 
 export default function RootLayout() {
   // Fraunces + Inter for the Tableside design system. Deliberately not awaited (hydration).
@@ -14,8 +13,8 @@ export default function RootLayout() {
       <StatusBar style="light" />
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: colors.surface },
-          headerTintColor: colors.text,
+          headerStyle: { backgroundColor: ds.card },
+          headerTintColor: ds.foreground,
           contentStyle: { backgroundColor: ds.background },
         }}
       >

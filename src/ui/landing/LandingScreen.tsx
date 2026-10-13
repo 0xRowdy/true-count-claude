@@ -9,33 +9,40 @@ import {
   View,
   type LayoutChangeEvent,
 } from "react-native";
-import { Badge, Button, colors, display, Gradient, radius, StrategyCard, ui } from "@/ui/ds";
+import {
+  Badge,
+  Button,
+  colors,
+  display,
+  Gradient,
+  Logo,
+  marketing,
+  Notice,
+  RadialFill,
+  radius,
+  StrategyCard,
+  Tag,
+  ui,
+} from "@/ui/ds";
 import {
   ArrowBigUp,
-  BadgeCheck,
-  GitFork,
-  Play,
-  RotateCcw,
-  TrendingUp,
-  type LucideIcon,
-} from "@/ui/ds/icons";
-import {
   ArrowRight,
+  BadgeCheck,
   Ban,
   BookOpenCheck,
   ChartNoAxesColumn,
   CirclePlay,
   EyeOff,
+  GitFork,
   MapPin,
+  Play,
+  RotateCcw,
   ShieldCheck,
   Smartphone,
-} from "@/ui/marketing/icons";
-import { Logo } from "@/ui/marketing/Logo";
-import { Notice } from "@/ui/marketing/Notice";
-import { RadialFill } from "@/ui/marketing/RadialFill";
-import { Tag } from "@/ui/marketing/Tag";
-import { marketing } from "@/ui/marketing/surfaces";
-import { usePlayFreeHref } from "@/ui/marketing/usePlayFreeHref";
+  TrendingUp,
+  type LucideIcon,
+} from "@/ui/ds/icons";
+import { usePlayFreeHref } from "@/ui/profile/usePlayFreeHref";
 import { EXAMPLE_FORK, EXAMPLE_STRATEGIES, TABLES, type TableTile } from "./content";
 import { FELT_ONLY_WIDTH, HERO_TABLE_WIDTH, HeroCoachNote, HeroTable } from "./HeroTable";
 

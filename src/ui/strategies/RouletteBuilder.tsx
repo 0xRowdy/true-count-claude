@@ -21,7 +21,7 @@ import {
 import { Badge, Button, SegmentedControl, colors, icons as ds, ui, StatCard } from "@/ui/ds";
 import type { RouletteDraft, RouletteLayoutPlan } from "@/state/strategies";
 import { Felt, FeltChip } from "./felt";
-import { Grid3x3, Timer, TrendingDown } from "./icons";
+import { Grid3x3, Timer, TrendingDown } from "@/ui/ds/icons";
 import { exportDraft, testInTrainerHref } from "./library";
 import { builder } from "./palette";
 import {

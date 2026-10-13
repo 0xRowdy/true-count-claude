@@ -11,7 +11,7 @@ import {
 } from "@/games/craps";
 import { Die, type DieValue } from "@/ui/ds/Die";
 import { colors, display, radius, surfaces, ui } from "@/ui/ds/tokens";
-import { Info, Timer } from "./icons";
+import { Info, Timer } from "@/ui/ds/icons";
 import { type ChipView, type Spot, chipText, chipsOn, yourLineTag, yourStakeOn } from "./session";
 import { live } from "./theme";
 

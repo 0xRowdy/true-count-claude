@@ -10,7 +10,7 @@ import { PhaseStepper } from "@/ui/ds/PhaseStepper";
 import { TableTopBar } from "@/ui/ds/TableTopBar";
 import { colors, radius, ui } from "@/ui/ds/tokens";
 import { CrapsFelt } from "./CrapsFelt";
-import { Dices, Eraser, Layers, Lightbulb, Repeat, Undo2 } from "./icons";
+import { Dices, Eraser, Layers, Lightbulb, Repeat, Undo2 } from "@/ui/ds/icons";
 import {
   type NoteAction,
   type Spot,
