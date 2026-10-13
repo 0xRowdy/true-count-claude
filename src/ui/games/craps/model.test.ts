@@ -3,6 +3,9 @@ import { betsOf, dice, isLineBet, onTable } from "@/games/craps";
 import {
   type GameState,
   type Spot,
+  BETS_CLOSED,
+  afterReset,
+  askCoach,
   breakageCheck,
   canRebet,
   clearWindow,
@@ -24,6 +27,7 @@ import {
   shownTable,
   showPayout,
   showResult,
+  startingMinimum,
   takeBack,
   takeMaxOdds,
   throwDice,
@@ -51,7 +55,7 @@ function roll(
   coach: "asked" | "mistakes" | "every" = "mistakes",
 ) {
   const r = throwDice(s, coach, dice(d1, d2));
-  return { ...r, state: showResult(r.state) };
+  return { ...r, state: showPayout(showResult(r.state)) };
 }
 
 /** The design's state (lUiCl): $10 pass, point 6 with 3x odds ($30), place 8 for $12. */
@@ -89,6 +93,43 @@ describe("betting", () => {
     s = bet(s, PASS, 5);
     expect(lineChips(s.table, "pass").flat).toBe(15);
     expect(s.notice).toBeNull();
+  });
+
+  it("starts a new place 6 or 8 at $12, the lowest exact-paying amount, and never grades it as a mistake", () => {
+    let s = designTable("mistakes");
+    s = bet(s, { kind: "place", number: 6 }, 5, "mistakes");
+    expect(betsOf(s.table).find((b) => b.kind === "place" && b.number === 6)?.amount).toBe(12);
+    expect(s.notice).toBe(
+      "Place 6 starts at $12, the lowest amount at or above the $10 minimum that pays exactly.",
+    );
+    expect(breakageCheck(s, "mistakes", 1000)).toBeNull();
+    const { effects } = roll(s, 2, 3, "mistakes");
+    expect(effects.decisions).toContainEqual({ category: "place", correct: true, coached: false });
+    expect(effects.decisions).not.toContainEqual(expect.objectContaining({ correct: false }));
+    expect(startingMinimum(s.table, { kind: "place", number: 5 })).toBe(10);
+  });
+
+  it("won't take a chip off when that leaves a bet under the minimum", () => {
+    let s = designTable();
+    s = removeChip(s, { kind: "place", number: 8 }, 5);
+    expect(s.error).toBe(
+      "Place 8 can't go under the $10 minimum. Take it down instead (Edit bets).",
+    );
+    expect(numberChips(s.table, 8)[0]?.amount).toBe(12);
+    s = removeChip(s, { kind: "place", number: 8 }, 25);
+    expect(numberChips(s.table, 8)).toEqual([]);
+  });
+
+  it("closes betting while the dice are out and the result shows", () => {
+    const thrown = throwDice(designTable(), "mistakes", dice(2, 3)).state;
+    for (const st of [thrown, showResult(thrown)]) {
+      const s = bet(st, { kind: "field" }, 5);
+      expect(s.phase).toBe(st.phase);
+      expect(s.table).toBe(st.table);
+      expect(s.notice).toBe(BETS_CLOSED);
+    }
+    const paid = showPayout(showResult(thrown));
+    expect(bet(paid, { kind: "field" }, 5).phase).toBe("bet");
   });
 
   it("never bets more than the practice chips left", () => {
@@ -154,20 +195,21 @@ describe("the coach", () => {
   });
 
   it("catches a place bet whose payout breaks before the roll, and fixes it", () => {
-    let s = bet(designTable("mistakes"), { kind: "place", number: 6 }, 10, "mistakes");
+    let s = bet(designTable("mistakes"), { kind: "place", number: 6 }, 12, "mistakes");
+    s = bet(s, { kind: "place", number: 6 }, 5, "mistakes"); // the player's $17
     expect(s.note).toBeNull(); // chips may still be going down
     const caught = breakageCheck(s, "mistakes", 1000)!;
     expect(caught.note).toMatchObject({
       variant: "mistake",
-      title: "Place 6 for $10 pays only $11.",
+      title: "Place 6 for $17 pays only $19.",
       primary: "fixAmount",
       secondary: "rollAnyway",
-      fixTo: 12,
+      fixTo: 18,
     });
-    expect(caught.note?.body).toMatch(/steps of \$6.*Make it \$12\?$/);
+    expect(caught.note?.body).toMatch(/steps of \$6.*Make it \$18\?$/);
     expect(breakageCheck(caught, "mistakes", 1000)).toBeNull(); // asked once
     expect(breakageCheck(s, "asked", 1000)).toBeNull();
-    s = fixAmount(caught, { kind: "place", number: 6 }, 12);
+    s = fixAmount(caught, { kind: "place", number: 6 }, 18);
     const { effects } = roll(s, 2, 3, "mistakes");
     expect(effects.decisions).toContainEqual({ category: "place", correct: false, coached: true });
   });
@@ -195,6 +237,32 @@ describe("the coach", () => {
     const { effects } = roll(s, 2, 3, "asked");
     expect(effects.decisions).toContainEqual({ category: "place", correct: false, coached: false });
     expect(coachHint(s).kind).toBe("Hint · Odds");
+  });
+
+  it("counts bets made after asking the coach as coached", () => {
+    let s = askCoach(designTable("asked"));
+    expect(s.note?.kind).toBe("Hint · Odds");
+    s = takeMaxOdds(s, "asked");
+    s = bet(s, { kind: "place", number: 6 }, 12, "asked");
+    const { effects, state } = roll(s, 2, 3, "asked");
+    expect(effects.decisions).toContainEqual({ category: "odds", correct: true, coached: true });
+    expect(effects.decisions).toContainEqual({ category: "place", correct: true, coached: true });
+    expect(state.hinted).toBe(false);
+  });
+
+  it("drops an odds decision when the odds are undone", () => {
+    let s = bet(designTable(), PASS, 10); // odds $40
+    for (let i = 0; i < 4; i++) s = undo(s); // place 8, then all three odds chips
+    expect(betsOf(s.table).some((b) => b.kind === "place")).toBe(false);
+    expect(lineChips(s.table, "pass").odds).toBe(0);
+    const { effects } = roll(s, 2, 3);
+    expect(effects.decisions.some((d) => d.category === "odds")).toBe(false);
+  });
+
+  it("clears the out-of-chips error after a reset", () => {
+    const s = placeChip(withSeed(initialGame(), 1), PASS, 5, 0, "mistakes");
+    expect(s.error).toBe("You're out of practice chips.");
+    expect(afterReset(s).error).toBeNull();
   });
 
   it("praises good bets at coach level 'every'", () => {
@@ -232,9 +300,10 @@ describe("rolling", () => {
       secondary: "oddsHelp",
     });
     expect(historyLabels(s).map((l) => l.text)).toEqual(["6 hard", "6 point"]);
-    expect(shownPoint(s)).toBe(6); // the puck is still on while the call is made
+    // The puck is still on while the call is made, and comes off for the payout.
+    expect(shownPoint({ ...s, phase: "result" })).toBe(6);
     expect(rollLabel(s)).toBe("Come-out roll");
-    expect(shownPoint(showPayout(s))).toBeNull();
+    expect(shownPoint(s)).toBeNull();
     expect(effects.hand).toBe(46);
     expect(effects.decisions).toEqual(
       expect.arrayContaining([

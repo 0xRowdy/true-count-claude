@@ -83,12 +83,18 @@ export default async ({ page, url, shot, log, check }) => {
   );
   check(await visible(page.getByText("ODDS 3x")).isVisible(), "ODDS 3x tag");
   await chip(1).click();
-  await spot("Place 8").click(); // starts at the $10 minimum
-  await spot("Place 8").click();
-  await spot("Place 8").click();
+  await spot("Place 8").click(); // a $1 chip on an empty place 8
   check(
     (await spot("Place 8").getAttribute("aria-label")) === "Place 8, your bet $12",
-    "place 8 for $12",
+    "a new place 8 starts at $12, the lowest exact-paying amount over the $10 minimum",
+  );
+  check(
+    await visible(
+      page.getByText(
+        "Place 8 starts at $12, the lowest amount at or above the $10 minimum that pays exactly.",
+      ),
+    ).isVisible(),
+    "place minimum notice",
   );
   check(await button("Edit bets, $52 on the table").isVisible(), "Edit bets · $52");
   // Keyboard only: bet with Enter, and take the chip off again through Edit bets (the button
@@ -112,7 +118,18 @@ export default async ({ page, url, shot, log, check }) => {
     "keyboard: Edit bets takes the $1 back off",
   );
 
+  // A $5 chip would leave the $12 place 8 under the minimum: the sheet offers "Take down", not
+  // "take $5 off".
   await chip(5).click();
+  await button("Edit bets, $52 on the table").click();
+  await visible(page.getByRole("dialog", { name: "Your bets" })).waitFor();
+  check(
+    (await page.getByRole("button", { name: "Place 8: take $5 off" }).count()) === 0 &&
+      (await button("Place 8: take down").isVisible()),
+    "under the minimum: Take down only",
+  );
+  await button("Close your bets").click();
+  await page.waitForTimeout(400);
   await button("Center bets").click();
   await spot("Hard 6, pays 9:1").click();
   await visible(page.getByText("Hard 6 carries a 9.09% house edge.")).waitFor();
@@ -137,8 +154,18 @@ export default async ({ page, url, shot, log, check }) => {
 
   await button("Roll").click();
   await phase(3, "Result");
+  // Bets are closed while the result shows: the tap is refused in place and the round goes on.
+  await spot("Field").click();
+  check(
+    await visible(page.getByText("No more bets until the payout.")).isVisible(),
+    "no bets during the result",
+  );
   check(await visible(page.getByText("Nine, center field nine")).isVisible(), "call: nine");
   await phase(4, "Payout");
+  check(
+    (await spot("Field").getAttribute("aria-label")) === "Field",
+    "no field bet was taken during the result",
+  );
   check(await visible(page.getByLabel("Last roll 9")).isVisible(), "ROLLS: 9");
 
   // Round 3: six the hard way, point made: +$46 (10 + 36 odds).
@@ -219,6 +246,10 @@ export default async ({ page, url, shot, log, check }) => {
   );
   await button("Reset bankroll").click();
   await visible(page.getByLabel("Practice bankroll $2,000")).waitFor();
+  check(
+    (await page.getByText("You're out of practice chips.").filter({ visible: true }).count()) === 0,
+    "the out-of-chips message clears on reset",
+  );
   log("bankroll reset to $2,000");
 
   // Desktop: the table sits in a phone-width column.

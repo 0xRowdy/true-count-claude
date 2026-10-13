@@ -24,9 +24,10 @@ import {
   type CoachLevel,
   type GameState,
   type Spot,
+  afterReset,
+  askCoach,
   breakageCheck,
   clearWindow,
-  coachHint,
   dismissNote,
   editBet,
   fixAmount,
@@ -70,19 +71,23 @@ export function useCrapsGame(seedParam: string | undefined) {
     return () => endProgressSession(id);
   }, [seedParam]);
 
-  // Roll → Result → Payout.
+  // Roll → Result → Payout, one timer per phase of each roll.
+  const { phase } = state;
+  const rolls = state.table.rollCount;
   useEffect(() => {
-    if (state.phase === "roll") {
-      const t = setTimeout(() => setState(showResult), ROLL_MS);
-      return () => clearTimeout(t);
-    }
-    if (state.phase === "result") {
-      const t = setTimeout(() => setState(showPayout), RESULT_MS);
-      return () => clearTimeout(t);
-    }
-    if (frozen !== null) setFrozen(null);
-    return undefined;
-  }, [state.phase, frozen]);
+    if (phase !== "roll" && phase !== "result") return undefined;
+    const t = setTimeout(
+      () => setState(phase === "roll" ? showResult : showPayout),
+      phase === "roll" ? ROLL_MS : RESULT_MS,
+    );
+    return () => clearTimeout(t);
+  }, [phase, rolls]);
+
+  // The held bankroll is released at the Payout.
+  const settled = phase === "bet" || phase === "payout";
+  useEffect(() => {
+    if (settled) setFrozen(null);
+  }, [settled]);
 
   const exposure = onLayout(state);
   const available = stored === undefined ? 0 : stored - exposure;
@@ -117,14 +122,15 @@ export function useCrapsGame(seedParam: string | undefined) {
       },
       maxOdds: () => update(takeMaxOdds(ref.current, coach)),
       dismiss: () => update(dismissNote(ref.current)),
-      hint: () => update({ ...ref.current, note: coachHint(ref.current) }),
+      hint: () => update(askCoach(ref.current)),
       fix(spot: Spot, amount: number) {
         update(fixAmount(ref.current, spot, amount));
       },
       /** Rolls; a breaking place bet is caught first unless the player rolls anyway. */
       roll(anyway = false) {
         const s = ref.current;
-        if (s.seed === null || s.phase === "roll") return;
+        // Result and Payout always show: the next roll waits for the payout.
+        if (s.seed === null || s.phase === "roll" || s.phase === "result") return;
         const caught = anyway ? null : breakageCheck(s, coach, available);
         if (caught) {
           update(caught);
@@ -137,7 +143,10 @@ export function useCrapsGame(seedParam: string | undefined) {
         update(next);
       },
       /** Invariant 6: a bankroll at zero always offers a one-tap reset in place. */
-      resetBankroll: () => resetBankroll("craps"),
+      resetBankroll() {
+        resetBankroll("craps");
+        update(afterReset(ref.current));
+      },
     }),
     [available, coach, stored, update],
   );

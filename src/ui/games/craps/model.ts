@@ -174,6 +174,20 @@ export function addToSpot(
   return placeBet(table, specFor(spot, amount));
 }
 
+/** The smallest a bet of this kind may be: the table minimum for line, come and place bets. */
+export function minimumFor(table: CrapsTable, kind: Spot["kind"]): number {
+  return ["pass", "dontPass", "come", "dontCome", "place"].includes(kind) ? table.rules.minBet : 1;
+}
+
+/**
+ * Whether taking `amount` off this bet would leave it under its minimum (then the whole bet has
+ * to come down, which is "Take down", never a silent side effect of "take $1 off").
+ */
+export function wouldDropBelowMinimum(table: CrapsTable, bet: Bet, amount: number): boolean {
+  const left = bet.amount - amount;
+  return left > 0 && left < minimumFor(table, bet.kind as Spot["kind"]);
+}
+
 /** Takes `amount` off a spot (odds first on a line with the point on). */
 export function removeFromSpot(table: CrapsTable, spot: Spot, amount: number): ActionResult {
   const bet = betAt(table, spot);
@@ -183,8 +197,13 @@ export function removeFromSpot(table: CrapsTable, spot: Spot, amount: number): A
   }
   const left = bet.amount - amount;
   if (left <= 0) return takeDown(table, bet.id);
-  const pressed = setAmount(table, bet.id, left);
-  return pressed.ok ? pressed : takeDown(table, bet.id);
+  if (wouldDropBelowMinimum(table, bet, amount)) {
+    return {
+      ok: false,
+      reason: `${spotName(spot)} can't go under the ${formatDollars(minimumFor(table, spot.kind))} minimum. Take it down instead (Edit bets).`,
+    };
+  }
+  return setAmount(table, bet.id, left);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -352,8 +371,12 @@ export const PHASE_INDEX: Record<Phase, number> = { bet: 0, roll: 1, result: 2, 
 interface Pending {
   readonly category: CrapsCategory;
   readonly spot: Spot | null;
-  /** The coach stepped in on it. */
+  /** The coach caught it as a mistake (recorded wrong and coached, whatever happens next). */
   readonly coached: boolean;
+  /** Made after asking the coach for a hint (recorded as coached). */
+  readonly hinted?: boolean;
+  /** For odds: the line or come bet they sit behind. */
+  readonly betId?: string;
   readonly takenBack: boolean;
   /** The pre-roll breakage check has already caught it. */
   readonly warned?: boolean;
@@ -391,6 +414,8 @@ export interface GameState {
   readonly error: string | null;
   /** A neutral note about the last action ("Pass line starts at the $10 table minimum."). */
   readonly notice: string | null;
+  /** The player asked the coach for a hint this betting window. */
+  readonly hinted: boolean;
 }
 
 export function initialGame(rules: CrapsRules = DOWNTOWN_RULES): GameState {
@@ -407,6 +432,7 @@ export function initialGame(rules: CrapsRules = DOWNTOWN_RULES): GameState {
     note: null,
     error: null,
     notice: null,
+    hinted: false,
   };
 }
 
@@ -416,7 +442,18 @@ export function withSeed(state: GameState, seed: number): GameState {
 
 /** Back to the Bet phase (from Result or Payout) without touching the layout. */
 export function openBetting(state: GameState): GameState {
-  return state.phase === "bet" ? state : { ...state, phase: "bet" };
+  return state.phase === "bet" || !bettingOpen(state) ? state : { ...state, phase: "bet" };
+}
+
+/** Bets close while the dice are out and the result shows; they reopen at the Payout. */
+export function bettingOpen(state: GameState): boolean {
+  return state.phase === "bet" || state.phase === "payout";
+}
+
+export const BETS_CLOSED = "No more bets until the payout.";
+
+function closed(state: GameState): GameState {
+  return { ...state, notice: BETS_CLOSED };
 }
 
 function changed(state: GameState, table: CrapsTable): GameState {
@@ -424,22 +461,34 @@ function changed(state: GameState, table: CrapsTable): GameState {
 }
 
 /**
+ * What a new bet on this spot starts at when the chip is under the table minimum (0 when the
+ * spot already holds your bet, or takes any amount). A $5 chip on an empty pass line at a $10
+ * table bets the $10; on the 6 or 8 it bets $12, the lowest amount at or above the minimum that
+ * pays 7:6 exactly, so the table never picks an amount the coach would call a mistake.
+ */
+export function startingMinimum(table: CrapsTable, spot: Spot): number {
+  if (minimumFor(table, spot.kind) <= 1) return 0;
+  if (betAt(table, spot)) return 0;
+  const min = table.rules.minBet;
+  if (spot.kind === "place") {
+    const step = exactStep("place", spot.number);
+    return Math.ceil(min / step) * step;
+  }
+  return min;
+}
+
+function startsAtCopy(table: CrapsTable, spot: Spot, stake: number): string {
+  const name = spotName(spot);
+  const min = formatDollars(table.rules.minBet);
+  return stake > table.rules.minBet
+    ? `${name} starts at ${formatDollars(stake)}, the lowest amount at or above the ${min} minimum that pays exactly.`
+    : `${name} starts at the ${min} table minimum.`;
+}
+
+/**
  * Bets `amount` on a spot. `available` is the practice chips not already on the layout.
  * Grades the bet and, per the coach level, shows a note (a caught mistake can be taken back).
  */
-/**
- * The table minimum a new bet on this spot must start at (0 when the spot already holds your
- * bet, or takes any amount). A $5 chip on an empty pass line at a $10 table bets the $10.
- */
-export function startingMinimum(table: CrapsTable, spot: Spot): number {
-  const minimumKinds = ["pass", "dontPass", "come", "dontCome", "place"];
-  if (!minimumKinds.includes(spot.kind)) return 0;
-  const existing = betAt(table, spot);
-  if (existing) return 0;
-  // With the point on, a chip on your own line goes to odds (handled by the engine).
-  return table.rules.minBet;
-}
-
 export function placeChip(
   state: GameState,
   spot: Spot,
@@ -447,6 +496,7 @@ export function placeChip(
   available: number,
   coach: CoachLevel,
 ): GameState {
+  if (!bettingOpen(state)) return closed(state);
   const s = openBetting(state);
   const minimum = startingMinimum(s.table, spot);
   const stake = Math.max(amount, minimum);
@@ -461,10 +511,7 @@ export function placeChip(
   }
   const result = addToSpot(s.table, spot, stake);
   if (!result.ok) return { ...s, error: result.reason };
-  const bumped =
-    stake > amount
-      ? `${spotName(spot)} starts at the ${formatDollars(minimum)} table minimum.`
-      : null;
+  const bumped = stake > amount ? startsAtCopy(s.table, spot, stake) : null;
   const next = { ...changed(s, result.table), notice: bumped };
   if (result.odds && result.bet) {
     const key = `odds-${result.bet.id}`;
@@ -472,7 +519,14 @@ export function placeChip(
       ...next,
       pending: {
         ...next.pending,
-        [key]: { category: "odds", spot: null, coached: false, takenBack: false },
+        [key]: {
+          category: "odds",
+          spot: null,
+          coached: false,
+          hinted: s.hinted,
+          betId: result.bet.id,
+          takenBack: false,
+        },
       },
       note: coach === "every" ? oddsNote(result.table, result.bet) : next.note,
     };
@@ -490,6 +544,7 @@ export function placeChip(
         category: grade.category,
         spot,
         coached: (prev?.coached ?? false) || caught,
+        hinted: (prev?.hinted ?? false) || s.hinted,
         takenBack: false,
       },
     },
@@ -497,7 +552,6 @@ export function placeChip(
   };
 }
 
-/** Takes `amount` off a spot (long-press). */
 /**
  * Before the dice go out: a place bet whose payout breaks is caught (coach "mistakes" or
  * "every") with an offer to fix the amount. Returns null when there is nothing to catch.
@@ -542,7 +596,9 @@ export function fixAmount(state: GameState, spot: Spot, amount: number): GameSta
   return { ...changed(state, result.table), note: null };
 }
 
+/** Takes `amount` off a spot (long-press, or "Take $X off" in Edit bets). */
 export function removeChip(state: GameState, spot: Spot, amount: number): GameState {
+  if (!bettingOpen(state)) return closed(state);
   const s = openBetting(state);
   const result = removeFromSpot(s.table, spot, amount);
   if (!result.ok) return { ...s, error: result.reason };
@@ -608,6 +664,7 @@ export function canRebet(state: GameState): boolean {
 
 /** Puts back last window's chips, skipping any that are not legal now (e.g. pass on a point). */
 export function rebet(state: GameState, available: number, coach: CoachLevel): GameState {
+  if (!bettingOpen(state)) return closed(state);
   let s = openBetting(state);
   let left = available;
   const skipped: string[] = [];
@@ -633,6 +690,7 @@ export function rebet(state: GameState, available: number, coach: CoachLevel): G
 
 /** An edit from the Edit bets sheet (odds, working/off, take down). */
 export function editBet(state: GameState, action: TableAction, coach: CoachLevel): GameState {
+  if (!bettingOpen(state)) return closed(state);
   const s = openBetting(state);
   const before = action.type === "odds" ? s.table.bets.find((b) => b.id === action.betId) : null;
   const result = applyAction(s.table, action);
@@ -653,6 +711,8 @@ export function editBet(state: GameState, action: TableAction, coach: CoachLevel
           category: "odds",
           spot: null,
           coached: false,
+          hinted: s.hinted,
+          betId: result.bet.id,
           takenBack: false,
         },
       },
@@ -729,7 +789,13 @@ export function throwDice(
   const decisions: DecisionRecord[] = [];
   for (const entry of Object.values(state.pending)) {
     if (entry.category === "odds" || entry.spot === null) {
-      decisions.push({ category: "odds", correct: true, coached: entry.coached });
+      // Only odds still standing above what the bet had when the window opened count.
+      const now = before.bets.find((b) => b.id === entry.betId);
+      const then = state.windowStart.bets.find((b) => b.id === entry.betId);
+      const oddsOf = (b: Bet | undefined) => (b && (isLineBet(b) || isComeBet(b)) ? b.odds : 0);
+      if (oddsOf(now) > oddsOf(then)) {
+        decisions.push({ category: "odds", correct: true, coached: entry.hinted ?? false });
+      }
       continue;
     }
     if (entry.coached) {
@@ -740,7 +806,11 @@ export function throwDice(
     }
     const grade = gradeSpot(before, entry.spot);
     if (!grade) continue;
-    decisions.push({ category: entry.category, correct: !grade.mistake, coached: entry.coached });
+    decisions.push({
+      category: entry.category,
+      correct: !grade.mistake,
+      coached: entry.hinted ?? false,
+    });
   }
 
   const engineNote = coachRoll(outcome);
@@ -763,6 +833,7 @@ export function throwDice(
       note,
       error: null,
       notice: null,
+      hinted: false,
     },
     effects: { decisions, hand: inAction ? net : null },
   };
@@ -786,6 +857,16 @@ function fromEngine(n: EngineNote): Note {
     primary: "gotIt",
     secondary: odds ? "oddsHelp" : undefined,
   };
+}
+
+/** "Ask the coach": shows the hint; bets made after it in this window count as coached. */
+export function askCoach(state: GameState): GameState {
+  return { ...state, note: coachHint(state), hinted: state.hinted || bettingOpen(state) };
+}
+
+/** After "Reset bankroll": the out-of-chips message no longer applies. */
+export function afterReset(state: GameState): GameState {
+  return { ...state, error: null, notice: null };
 }
 
 /** The note for "ask the coach" (and the pre-roll hint at coach level "every"). */

@@ -22,7 +22,16 @@ import {
 } from "@/games/craps";
 import { colors, display, radius, ui } from "@/ui/ds/tokens";
 import { Info, X } from "./icons";
-import { type Spot, CENTER_KINDS, betAt, spotEdge, spotName, spotOf, stakeOn } from "./model";
+import {
+  type Spot,
+  CENTER_KINDS,
+  betAt,
+  spotEdge,
+  spotName,
+  spotOf,
+  stakeOn,
+  wouldDropBelowMinimum,
+} from "./model";
 import { craps } from "./theme";
 
 function Sheet({
@@ -200,6 +209,7 @@ export function EditBetsSheet({
           spot !== null &&
           betAt(table, spot)?.id === bet.id &&
           bet.amount > chip &&
+          !wouldDropBelowMinimum(table, bet, chip) &&
           !(isLineBet(bet) && table.point !== null) &&
           !(isComeBet(bet) && bet.point !== null);
         return (
