@@ -332,3 +332,38 @@ describe("payout drill", () => {
     expect(wrong.message).toContain(`It pays $${q.answer}.`);
   });
 });
+
+describe("copy follows the configured rules", () => {
+  it("field copy reads both the 2 and the 12", () => {
+    const R = DOWNTOWN_RULES;
+    expect(explainBet("field", R)).toContain("2 and 12 pay double.");
+    expect(explainBet("field", { ...R, fieldTwoPays: 3 })).toContain(
+      "2 pays triple, 12 pays double.",
+    );
+    expect(explainBet("field", { ...R, fieldTwoPays: 3, fieldTwelvePays: 3 })).toContain(
+      "2 and 12 pay triple.",
+    );
+  });
+
+  it("buy and lay copy uses the configured commission rate", () => {
+    const R = {
+      ...DOWNTOWN_RULES,
+      buyCommission: { ...DOWNTOWN_RULES.buyCommission, rate: 0.04 },
+      layCommission: { ...DOWNTOWN_RULES.layCommission, rate: 0.025 },
+    };
+    expect(explainBet("buy", R, 4)).toContain("less a 4% commission");
+    expect(explainBet("lay", R, 4)).toContain("less 2.5% of the win");
+    expect(explainBet("buy", DOWNTOWN_RULES, 4)).toContain("less a 5% commission");
+  });
+
+  it("the lay-odds hint shows the real, settable maximum", () => {
+    const R = CRAPS_PRESETS["2x"];
+    // $11 don't pass on the 6 at 2x: $26.40 exact, floored to the $6 lay step.
+    expect(maxOddsHint(R, 6, 11, 0, "dont")).toContain("($24)");
+    let t = createTable(R);
+    t = bet(t, { kind: "dontPass", amount: 11 });
+    t = roll(t, dice(4, 2)).table;
+    expect(setOdds(t, t.bets[0]!.id, 24).ok).toBe(true);
+    expect(setOdds(t, t.bets[0]!.id, 25).ok).toBe(false);
+  });
+});

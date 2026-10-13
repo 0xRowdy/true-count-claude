@@ -27,6 +27,7 @@ import {
   planActions,
   planAfterRoll,
 } from "./plan";
+import { formatDollars } from "./money";
 import { type CrapsRules, DOWNTOWN_RULES, tableLabel } from "./rules";
 import {
   type BetResolution,
@@ -298,7 +299,7 @@ export function liveTableSubtitle(state: LiveTableState): string {
   const host = state.seats.find((s) => s.host);
   const odds = tableLabel(state.table.rules).split(" · ")[0];
   const by = host ? `Hosted by ${host.handle} · ` : "";
-  return `${by}${odds} · $${state.table.rules.minBet} minimum · practice chips only`;
+  return `${by}${odds} · ${formatDollars(state.table.rules.minBet)} minimum · practice chips only`;
 }
 
 /** "Live · 6 of 8 at the rail". */

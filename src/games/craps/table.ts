@@ -83,8 +83,8 @@ export interface CrapsTable {
   readonly point: PointNumber | null;
   readonly bets: readonly Bet[];
   /**
-   * Rolls so far, oldest first. Long-running callers (simulations, the live table) may trim
-   * this; `rollCount` keeps counting regardless.
+   * The most recent rolls (at most `HISTORY_LIMIT`), oldest first. Callers may trim further;
+   * `rollCount` keeps counting regardless.
    */
   readonly history: readonly RollRecord[];
   /** Total rolls made at this table. */
@@ -93,6 +93,12 @@ export interface CrapsTable {
   /** Monotonic counter behind bet ids, so ids are deterministic. */
   readonly nextBetId: number;
 }
+
+/**
+ * `roll` keeps only the most recent rolls in `history`, so a long session stays cheap to copy.
+ * `rollCount` and each record's `index` keep counting past the cap.
+ */
+export const HISTORY_LIMIT = 500;
 
 export function createTable(rules: CrapsRules = DEFAULT_CRAPS_RULES): CrapsTable {
   return {
@@ -436,7 +442,7 @@ export function roll(table: CrapsTable, d: Dice): RollOutcome {
     ...table,
     point: pointAfter,
     bets: resolutions.flatMap((r) => (r.remains ? [r.remains] : [])),
-    history: [...table.history, record],
+    history: [...table.history, record].slice(-HISTORY_LIMIT),
     rollCount: table.rollCount + 1,
     shooter,
   };
@@ -680,7 +686,10 @@ export function canTakeDown(table: CrapsTable, bet: Bet): boolean {
   return true;
 }
 
-/** Takes a bet down, returning its stake (and odds). */
+/**
+ * Takes a bet down, returning its stake (and odds). Vig paid up front on a buy or lay is not
+ * refunded (house rule; see `upfrontCommission`).
+ */
 export function takeDown(table: CrapsTable, betId: string): ActionResult {
   const bet = findBet(table, betId);
   if (!bet) return fail("No such bet.");

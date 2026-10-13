@@ -13,6 +13,8 @@ import {
   type BetSpec,
   YOU,
   betName,
+  commissionLabel,
+  fieldPaysText,
   exactStep,
   isBoxBet,
   isComeBet,
@@ -129,18 +131,18 @@ export function explainBet(kind: BetKind | "odds", rules: CrapsRules, n?: PointN
         : `Place bets win when their number rolls before a seven.`;
     case "buy":
       return n
-        ? `Buy ${n} pays true odds (${ratioLabel(oddsRatio(n))}) less a 5% commission. House edge ${edge}.`
-        : `Buy bets pay true odds less a 5% commission.`;
+        ? `Buy ${n} pays true odds (${ratioLabel(oddsRatio(n))}) less a ${commissionLabel(rules.buyCommission)} commission. House edge ${edge}.`
+        : `Buy bets pay true odds less a ${commissionLabel(rules.buyCommission)} commission.`;
     case "lay":
       return n
-        ? `Lay ${n} wins when a seven rolls before ${n}, paying ${ratioLabel(layRatio(n))} less 5% of the win. House edge ${edge}.`
+        ? `Lay ${n} wins when a seven rolls before ${n}, paying ${ratioLabel(layRatio(n))} less ${commissionLabel(rules.layCommission)} of the win. House edge ${edge}.`
         : `Lay bets win on a seven before their number.`;
     case "hard":
       return n
         ? `Hard ${n} wins only if ${n} rolls as a pair before an easy ${n} or a seven. Pays ${ratioLabel(hardRatio(n as HardNumber))}. House edge ${edge}.`
         : `Hardways win on the pair before the easy way or a seven.`;
     case "field":
-      return `The field is a one-roll bet on 2, 3, 4, 9, 10, 11 or 12. ${rules.fieldTwelvePays === 3 ? "2 pays double and 12 pays triple" : "2 and 12 pay double"}. House edge ${edge}.`;
+      return `The field is a one-roll bet on 2, 3, 4, 9, 10, 11 or 12. ${capitalizeFirst(fieldPaysText(rules))}. House edge ${edge}.`;
     case "anySeven":
       return `Any seven is a one-roll bet on 7, paying 4:1 on a 5:1 shot. House edge ${edge}, the worst on the table.`;
     case "anyCraps":
@@ -319,4 +321,8 @@ export function oddsNudge(table: CrapsTable, owner: string = YOU): string | null
       : maxLayOdds(table.rules, table.point, line.amount);
   if (line.odds >= limit) return null;
   return maxOddsHint(table.rules, table.point, line.amount, line.odds, side);
+}
+
+function capitalizeFirst(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }

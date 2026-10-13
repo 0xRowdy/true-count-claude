@@ -209,3 +209,13 @@ describe("playing the live table", () => {
     }
   });
 });
+
+describe("subtitle formatting", () => {
+  it("groups thousands in the minimum", () => {
+    const s = createLiveTable({
+      seed: 1,
+      rules: { ...DOWNTOWN_RULES, minBet: 1000, maxBet: 5000 },
+    });
+    expect(liveTableSubtitle(s)).toContain("$1,000 minimum");
+  });
+});

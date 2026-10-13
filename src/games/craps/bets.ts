@@ -212,6 +212,21 @@ export function fieldMultiple(total: number, rules: CrapsRules): number {
   return 0;
 }
 
+/** How the field pays its 2 and 12: "2 and 12 pay double", "2 pays double, 12 pays triple". */
+export function fieldPaysText(rules: CrapsRules): string {
+  const word = (m: number) => (m === 3 ? "triple" : "double");
+  if (rules.fieldTwoPays === rules.fieldTwelvePays) {
+    return `2 and 12 pay ${word(rules.fieldTwoPays)}`;
+  }
+  return `2 pays ${word(rules.fieldTwoPays)}, 12 pays ${word(rules.fieldTwelvePays)}`;
+}
+
+/** The commission rate as copy: "5%". */
+export function commissionLabel(rule: CommissionRule): string {
+  const pct = Math.round(rule.rate * 10000) / 100;
+  return `${pct}%`;
+}
+
 /** The commission on a buy (`base` = the bet) or lay (`base` = the win), whole dollars. */
 export function commissionOn(base: number, rule: CommissionRule): number {
   if (rule.rate <= 0 || base <= 0) return 0;
@@ -228,7 +243,13 @@ export function layCommission(n: PointNumber, amount: number, rules: CrapsRules)
   return commissionOn(layOddsPayout(n, amount), rules.layCommission);
 }
 
-/** Commission due when the bet is made (zero unless the table collects vig up front). */
+/**
+ * Commission due when the bet is made (zero unless the table collects vig up front).
+ *
+ * House rule: vig paid up front is **not refunded** when a buy or lay bet is taken down
+ * (`takeDown` returns the stake only). Many rooms do refund it; a table that wants that would
+ * add the commission back to the take-down's cash.
+ */
 export function upfrontCommission(bet: BetSpec | Bet, rules: CrapsRules): number {
   if (bet.kind === "buy" && rules.buyCommission.timing === "upfront") {
     return buyCommission(bet.amount, rules);
@@ -321,7 +342,10 @@ export function maxOdds(rules: CrapsRules, point: PointNumber, flat: number): nu
  */
 export function maxLayOdds(rules: CrapsRules, point: PointNumber, flat: number): number {
   const r = layRatio(point);
-  return (flat * maxOddsMultiple(rules, point) * r.per) / r.wins;
+  const exact = (flat * maxOddsMultiple(rules, point) * r.per) / r.wins;
+  // Floor to the lay step so the limit is always a whole, exactly-paying amount
+  // ($11 on the 6 at 2x lays $24, not $26.40). 3-4-5x tables (6x) are never affected.
+  return Math.floor(exact / r.per + 1e-9) * r.per;
 }
 
 // ---------------------------------------------------------------------------

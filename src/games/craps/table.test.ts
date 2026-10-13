@@ -7,6 +7,7 @@ import {
   type Dice,
   type RollOutcome,
   DOWNTOWN_RULES,
+  HISTORY_LIMIT,
   applyAction,
   canTakeDown,
   createTable,
@@ -665,5 +666,16 @@ describe("applyAction", () => {
     expect(findBet(t, placeId)).toMatchObject({ amount: 18, working: false });
     t = ok(applyAction(t, { type: "takeDown", betId: placeId })).table;
     expect(findBet(t, placeId)).toBeUndefined();
+  });
+});
+
+describe("history cap", () => {
+  it("keeps the most recent HISTORY_LIMIT rolls while rollCount keeps counting", () => {
+    const rng = createRng(5);
+    let t = createTable();
+    for (let i = 0; i < HISTORY_LIMIT + 20; i++) t = rollWith(t, rng).table;
+    expect(t.history).toHaveLength(HISTORY_LIMIT);
+    expect(t.rollCount).toBe(HISTORY_LIMIT + 20);
+    expect(t.history[t.history.length - 1]!.index).toBe(HISTORY_LIMIT + 19);
   });
 });

@@ -20,6 +20,8 @@ import {
   isComeBet,
   isLineBet,
   betNumber,
+  commissionLabel,
+  fieldPaysText,
 } from "./bets";
 import {
   type HardNumber,
@@ -235,11 +237,18 @@ export function edgeChart(rules: CrapsRules): EdgeRow[] {
   }
   for (const n of [4, 5, 6] as const) {
     const pair = n === 6 ? "6 / 8" : n === 5 ? "5 / 9" : "4 / 10";
-    rows.push({ label: `Buy ${pair}`, payout: "true odds − 5%", edge: buyEdge(n, rules) });
-    rows.push({ label: `Lay ${pair}`, payout: "true odds − 5%", edge: layEdge(n, rules) });
+    rows.push({
+      label: `Buy ${pair}`,
+      payout: `true odds − ${commissionLabel(rules.buyCommission)}`,
+      edge: buyEdge(n, rules),
+    });
+    rows.push({
+      label: `Lay ${pair}`,
+      payout: `true odds − ${commissionLabel(rules.layCommission)}`,
+      edge: layEdge(n, rules),
+    });
   }
-  const twelve = rules.fieldTwelvePays === 3 ? "12 pays triple" : "2 and 12 pay double";
-  rows.push({ label: "Field", payout: twelve, edge: fieldEdge(rules) });
+  rows.push({ label: "Field", payout: fieldPaysText(rules), edge: fieldEdge(rules) });
   rows.push({ label: "Hard 6 / 8", payout: "9:1", edge: hardEdge(6) });
   rows.push({ label: "Hard 4 / 10", payout: "7:1", edge: hardEdge(4) });
   rows.push({ label: "Any seven", payout: "4:1", edge: oneRollEdge("anySeven") });
