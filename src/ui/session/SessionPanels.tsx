@@ -19,9 +19,9 @@ import { StyleSheet, Text, View } from "react-native";
 import type { DrillId } from "@/drills/types";
 import type { Session, SessionStats, SessionSummary } from "@/state";
 import { DRILL_HREF } from "@/ui/drills/DrillsHub";
-import { ActionButton, Badge, Panel, StatRow } from "@/ui/primitives";
+import { colors, radius, ui, Panel } from "@/ui/ds";
 import { formatChips, formatNet } from "@/ui/table/format";
-import { colors, spacing, type } from "@/ui/theme";
+import { ActionButton, StatRow, ToneBadge, signColor, text } from "@/ui/trainer/kit";
 import {
   NO_VALUE,
   bankrollTopUp,
@@ -61,11 +61,11 @@ export function SessionControlBar({
       <View style={styles.bar}>
         <View style={styles.status}>
           {recording ? (
-            <Badge label="RECORDING" tone="good" />
+            <ToneBadge label="Recording" tone="good" />
           ) : session ? (
-            <Badge label="SESSION ENDED" tone="warn" />
+            <ToneBadge label="Session ended" tone="warn" />
           ) : (
-            <Badge label="NOT STARTED" tone="neutral" />
+            <ToneBadge label="Not started" tone="neutral" />
           )}
           <Text style={styles.note}>
             {recording
@@ -247,12 +247,12 @@ export function SessionHistoryRow({ summary }: { summary: SessionSummary }) {
   return (
     <View style={styles.historyRow}>
       <View style={styles.historyHead}>
-        <Badge
-          label={sessionKindLabel(summary).toUpperCase()}
+        <ToneBadge
+          label={sessionKindLabel(summary)}
           tone={summary.mode === "play" ? "info" : "neutral"}
         />
         <Text style={styles.historyTitle}>{formatStartedAt(summary.startedAt)}</Text>
-        {summary.active ? <Badge label="OPEN" tone="good" /> : null}
+        {summary.active ? <ToneBadge label="Open" tone="good" /> : null}
       </View>
       <Text style={styles.note}>
         {countingSystemsLine(summary.countingSystems)} · seed {summary.seed} ·{" "}
@@ -270,6 +270,76 @@ export function SessionHistoryRow({ summary }: { summary: SessionSummary }) {
           />
         </>
       ) : null}
+    </View>
+  );
+}
+
+/**
+ * The history as a table, for wide screens: the design's Recent sessions table (Progress,
+ * LvXnf) — a `--muted` header row, hairline rows, figures right-aligned. Phones get
+ * `SessionHistoryRow` instead, because six columns do not fit 360pt.
+ */
+export function SessionHistoryTable({ summaries }: { summaries: readonly SessionSummary[] }) {
+  return (
+    <View style={styles.table}>
+      <View style={[styles.tr, styles.thead]}>
+        <Text style={[styles.th, styles.colWhen]}>Started</Text>
+        <Text style={[styles.th, styles.colKind]}>Session</Text>
+        <Text style={[styles.th, styles.colAcc]}>Accuracy</Text>
+        <Text style={[styles.th, styles.colNum]}>Hands</Text>
+        <Text style={[styles.th, styles.colNum]}>Win rate</Text>
+        <Text style={[styles.th, styles.colNum]}>Net (practice)</Text>
+      </View>
+      {summaries.map((summary) => {
+        const { stats } = summary;
+        const dealt = summary.mode === "play" || stats.roundsPlayed > 0;
+        const lines = recordedAccuracies(stats, summary.drillId);
+        return (
+          <View key={summary.id} style={styles.tr}>
+            <View style={styles.colWhen}>
+              <Text style={styles.td}>{formatStartedAt(summary.startedAt)}</Text>
+              <Text style={text.small}>{formatDuration(summary.durationMs)}</Text>
+            </View>
+            <View style={[styles.colKind, styles.kindCell]}>
+              <View style={styles.historyHead}>
+                <ToneBadge
+                  label={sessionKindLabel(summary)}
+                  tone={summary.mode === "play" ? "info" : "neutral"}
+                />
+                {summary.active ? <ToneBadge label="Open" tone="good" /> : null}
+              </View>
+              <Text style={text.small}>
+                {countingSystemsLine(summary.countingSystems)} · seed {summary.seed}
+              </Text>
+            </View>
+            <View style={styles.colAcc}>
+              {lines.map((line) => (
+                <Text key={line.label} style={text.small}>
+                  {line.label}{" "}
+                  <Text style={styles.tdStrong}>
+                    {line.total === 0
+                      ? NO_VALUE
+                      : `${formatRate(line.rate)} (${formatRatio(line.correct, line.total)})`}
+                  </Text>
+                </Text>
+              ))}
+            </View>
+            <Text style={[styles.td, styles.colNum]}>{dealt ? stats.handsPlayed : NO_VALUE}</Text>
+            <Text style={[styles.td, styles.colNum]}>
+              {dealt ? formatRate(stats.winRate) : NO_VALUE}
+            </Text>
+            <Text
+              style={[
+                styles.td,
+                styles.colNum,
+                dealt ? { color: signColor(stats.netResult) } : null,
+              ]}
+            >
+              {dealt ? formatNet(stats.netResult) : NO_VALUE}
+            </Text>
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -305,7 +375,7 @@ export function LatestDrillPanel({ summary }: { summary: SessionSummary | null }
         <Text style={styles.note}>
           No drill Session yet. Every drill records its answers — the first one opens a Session.
         </Text>
-        <Link href="/drills" style={styles.link}>
+        <Link href="/drills" style={text.link}>
           Go to the drills →
         </Link>
       </Panel>
@@ -316,8 +386,12 @@ export function LatestDrillPanel({ summary }: { summary: SessionSummary | null }
   return (
     <Panel title="Latest drill session">
       <View style={styles.historyHead}>
-        <Badge label={sessionKindLabel(summary).toUpperCase()} tone="neutral" />
-        {summary.active ? <Badge label="OPEN" tone="good" /> : <Badge label="ENDED" tone="warn" />}
+        <ToneBadge label={sessionKindLabel(summary)} tone="neutral" />
+        {summary.active ? (
+          <ToneBadge label="Open" tone="good" />
+        ) : (
+          <ToneBadge label="Ended" tone="warn" />
+        )}
       </View>
       <Text style={styles.note}>
         {countingSystemsLine(summary.countingSystems)} · last answer{" "}
@@ -332,7 +406,7 @@ export function LatestDrillPanel({ summary }: { summary: SessionSummary | null }
           ? "Still open: it picks up where you left off, and only its own End session button closes it."
           : `${describeEndReason({ endReason: summary.endReason })}. It is kept in your history.`}
       </Text>
-      <Link href={href} style={styles.link}>
+      <Link href={href} style={text.link}>
         {summary.active ? "Carry on drilling →" : "Drill again →"}
       </Link>
     </Panel>
@@ -347,26 +421,51 @@ function formatStartedAt(at: number): string {
   return new Date(at).toLocaleString();
 }
 
+const NUM = { fontVariant: ["tabular-nums" as const] };
+
 const styles = StyleSheet.create({
   bar: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: spacing.md,
+    gap: 16,
   },
-  status: { flexGrow: 1, flexShrink: 1, flexBasis: 220, gap: spacing.xs },
-  controls: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, alignItems: "center" },
-  divider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.xs },
-  note: { ...type.caption, color: colors.textMuted, flexShrink: 1, lineHeight: 18 },
-  error: { ...type.caption, color: colors.danger, lineHeight: 18 },
+  status: { flexGrow: 1, flexShrink: 1, flexBasis: 220, gap: 8 },
+  controls: { flexDirection: "row", flexWrap: "wrap", gap: 8, alignItems: "center" },
+  divider: { height: 1, backgroundColor: colors.border, marginVertical: 2 },
+  note: text.note,
+  error: text.bad,
   historyRow: {
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    paddingTop: spacing.sm,
-    gap: spacing.xs,
+    paddingTop: 12,
+    gap: 8,
   },
-  historyHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm, flexWrap: "wrap" },
-  historyTitle: { ...type.body, color: colors.text, fontWeight: "600" },
-  link: { ...type.body, color: colors.accent, minHeight: 44, paddingTop: spacing.sm },
+  historyHead: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
+  historyTitle: { ...ui(15, 600), color: colors.foreground },
+  table: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    overflow: "hidden",
+  },
+  tr: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  thead: { backgroundColor: colors.muted, borderTopWidth: 0, paddingVertical: 10 },
+  th: { ...ui(12, 600), color: colors.mutedForeground },
+  td: { ...ui(14), ...NUM, color: colors.foreground },
+  tdStrong: { ...ui(12, 600), ...NUM, color: colors.foreground },
+  colWhen: { width: 170, gap: 2 },
+  colKind: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0 },
+  kindCell: { gap: 6 },
+  colAcc: { flexGrow: 1.2, flexShrink: 1, flexBasis: 0, minWidth: 0, gap: 2 },
+  colNum: { width: 96, textAlign: "right" },
 });

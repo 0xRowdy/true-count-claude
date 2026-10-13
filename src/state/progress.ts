@@ -24,6 +24,10 @@
  * endProgressSession(state, id, when)
  * ```
  *
+ * The reducers throw on a programming error (an unknown game or category, a non-finite net,
+ * a malformed `when`). Through the store or the React binding the throw reaches the caller
+ * synchronously and nothing is recorded or queued; the store stays healthy.
+ *
  * `when` is `{ at: epochMs, day: "YYYY-MM-DD" }` — the caller's clock and the player's *local*
  * date. Nothing in this module reads a clock, generates an id or draws randomness. The React
  * binding (`src/ui/progress/progressStore.ts`) supplies all three and exposes the same calls
@@ -35,6 +39,17 @@
  * is the source of truth: `blackjackProgress()` converts it into progress records at read time
  * and `mergeProgress()` lays them alongside the recorded ones. **Do not also call
  * `recordDecision`/`recordHand` for blackjack Play or the drills** — it would count twice.
+ *
+ * ## Bankroll
+ *
+ * The practice-chip bankroll per game is a *ledger*: `PRACTICE_BANKROLL_START` plus the net of
+ * every settled hand at that game, across all sessions. For blackjack that is every Play hand
+ * in the Session log; drill rounds are graded decisions, not wagers, and add no chips. The
+ * ledger deliberately ignores the Play table's own per-Session stack (each Session opens at
+ * the table's starting bankroll, and the one-tap reset of invariant 6 refills it), so the
+ * table's "Available" and the header's practice chips can differ. Reconciling the two would
+ * mean either inventing chips at every reset or letting a reset erase history; the ledger
+ * keeps the honest running total of results instead.
  *
  * ## Storage
  *
@@ -49,6 +64,7 @@ import type { Decision, DecisionAction, IndexPlay, Session } from "./types";
 import { GAMES, type GameId, isIsoDate } from "./profile";
 import type { KeyValueStore } from "./store";
 import { rankValue, type Card } from "@/engine/cards";
+import { evaluate } from "@/engine/hand";
 
 // ---------------------------------------------------------------------------------------------
 // Categories
@@ -380,7 +396,8 @@ function decisionFromBlackjack(d: Decision): Omit<ProgressDecision, "day" | "ses
 }
 
 function decisionFromIndexPlay(p: IndexPlay): Omit<ProgressDecision, "day" | "sessionId"> {
-  const soft = p.placedCards.some((c) => c.rank === "A") && p.placedCards.length >= 2;
+  // A real soft total: an ace still counted as 11 (A,6,10 is hard 17).
+  const soft = p.placedCards.length >= 2 && evaluate(p.placedCards).soft;
   return {
     game: "blackjack",
     category: blackjackCategory({
@@ -417,7 +434,8 @@ export function blackjackProgress(
       ...session.indexPlays.map(decisionFromIndexPlay),
     ];
     for (const r of records) decisions.push({ ...r, day: dayOf(r.at), sessionId });
-    for (const round of session.rounds) {
+    // Drill rounds are graded decisions, not wagers: their decisions count, their chips do not.
+    for (const round of session.mode === "play" ? session.rounds : []) {
       for (const hand of round.hands) {
         hands.push({
           game: "blackjack",
@@ -610,8 +628,15 @@ export function createProgressStore(repo: ProgressRepository): ProgressStore {
     writes = writes.then(work).catch(() => publish({ ...state, status: "unavailable" }));
     return writes.then(() => undefined);
   };
+  /** Replays queued changes; a change that throws on the loaded state is skipped and dropped. */
   const replay = (base: ProgressState, changes: readonly ProgressChange[]) =>
-    changes.reduce((s, c) => c(s), base);
+    changes.reduce((s, c) => {
+      try {
+        return c(s);
+      } catch {
+        return s;
+      }
+    }, base);
 
   function load(): Promise<void> {
     loading ??= repo.load().then(
@@ -654,8 +679,11 @@ export function createProgressStore(repo: ProgressRepository): ProgressStore {
     load,
     apply(change) {
       if (!state.ready) {
+        // Run it first: a change that throws (e.g. an unknown category) throws to the caller
+        // and is never queued, so it cannot break the replay over the stored state.
+        const next = change(state.progress);
         pending.push(change);
-        publish({ ...state, progress: change(state.progress) });
+        publish({ ...state, progress: next });
         return load();
       }
       const progress = change(state.progress);

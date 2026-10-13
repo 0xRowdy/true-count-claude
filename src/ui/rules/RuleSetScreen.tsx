@@ -23,11 +23,13 @@
  */
 
 import { useMemo, useRef, useState } from "react";
-import { ScrollView, StyleSheet, Text } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import RotateCcw from "lucide-react-native/icons/rotate-ccw";
 import { DEFAULT_RULES } from "@/engine/rules";
 import { type StrategyChart, strategyChart } from "@/engine/strategy";
-import { Badge, Panel, Screen, SecondaryButton } from "@/ui/primitives";
-import { colors, spacing, type } from "@/ui/theme";
+import { ReportBugButton } from "@/ui/bug-report/ReportBugButton";
+import { Button, colors, Panel } from "@/ui/ds";
+import { PageHeader, ToneBadge, TrainerPage, text, useWide } from "@/ui/trainer/kit";
 import { HouseEdgePanel } from "./HouseEdgePanel";
 import { PresetPanel } from "./PresetPanel";
 import { RuleFields } from "./RuleFields";
@@ -44,47 +46,55 @@ export function RuleSetScreen() {
 
   const { changes, changedKeys } = useChartDiff(chart);
 
-  return (
-    <ScrollView
-      style={styles.page}
-      contentContainerStyle={styles.pageContent}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Screen>
-        <Panel>
-          <Text style={styles.title}>Your table</Text>
-          <Text style={styles.lede}>
-            Basic Strategy is not one chart, it is a chart per rule set. Tell us the table you play
-            and every verdict, drill and explanation in the app is generated for that table — not
-            for a generic one that happens to be close.
-          </Text>
-          <StorageNote status={status} />
-        </Panel>
+  const [wide, onLayout] = useWide(1100);
 
-        {problems.length > 0 ? <ProblemPanel problems={problems} /> : null}
-
-        <HouseEdgePanel rules={rules} estimate={estimate} />
-
-        <PresetPanel rules={rules} onSelect={setRules} />
-
-        <RuleFields rules={rules} onChange={setRules} />
-
-        <StrategyChartPanel
-          rules={rules}
-          chart={chart}
-          changes={changes}
-          changedKeys={changedKeys}
+  const fields = (
+    <>
+      <HouseEdgePanel rules={rules} estimate={estimate} />
+      <PresetPanel rules={rules} onSelect={setRules} />
+      <RuleFields rules={rules} onChange={setRules} />
+    </>
+  );
+  const chartAndReset = (
+    <>
+      <StrategyChartPanel rules={rules} chart={chart} changes={changes} changedKeys={changedKeys} />
+      <Panel>
+        <Button
+          label="Reset to the default table"
+          variant="secondary"
+          icon={RotateCcw}
+          onPress={reset}
         />
+        <Text style={styles.resetNote}>
+          The default is an ordinary Las Vegas six-deck shoe game — deliberately not the most
+          generous table, because the default should look like one you would actually sit at.
+        </Text>
+      </Panel>
+    </>
+  );
 
-        <Panel>
-          <SecondaryButton label="Reset to the default table" onPress={reset} />
-          <Text style={styles.resetNote}>
-            The default is an ordinary Las Vegas six-deck shoe game — deliberately not the most
-            generous table, because the default should look like one you would actually sit at.
-          </Text>
-        </Panel>
-      </Screen>
-    </ScrollView>
+  return (
+    <TrainerPage>
+      <PageHeader
+        eyebrow="Trainer · Rule Set"
+        title="Your table"
+        lede="Basic Strategy is not one chart, it is a chart per rule set. Tell us the table you play and every verdict, drill and explanation in the app is generated for that table — not for a generic one that happens to be close."
+        actions={
+          // A table that charts or prices wrongly is reported with the rules on screen.
+          <ReportBugButton screen="Your table" rules={rules} />
+        }
+      >
+        <StorageNote status={status} />
+      </PageHeader>
+
+      {problems.length > 0 ? <ProblemPanel problems={problems} /> : null}
+
+      <View onLayout={onLayout} style={wide ? styles.columns : styles.stack}>
+        {/* One tree at every width, so nothing remounts when the layout changes. */}
+        <View style={wide ? styles.left : styles.stack}>{fields}</View>
+        <View style={wide ? styles.right : styles.stack}>{chartAndReset}</View>
+      </View>
+    </TrainerPage>
   );
 }
 
@@ -136,7 +146,7 @@ function useChartDiff(chart: StrategyChart): {
 function ProblemPanel({ problems }: { problems: readonly string[] }) {
   return (
     <Panel>
-      <Badge label="NOT A PLAYABLE TABLE" tone="bad" />
+      <ToneBadge label="Not a playable table" tone="bad" />
       {problems.map((problem) => (
         <Text key={problem} style={styles.problem}>
           {problem}
@@ -174,13 +184,13 @@ function StorageNote({ status }: { status: RuleSetStatus }) {
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: colors.background },
-  pageContent: { flexGrow: 1, paddingBottom: spacing.xl },
-  title: { ...type.title, color: colors.text },
-  lede: { ...type.body, color: colors.textMuted },
-  status: { ...type.caption, color: colors.textMuted, marginTop: spacing.xs },
-  statusBad: { color: colors.warning },
-  problem: { ...type.caption, color: colors.danger, lineHeight: 19 },
-  problemNote: { ...type.caption, color: colors.textMuted, lineHeight: 19 },
-  resetNote: { ...type.caption, color: colors.textMuted, lineHeight: 19 },
+  stack: { gap: 24 },
+  columns: { flexDirection: "row", alignItems: "flex-start", gap: 24 },
+  left: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0, maxWidth: 560, gap: 24 },
+  right: { flexGrow: 1.6, flexShrink: 1, flexBasis: 0, minWidth: 0, gap: 24 },
+  status: text.note,
+  statusBad: { color: colors.primary },
+  problem: text.bad,
+  problemNote: text.note,
+  resetNote: text.note,
 });

@@ -22,4 +22,4 @@ Real local training stats (design frame `LvXnf`), computed from the progress sto
 ## Gotchas
 
 - Stat cards are `group`s named "Label: value"; read numbers from the aria-label.
-- The range control is a button ("Range: Last 30 days") opening a `menu` of `menuitem`s.
+- The range control is a button ("Range: Last 30 days") opening a `menu` of `menuitemradio`s (current one `aria-checked`); Escape or an outside press closes it.

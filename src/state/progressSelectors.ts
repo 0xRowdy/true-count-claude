@@ -627,7 +627,9 @@ export function sessionRows(data: ProgressState, scope: Scope, window?: DayWindo
   return sessions
     .map((s) => {
       const { d, h } = byId.get(s.id)!;
-      const last = Math.max(s.startedAt, ...d.map((x) => x.at), ...h.map((x) => x.at));
+      let last = s.startedAt;
+      for (const x of d) if (x.at > last) last = x.at;
+      for (const x of h) if (x.at > last) last = x.at;
       const end = s.endedAt ?? last;
       return {
         id: s.id,
@@ -729,7 +731,8 @@ export function achievements(data: ProgressState): Achievement[] {
   }
   const hardWay = [...crapsOdds.values()].some((e) => e.ok && e.n >= 3);
 
-  const cleanHands = Math.max(0, ...rows.filter((r) => r.coached === 0).map((r) => r.hands));
+  let cleanHands = 0;
+  for (const r of rows) if (r.coached === 0 && r.hands > cleanHands) cleanHands = r.hands;
 
   const vpStreak = bestStreak(decisionsIn(data, "video-poker"));
 

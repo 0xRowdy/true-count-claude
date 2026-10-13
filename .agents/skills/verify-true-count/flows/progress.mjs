@@ -117,8 +117,24 @@ export default async ({ page, url, shot, log, check }) => {
   // Range control.
   await visible(page.getByRole("tab", { name: "Blackjack" })).click();
   const before = await card("Hands played");
-  await visible(page.getByRole("button", { name: "Range: Last 30 days" })).click();
-  await visible(page.getByRole("menuitem", { name: "All time" })).click();
+  const rangeButton = visible(page.getByRole("button", { name: "Range: Last 30 days" }));
+  await rangeButton.click();
+  check(
+    (await visible(page.getByRole("menuitemradio", { name: "Last 30 days" })).getAttribute(
+      "aria-checked",
+    )) === "true",
+    "range menu items are menuitemradio, the current one checked",
+  );
+  await page.keyboard.press("Escape");
+  await page.getByRole("menu", { name: "Range" }).waitFor({ state: "hidden" });
+  log("Escape closes the range menu");
+  await rangeButton.click();
+  await visible(page.getByRole("menu", { name: "Range" })).waitFor();
+  await page.mouse.click(700, 120); // the page title, outside the picker
+  await page.getByRole("menu", { name: "Range" }).waitFor({ state: "hidden" });
+  log("an outside press closes the range menu");
+  await rangeButton.click();
+  await visible(page.getByRole("menuitemradio", { name: "All time" })).click();
   await visible(page.getByRole("button", { name: "Range: All time" })).waitFor();
   const after = await card("Hands played");
   check(after !== before, `range changes the numbers (${before} → ${after})`);
