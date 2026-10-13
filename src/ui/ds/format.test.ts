@@ -9,6 +9,7 @@ import {
   chipColors,
   chipLabel,
   clampProgress,
+  formatChips,
   formatMoney,
   formatThousands,
   initials,
@@ -45,6 +46,13 @@ describe("numbers", () => {
   it("formats money", () => {
     expect(formatMoney(2450)).toBe("$2,450");
     expect(formatMoney(-75)).toBe("-$75");
+    expect(formatMoney(2591.5)).toBe("$2,591.50");
+    expect(formatMoney(0.1 + 0.2)).toBe("$0.30");
+    expect(formatMoney(-0.001)).toBe("$0");
+    expect(formatChips(9999.8)).toBe("9,999.80");
+    expect(formatChips(10057.599999999999)).toBe("10,057.60");
+    expect(formatChips(10000)).toBe("10,000");
+    expect(formatChips(-12.5)).toBe("-12.50");
   });
 
   it("clamps progress", () => {
