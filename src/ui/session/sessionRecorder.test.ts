@@ -462,3 +462,103 @@ describe("the bankroll reset keeps the Session open (invariant 6)", () => {
     expect(broke.round).toBeNull();
   });
 });
+
+/**
+ * The coach catches a play before it reaches the cards and the player takes it back: the
+ * Decision is scored as what they chose, and the cards follow what replaced it. Replay must
+ * read the cards by the replacement, or a taken-back split would be counted as a real one.
+ */
+describe("a coach take-back", () => {
+  /** Plays rounds where every legal `chosen` is taken back and replaced by `played`. */
+  function playTakingBack(rounds: number, chosen: Action, played: Action, seed = 1234): Run {
+    let table = chooseBet(createPlayTable(DEFAULT_RULES, seed), 10);
+    let session = beginSession({ table, id: "coached", startedAt: AT });
+    for (let round = 0; round < rounds; round++) {
+      const opened = openRound(session, table);
+      session = opened.session;
+      let pending = opened.pending;
+      table = dealRound(table);
+      while (table.round && table.round.phase === "insurance") {
+        pending = observeDecision(pending, table, { kind: "insurance", take: false }, AT);
+        table = takeInsurance(table, false);
+      }
+      while (table.round && !isRoundOver(table.round)) {
+        const legal = currentLegalActions(table.round);
+        if (legal.includes(chosen) && legal.includes(played)) {
+          pending = observeDecision(
+            pending,
+            table,
+            { kind: "play", action: chosen, playedInstead: played },
+            AT,
+          );
+          table = playAction(table, played);
+        } else {
+          const action = ALWAYS_STAND(legal);
+          pending = observeDecision(pending, table, { kind: "play", action }, AT);
+          table = playAction(table, action);
+        }
+      }
+      session = closeRound(session, pending, table, AT);
+      table = nextRound(table);
+    }
+    return { session, table };
+  }
+
+  it("records what was chosen, scored, and what was played in its place", () => {
+    const { session } = playTakingBack(30, "split", "stand");
+    const takenBack = session.decisions.filter((d) => d.playedInstead !== undefined);
+    expect(takenBack.length, "30 rounds offered no split").toBeGreaterThan(0);
+    for (const decision of takenBack) {
+      expect(decision.actionTaken).toBe("split");
+      expect(decision.playedInstead).toBe("stand");
+    }
+    // An ordinary Decision carries no replacement at all.
+    expect(session.decisions.some((d) => !("playedInstead" in d))).toBe(true);
+  });
+
+  it("replays a taken-back split as the stand that was played", () => {
+    const { session } = playTakingBack(30, "split", "stand");
+    expect(verifyReplay(session)).toEqual({ ok: true, problems: [] });
+  });
+
+  it("replays a stand taken back into a split as the split that was played", () => {
+    const { session } = playTakingBack(30, "stand", "split");
+    expect(session.decisions.some((d) => d.playedInstead === "split")).toBe(true);
+    expect(verifyReplay(session)).toEqual({ ok: true, problems: [] });
+  });
+
+  it("counts a taken-back mistake as a miss", () => {
+    const { session } = playTakingBack(30, "stand", "split");
+    const stats = computeStats(session);
+    const misses = session.decisions.filter((d) => d.verdict === "incorrect").length;
+    expect(stats.decisionsMade).toBe(session.decisions.length);
+    expect(stats.decisionsMade - stats.correctDecisions).toBe(misses);
+  });
+
+  it("records a taken-back insurance answer the same way", () => {
+    let table = chooseBet(createPlayTable(DEFAULT_RULES, 1), 10);
+    const session = beginSession({ table, id: "ins", startedAt: AT });
+    let pending = openRound(session, table).pending;
+    // Find a round that offers insurance.
+    for (let i = 0; i < 400 && !(table.round?.phase === "insurance"); i++) {
+      table = table.round ? nextRound(table) : table;
+      if (table.round && isRoundOver(table.round)) table = nextRound(table);
+      if (!table.round) {
+        pending = openRound(session, table).pending;
+        table = dealRound(table);
+        while (table.round && table.round.phase === "player") {
+          table = playAction(table, ALWAYS_STAND(currentLegalActions(table.round)));
+        }
+      }
+    }
+    expect(table.round?.phase, "no insurance offer in 400 rounds").toBe("insurance");
+    pending = observeDecision(
+      pending,
+      table,
+      { kind: "insurance", take: true, playedInstead: false },
+      AT,
+    );
+    expect(pending.decisions[0]?.actionTaken).toBe("insurance");
+    expect(pending.decisions[0]?.playedInstead).toBe("decline-insurance");
+  });
+});

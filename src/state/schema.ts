@@ -15,7 +15,7 @@
 import type { CountingSystemChange, Decision, Session } from "./types";
 
 /** The version this build writes. Bump on every change to the persisted shape. */
-export const CURRENT_SCHEMA_VERSION = 3;
+export const CURRENT_SCHEMA_VERSION = 4;
 
 /**
  * What a stored value looks like on disk. The version travels with the data, not beside it,
@@ -182,9 +182,26 @@ function numberOr(value: unknown, fallback: number): number {
 }
 
 /**
+ * 3→4: a Decision may carry `playedInstead` — the play that reached the cards after the coach
+ * caught a mistake and the player took it back. Additive and optional, so a version 3 record
+ * is already a valid version 4 one; the version moves so that a version 3 build refuses a log
+ * whose replay it would misread, rather than replaying a taken-back split as a real one.
+ */
+export const DECISION_PLAYED_INSTEAD_V4: Migration = {
+  from: 3,
+  to: 4,
+  describe: "3→4: a Decision may record the play that replaced it (coach take-back)",
+  migrate: (data) => data,
+};
+
+/**
  * The shipped upgrade path for Session records, one single-version hop per entry, in order.
  */
-export const SESSION_MIGRATIONS: readonly Migration[] = [TRUE_COUNT_NULLABLE, SESSION_RECORDS_V3];
+export const SESSION_MIGRATIONS: readonly Migration[] = [
+  TRUE_COUNT_NULLABLE,
+  SESSION_RECORDS_V3,
+  DECISION_PLAYED_INSTEAD_V4,
+];
 
 export type MigrationOutcome<T> =
   | { readonly ok: true; readonly data: T; readonly applied: readonly string[] }
