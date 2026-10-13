@@ -21,7 +21,12 @@ const ROUTES = [
   "/progress",
   "/progress?demo=1",
   "/games/baccarat",
+  "/strategies",
+  "/strategies/blackjack",
+  "/strategies/craps",
+  "/strategies/roulette",
   "/games/video-poker",
+  "/games/craps",
 ];
 const HYDRATION = /Minified React error #(418|423|425)|hydrat/i;
 
