@@ -4,12 +4,14 @@ import type { Card } from "@/engine/cards";
 import {
   INITIAL_VP_STATE,
   type VpState,
+  abandonedNet,
   askHint,
   betTag,
   changeBet,
   collect,
   deal,
   dealBlocker,
+  dealtCards,
   decisionSummary,
   draw,
   handName,
@@ -177,6 +179,16 @@ describe("hold & draw", () => {
   });
 });
 
+describe("abandoned hands", () => {
+  it("settles a hand left mid-hold as held, and nothing outside Hold & draw", () => {
+    const s = holdBest(dealt());
+    const drawn = draw(s, "asked");
+    expect(abandonedNet(s)).toBe(drawn.record!.net);
+    expect(abandonedNet(seeded())).toBeNull();
+    expect(abandonedNet(drawn.state)).toBeNull();
+  });
+});
+
 describe("result and payout", () => {
   const settled = () => draw(holdBest(dealt()), "mistakes").state;
 
@@ -209,8 +221,19 @@ describe("result and payout", () => {
     const summary = decisionSummary(missed.state.decision!, missed.state.settings);
     expect(summary.correct).toBe(false);
     expect(summary.title).toBe("Hold: a low pair.");
-    expect(summary.detail).toMatch(
-      /^Gave up about \$\d+\.\d0 a hand on average\. Counts as a miss\.$/,
+    expect(summary.detail).toBe(
+      "Better: keep the four hearts (3♥ A♥ 9♥ 5♥), about $6.10 back vs $4.10 for yours. Gave up about $1.90 a hand on average. Counts as a miss.",
+    );
+    expect(dealtCards(missed.state.round!, missed.state.decision!)).toEqual([
+      { card: { rank: "3", suit: "h" }, yours: false, best: true },
+      { card: { rank: "9", suit: "s" }, yours: true, best: false },
+      { card: { rank: "A", suit: "h" }, yours: false, best: true },
+      { card: { rank: "9", suit: "h" }, yours: true, best: true },
+      { card: { rank: "5", suit: "h" }, yours: false, best: true },
+    ]);
+    const back = resolveMistake(draw(toggle(toggle(dealt(), 1), 3), "mistakes").state, "take-back");
+    expect(decisionSummary(back.state.decision!, back.state.settings).detail).toBe(
+      "Better: keep the four hearts (3♥ A♥ 9♥ 5♥), about $6.10 back vs $4.10 for yours. You took it back and drew to it. Counts as a miss.",
     );
   });
 

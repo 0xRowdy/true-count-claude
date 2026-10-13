@@ -45,6 +45,7 @@ import {
   VP_STEPS,
   type VpRecord,
   type VpState,
+  abandonedNet,
   askHint,
   betDollars,
   betTag,
@@ -53,6 +54,7 @@ import {
   collect,
   deal,
   dealBlocker,
+  dealtCards,
   decisionSummary,
   denominationLabel,
   draw,
@@ -79,6 +81,7 @@ import {
   withSeed,
 } from "./model";
 import {
+  DealtHand,
   DecisionLine,
   HandRow,
   HistoryStrip,
@@ -117,12 +120,26 @@ export function VideoPokerScreen() {
     setState((s) => (s.seed === null ? withSeed(s, seed) : s));
   }, []);
 
-  useEffect(
-    () => () => {
+  // Leaving mid-hand never refunds the stake: the hand is drawn as held and its net recorded.
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  const forfeitedRef = useRef(0);
+  useEffect(() => {
+    const settleAbandoned = () => {
+      const current = stateRef.current;
+      const net = abandonedNet(current);
+      if (net === null || forfeitedRef.current === current.handNo) return;
+      forfeitedRef.current = current.handNo;
+      recordHand({ game: "video-poker", net });
+    };
+    const onPageHide = () => settleAbandoned();
+    if (typeof window !== "undefined") window.addEventListener("pagehide", onPageHide);
+    return () => {
+      if (typeof window !== "undefined") window.removeEventListener("pagehide", onPageHide);
+      settleAbandoned();
       if (sessionRef.current) endProgressSession(sessionRef.current);
-    },
-    [],
-  );
+    };
+  }, []);
 
   const storedBankroll = progress.ready ? bankrollOf(progress.data, "video-poker") : undefined;
   // The stake sits in the machine while the hand is in play.
@@ -272,6 +289,9 @@ export function VideoPokerScreen() {
                   }}
                   secondary={{ label: "Keep my hold", onPress: () => onResolve("keep") }}
                 />
+                <Text style={[ui(12), styles.lockNote]}>
+                  Your holds are locked until you answer Marcus.
+                </Text>
               </View>
             ) : null}
 
@@ -325,6 +345,22 @@ export function VideoPokerScreen() {
                 {state.decision ? (
                   <DecisionLine {...decisionSummary(state.decision, state.settings)} />
                 ) : null}
+                {state.decision && !state.decision.correct ? (
+                  <DealtHand cards={dealtCards(round, state.decision)} />
+                ) : null}
+                {state.decision ? (
+                  <View style={{ alignItems: "flex-start" }}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      label={state.mathOpen ? "Hide the math" : "Show the math"}
+                      onPress={() => setState(toggleMath)}
+                    />
+                  </View>
+                ) : null}
+                {state.decision && state.mathOpen ? (
+                  <MathTable rows={mathRows(round, state.decision.chosenMask)} />
+                ) : null}
               </View>
             ) : null}
 
@@ -369,7 +405,7 @@ export function VideoPokerScreen() {
                 label={speed === "fast" ? "Fast" : "Speed"}
                 accessibilityLabel={`Deal speed: ${speed}. Switch to ${speed === "fast" ? "normal" : "fast"}`}
                 onPress={() => setSpeed((s) => (s === "fast" ? "normal" : "fast"))}
-                style={styles.side}
+                style={styles.speed}
               />
             )}
             {state.phase === "bet" ? (
@@ -525,6 +561,8 @@ const styles = StyleSheet.create({
   },
   actions: { flexDirection: "row", gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
   side: { width: 130, height: 52, paddingHorizontal: 14 },
+  speed: { width: 110, height: 52, paddingHorizontal: 12 },
+  lockNote: { color: colors.mutedForeground, marginTop: 8, textAlign: "center" },
   main: { flex: 1 },
   sheetLayer: {
     position: "absolute",
