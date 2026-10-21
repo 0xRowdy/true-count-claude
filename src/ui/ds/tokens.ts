@@ -1,7 +1,7 @@
 /**
  * Tableside design tokens.
  *
- * `penVariables` mirrors every variable of the Tableside design file (`design/Tableside-claude.pen`,
+ * `penVariables` mirrors every variable of the Tableside design file (`design/Truecount-claude.pen`,
  * `GetVariables()`) 1:1, under the same shadcn-style names. Everything else in this file is derived
  * from it, so a token changed in the design is changed here in exactly one place.
  *
