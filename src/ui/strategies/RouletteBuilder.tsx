@@ -458,11 +458,7 @@ function CustomProgressionEditor({
         One unit is your whole base layout. Add or remove 1–10 units; the first spin starts at one
         unit.
       </Text>
-      <Text
-        role="status"
-        accessibilityLabel="Custom progression"
-        style={[ui(14), { color: colors.foreground }]}
-      >
+      <Text role="status" style={[ui(14), { color: colors.foreground }]}>
         {progressionDescription(layout)}.
       </Text>
     </View>

@@ -16,7 +16,7 @@ export const PRICES = {
 } as const;
 
 export const TRIAL_DAYS = 7;
-/** The reminder goes out this many days before the trial ends. */
+/** The preview places a hypothetical reminder this many days before the trial ends. */
 export const REMINDER_DAYS_BEFORE = 2;
 
 /** "$49", "$5.99", "$0" — whole dollars without cents. */
@@ -108,7 +108,10 @@ export function order(plan: PlanId, billing: Billing, today: string | null): Ord
       total: dollarsCents(PRICES.lifetime),
       dueToday: dollarsCents(PRICES.lifetime),
       timeline: [
-        { when: "Today", text: `One payment of ${dollars(PRICES.lifetime)}. No renewals.` },
+        {
+          when: "Today",
+          text: `Example: one payment of ${dollars(PRICES.lifetime)} with no renewals. Purchases are unavailable.`,
+        },
       ],
       trial: false,
       purchasable: true,
@@ -122,16 +125,16 @@ export function order(plan: PlanId, billing: Billing, today: string | null): Ord
     total: dollarsCents(amount),
     dueToday: dollarsCents(0),
     timeline: [
-      { when: "Today", text: "Free trial starts. Nothing charged." },
+      { when: "Today", text: "Example: a seven-day trial would start. No trial starts here." },
       {
         when: dayLabel(today, TRIAL_DAYS - REMINDER_DAYS_BEFORE),
-        text: `We'll email and notify you ${REMINDER_DAYS_BEFORE} days before.`,
+        text: `Example: a reminder would arrive ${REMINDER_DAYS_BEFORE} days before. No reminders are sent.`,
       },
       {
         when: dayLabel(today, TRIAL_DAYS),
         text: yearly
-          ? `Trial ends. ${dollars(amount)} for the year unless you cancel.`
-          : `Trial ends. ${dollars(amount)} a month unless you cancel.`,
+          ? `Example: ${dollars(amount)} for the year after the trial. No subscription starts here.`
+          : `Example: ${dollars(amount)} a month after the trial. No subscription starts here.`,
       },
     ],
     trial: true,

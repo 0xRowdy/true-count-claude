@@ -72,6 +72,14 @@ describe("shoe integrity", () => {
     expect(isCutCardReached(shoe)).toBe(false);
   });
 
+  it("deals once before reshuffling a cut card at index zero", () => {
+    const rules = { ...DEFAULT_RULES, decks: 1, penetration: 0.01 };
+    const shoe = createShoe(rules, 1);
+    expect(shoe.cutIndex).toBe(0);
+    expect(needsShuffleBeforeRound(shoe, rules)).toBe(false);
+    expect(needsShuffleBeforeRound(deal(shoe).shoe, rules)).toBe(true);
+  });
+
   it("reports decks remaining for the true-count conversion", () => {
     let shoe = createShoe({ ...DEFAULT_RULES, decks: 6 }, 7);
     expect(decksRemaining(shoe)).toBe(6);

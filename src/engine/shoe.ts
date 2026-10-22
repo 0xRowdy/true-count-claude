@@ -59,7 +59,9 @@ export function isCutCardReached(shoe: Shoe): boolean {
  * This checks composition, not the hidden order, and never reshuffles during a round.
  */
 export function needsShuffleBeforeRound(shoe: Shoe, rules: RuleSet): boolean {
-  if (isCutCardReached(shoe)) return true;
+  // Tiny positive penetration can round the cut index to zero. An untouched shoe
+  // still needs its first round; otherwise repeated preparation keeps changing its seed.
+  if (shoe.dealtCount > 0 && isCutCardReached(shoe)) return true;
   let points = 0;
   for (const card of shoe.cards.slice(shoe.dealtCount)) {
     points += card.rank === "A" ? 1 : rankValue(card.rank);

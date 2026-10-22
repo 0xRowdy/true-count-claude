@@ -70,7 +70,11 @@ export default async ({ page, url, shot, check }) => {
     .getByRole("radio", { name: "Add units" })
     .click();
   await visible(page.getByRole("button", { name: "More: Unit change" })).click();
-  const custom = visible(page.getByRole("status", { name: "Custom progression" }));
+  const custom = visible(page.getByRole("status").filter({ hasText: /^Custom: / }));
+  check(
+    (await custom.getAttribute("aria-label")) === null,
+    "the custom rule description remains available to assistive technology",
+  );
   check(
     /after a loss, double the stake; after a win, add 2 base units/.test(await custom.innerText()),
     "Custom applies independent loss and win rules",

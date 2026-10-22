@@ -8,6 +8,7 @@
 - "Covers n of 37 numbers", legend, the outcome bar and "What happens on each spin" table (exact enumeration), average result per spin
 - "After each spin": Flat / Martingale / D'Alembert / Custom. Custom sets independent win/loss actions (reset, keep, add, remove, double) and 1–10 base-layout units for add/remove. Break-even spins keep the stake. The whole layout scales, never below its base stake; each spot is capped at the table maximum. Rules autosave with the draft and run in the session simulation.
 - Session rules (stop when up / down, max spins) with steppers
+- The custom progression status exposes the full rule description to assistive technology; a fixed accessible label must not replace it.
 - Inspector: covers, pays, wins, if it hits, amount stepper, Half / 1 unit / Double / Match original %, change the bet type (split, street, corner, six line around the number), remove, rules check (limits + share of the spin vs the original), coach note, Bet n of m
 - Steps: Game & rules (European / French / American), Explain your changes, Test & submit (50 seeded spins + 200 sessions)
 

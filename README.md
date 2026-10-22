@@ -29,7 +29,7 @@ The September [category research](docs/research/competitive-landscape.md) and Oc
 | `/play`           | A full blackjack table at your configured rules. Running and true count, six counting systems, every legal action and none greyed out.                      |
 | `/drills`         | Four scored drills — Basic Strategy (with a per-chart-cell weakness breakdown), Counting, True Count conversion, and Deviations (Illustrious 18 and Fab 4). |
 | `/rules`          | Configure the table: decks, S17/H17, payout, DAS, surrender, penetration, presets. Shows the house edge and the strategy chart reacting live.               |
-| `/shoe-integrity` | Proof the shoe is fair: live composition, the running count landing on zero, the seed, the full dealt history.                                              |
+| `/shoe-integrity` | Proof the shoe is fair: live composition, the Running Count reaching zero after the full Shoe for balanced Counting Systems, the seed and dealt history.    |
 | `/session`        | Statistics, session history, explicit end-session control, and JSON backup/restore.                                                                         |
 | `/games/*`        | Roulette, craps, baccarat, and video poker, with rules, explanations, and saved practice bankrolls.                                                         |
 | `/strategies/*`   | Local blackjack, craps, and roulette strategy builders with test runs and example strategies to fork.                                                       |

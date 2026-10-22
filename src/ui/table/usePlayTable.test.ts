@@ -65,6 +65,21 @@ describe("the Shoe's seed", () => {
     expect(dealRound(prepared).round?.shoe.seed).toBe(prepared.shoe.seed);
   });
 
+  it("keeps repeated preparation and dealing on the same fresh shoe at minimal penetration", () => {
+    const rules = { ...DEFAULT_RULES, decks: 1, penetration: 0.01 };
+    const fresh = createPlayTable(rules, SESSION_SEED);
+    const prepared = prepareRound(fresh);
+    const dealt = dealRound(prepared);
+    expect(dealt.round?.shoe.seed).toBe(prepared.shoe.seed);
+    expect(prepareRound(prepared)).toBe(prepared);
+    expect(prepared).toBe(fresh);
+
+    const next = nextRound(playOneRound(fresh));
+    expect(next.shoeIndex).toBe(1);
+    expect(prepareRound(next)).toBe(next);
+    expect(dealRound(next).round?.shoe.seed).toBe(next.shoe.seed);
+  });
+
   it("comes from `deriveShoeSeed` and nowhere else", () => {
     const table = createPlayTable(DEFAULT_RULES, SESSION_SEED);
     expect(table.shoe.seed).toBe(deriveShoeSeed(SESSION_SEED, 0));

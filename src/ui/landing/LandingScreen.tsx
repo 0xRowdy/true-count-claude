@@ -557,7 +557,13 @@ export function LandingScreen() {
           </View>
         </View>
         {footerNotice ? (
-          <View style={[pad, { paddingBottom: 32 }]}>
+          <View
+            key={footerNotice}
+            style={[pad, { paddingBottom: 32 }]}
+            onLayout={(e) =>
+              scroller.current?.scrollTo({ y: e.nativeEvent.layout.y, animated: true })
+            }
+          >
             <Notice
               title={footerNotice}
               body={FOOTER_NOTICES[footerNotice]}

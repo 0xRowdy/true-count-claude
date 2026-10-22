@@ -6,7 +6,7 @@
 
 - Upfront preview disclosure: all current games, drills, local history and builders are free; purchases and trials are unavailable. Plus and Lifetime describe future plan previews.
 - Monthly / Yearly toggle (radio group): Plus is $5.99 / month or $49 / year ($4.08 a month, "Save 32%"); Lifetime $119 once; Free $0 (current plan)
-- Plan cards are a radio group; the chosen plan drives "Your order": name, total, trial timeline (Today → reminder 2 days before → trial ends after 7 days, dates counted from today after mount), "Due today"
+- Plan cards are a radio group; the chosen plan drives "Your order": name, total, hypothetical trial timeline and "Due today" example. Every timeline step identifies its hypothetical nature and states that no trial, reminder, purchase or subscription occurs. Example dates use today after mount.
 - Pay and "Start free trial with card" (Pay with card for Lifetime) show an in-place notice: "Purchases aren't available in this build"; Free shows "Keep playing free" instead
 - FAQ accordion (buttons with `aria-expanded`)
 - The "You're paying for training tools, not chips" box

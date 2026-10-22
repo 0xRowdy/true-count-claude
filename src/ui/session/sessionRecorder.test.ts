@@ -33,6 +33,7 @@ import {
   dealRound,
   nextRound,
   playAction,
+  prepareRound,
   resetBankroll,
   shuffleShoe,
   takeInsurance,
@@ -84,6 +85,8 @@ function play(
 
   for (let round = 0; round < rounds; round++) {
     const at = AT + round * 30_000;
+    // Match usePlaySession.deal: prepare before recording, then dealRound prepares again.
+    table = prepareRound(table);
     const opened = openRound(session, table);
     session = opened.session;
     let pending = opened.pending;
@@ -109,6 +112,14 @@ function play(
 }
 
 describe("recording a Session from the Play table", () => {
+  it("replays every round when the cut card falls before the first card", () => {
+    const rules = { ...DEFAULT_RULES, decks: 1, penetration: 0.01 };
+    const { session } = play(3, 1234, 10, ALWAYS_STAND, "hi-lo", rules);
+    expect(verifyReplay(session)).toEqual({ ok: true, problems: [] });
+    expect(session.shoes).toHaveLength(3);
+    expect(session.rounds.map((round) => round.shoeIndex)).toEqual([0, 1, 2]);
+  });
+
   it("preserves a legacy no-peek round's reserved hole card and original-bet refund", () => {
     // Seed 3398 deals 5h, 10h, 6h, Ad, 9d. Older versions reserved Ad as the hole
     // card, doubled 11 onto 9d, then refunded the extra wager against dealer blackjack.

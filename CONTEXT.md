@@ -46,7 +46,7 @@ Use these terms exactly. Do not drift to synonyms.
 | **Decision**               | One player action (hit/stand/double/split/surrender/insurance) with the hand state that produced it. The unit of scoring and of explanation.                         |
 | **Explanation**            | The _why_ behind a Decision verdict: per-action EV, the governing chart cell, and the count's effect. Never omitted.                                                 |
 | **Session**                | A bounded run of Play or Drill, with its own stats and a replayable Decision log.                                                                                    |
-| **Shoe Integrity Panel**   | The user-facing proof that the shoe is fair: remaining composition, RC returning to zero after the full Shoe, exportable history.                                    |
+| **Shoe Integrity Panel**   | The user-facing proof that the shoe is fair: remaining composition, RC returning to zero after the full Shoe (balanced Counting Systems only), exportable history.   |
 
 ## Non-negotiable product invariants
 

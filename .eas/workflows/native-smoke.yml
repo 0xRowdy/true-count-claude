@@ -22,6 +22,7 @@ jobs:
           extensions: [app]
       - name: Install Maestro
         run: |
+          set -euo pipefail
           curl -fL https://github.com/mobile-dev-inc/Maestro/releases/download/cli-2.11.0/maestro.zip -o /tmp/maestro.zip
           echo '5384593cb4e7a106489e75a821d157dd43f4e438df6bc308b72e82c685e1283a  /tmp/maestro.zip' | shasum -a 256 -c -
           unzip -q /tmp/maestro.zip -d /tmp/maestro-cli
