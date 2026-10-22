@@ -84,17 +84,17 @@ social and untested workflows are identified explicitly.
 
 ## Platform gates
 
-| Gate                                             | Current evidence                                                                                                                                                                                      |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Typecheck, lint, formatting, all unit tests      | Final source passes typecheck, lint and formatting. The prior full unit run passed 3,079 tests in 89 files; this follow-up changes layout only. `git diff --check` is clean.                          |
-| Fresh web export and complete browser suite      | All 29 flows pass with no console errors. The final week-label adjustment then passes Progress, trainer layout, and hydration checks on a fresh export.                                               |
-| iOS and Android JS exports                       | Earlier exports passed; these do not prove native build/runtime behavior.                                                                                                                             |
-| EAS account and project                          | Authenticated as `mmgjlegacy`, linked project `15b42160-932f-4c21-bfd0-b6a539d7cf94`.                                                                                                                 |
-| Installable Android APK                          | Layout-corrected build `74a79d38-741a-44aa-bf01-7caf62ce2762` passes all six native flows offline in 247 seconds. Valid APK v2/v3 signature with the existing signer.                                 |
-| iOS simulator binary and automated runtime check | Layout-corrected build `01864a54-3ffd-485b-9fa9-85f9944d5d78` passes all six native flows in 436 seconds. Successful runtime workflow: `01a1636e-6353-75e2-8ea2-0531cb3ae1ab`. Screenshots inspected. |
-| Physical iOS                                     | User confirmed Expo Go launch, backup creation, drill persistence after reopening, and the corrected Statistics layout.                                                                               |
-| Android emulator                                 | Latest signed APK passes with Wi-Fi and mobile data disabled: drill/backup/restart, blackjack settlement, onboarding, other games, eight trainer headers, and Lobby/Progress card layouts.            |
-| Physical Android                                 | User has no Android device. Emulator evidence does not satisfy physical acceptance in #13.                                                                                                            |
+| Gate                                             | Current evidence                                                                                                                                                                                                        |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Typecheck, lint, formatting, all unit tests      | Review fixes pass all 3,087 tests in 90 files, typecheck, lint and formatting. `git diff --check` is clean.                                                                                                             |
+| Fresh web export and complete browser suite      | All 29 flows pass in CI on review-fix commit `1cf316d`, including the footer, pricing and accessible Roulette rule regressions.                                                                                         |
+| iOS and Android JS exports                       | Earlier exports passed; these do not prove native build/runtime behavior.                                                                                                                                               |
+| EAS account and project                          | Authenticated as `mmgjlegacy`, linked project `15b42160-932f-4c21-bfd0-b6a539d7cf94`.                                                                                                                                   |
+| Installable Android APK                          | Review-corrected build `f9c771f5-7ecb-4e85-8dd9-7671094a561c` passes all seven native flows offline in 293 seconds. Valid APK v2/v3 signature with the existing signer.                                                 |
+| iOS simulator binary and automated runtime check | Review-corrected build `a44d17be-353e-4846-a25e-286726306488` passes all seven native flows in 510 seconds. Successful runtime workflow: `01a163e5-da63-7750-9761-95dc7cd8c77a`. Screenshots inspected.                 |
+| Physical iOS                                     | User confirmed Expo Go launch, backup creation, drill persistence after reopening, and the corrected Statistics layout.                                                                                                 |
+| Android emulator                                 | Latest signed APK passes with Wi-Fi and mobile data disabled: drill/backup/restart, blackjack settlement, onboarding, other games, eight trainer headers, Lobby/Progress cards, footer notices and pricing disclosures. |
+| Physical Android                                 | User has no Android device. Emulator evidence does not satisfy physical acceptance in #13.                                                                                                                              |
 
 During the 2026-10-22 physical iPhone check, the LAN QR timed out; the user reached
 the app using the Tailscale address and confirmed that Create backup displayed
@@ -106,7 +106,7 @@ Drills → Your record → Statistics; the backup controls are at the bottom of 
 screen. Physical Android acceptance remains open.
 
 The native workflows are `.eas/workflows/native-smoke.yml` and
-`.eas/workflows/native-repack.yml`. Assertions live in all six `.maestro/native-*.yml`
+`.eas/workflows/native-repack.yml`. Assertions live in all seven `.maestro/native-*.yml`
 files. The game flow covers Roulette and Baccarat results, a seeded Video Poker
 deal/hint/draw/collection, and a Craps come-out roll establishing the point. The
 broader browser suite covers additional behavior. Release instructions live in
@@ -173,7 +173,63 @@ fixed navigation header after the layout changed.
   file hashes checked against the worktree. Artifact URLs, expiry, SHA-256 hashes,
   and Android signing certificate: `.verify/native/layout-artifacts.json`.
 - Local binaries: `.verify/native/truecount-android-layout.apk` and
-  `.verify/native/truecount-ios-layout.tar.gz`. They supersede the binaries below.
+  `.verify/native/truecount-ios-layout.tar.gz`. The review artifacts below supersede these builds.
+
+## PR review fixes, 2026-10-22
+
+The review of PR #54 identified seven defects. The follow-up fixes each one:
+
+| Finding                                                            | Corrected behavior and regression evidence                                                                                                                                                                                                    |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Maestro installation continued after a checksum mismatch           | Both workflows stop before extracting. Executing their shell blocks with a failed checksum changed the exit code from 0 to 1 and prevented extraction.                                                                                        |
+| Documentation implied every Running Count returns to zero          | The glossary and route description restrict that claim to a full Shoe with a balanced Counting System.                                                                                                                                        |
+| A cut card at index zero caused repeated pre-round shuffles        | An untouched Shoe receives its first round. Three regressions cover the engine, repeated table preparation, and recorded replay. The previous three-round replay produced 15 errors.                                                          |
+| A recovered drill write left backup permanently blocked            | Successful writes clear failures only for the same Session. Five integration tests cover save recovery, unrelated unsaved data, failed undo, history reads and recovery from an initial read failure. Backup still rejects unresolved writes. |
+| Footer notices appeared below the phone viewport                   | Privacy, Terms and Accessibility scroll their complete notice into view when tapped. The 390 × 844 browser check and the Android baseline reproduced the defect.                                                                              |
+| The pricing timeline promised a real trial and reminders           | Every timeline entry identifies a hypothetical example and says no trial, reminder, purchase or subscription occurs. The pricing flow checks the rendered copy.                                                                               |
+| The custom Roulette status hid its rules from assistive technology | The status exposes the rule description instead of replacing it with a fixed accessible label. The strategy flow checks the text and absence of that override.                                                                                |
+
+The footer screenshots show the state immediately after tapping Privacy:
+
+| Before                                                                        | After                                                                     |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| ![Privacy notice below the phone viewport](evidence/footer-notice-before.png) | ![Privacy notice visible after tapping](evidence/footer-notice-after.png) |
+
+- Full unit suite: `/tmp/truecount-review-final-tests.log`, 3,087 tests in 90 files.
+  Typecheck, lint, formatting and `git diff --check` pass.
+- Browser regressions: landing, pricing and strategy-roulette failed before the
+  fixes and passed afterward, with zero console errors. Evidence directories are
+  `.verify/evidence/20261022-072407-landing`,
+  `.verify/evidence/20261022-072410-pricing` and
+  `.verify/evidence/20261022-072411-strategy-roulette`.
+- [Source CI](https://github.com/0xRowdy/true-count-claude/actions/runs/39791430869)
+  passes unit/static checks, the web build and all 29 browser flows on `1cf316d`.
+- Native source snapshot: `.verify/native/review-source-manifest.json`. All 399
+  source and verification files match `1cf316d`;
+  `.verify/native/review-commit-source-check.json` records that comparison.
+- Final local browser sweep: `.verify/review-final-browser-results.json`, all 29
+  flows pass with zero console errors on export `fde542431a8d`.
+- Workflow checksum regression: `.verify/review-checksum-check.json`.
+- Native baseline: `.verify/native/review-baseline-results.xml` and
+  `.verify/native/review-baseline-evidence-2/`. The new seventh flow reached the
+  Privacy button on the previous signed APK, tapped it, and failed its immediate
+  notice visibility assertion. `.maestro/native-notices.yml` now also checks
+  Terms, Accessibility and the hypothetical pricing timeline.
+- iOS review artifact: build `a44d17be-353e-4846-a25e-286726306488`, seven passing
+  flows on iPhone 17 Pro, iOS 26.5. JUnit and screenshots are under
+  `.verify/native/review-ios-evidence/Users/expo/workingdir/build/native-evidence/`.
+  Each footer capture shows the complete notice and Dismiss control. The pricing
+  capture shows all three hypothetical timeline statements.
+- Android review artifact: signed build `f9c771f5-7ecb-4e85-8dd9-7671094a561c`,
+  all seven flows pass offline in 293 seconds.
+  `.verify/native/review-android-results.xml` records zero failures; screenshots
+  are in `.verify/native/review-android-evidence/`. APK v2/v3 signatures verify
+  with the existing EAS signer.
+- Artifact URLs, SHA-256 hashes and runtime evidence are in
+  `.verify/native/review-artifacts.json`. The retained binaries are
+  `.verify/native/truecount-android-review.apk` and
+  `.verify/native/truecount-ios-review.tar.gz`. These supersede the six-flow
+  layout artifacts listed in the earlier section.
 
 ## Earlier evidence, 2026-10-21
 
@@ -217,5 +273,6 @@ fixed navigation header after the layout changed.
   `.verify/native/expo-go-play-results.xml`.
 - Expo Doctor: `.verify/native/expo-doctor.log`, 21 of 21 checks pass.
 
-Generated artifacts are ignored by Git. The app changes and runnable verification
-flows are in the worktree; this record does not imply a commit, deployment or store submission.
+Generated artifacts are ignored by Git. App changes, screenshots and runnable
+verification flows are committed in PR #54. Internal builds do not imply deployment
+or store submission.

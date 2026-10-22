@@ -63,9 +63,11 @@ creation and persistence; `.maestro/native-games.yml` checks roulette, baccarat,
 video poker and craps, including a reproducible seeded video poker deal.
 `.maestro/native-layout.yml` checks eight trainer headers without scrolling past
 their controls. `.maestro/native-card-layout.yml` checks wrapping on the Lobby
-and Progress pages and captures the weekly chart. These six flows include visual
-regressions that the previous behavior-only smoke test missed.
-`.eas/workflows/native-smoke.yml` builds an iOS artifact and runs all six flows
+and Progress pages and captures the weekly chart. `.maestro/native-notices.yml`
+requires footer notices to appear immediately after tapping and verifies that
+pricing timelines describe hypothetical examples. These seven flows include
+visual regressions that the previous behavior-only smoke test missed.
+`.eas/workflows/native-smoke.yml` builds an iOS artifact and runs all seven flows
 on a macOS worker with Apple's simulator, so the
 local host can be Linux. Android uses the APK with a local emulator. Run and inspect
 the iOS workflow with the EAS CLI:
@@ -99,20 +101,22 @@ assets and persisted history independently of Metro.
 
 ## Internal artifacts verified on 2026-10-22
 
-- [Android preview APK](https://expo.dev/accounts/mmgjlegacy/projects/true-count/builds/74a79d38-741a-44aa-bf01-7caf62ce2762):
-  EAS signing certificate, APK v2 and v3 signature verified. All six native flows
+- [Android preview APK](https://expo.dev/accounts/mmgjlegacy/projects/true-count/builds/f9c771f5-7ecb-4e85-8dd9-7671094a561c):
+  EAS signing certificate, APK v2 and v3 signature verified. All seven native flows
   passed on this exact APK with emulator Wi-Fi and mobile data disabled.
-- [iOS simulator app](https://expo.dev/accounts/mmgjlegacy/projects/true-count/builds/01864a54-3ffd-485b-9fa9-85f9944d5d78):
-  all six native flows passed in
-  [the simulator workflow](https://expo.dev/accounts/mmgjlegacy/projects/true-count/workflows/01a1636e-6353-75e2-8ea2-0531cb3ae1ab).
+- [iOS simulator app](https://expo.dev/accounts/mmgjlegacy/projects/true-count/builds/a44d17be-353e-4846-a25e-286726306488):
+  all seven native flows passed in
+  [the simulator workflow](https://expo.dev/accounts/mmgjlegacy/projects/true-count/workflows/01a163e5-da63-7750-9761-95dc7cd8c77a).
 
 These artifacts include the final bundled JavaScript and assets. Expo lists their
 expiration as November 5, 2026; local copies are already retained.
-These builds include the native header, card, and chart-label layout fixes.
-The submitted source and test snapshot is `.verify/native/layout-complete-source-manifest.json`;
-artifact hashes and URLs are in `.verify/native/layout-artifacts.json`. These builds were
+These builds include the native header, card and chart-label layout fixes, plus
+the replay, backup recovery, footer notice and pricing review fixes.
+The submitted source and test snapshot is `.verify/native/review-source-manifest.json`;
+artifact hashes and URLs are in `.verify/native/review-artifacts.json`. These builds were
 submitted before the changes were committed, so the Git commit displayed by EAS alone does
-not identify the bundled source. Use the source manifest to match a checkout to the builds.
+not identify the bundled source. All 399 files in the source manifest match commit `1cf316d`;
+`.verify/native/review-commit-source-check.json` records the comparison.
 See [the MVP verification record](mvp-verification.md) for runtime evidence and
 remaining physical-device checks.
 
