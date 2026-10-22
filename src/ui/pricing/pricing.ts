@@ -48,11 +48,11 @@ export function planView(plan: PlanId, billing: Billing): PlanView {
       return billing === "yearly"
         ? {
             price: `${dollars(PRICES.plusYearly)} / year`,
-            sub: `${dollarsCents(Math.floor((PRICES.plusYearly / 12) * 100) / 100)} a month, billed yearly · ${TRIAL_DAYS}-day free trial`,
+            sub: `${dollarsCents(Math.floor((PRICES.plusYearly / 12) * 100) / 100)} a month, billed yearly · example ${TRIAL_DAYS}-day trial`,
           }
         : {
             price: `${dollars(PRICES.plusMonthly)} / month`,
-            sub: `Billed monthly · ${TRIAL_DAYS}-day free trial`,
+            sub: `Billed monthly · example ${TRIAL_DAYS}-day trial`,
           };
     case "lifetime":
       return {
@@ -74,7 +74,7 @@ export interface Order {
   total: string;
   dueToday: string;
   timeline: TimelineEntry[];
-  /** Whether this plan starts with a free trial (shows "Start free trial with card"). */
+  /** Whether this plan's example includes a free trial (shows "Free trial (unavailable)"). */
   trial: boolean;
   /** Free is already the player's plan: nothing to buy. */
   purchasable: boolean;

@@ -68,8 +68,8 @@ const WIDE = 1100;
  * Monthly/Yearly changes the prices, choosing a plan updates "Your order" (its trial dates
  * counted from today, after mount), and the FAQ opens and closes.
  *
- * No payment is ever processed: "Pay" and the card button show an in-place notice that
- * purchases are not available in this build.
+ * No payment is ever processed: both checkout buttons say they are unavailable and show an
+ * in-place notice that purchases are not available in this build.
  */
 export function PricingScreen() {
   const router = useRouter();
@@ -271,17 +271,17 @@ export function PricingScreen() {
             <View style={styles.pay}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Pay"
+                accessibilityLabel="Pay (unavailable)"
                 onPress={() => setNotice(true)}
                 style={({ pressed }) => [styles.wallet, pressed && { opacity: 0.85 }]}
               >
                 <Apple size={18} color={marketing.walletInk} strokeWidth={2} />
-                <Text style={[ui(17, 600), { color: marketing.walletInk }]}>Pay</Text>
+                <Text style={[ui(17, 600), { color: marketing.walletInk }]}>Pay (unavailable)</Text>
               </Pressable>
               <Button
                 size="lg"
                 icon={CreditCard}
-                label={o.trial ? "Start free trial with card" : "Pay with card"}
+                label={o.trial ? "Free trial (unavailable)" : "Pay with card (unavailable)"}
                 onPress={() => setNotice(true)}
                 fullWidth
                 style={{ height: 52 }}

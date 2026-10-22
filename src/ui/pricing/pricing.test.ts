@@ -6,7 +6,7 @@ describe("pricing", () => {
     expect(yearlySaving()).toBe(32);
     expect(planView("plus", "yearly")).toEqual({
       price: "$49 / year",
-      sub: "$4.08 a month, billed yearly · 7-day free trial",
+      sub: "$4.08 a month, billed yearly · example 7-day trial",
     });
     expect(planView("lifetime", "yearly").price).toBe("$119 once");
   });
@@ -14,7 +14,7 @@ describe("pricing", () => {
   it("switches Plus to monthly", () => {
     expect(planView("plus", "monthly")).toEqual({
       price: "$5.99 / month",
-      sub: "Billed monthly · 7-day free trial",
+      sub: "Billed monthly · example 7-day trial",
     });
     expect(order("plus", "monthly", null).total).toBe("$5.99");
   });

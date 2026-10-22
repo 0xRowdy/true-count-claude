@@ -27,6 +27,11 @@ export default async ({ page, url, shot, check }) => {
 
   // Yearly by default, as designed.
   check(await visible(page.getByText("$49 / year")).isVisible(), "yearly Plus price $49 / year");
+  check(
+    await visible(page.getByText(/billed yearly · example 7-day trial/)).isVisible(),
+    "the Plus card calls the trial an example",
+  );
+  check((await page.getByText(/\d+-day free trial/).count()) === 0, "no copy offers a free trial");
   check(await order.getByText("Tableside Plus, yearly").isVisible(), "order: Plus yearly");
   check(await order.getByText("$49.00").isVisible(), "order total $49.00");
   check(
@@ -82,14 +87,14 @@ export default async ({ page, url, shot, check }) => {
   );
 
   // Pay: nothing is processed, the notice says so.
-  await visible(page.getByRole("button", { name: "Pay", exact: true })).click();
+  await visible(page.getByRole("button", { name: "Pay (unavailable)", exact: true })).click();
   const notice = visible(page.getByRole("status", { name: /Purchases aren't available/ }));
   await notice.waitFor();
   check(await notice.isVisible(), "Pay shows the purchases-unavailable notice");
   await shot("pay-notice");
   await visible(page.getByRole("radio", { name: "Tableside Plus" })).click();
   check((await page.getByRole("status", { name: /Purchases/ }).count()) === 0, "notice clears");
-  await visible(page.getByRole("button", { name: "Start free trial with card" })).click();
+  await visible(page.getByRole("button", { name: "Free trial (unavailable)" })).click();
   await notice.waitFor();
   check(true, "card button shows the notice too");
   check(

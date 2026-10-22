@@ -218,12 +218,12 @@ describe("export and import", () => {
     expect(await destination.load("someone-elses")).not.toBeNull();
   });
 
-  it("reports a file that is not a True Count archive", async () => {
+  it("reports a file that is not a Tableside session backup", async () => {
     const repository = createSessionRepository({ store: createMemoryStore() });
     const report = await repository.importArchive(JSON.stringify({ format: "something-else" }));
 
     expect(report.imported).toEqual([]);
-    expect(report.unreadable[0]!.reason).toMatch(/Not a True Count archive/);
+    expect(report.unreadable[0]!.reason).toMatch(/Not a Tableside session backup/);
   });
 });
 

@@ -33,7 +33,7 @@ export function SessionBackupPanel({ onRestore }: { onRestore: () => void }) {
 
   async function restoreBackup() {
     if (!raw.trim()) {
-      setOutcome({ ok: false, message: "Paste the JSON from a True Count session backup first." });
+      setOutcome({ ok: false, message: "Paste the JSON from a Tableside session backup first." });
       return;
     }
     setBusy(true);
