@@ -36,6 +36,16 @@ export default async ({ page, url, shot, check }) => {
     await visible(page.getByText(/Example strategies/)).isVisible(),
     "community strategies are labelled as examples",
   );
+  check(
+    await visible(page.getByText("Every current training tool is free.")).isVisible(),
+    "landing states the actual free training scope",
+  );
+  check(
+    await visible(
+      page.getByText("Pricing preview only. Purchases and trials are unavailable in this build."),
+    ).isVisible(),
+    "pricing preview is disclosed before plan cards",
+  );
 
   const tiles = {
     Blackjack: "/play",
@@ -58,6 +68,18 @@ export default async ({ page, url, shot, check }) => {
   check((await page.locator("input[type=password]").count()) === 0, "no fake sign-in form");
   await shot("sign-in-notice");
   await visible(page.getByRole("button", { name: "Dismiss" })).click();
+
+  for (const [label, content] of [
+    ["Privacy", /Clearing its storage deletes them/],
+    ["Terms", /balances are virtual and have no cash value/],
+    ["Accessibility", /controls support keyboard navigation/],
+  ]) {
+    await visible(page.getByRole("button", { name: label, exact: true })).click();
+    const disclosure = visible(page.getByRole("status", { name: label, exact: true }));
+    check(content.test(await disclosure.innerText()), `${label} opens its information`);
+    await disclosure.getByRole("button", { name: "Dismiss", exact: true }).click();
+    check(!(await disclosure.isVisible()), `${label} can be dismissed`);
+  }
 
   // Phone width: nothing scrolls sideways.
   await page.setViewportSize({ width: 390, height: 6000 });

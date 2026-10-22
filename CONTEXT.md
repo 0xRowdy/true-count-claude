@@ -5,26 +5,26 @@
 **True Count** is a card-counting and advantage-play trainer for blackjack. It is a
 _training tool_, not a gambling product: no real money, no tokens, no wagering, no ads.
 
-The product thesis, in one sentence: **every other trainer tells you that you were wrong;
-True Count shows you why, and proves its own math.**
+The product thesis: **True Count shows why a decision is wrong and makes its math inspectable.**
 
 ## Why we are building it
 
-Competitive research (see `docs/research/`) established three exploitable gaps in the
-incumbent (CQ Nexus) and in the category as a whole:
+The September category research and the October live CQ Nexus review (see
+`docs/research/`) guide three priorities:
 
-1. **No named counting systems anywhere in the category leader.** CQ Nexus ships a single
-   unnamed running/true count. There is no Hi-Lo, KO, Omega II, Wong Halves, Zen, or Red 7,
-   and no index/deviation play. Counting depth is our wedge.
+1. **Named Counting Systems and index practice.** True Count supports Hi-Lo, KO, Omega II,
+   Wong Halves, Zen and Red 7. The October CQ Nexus review found counting training but did
+   not establish named-system selection or scored deviation drills across its paid surfaces.
 2. **"Doesn't teach" is the #1 product complaint in the category** (22% of low-star reviews
-   across ~1,100 competitor reviews). Apps report a verdict without a reason. Explanation is
-   our product, not a feature of it.
+   across ~1,100 competitor reviews in the September sample). The October review observed
+   contextual blackjack hints and a chart link in CQ Nexus. Our target is deeper, auditable
+   Explanations, rather than a claim that competitors never explain a move.
 3. **Trust failures dominate the rest.** "Wrong math" (21%) and "rigged RNG" (19%) together
    are 40% of low-star reviews. One wrong strategy cell poisons trust in the whole app. We
    answer this with auditable math and a verifiable shoe.
 
-The incumbent is not entrenched — 23 total ratings across both stores. The category leaders
-by review volume are older, thinner apps. The opportunity is real.
+Store counts and binary sizes in the September report are historical measurements. Use
+`docs/research/cqnexus-functionality.md` for current observed capabilities and access limits.
 
 ## Glossary
 
@@ -46,7 +46,7 @@ Use these terms exactly. Do not drift to synonyms.
 | **Decision**               | One player action (hit/stand/double/split/surrender/insurance) with the hand state that produced it. The unit of scoring and of explanation.                         |
 | **Explanation**            | The _why_ behind a Decision verdict: per-action EV, the governing chart cell, and the count's effect. Never omitted.                                                 |
 | **Session**                | A bounded run of Play or Drill, with its own stats and a replayable Decision log.                                                                                    |
-| **Shoe Integrity Panel**   | The user-facing proof that the shoe is fair: remaining composition, RC returning to zero at the cut card, exportable history.                                        |
+| **Shoe Integrity Panel**   | The user-facing proof that the shoe is fair: remaining composition, RC returning to zero after the full Shoe, exportable history.                                    |
 
 ## Non-negotiable product invariants
 
@@ -59,8 +59,9 @@ bug, not a design choice.
 3. **Feedback arrives while the cards are still visible.** Never sweep the hand and then grade it.
 4. **The strategy engine is auditable.** The user can see the chart cell behind any verdict,
    and CI asserts the whole chart against reference tables for every Rule Set permutation.
-5. **The shoe is provable.** RC must return to zero at the cut card for balanced systems, and
-   the user can verify this themselves. Seeded shoes are reproducible.
+5. **The shoe is provable.** RC must return to zero after every card in the Shoe is exposed
+   for balanced systems, and the user can verify this themselves. A cut card can leave unseen
+   cards, so its Running Count need not be zero. Seeded shoes are reproducible.
 6. **Never a dead end.** A bankroll at zero always offers a one-tap reset in place.
 7. **Buttons, not gestures, and never a disabled legal action.** Greying out a legal action
    corrupts the user's accuracy statistics.

@@ -14,6 +14,16 @@ export default async ({ page, url, shot, check }) => {
   check(res?.ok(), `/pricing served (HTTP ${res?.status()})`);
   const order = visible(page.getByRole("region", { name: "Your order" }));
   await order.waitFor();
+  check(
+    await visible(
+      page.getByText(/Pricing preview\. Purchases and trials are unavailable/),
+    ).isVisible(),
+    "pricing is labelled as unavailable before any payment action",
+  );
+  check(
+    await visible(page.getByText(/Progress stays on this device/)).isVisible(),
+    "local storage and backup are explained without promising automatic sync",
+  );
 
   // Yearly by default, as designed.
   check(await visible(page.getByText("$49 / year")).isVisible(), "yearly Plus price $49 / year");
@@ -63,7 +73,7 @@ export default async ({ page, url, shot, check }) => {
   await notice.waitFor();
   check(true, "card button shows the notice too");
   check(
-    await visible(page.getByText(/You're paying for training tools, not chips/)).isVisible(),
+    await visible(page.getByText(/Practice uses virtual chips only/)).isVisible(),
     "responsible box",
   );
 
@@ -83,7 +93,10 @@ export default async ({ page, url, shot, check }) => {
   check((await q.getAttribute("aria-expanded")) === "false", "FAQ 2 starts closed");
   await q.click();
   check((await q.getAttribute("aria-expanded")) === "true", "FAQ 2 opens");
-  check(await visible(page.getByText(/Every game, every casino rule set/)).isVisible(), "answer");
+  check(
+    await visible(page.getByText(/Every game, every supported rule set/)).isVisible(),
+    "answer",
+  );
   await q.click();
   check((await q.getAttribute("aria-expanded")) === "false", "FAQ 2 closes");
 

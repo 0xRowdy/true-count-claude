@@ -31,15 +31,17 @@ export function FeltSurface({
   const id = `felt${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   return (
     <View style={[styles.felt, { minHeight: height }]}>
-      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Defs>
-          <RadialGradient id={id} cx="0.5" cy="0.45" rx="0.75" ry="0.6" fx="0.5" fy="0.45">
-            <Stop offset={0} stopColor={felt.centre} />
-            <Stop offset={1} stopColor={colors.feltDeep} />
-          </RadialGradient>
-        </Defs>
-        <Rect x={0} y={0} width="100%" height="100%" fill={`url(#${id})`} />
-      </Svg>
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Svg width="100%" height="100%">
+          <Defs>
+            <RadialGradient id={id} cx="0.5" cy="0.45" rx="0.75" ry="0.6" fx="0.5" fy="0.45">
+              <Stop offset={0} stopColor={felt.centre} />
+              <Stop offset={1} stopColor={colors.feltDeep} />
+            </RadialGradient>
+          </Defs>
+          <Rect x={0} y={0} width="100%" height="100%" fill={`url(#${id})`} />
+        </Svg>
+      </View>
       {children}
     </View>
   );

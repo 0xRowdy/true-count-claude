@@ -1,3 +1,4 @@
+/* global document, innerWidth -- page.evaluate runs in the browser */
 // Roulette strategy builder (/strategies/roulette, frame D0h320): the design's example layout
 // renders the engine's numbers (Covers 25 of 37, the per-spin table, −$2.70) and they move
 // when a bet changes.
@@ -62,10 +63,42 @@ export default async ({ page, url, shot, check }) => {
   );
 
   await visible(page.getByRole("radio", { name: "Custom" })).click();
+  await visible(page.getByRole("radiogroup", { name: "After a loss", exact: true }))
+    .getByRole("radio", { name: "Double stake" })
+    .click();
+  await visible(page.getByRole("radiogroup", { name: "After a win", exact: true }))
+    .getByRole("radio", { name: "Add units" })
+    .click();
+  await visible(page.getByRole("button", { name: "More: Unit change" })).click();
+  const custom = visible(page.getByRole("status", { name: "Custom progression" }));
   check(
-    await visible(page.getByText(/Custom progressions are coming soon/)).isVisible(),
-    "Custom is honest: coming soon",
+    /after a loss, double the stake; after a win, add 2 base units/.test(await custom.innerText()),
+    "Custom applies independent loss and win rules",
   );
+  await page.waitForTimeout(500);
+  await page.reload({ waitUntil: "networkidle" });
+  await custom.waitFor();
+  check(
+    /after a win, add 2 base units/.test(await custom.innerText()),
+    "custom rule survives reload",
+  );
+  await shot("custom-progression");
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.waitForTimeout(200);
+  await custom.scrollIntoViewIfNeeded();
+  check(
+    await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+    "custom controls fit a phone without page overflow",
+  );
+  await shot("custom-progression-mobile");
+  await page.setViewportSize({ width: 1440, height: 1300 });
+  await visible(page.getByRole("tab", { name: "Step 4: Test & submit" })).click();
+  await visible(page.getByRole("button", { name: "Play 50 spins with it" })).click();
+  check(
+    await visible(page.getByText("200 sessions", { exact: true })).isVisible(),
+    "custom progression runs the session simulation",
+  );
+  await visible(page.getByRole("tab", { name: "Step 2: Bet layout" })).click();
   await visible(page.getByRole("radio", { name: "Martingale" })).click();
   check(
     (await visible(page.getByRole("radio", { name: "Martingale" })).getAttribute(

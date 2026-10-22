@@ -420,7 +420,15 @@ export function explainDecision(situation: DecisionSituation): DecisionExplanati
     evs,
     ranked,
     bestByEv: ranked[0]?.action ?? null,
-    dealer: usable ? dealerOutcomes(dealerUpcard, rules, composition) : null,
+    dealer: usable
+      ? dealerOutcomes(
+          dealerUpcard,
+          rules.surrender === "early" && legal.includes("surrender")
+            ? { ...rules, dealerPeek: false }
+            : rules,
+          composition,
+        )
+      : null,
     evNote: usable ? null : composition === null ? NO_COMPOSITION_NOTE : EMPTY_COMPOSITION_NOTE,
     index,
     countAwareAction,

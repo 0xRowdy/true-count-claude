@@ -48,7 +48,7 @@ import {
   createShoe,
   dealtCards,
   decksRemaining,
-  isCutCardReached,
+  needsShuffleBeforeRound,
 } from "@/engine/shoe";
 import { deriveShoeSeed } from "@/state";
 import { sameRules } from "@/ui/rules/presets";
@@ -61,13 +61,6 @@ export const STARTING_BANKROLL = 500;
  * and the bankroll — an unaffordable chip is not rendered, never rendered greyed out.
  */
 export const CHIP_VALUES: readonly number[] = [5, 10, 25, 50, 100, 250, 500];
-
-/**
- * The player's shoe is replaced once the cut card is out. A handful of cards is also kept in
- * reserve so a long round of splits cannot run the shoe dry mid-hand, which `deal` treats as
- * a bug rather than a condition to recover from.
- */
-const RESERVE_CARDS = 30;
 
 export interface PlayTable {
   /** The Rule Set this table is actually dealing. Fixed for the life of the Shoe. */
@@ -355,6 +348,7 @@ export function chooseBet(table: PlayTable, amount: number): PlayTable {
 
 export function dealRound(table: PlayTable): PlayTable {
   if (table.round) return table;
+  table = prepareRound(table);
   return {
     ...table,
     justShuffled: false,
@@ -365,6 +359,13 @@ export function dealRound(table: PlayTable): PlayTable {
       bankroll: table.bankroll,
     }),
   };
+}
+
+/** Runs before the recorder opens a round, including after restoring an older Session. */
+export function prepareRound(table: PlayTable): PlayTable {
+  return !table.round && needsShuffleBeforeRound(table.shoe, table.rules)
+    ? shuffleShoe(table)
+    : table;
 }
 
 export function act(table: PlayTable, action: RoundAction): PlayTable {
@@ -389,7 +390,7 @@ export function nextRound(table: PlayTable): PlayTable {
   const round = table.round;
   if (!round || round.phase !== "settled") return table;
 
-  const needsShuffle = isCutCardReached(round.shoe) || cardsRemaining(round.shoe) < RESERVE_CARDS;
+  const needsShuffle = needsShuffleBeforeRound(round.shoe, table.rules);
   const shoeIndex = needsShuffle ? table.shoeIndex + 1 : table.shoeIndex;
 
   const banked: PlayTable = {

@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { RANKS } from "./cards";
 import { DEFAULT_RULES, type RuleSet } from "./rules";
+import { evaluate } from "./hand";
+import { applyAction, currentLegalActions, startRound } from "./round";
 import {
   cardsRemaining,
   createShoe,
   deal,
   decksRemaining,
   isCutCardReached,
+  needsShuffleBeforeRound,
   remainingComposition,
   verifyComposition,
 } from "./shoe";
@@ -16,6 +19,11 @@ import {
  * shows the user, run on every commit.
  */
 describe("shoe integrity", () => {
+  it("rejects unsupported rules before building or dealing a shoe", () => {
+    expect(() => createShoe({ ...DEFAULT_RULES, decks: Infinity }, 1)).toThrow(/Invalid Rule Set/);
+    expect(() => createShoe({ ...DEFAULT_RULES, maxSplitHands: 1000 }, 1)).toThrow(/maxSplitHands/);
+  });
+
   const deckCounts = [1, 2, 4, 6, 8];
 
   it.each(deckCounts)("holds exactly 4x%i of every rank", (decks) => {
@@ -76,6 +84,54 @@ describe("shoe integrity", () => {
     let shoe = createShoe({ ...DEFAULT_RULES, decks: 1 }, 3);
     for (let i = 0; i < 52; i++) shoe = deal(shoe).shoe;
     expect(() => deal(shoe)).toThrow(/Shoe exhausted/);
+  });
+
+  it("reserves enough cards for aggressive legal play at full penetration", () => {
+    for (const decks of [1, 2, 6]) {
+      const rules = { ...DEFAULT_RULES, decks, penetration: 1, resplitAces: true };
+      let shoe = createShoe(rules, 1);
+      let shuffles = 0;
+      for (let index = 0; index < 100; index++) {
+        if (needsShuffleBeforeRound(shoe, rules)) {
+          expect(shoe.dealtCount).toBeGreaterThan(0);
+          shoe = createShoe(rules, ++shuffles + 1);
+        }
+        let round = startRound({ rules, shoe, bet: 10, bankroll: 100_000 });
+        while (round.phase !== "settled") {
+          if (round.phase === "insurance") {
+            round = applyAction(round, { type: "insurance", take: false });
+            continue;
+          }
+          const legal = currentLegalActions(round);
+          const total = evaluate(round.playerHands[round.activeHandIndex]!.cards).total;
+          const action = legal.includes("split")
+            ? "split"
+            : legal.includes("hit") && (index % 2 === 0 || total < 17)
+              ? "hit"
+              : "stand";
+          round = applyAction(round, { type: action });
+        }
+        shoe = round.shoe;
+        expect(shoe.dealtCount).toBeLessThanOrEqual(shoe.cards.length);
+      }
+      expect(shuffles).toBeGreaterThan(0);
+      expect(shuffles).toBeLessThan(50);
+    }
+  });
+
+  it("bases the safety reserve on remaining values, not a fixed card count", () => {
+    const shoe = createShoe({ ...DEFAULT_RULES, penetration: 1 }, 1);
+    const high = {
+      ...shoe,
+      cards: Array.from({ length: 20 }, () => ({ rank: "10" as const, suit: "s" as const })),
+      cutIndex: 20,
+    };
+    const low = {
+      ...high,
+      cards: high.cards.map(() => ({ rank: "2" as const, suit: "s" as const })),
+    };
+    expect(needsShuffleBeforeRound(high, DEFAULT_RULES)).toBe(false);
+    expect(needsShuffleBeforeRound(low, DEFAULT_RULES)).toBe(true);
   });
 
   it("shuffles without bias across many seeds", () => {

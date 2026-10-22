@@ -93,15 +93,17 @@ function Felt({ children }: { children: ReactNode }) {
   const id = `f${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   return (
     <View style={styles.felt}>
-      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Defs>
-          <RadialGradient id={id} cx={0.45} cy={0.4} rx={0.7} ry={0.8} fx={0.45} fy={0.4}>
-            <Stop offset={0} stopColor={live.feltGlow} />
-            <Stop offset={1} stopColor={live.feltDeep} />
-          </RadialGradient>
-        </Defs>
-        <Rect x={0} y={0} width="100%" height="100%" rx={18} ry={18} fill={`url(#${id})`} />
-      </Svg>
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Svg width="100%" height="100%">
+          <Defs>
+            <RadialGradient id={id} cx={0.45} cy={0.4} rx={0.7} ry={0.8} fx={0.45} fy={0.4}>
+              <Stop offset={0} stopColor={live.feltGlow} />
+              <Stop offset={1} stopColor={live.feltDeep} />
+            </RadialGradient>
+          </Defs>
+          <Rect x={0} y={0} width="100%" height="100%" rx={18} ry={18} fill={`url(#${id})`} />
+        </Svg>
+      </View>
       {children}
     </View>
   );

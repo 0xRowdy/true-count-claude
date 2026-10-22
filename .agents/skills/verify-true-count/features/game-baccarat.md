@@ -27,3 +27,7 @@ Lobby → Baccarat card, or `/games/baccarat`. `?seed=<n>` deals a reproducible 
 
 - The seed is drawn (or read from `?seed=`) after mount; the prerendered table is seed 1 with nothing on the felt.
 - Spots are buttons named "Banker, pays 0.95:1[, $50 bet][, +$47.50]"; the rules sheet's close button is named "Close".
+
+## Recovery proof
+
+`flows/recovery-report.mjs` sets this game's saved bankroll ledger to zero while preserving its history, taps the reset once, verifies $2,000 and unchanged hand/decision logs, reloads to prove persistence, and starts another real round. It leaves the previous game before changing storage so its page-exit settlement cannot overwrite the test setup.

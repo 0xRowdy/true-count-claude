@@ -22,26 +22,27 @@ const PLANS: ReadonlyArray<{ id: PlanId; name: string; features: readonly string
     id: "free",
     name: "Free",
     features: [
-      "All 5 games with every casino rule set",
-      "Coach on house basic strategy for each game",
-      "Play and follow community strategies",
-      "Live tables, chat and leaderboards",
+      "All 5 games with every supported rule set",
+      "Every drill, counting system, and coaching explanation",
+      "Full local session history and backup/restore",
+      "Strategy builders, example strategies, and simulated tables",
     ],
   },
   {
     id: "plus",
     name: "Tableside Plus",
     features: [
-      "Advanced trainers: counting, craps systems, every video poker pay table",
-      "Full progress history and decision breakdowns",
-      "Private tables for you and friends",
-      "Unlimited strategy drafts and test runs",
+      "Future plan preview; no paid features in this build",
+      "All current trainers, history, and strategy drafts stay free",
     ],
   },
   {
     id: "lifetime",
     name: "Lifetime",
-    features: ["Pay once and keep it on every device", "Includes future games as they launch"],
+    features: [
+      "Example one-time price; not offered yet",
+      "No purchase or account required to train",
+    ],
   },
 ];
 
@@ -52,11 +53,11 @@ const FAQ: ReadonlyArray<{ q: string; a: string }> = [
   },
   {
     q: "Do I need Plus to get ready for a trip?",
-    a: "No. Every game, every casino rule set and the coach on basic strategy are free. Free is enough to walk up to the table knowing the move; Plus adds deeper trainers and your full history.",
+    a: "No. Every game, every supported rule set, all drills, and your full session history are free in this MVP. There is no separate purchase for deeper training.",
   },
   {
     q: "What happens to my strategies if I cancel?",
-    a: "They stay yours. Strategies you wrote or forked stay on your device and keep working with the coach on house basic strategy.",
+    a: "There is no subscription to cancel in this build. Strategies you write or fork stay on your device and keep working for free.",
   },
 ];
 
@@ -101,11 +102,15 @@ export function PricingScreen() {
               aria-level={1}
               style={[display(wide ? 40 : 32, 500, { lineHeight: wide ? 48 : 38 }), styles.fg]}
             >
-              Every game is free. Plus goes deeper.
+              Every game and drill is free in this MVP.
             </Text>
             <Text style={[ui(17, 400, { lineHeight: 25 }), styles.muted]}>
-              No chips to buy, no ads and no real-money wagering, on any plan. Your progress follows
-              you across web, iPhone and Android.
+              Pricing preview. Purchases and trials are unavailable. All games, drills, session
+              history, and strategy builders are free to use.
+            </Text>
+            <Text style={[ui(17, 400, { lineHeight: 25 }), styles.muted]}>
+              Progress stays on this device. Session backup and restore can move your Play and Drill
+              history between devices; there is no automatic sync.
             </Text>
           </View>
 
@@ -159,7 +164,7 @@ export function PricingScreen() {
                         {p.id === "free" ? (
                           <Badge icon={Check} tone="correct" label="Current plan" />
                         ) : p.id === "plus" ? (
-                          <Tag label="Best for trip prep" />
+                          <Tag label="Preview only" />
                         ) : null}
                       </View>
                       <Text style={[ui(13), styles.muted]}>{view.sub}</Text>
@@ -228,7 +233,7 @@ export function PricingScreen() {
           role="region"
           accessibilityLabel="Your order"
         >
-          <Text style={[ui(11, 700, { letterSpacing: 1.5 }), styles.muted]}>YOUR ORDER</Text>
+          <Text style={[ui(11, 700, { letterSpacing: 1.5 }), styles.muted]}>ORDER PREVIEW</Text>
           <View style={styles.item}>
             <View style={styles.itemText}>
               <Text style={[ui(17, 600), styles.fg]}>{o.name}</Text>
@@ -299,14 +304,14 @@ export function PricingScreen() {
             />
           ) : null}
           <Text style={[ui(12, 400, { lineHeight: 18 }), styles.muted]}>
-            Cancel any time in Settings → Plan, in two taps. Bought on iPhone or Android? Manage it
-            in your app store. Purchases restore on every device.
+            This is an example order, not an active subscription. No payment method is collected, no
+            trial starts, and nothing is charged.
           </Text>
           <View style={styles.responsible}>
             <ShieldCheck size={18} color={colors.correct} strokeWidth={2} />
             <Text style={[ui(12, 400, { lineHeight: 12 * 1.45 }), styles.fg, styles.flex]}>
-              You&apos;re paying for training tools, not chips. Nothing here can be wagered, cashed
-              out or used to win real money.
+              Practice uses virtual chips only. Nothing here can be wagered, cashed out or used to
+              win real money.
             </Text>
           </View>
         </View>

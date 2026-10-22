@@ -22,11 +22,10 @@ export const FONT_MAP = {
 };
 
 /**
- * Loads Fraunces + Inter. Never gate rendering on the result: in the static web export the
- * server render registers the @font-face rules into the HTML, so the client hydrates the same
- * tree; on native, text falls back to the system face for the first frames.
+ * Ready when fonts load or fail, so native can defer text measurement without getting stuck.
+ * Web must render immediately to preserve the static export's hydration tree.
  */
 export function useTablesideFonts(): boolean {
-  const [loaded] = useFonts(FONT_MAP);
-  return loaded;
+  const [loaded, error] = useFonts(FONT_MAP);
+  return loaded || error !== null;
 }

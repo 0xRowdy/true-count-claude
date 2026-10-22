@@ -63,8 +63,8 @@ const STEPS: ReadonlyArray<{ num: string; title: string; body: string; icon: Luc
   },
   {
     num: "02",
-    title: "Follow a strategy, curated or community-built",
-    body: "Start with house basic strategy or load one ranked by the community. The coach knows every decision it calls for.",
+    title: "Follow a strategy, or build your own",
+    body: "Start with house basic strategy, fork an example, or edit your own local chart. The coach follows the blackjack decisions it calls for.",
     icon: BookOpenCheck,
   },
   {
@@ -86,22 +86,31 @@ const PLANS = [
     name: "Free",
     amount: "$0",
     per: "forever",
-    desc: "All 5 games, every rule set, the coach on basic strategy, community strategies and live tables.",
+    desc: "All 5 games, every drill, full local history, strategy builders, example strategies and simulated tables.",
   },
   {
     name: "Tableside Plus",
     amount: "$5.99",
-    per: "per month, or $49 a year",
-    desc: "Advanced trainers (counting, craps systems, every video poker pay table), full progress history, private tables.",
+    per: "preview per month, or $49 a year",
+    desc: "Future plan preview. All current trainers, history and local strategy builders are free.",
     featured: true,
   },
   {
     name: "Lifetime",
     amount: "$119",
-    per: "one payment, yours for good",
-    desc: "Everything in Plus with no subscription. Good if you just want to own it.",
+    per: "example one-time price",
+    desc: "Future plan preview. Purchases and trials are unavailable in this build.",
   },
 ] as const;
+
+const FOOTER_NOTICES = {
+  Privacy:
+    "Your progress, settings and strategies stay in this browser or device. Clearing its storage deletes them. Session backups leave the app only when you choose to download or share them.",
+  Terms:
+    "Tableside is for practice only. All balances are virtual and have no cash value. There is no real-money gambling. Training and expected-value estimates do not guarantee casino results.",
+  Accessibility:
+    "Web controls support keyboard navigation and actions have accessible labels. If a control is difficult to use, the in-app Report a bug controls let you create a report with the current hand state. Accessibility testing is ongoing; we do not claim certification.",
+} as const;
 
 /**
  * The marketing landing page (design frame Do2ZB): nav, hero with the table vignette,
@@ -118,6 +127,7 @@ export function LandingScreen() {
   const offsets = useRef<Partial<Record<Section, number>>>({});
   const [width, setWidth] = useState<number | null>(null);
   const [signInOpen, setSignInOpen] = useState(false);
+  const [footerNotice, setFooterNotice] = useState<keyof typeof FOOTER_NOTICES | null>(null);
 
   const layout: Layout =
     width === null || width >= WIDE ? "wide" : width >= NARROW ? "mid" : "narrow";
@@ -192,7 +202,7 @@ export function LandingScreen() {
             <Notice
               style={styles.signIn}
               title="No account needed: your progress stays on this device"
-              body="Tableside has no sign-in in this build. Everything you play, your profile and your stats are saved locally, and nothing is sent anywhere."
+              body="Tableside has no sign-in in this build. Your profile and practice history are saved locally. You choose whether to export or share a backup."
               onClose={() => setSignInOpen(false)}
             />
           </View>
@@ -385,18 +395,18 @@ export function LandingScreen() {
             <Text
               style={[ui(18, 400, { lineHeight: 18 * 1.55 }), { color: colors.mutedForeground }]}
             >
-              Players publish strategies for every game. Load one and the coach checks every
-              decision against it, just like house basic strategy.
+              Explore example strategies for blackjack, roulette and craps, then save your own
+              drafts on this device. Community publishing is not available in this build.
             </Text>
             <View style={styles.points}>
               <Point icon={GitFork}>
                 Fork any strategy. The original author stays credited on every copy.
               </Point>
               <Point icon={BadgeCheck}>
-                Every submission is rules-checked against the game engine.
+                Check your draft against the game engine before testing it.
               </Point>
               <Point icon={ChartNoAxesColumn}>
-                Ranked by how well learners play it, not by hype.
+                Fork an example and test your changes in the trainer.
               </Point>
             </View>
           </View>
@@ -462,12 +472,12 @@ export function LandingScreen() {
                 styles.center,
               ]}
             >
-              Free to play. Pay only to go deeper.
+              Every current training tool is free.
             </Text>
             <Text
               style={[ui(18, 400, { lineHeight: 26 }), styles.center, { color: colors.inkMuted }]}
             >
-              No chips to buy, no ads, no real-money wagering, now or later.
+              Pricing preview only. Purchases and trials are unavailable in this build.
             </Text>
           </View>
           <View style={[wide || layout === "mid" ? styles.planRow : styles.column, { gap: 16 }]}>
@@ -478,7 +488,7 @@ export function LandingScreen() {
                 <View key={plan.name} style={[styles.plan, featured && styles.planFeatured]}>
                   <View style={styles.planTop}>
                     <Text style={[ui(16, 600), { color: fg }]}>{plan.name}</Text>
-                    {featured ? <Tag label="7-day free trial" /> : null}
+                    {plan.name !== "Free" ? <Tag label="Plan preview" /> : null}
                   </View>
                   <View style={styles.planPrice}>
                     <Text style={[display(44, 500, { lineHeight: 44 }), { color: fg }]}>
@@ -541,12 +551,20 @@ export function LandingScreen() {
             <FooterLink label="Games" onPress={() => scrollTo("games")} />
             <FooterLink label="Pricing" href="/pricing" />
             <FooterLink label="Community guidelines" onPress={() => scrollTo("community")} />
-            {/* No pages yet for these; shown as plain text rather than links that go nowhere. */}
-            <FooterLink label="Privacy" />
-            <FooterLink label="Terms" />
-            <FooterLink label="Accessibility" />
+            {(["Privacy", "Terms", "Accessibility"] as const).map((label) => (
+              <FooterLink key={label} label={label} onPress={() => setFooterNotice(label)} />
+            ))}
           </View>
         </View>
+        {footerNotice ? (
+          <View style={[pad, { paddingBottom: 32 }]}>
+            <Notice
+              title={footerNotice}
+              body={FOOTER_NOTICES[footerNotice]}
+              onClose={() => setFooterNotice(null)}
+            />
+          </View>
+        ) : null}
       </ScrollView>
     </View>
   );

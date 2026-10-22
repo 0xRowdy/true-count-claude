@@ -21,18 +21,36 @@ import { type Bet, scaleBets, settleBets, spinWheel, totalStake } from "./spin";
 import { fromCents, toCents } from "./format";
 import type { Pocket, RouletteRules } from "./wheel";
 
-export type ProgressionKind = "flat" | "martingale" | "dalembert";
+export type ProgressionKind = "flat" | "martingale" | "dalembert" | "custom";
+
+export const PROGRESSION_ACTIONS = ["reset", "hold", "add", "subtract", "double"] as const;
+export type ProgressionAction = (typeof PROGRESSION_ACTIONS)[number];
+
+export interface CustomProgression {
+  readonly afterLoss: ProgressionAction;
+  readonly afterWin: ProgressionAction;
+  /** Base-layout units added or removed; always a whole number from 1 to 10. */
+  readonly units: number;
+}
+
+export const DEFAULT_CUSTOM_PROGRESSION: CustomProgression = {
+  afterLoss: "add",
+  afterWin: "reset",
+  units: 1,
+};
 
 export const PROGRESSION_NAMES: Readonly<Record<ProgressionKind, string>> = {
   flat: "Flat bet",
   martingale: "Martingale",
   dalembert: "D'Alembert",
+  custom: "Custom",
 };
 
 export const PROGRESSION_DESCRIPTIONS: Readonly<Record<ProgressionKind, string>> = {
   flat: "Same bet every spin",
   martingale: "Double after a loss",
   dalembert: "+1 unit after a loss",
+  custom: "Choose your own rule",
 };
 
 export interface SessionRules {
@@ -48,6 +66,7 @@ export interface StrategyPlan {
   /** The base layout, staked at one unit (multiplier 1). */
   readonly bets: readonly Bet[];
   readonly progression: ProgressionKind;
+  readonly customProgression?: CustomProgression;
   readonly session: SessionRules;
   /** Chips available. Defaults to unlimited. */
   readonly bankroll?: number;
@@ -89,9 +108,28 @@ export function nextProgression(
   kind: ProgressionKind,
   state: ProgressionState,
   spinNet: number,
+  custom: CustomProgression = DEFAULT_CUSTOM_PROGRESSION,
 ): ProgressionState {
   if (spinNet === 0 || kind === "flat") return state;
-  if (kind === "martingale") return { multiplier: spinNet < 0 ? state.multiplier * 2 : 1 };
+  // Beyond this point every practical table is capped. Keep recorded state finite and
+  // serializable even for a custom rule that doubles after both wins and losses.
+  const doubled = Math.min(Number.MAX_SAFE_INTEGER, state.multiplier * 2);
+  if (kind === "martingale") return { multiplier: spinNet < 0 ? doubled : 1 };
+  if (kind === "custom") {
+    const action = spinNet < 0 ? custom.afterLoss : custom.afterWin;
+    switch (action) {
+      case "reset":
+        return INITIAL_PROGRESSION;
+      case "hold":
+        return state;
+      case "double":
+        return { multiplier: doubled };
+      case "add":
+        return { multiplier: Math.min(Number.MAX_SAFE_INTEGER, state.multiplier + custom.units) };
+      case "subtract":
+        return { multiplier: Math.max(1, state.multiplier - custom.units) };
+    }
+  }
   return { multiplier: Math.max(1, state.multiplier + (spinNet < 0 ? 1 : -1)) };
 }
 
@@ -128,6 +166,12 @@ export function stakeForSpin(
 
 /** Simulate one session of the plan with an injected Rng. */
 export function simulatePlanWith(plan: StrategyPlan, rng: Rng): PlanResult {
+  if (
+    !Number.isSafeInteger(plan.session.maxSpins) ||
+    plan.session.maxSpins < 1 ||
+    plan.session.maxSpins > 100_000
+  )
+    throw new Error("A simulation needs a whole number of spins from 1 to 100,000.");
   for (const b of plan.bets) {
     if (!getSpot(plan.rules, b.spotId)) throw new Error(`Unknown bet spot "${b.spotId}".`);
   }
@@ -175,7 +219,7 @@ export function simulatePlanWith(plan: StrategyPlan, rng: Rng): PlanResult {
       cumulative,
       capped,
     });
-    progression = nextProgression(plan.progression, progression, net);
+    progression = nextProgression(plan.progression, progression, net, plan.customProgression);
   }
   if (spins.length === maxSpins) {
     // The last spin may itself have crossed a stop line; report that rather than maxSpins.

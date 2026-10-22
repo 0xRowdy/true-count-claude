@@ -820,7 +820,7 @@ const styles = StyleSheet.create({
   },
   stats: { flexDirection: "row", gap: 16 },
   wrap: { flexWrap: "wrap" },
-  halfCard: { flexBasis: "45%", flexGrow: 1 },
+  halfCard: { minWidth: "45%" },
   grid: { flexDirection: "row", gap: 16, alignItems: "flex-start" },
   stack: { flexDirection: "column", alignItems: "stretch" },
   left: { flex: 1, gap: 16, minWidth: 0, alignSelf: "stretch" },

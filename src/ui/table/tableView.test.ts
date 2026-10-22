@@ -2,7 +2,13 @@ import { describe, expect, it } from "vitest";
 import type { Card, Rank, Suit } from "@/engine/cards";
 import { createHand } from "@/engine/hand";
 import { DEFAULT_RULES, type RuleSet } from "@/engine/rules";
-import { type RoundState, currentLegalActions, isRoundOver } from "@/engine/round";
+import {
+  type RoundState,
+  applyAction,
+  currentLegalActions,
+  isRoundOver,
+  startRound,
+} from "@/engine/round";
 import type { RoundResult } from "@/state";
 import {
   addChip,
@@ -224,6 +230,47 @@ describe("settling and collecting", () => {
       paid: "paid 1:1",
     });
     expect(collectAmount(round)).toBe(200);
+  });
+});
+
+describe("settlement explanations", () => {
+  it("explains why dealer blackjack beats a drawn 21", () => {
+    const round = startRound({
+      rules: { ...DEFAULT_RULES, dealerPeek: false },
+      shoe: {
+        seed: 1,
+        decks: 6,
+        cards: [card("7"), card("J"), card("4"), card("J"), card("A")],
+        dealtCount: 0,
+        cutIndex: 5,
+      },
+      bet: 10,
+      bankroll: 500,
+    });
+    const summary = outcomeSummary(applyAction(round, { type: "double" }));
+    expect(summary.headline).toBe("You lose $20");
+    expect(summary.detail).toContain("Only a player blackjack can push a dealer blackjack");
+    expect(summary.detail).not.toContain("21 beats your 21");
+  });
+
+  it("does not promise a half refund when late surrender meets a dealer natural", () => {
+    const rules = { ...DEFAULT_RULES, dealerPeek: false };
+    const round = startRound({
+      rules,
+      shoe: {
+        seed: 1,
+        decks: 6,
+        cards: [card("10"), card("10"), card("6"), card("A")],
+        dealtCount: 0,
+        cutIndex: 4,
+      },
+      bet: 10,
+      bankroll: 500,
+    });
+    const summary = outcomeSummary(applyAction(round, { type: "surrender" }));
+    expect(summary.headline).toBe("You lose $10");
+    expect(summary.detail).toContain("full bet");
+    expect(summary.detail).not.toContain("half the bet comes back");
   });
 });
 

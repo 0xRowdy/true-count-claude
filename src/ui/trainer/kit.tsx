@@ -128,9 +128,11 @@ export function PageHeader({
   actions?: ReactNode;
   children?: ReactNode;
 }) {
+  const [wide, onLayout] = useWide(720);
+
   return (
-    <View style={styles.head}>
-      <View style={styles.headText}>
+    <View onLayout={onLayout} style={[styles.head, wide && styles.headWide]}>
+      <View style={[styles.headText, wide && styles.headTextWide]}>
         {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
         <Text accessibilityRole="header" aria-level={1} style={styles.title}>
           {title}
@@ -392,13 +394,16 @@ export const inputStyle: TextStyle = {
 const styles = StyleSheet.create({
   page: { gap: 24 },
   head: {
+    gap: 16,
+  },
+  headWide: {
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "flex-end",
     justifyContent: "space-between",
-    gap: 16,
   },
-  headText: { flexGrow: 1, flexShrink: 1, flexBasis: 320, gap: 10 },
+  headText: { gap: 10 },
+  headTextWide: { flexGrow: 1, flexShrink: 1, flexBasis: 320 },
   eyebrow: {
     ...ui(12, 600, { letterSpacing: 2, textTransform: "uppercase" }),
     color: colors.primary,

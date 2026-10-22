@@ -861,6 +861,7 @@ function isAction(action: DrillAction): action is Action {
 
 export interface DealerOddsView {
   readonly bust: string;
+  readonly blackjack: string | null;
   readonly totals: readonly {
     readonly total: DealerTotal;
     readonly text: string;
@@ -877,7 +878,12 @@ export function dealerOddsView(explanation: DecisionExplanation): DealerOddsView
     p: dealer.totals[total],
     text: formatPercent(dealer.totals[total]),
   }));
-  return { bust: formatPercent(dealer.bust), bustP: dealer.bust, totals };
+  return {
+    bust: formatPercent(dealer.bust),
+    blackjack: dealer.blackjack > 0 ? formatPercent(dealer.blackjack) : null,
+    bustP: dealer.bust,
+    totals,
+  };
 }
 
 // ---------------------------------------------------------------------------

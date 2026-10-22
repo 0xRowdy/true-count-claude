@@ -279,23 +279,25 @@ function UpNextHero({
   const Icon = GAME_ICON[next.game];
   return (
     <View style={[styles.hero, narrow && styles.heroNarrow]}>
-      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Defs>
-          <RadialGradient
-            id={id}
-            cx="0.85"
-            cy="0.5"
-            rx="0.6"
-            ry="1"
-            gradientUnits="objectBoundingBox"
-          >
-            <Stop offset="0" stopColor={colors.felt} />
-            <Stop offset="0.55" stopColor={colors.feltDeep} />
-            <Stop offset="1" stopColor={colors.card} />
-          </RadialGradient>
-        </Defs>
-        <Rect x={0} y={0} width="100%" height="100%" fill={`url(#${id})`} />
-      </Svg>
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Svg width="100%" height="100%">
+          <Defs>
+            <RadialGradient
+              id={id}
+              cx="0.85"
+              cy="0.5"
+              rx="0.6"
+              ry="1"
+              gradientUnits="objectBoundingBox"
+            >
+              <Stop offset="0" stopColor={colors.felt} />
+              <Stop offset="0.55" stopColor={colors.feltDeep} />
+              <Stop offset="1" stopColor={colors.card} />
+            </RadialGradient>
+          </Defs>
+          <Rect x={0} y={0} width="100%" height="100%" fill={`url(#${id})`} />
+        </Svg>
+      </View>
       <View style={[styles.heroCopy, narrow && styles.heroCopyNarrow]}>
         <Text style={[ui(11, 700, { letterSpacing: 1.5 }), { color: colors.primary }]}>
           {next.eyebrow}
@@ -653,7 +655,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.card,
   },
-  gameCardWrap: { flexBasis: 160, flexGrow: 1 },
+  gameCardWrap: { minWidth: 160 },
   gameText: { gap: 2 },
   gameBar: { height: 6, borderRadius: 3, backgroundColor: colors.muted, overflow: "hidden" },
   gameBarFill: { height: 6, borderRadius: 3, backgroundColor: colors.primary },

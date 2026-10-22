@@ -147,6 +147,20 @@ export default async ({ page, url, shot, log, check }) => {
   await page.waitForTimeout(400);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
   check(overflow <= 0, `no horizontal page scroll at 390 wide (overflow ${overflow}px)`);
+  const accuracyCard = await visible(
+    page.getByRole("group", { name: /^Decision accuracy: / }),
+  ).boundingBox();
+  const winRateCard = await visible(
+    page.getByRole("group", { name: /^Practice win rate: / }),
+  ).boundingBox();
+  check(accuracyCard.width >= 150, "phone statistic cards retain readable width");
+  check(
+    winRateCard.y >= accuracyCard.y + accuracyCard.height,
+    "phone statistic cards wrap into rows",
+  );
+  const lastWeek = visible(page.getByRole("listitem", { name: /^W12:/ }));
+  await lastWeek.scrollIntoViewIfNeeded();
+  check((await lastWeek.boundingBox()).width >= 36, "week labels retain readable width on phones");
   await shot("progress-sample-390");
 
   // Real blackjack: a round at the Play table shows up in Progress (bridged from the Session log).

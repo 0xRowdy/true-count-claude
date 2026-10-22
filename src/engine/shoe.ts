@@ -6,9 +6,9 @@
  * than asking them to take it on faith.
  */
 
-import { type Card, type Rank, RANKS, freshDeck } from "./cards";
+import { type Card, type Rank, RANKS, freshDeck, rankValue } from "./cards";
 import { createRng, shuffleInPlace } from "./rng";
-import type { RuleSet } from "./rules";
+import { type RuleSet, validateRules } from "./rules";
 
 export interface Shoe {
   readonly seed: number;
@@ -22,6 +22,8 @@ export interface Shoe {
 }
 
 export function createShoe(rules: RuleSet, seed: number): Shoe {
+  const problems = validateRules(rules);
+  if (problems.length > 0) throw new Error(`Invalid Rule Set: ${problems.join("; ")}.`);
   const cards: Card[] = [];
   for (let i = 0; i < rules.decks; i++) cards.push(...freshDeck());
   shuffleInPlace(cards, createRng(seed));
@@ -47,6 +49,22 @@ export function decksRemaining(shoe: Shoe): number {
 /** True once the cut card is reached — the shoe should be reshuffled after this round. */
 export function isCutCardReached(shoe: Shoe): boolean {
   return shoe.dealtCount >= shoe.cutIndex;
+}
+
+/**
+ * Penetration is a maximum target. Keep enough cards to finish any legal round before
+ * crossing it: each player hand can consume at most 31 hard points (hit 21 with a ten),
+ * and the dealer at most 26 (hit 16 with a ten). Aces count one for this bound.
+ * If the remaining cards exceed that budget, even the longest round cannot use them all.
+ * This checks composition, not the hidden order, and never reshuffles during a round.
+ */
+export function needsShuffleBeforeRound(shoe: Shoe, rules: RuleSet): boolean {
+  if (isCutCardReached(shoe)) return true;
+  let points = 0;
+  for (const card of shoe.cards.slice(shoe.dealtCount)) {
+    points += card.rank === "A" ? 1 : rankValue(card.rank);
+  }
+  return points <= rules.maxSplitHands * 31 + 26;
 }
 
 /** True when the shoe is physically exhausted. Reaching this is a bug in round handling. */

@@ -13,7 +13,7 @@
 
 import { type Card, isAce, isTen } from "./cards";
 import { type Action, type Hand, createHand, evaluate, isBlackjack, legalActions } from "./hand";
-import type { BlackjackPayout, RuleSet } from "./rules";
+import { type BlackjackPayout, type RuleSet, validateRules } from "./rules";
 import { type Shoe, deal } from "./shoe";
 
 /**
@@ -74,7 +74,7 @@ export interface RoundState {
   /** The player's hands, left to right. Splitting inserts in place; it never appends. */
   readonly playerHands: readonly Hand[];
   readonly activeHandIndex: number;
-  /** `cards[0]` is the upcard, `cards[1]` the hole card. */
+  /** `cards[0]` is the upcard. In no-hole-card games the second card arrives after player play. */
   readonly dealerHand: Hand;
   readonly dealerHoleCardRevealed: boolean;
   readonly insurance: Insurance;
@@ -103,6 +103,12 @@ export interface StartRoundOptions {
 export function startRound(options: StartRoundOptions): RoundState {
   const { rules, shoe, bet, bankroll } = options;
 
+  const problems = validateRules(rules);
+  if (problems.length > 0) throw new Error(`Invalid Rule Set: ${problems.join("; ")}.`);
+  if (!Number.isFinite(bet) || !Number.isFinite(bankroll) || bankroll < 0) {
+    throw new Error("Bet and bankroll must be finite, with a non-negative bankroll.");
+  }
+
   if (bet < rules.minBet || bet > rules.maxBet) {
     throw new Error(`Bet ${bet} is outside the table limits of ${rules.minBet}-${rules.maxBet}.`);
   }
@@ -113,16 +119,18 @@ export function startRound(options: StartRoundOptions): RoundState {
   const playerFirst = deal(shoe);
   const dealerUp = deal(playerFirst.shoe);
   const playerSecond = deal(dealerUp.shoe);
-  const dealerHole = deal(playerSecond.shoe);
+  // European no-hole-card rules leave the dealer's second card in the shoe until
+  // every player hand has finished. It must not change the player's draw order.
+  const dealerHole = rules.dealerPeek ? deal(playerSecond.shoe) : null;
 
   const dealt: RoundState = {
     rules,
-    shoe: dealerHole.shoe,
+    shoe: dealerHole?.shoe ?? playerSecond.shoe,
     bet,
     bankroll: bankroll - bet,
     playerHands: [createHand([playerFirst.card, playerSecond.card], bet)],
     activeHandIndex: 0,
-    dealerHand: createHand([dealerUp.card, dealerHole.card], 0),
+    dealerHand: createHand(dealerHole ? [dealerUp.card, dealerHole.card] : [dealerUp.card], 0),
     dealerHoleCardRevealed: false,
     insurance: { offered: false, taken: false, bet: 0, returned: 0 },
     phase: "player",
@@ -233,7 +241,9 @@ function openPlay(state: RoundState): RoundState {
   const upcard = dealerUpcard(state);
   const peeks = state.rules.dealerPeek && (isTen(upcard.rank) || isAce(upcard.rank));
 
-  if (peeks && isBlackjack(state.dealerHand)) {
+  // Early surrender must be offered before a peek can end the round. The first
+  // non-surrender choice authorizes the peek; it executes only if the dealer is clear.
+  if (peeks && !earlySurrenderPending(state) && isBlackjack(state.dealerHand)) {
     return settle({ ...state, phase: "player", dealerHoleCardRevealed: true });
   }
   return advance({ ...state, phase: "player" }, 0);
@@ -252,6 +262,10 @@ function applyPlay(state: RoundState, action: Action): RoundState {
     );
   }
 
+  if (action !== "surrender" && earlySurrenderPending(state) && isBlackjack(state.dealerHand)) {
+    return settle(state);
+  }
+
   const index = state.activeHandIndex;
   switch (action) {
     case "hit":
@@ -268,6 +282,24 @@ function applyPlay(state: RoundState, action: Action): RoundState {
     case "split":
       return advance(split(state), index);
   }
+}
+
+/** Whether the first playing choice still precedes the dealer's peek. */
+export function earlySurrenderPending(state: RoundState): boolean {
+  const hand = state.playerHands[0];
+  const upcard = dealerUpcard(state);
+  return (
+    state.rules.surrender === "early" &&
+    state.rules.dealerPeek &&
+    (isAce(upcard.rank) || isTen(upcard.rank)) &&
+    hand !== undefined &&
+    !isBlackjack(hand) &&
+    state.playerHands.length === 1 &&
+    hand.cards.length === 2 &&
+    !hand.surrendered &&
+    !hand.doubled &&
+    state.actionLog.every((action) => action.type === "insurance")
+  );
 }
 
 function hit(state: RoundState): RoundState {
@@ -354,7 +386,13 @@ function playDealer(state: RoundState): RoundState {
   let dealerHand = state.dealerHand;
   let shoe = state.shoe;
 
-  if (dealerDraws(state)) {
+  if (dealerHand.cards.length === 1) {
+    const second = deal(shoe);
+    dealerHand = { ...dealerHand, cards: [...dealerHand.cards, second.card] };
+    shoe = second.shoe;
+  }
+
+  if (dealerDraws({ ...state, dealerHand })) {
     while (dealerMustHit(dealerHand, state.rules)) {
       const drawn = deal(shoe);
       shoe = drawn.shoe;
@@ -413,16 +451,10 @@ function settleHand(hand: Hand, handIndex: number, dealerHand: Hand, rules: Rule
   const wagered = hand.doubled ? hand.bet * 2 : hand.bet;
   const dealerNatural = isBlackjack(dealerHand);
 
-  // Original bets only. In a no-peek game the player may have doubled or split into wagers
-  // they would never have placed against a known natural, so when the dealer turns one over
-  // everything staked beyond the opening bet comes back. Only hand 0 descends from that bet;
-  // with `rules.dealerPeek` on, the peek ends the round before any of this is reachable.
-  const opening = handIndex === 0 ? hand.bet : 0;
-
   if (hand.surrendered) {
     // Early surrender is taken before the dealer peeks, so it keeps half the bet even
     // against a natural. Late surrender against a natural forfeits the opening bet.
-    const forfeit = dealerNatural && rules.surrender !== "early" ? opening : wagered / 2;
+    const forfeit = dealerNatural && rules.surrender !== "early" ? wagered : wagered / 2;
     return toOutcome(handIndex, "surrender", wagered, wagered - forfeit);
   }
 
@@ -431,7 +463,8 @@ function settleHand(hand: Hand, handIndex: number, dealerHand: Hand, rules: Rule
 
   if (dealerNatural) {
     if (isBlackjack(hand)) return toOutcome(handIndex, "push", wagered, wagered);
-    return toOutcome(handIndex, "lose", wagered, wagered - opening);
+    // European no-peek rules expose every split and double wager to dealer blackjack.
+    return toOutcome(handIndex, "lose", wagered, 0);
   }
 
   if (isBlackjack(hand)) {

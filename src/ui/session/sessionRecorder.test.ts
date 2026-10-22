@@ -16,6 +16,8 @@ import { currentLegalActions, isRoundOver } from "@/engine/round";
 import {
   computeStats,
   countingSystemsUsed,
+  decodeSession,
+  encodeSession,
   endSession,
   handsPlayed,
   isActive,
@@ -107,6 +109,44 @@ function play(
 }
 
 describe("recording a Session from the Play table", () => {
+  it("preserves a legacy no-peek round's reserved hole card and original-bet refund", () => {
+    // Seed 3398 deals 5h, 10h, 6h, Ad, 9d. Older versions reserved Ad as the hole
+    // card, doubled 11 onto 9d, then refunded the extra wager against dealer blackjack.
+    const { session } = play(1, 3398, 10, () => "double", "hi-lo", {
+      ...DEFAULT_RULES,
+      dealerPeek: false,
+    });
+    const legacy: Session = {
+      ...session,
+      bankroll: session.startingBankroll - 10,
+      decisions: session.decisions.map((decision) => ({
+        ...decision,
+        shoeDealtCount: 4,
+        count: { ...decision.count, decksRemaining: 308 / 52 },
+      })),
+      rounds: session.rounds.map((round) => ({
+        ...round,
+        dealerCards: [
+          { rank: "10", suit: "h" },
+          { rank: "A", suit: "d" },
+        ],
+        hands: round.hands.map((hand) => ({ ...hand, finalTotal: 20, net: -10 })),
+        net: -10,
+      })),
+    };
+    const restored = decodeSession(encodeSession(legacy));
+    expect(restored).toEqual({ ok: true, session: legacy, applied: [] });
+    expect(verifyReplay(legacy)).toEqual({ ok: true, problems: [] });
+    expect(computeStats(legacy).netResult).toBe(-10);
+  });
+
+  it("replays safety reshuffles and European dealer draw order at full penetration", () => {
+    const rules = { ...DEFAULT_RULES, decks: 1, penetration: 1, dealerPeek: false };
+    const { session } = play(40, 12, 10, ALWAYS_SPLIT, "hi-lo", rules);
+    expect(session.shoes.length).toBeGreaterThan(1);
+    expect(verifyReplay(session)).toEqual({ ok: true, problems: [] });
+  });
+
   it("opens a Session on the Shoe the table is actually dealing from", () => {
     const table = createPlayTable(DEFAULT_RULES, 99);
     const session = beginSession({ table, id: "run", startedAt: AT });

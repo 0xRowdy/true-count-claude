@@ -11,7 +11,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Stack, useRouter } from "expo-router";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { betCents, formatMoney as formatCents, getPayTable, holdMask } from "@/games/video-poker";
 import { PRACTICE_BANKROLL_START } from "@/state/progress";
 import { bankroll as bankrollOf } from "@/state/progressSelectors";
@@ -99,12 +99,7 @@ const COLUMN = 390;
 const REVEAL_MS = { normal: 110, fast: 0 } as const;
 type Speed = keyof typeof REVEAL_MS;
 
-function readSeedParam(): number | null {
-  if (typeof window === "undefined") return null;
-  return parseSeed(new URLSearchParams(window.location.search).get("seed"));
-}
-
-export function VideoPokerScreen() {
+export function VideoPokerScreen({ seed: seedParam }: { seed?: string }) {
   const router = useRouter();
   const { profile } = useProfile();
   const coach = profile.coach;
@@ -116,7 +111,7 @@ export function VideoPokerScreen() {
 
   // The seed is drawn after mount (hydration); `?seed=` makes a session reproducible.
   useEffect(() => {
-    const seed = readSeedParam() ?? Math.floor(Math.random() * 0x100000000) >>> 0;
+    const seed = parseSeed(seedParam) ?? Math.floor(Math.random() * 0x100000000) >>> 0;
     setState((s) => (s.seed === null ? withSeed(s, seed) : s));
   }, []);
 
@@ -133,9 +128,9 @@ export function VideoPokerScreen() {
       recordHand({ game: "video-poker", net });
     };
     const onPageHide = () => settleAbandoned();
-    if (typeof window !== "undefined") window.addEventListener("pagehide", onPageHide);
+    if (Platform.OS === "web") window.addEventListener("pagehide", onPageHide);
     return () => {
-      if (typeof window !== "undefined") window.removeEventListener("pagehide", onPageHide);
+      if (Platform.OS === "web") window.removeEventListener("pagehide", onPageHide);
       settleAbandoned();
       if (sessionRef.current) endProgressSession(sessionRef.current);
     };

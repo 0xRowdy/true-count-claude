@@ -104,7 +104,7 @@ export function order(plan: PlanId, billing: Billing, today: string | null): Ord
   if (plan === "lifetime") {
     return {
       name: "Tableside Lifetime",
-      detail: "Web, iOS and Android, one account",
+      detail: "Example price only. Training stays free in this build.",
       total: dollarsCents(PRICES.lifetime),
       dueToday: dollarsCents(PRICES.lifetime),
       timeline: [
@@ -118,7 +118,7 @@ export function order(plan: PlanId, billing: Billing, today: string | null): Ord
   const amount = yearly ? PRICES.plusYearly : PRICES.plusMonthly;
   return {
     name: `Tableside Plus, ${billing}`,
-    detail: "Web, iOS and Android, one account",
+    detail: "Example price only. Training stays free in this build.",
     total: dollarsCents(amount),
     dueToday: dollarsCents(0),
     timeline: [

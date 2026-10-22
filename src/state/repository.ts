@@ -166,6 +166,7 @@ export function createSessionRepository(config: RepositoryConfig): SessionReposi
       // someone else's unfinished run must not resume it on this device.
       await write(session);
       imported.push(session.id);
+      existing.add(session.id);
     }
 
     return {

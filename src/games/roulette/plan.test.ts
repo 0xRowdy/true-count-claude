@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   INITIAL_PROGRESSION,
+  type CustomProgression,
   type StrategyPlan,
   lossesUntilOverMax,
   martingaleBet,
@@ -23,6 +24,32 @@ const plan = (overrides: Partial<StrategyPlan> = {}): StrategyPlan => ({
 });
 
 describe("progressions", () => {
+  it("runs custom loss/win rules, keeps a push unchanged and floors the stake at base", () => {
+    const custom: CustomProgression = { afterLoss: "add", afterWin: "subtract", units: 2 };
+    let state = INITIAL_PROGRESSION;
+    const stakes = [state.multiplier];
+    for (const net of [-10, -30, 0, 50, 30, 10]) {
+      state = nextProgression("custom", state, net, custom);
+      stakes.push(state.multiplier);
+    }
+    expect(stakes).toEqual([1, 3, 5, 5, 3, 1, 1]);
+    expect(
+      nextProgression("custom", { multiplier: 5 }, 10, { ...custom, afterWin: "hold" }),
+    ).toEqual({ multiplier: 5 });
+  });
+
+  it("simulates custom doubling and reset exactly like Martingale, including table caps", () => {
+    const custom = plan({
+      progression: "custom",
+      customProgression: { afterLoss: "double", afterWin: "reset", units: 1 },
+      bets: [bet("red", 100)],
+      session: { maxSpins: 500 },
+    });
+    const result = simulatePlan(custom, 1);
+    expect(result).toEqual(simulatePlan({ ...custom, progression: "martingale" }, 1));
+    expect(result.hitTableMax).toBe(true);
+  });
+
   it("flat never moves", () => {
     expect(nextProgression("flat", { multiplier: 1 }, -10)).toEqual({ multiplier: 1 });
   });
@@ -65,6 +92,29 @@ describe("progressions", () => {
 });
 
 describe("simulatePlan", () => {
+  it("rejects nonfinite and unbounded spin counts before starting", () => {
+    for (const maxSpins of [Infinity, NaN, 0, 1.5, 100_001]) {
+      expect(() => simulatePlan(plan({ session: { maxSpins } }), 1)).toThrow(/whole number/);
+    }
+  });
+
+  it("keeps a long always-double custom session finite and serializable", () => {
+    const result = simulatePlan(
+      plan({
+        progression: "custom",
+        customProgression: { afterLoss: "double", afterWin: "double", units: 1 },
+        session: { maxSpins: 1100 },
+      }),
+      1,
+    );
+    expect(result.spins).toHaveLength(1100);
+    expect(
+      result.spins.every((s) => Number.isFinite(s.multiplier) && Number.isFinite(s.staked)),
+    ).toBe(true);
+    expect(result.largestStake).toBe(EUROPEAN_RULES.limits.max);
+    expect(JSON.parse(JSON.stringify(result))).toEqual(result);
+  });
+
   it("is deterministic for a seed", () => {
     const p = plan({ progression: "martingale" });
     expect(simulatePlan(p, 11)).toEqual(simulatePlan(p, 11));

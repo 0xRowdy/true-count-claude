@@ -16,7 +16,7 @@
 import { useCallback, useMemo } from "react";
 import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import type { Action } from "@/engine/hand";
-import { isRoundOver, visibleDealerCards } from "@/engine/round";
+import { earlySurrenderPending, isRoundOver, visibleDealerCards } from "@/engine/round";
 import {
   type BasicStrategyDrillState,
   DEFAULT_BASIC_STRATEGY_CONFIG,
@@ -149,7 +149,7 @@ export function BasicStrategyDrillScreen() {
       <Felt>
         <DealerHand
           cards={round ? visibleDealerCards(round) : []}
-          revealed={round?.dealerHoleCardRevealed ?? true}
+          revealed={!round || round.dealerHoleCardRevealed || round.dealerHand.cards.length === 1}
           size={cardSize}
         />
         <View style={styles.divider} />
@@ -192,6 +192,12 @@ export function BasicStrategyDrillScreen() {
               : "Your play"
           }
         >
+          {earlySurrenderPending(round) ? (
+            <Text style={drillStyles.note}>
+              Early surrender keeps half your bet before the dealer checks for blackjack. Another
+              action takes effect only if the dealer has no blackjack.
+            </Text>
+          ) : null}
           <View style={drillStyles.actions}>
             {ACTION_ORDER.filter((action) => currentActions(state).includes(action)).map(
               (action) => (

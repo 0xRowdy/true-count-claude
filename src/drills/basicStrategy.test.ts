@@ -352,6 +352,14 @@ describe("undo", () => {
 });
 
 describe("the shoe", () => {
+  it("keeps a single-deck drill playable at 100% target penetration", () => {
+    const rules = { ...SMALL_TABLE, decks: 1, penetration: 1 };
+    const drill = playRounds(startBasicStrategyDrill(config({ rules }), 2), 100, chartPlay);
+    expect(drill.current.roundsDealt).toBe(100);
+    expect(drill.current.shuffles).toBeGreaterThan(0);
+    expect(drill.current.shuffles).toBeLessThan(50);
+  });
+
   it("replaces the shoe at the cut card and keeps playing", () => {
     const drill = playRounds(startBasicStrategyDrill(config(), 2), 200, chartPlay);
     const report = basicStrategyReport(drill);

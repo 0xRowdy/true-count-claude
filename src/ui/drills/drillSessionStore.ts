@@ -120,6 +120,12 @@ export function endDrillSession(drillId: DrillId, session: Session): Session {
   return ended;
 }
 
+/** A backup must include the latest answer, including a write still in flight. */
+export async function flushDrillSessionWrites(): Promise<void> {
+  await writes;
+  if (state.error) throw new Error(state.error);
+}
+
 function enqueue(work: () => Promise<void>): void {
   writes = writes
     .then(work)

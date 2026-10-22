@@ -6,14 +6,12 @@
     "orientation": "default",
     "scheme": "truecount",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.truecount.app"
     },
     "android": {
-      "package": "com.truecount.app",
-      "edgeToEdgeEnabled": true
+      "package": "com.truecount.app"
     },
     "web": {
       "bundler": "metro",

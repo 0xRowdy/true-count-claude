@@ -30,6 +30,7 @@ import { DEFAULT_RULES } from "@/engine/rules";
 import {
   type RoundState,
   currentLegalActions,
+  earlySurrenderPending,
   insuranceStake,
   visibleDealerCards,
 } from "@/engine/round";
@@ -349,7 +350,7 @@ export function PlayTable() {
         {round ? (
           <HandBox
             label="Dealer's hand"
-            holeCard={!round.dealerHoleCardRevealed}
+            holeCard={!round.dealerHoleCardRevealed && round.dealerHand.cards.length > 1}
             spread={!round.dealerHoleCardRevealed}
             cards={visibleDealerCards(round)}
             tilt={false}
@@ -569,6 +570,7 @@ export function PlayTable() {
                   ) : (
                     <ActionBar
                       legal={currentLegalActions(round)}
+                      earlySurrender={earlySurrenderPending(round)}
                       handLabel={
                         round.playerHands.length > 1
                           ? `Hand ${round.activeHandIndex + 1} of ${round.playerHands.length}`
@@ -752,9 +754,7 @@ function Notices({
   const items: ReactNode[] = [];
   if (capNote) items.push(<Badge key="cap" label={capNote} tone="primary" />);
   if (table.justShuffled) {
-    items.push(
-      <Badge key="shuffle" label="Cut card reached — new shoe, count reset" tone="primary" />,
-    );
+    items.push(<Badge key="shuffle" label="New shoe, count reset" tone="primary" />);
   } else if (cutCardOut && table.round !== null) {
     items.push(
       <Badge key="cut" label="Cut card is out — last round on this shoe" tone="mistake" />,
@@ -940,11 +940,13 @@ function OutOfChips({
 
 function ActionBar({
   legal,
+  earlySurrender,
   handLabel,
   withheldStake,
   onAction,
 }: {
   legal: readonly Action[];
+  earlySurrender: boolean;
   handLabel: string | null;
   /**
    * The engine withholds the insurance offer when the bankroll cannot cover the stake, rather
@@ -956,6 +958,12 @@ function ActionBar({
   const ordered = ACTION_ORDER.filter((action) => legal.includes(action));
   return (
     <View style={styles.actionBlock}>
+      {earlySurrender ? (
+        <Text style={[ui(13, 400, { lineHeight: 19 }), { color: colors.mutedForeground }]}>
+          Early surrender keeps half your bet before the dealer checks for blackjack. Choose another
+          action to continue; it takes effect only if the dealer has no blackjack.
+        </Text>
+      ) : null}
       {handLabel ? (
         <Text style={[ui(12, 600, { letterSpacing: 0.5 }), { color: colors.mutedForeground }]}>
           {handLabel.toUpperCase()}

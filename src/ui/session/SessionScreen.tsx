@@ -15,7 +15,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
-import { type LoadResult, type SessionStats, type SessionSummary, aggregateStats } from "@/state";
+import {
+  type LoadResult,
+  type SessionStats,
+  type SessionSummary,
+  aggregateStats,
+  summarize,
+} from "@/state";
 import { ReportBugButton } from "@/ui/bug-report/ReportBugButton";
 import { Panel } from "@/ui/ds";
 import {
@@ -47,8 +53,9 @@ import {
   latestDrillSummary,
   sessionResultFor,
 } from "./sessionFormat";
-import { listSessionSummaries, loadAllSessions } from "./sessionStore";
+import { loadAllSessions } from "./sessionStore";
 import { useSessionOverview } from "./usePlaySession";
+import { SessionBackupPanel } from "./SessionBackupPanel";
 
 export function SessionScreen() {
   const overview = useSessionOverview();
@@ -58,6 +65,8 @@ export function SessionScreen() {
   const [summaries, setSummaries] = useState<readonly SessionSummary[]>([]);
   const [unreadable, setUnreadable] = useState<LoadResult["unreadable"]>([]);
   const [lifetime, setLifetime] = useState(EMPTY_STATS);
+  const [archiveRevision, setArchiveRevision] = useState(0);
+  const [historyError, setHistoryError] = useState<string | null>(null);
 
   // Reloaded whenever the Session in hand changes identity or closes, which is exactly when
   // the history gains a row or an open run turns into a finished one.
@@ -68,16 +77,22 @@ export function SessionScreen() {
 
   useEffect(() => {
     let cancelled = false;
-    void Promise.all([listSessionSummaries(), loadAllSessions()]).then(([rows, all]) => {
-      if (cancelled) return;
-      setSummaries(rows);
-      setUnreadable(all.unreadable);
-      setLifetime(aggregateStats(all.sessions));
-    });
+    void loadAllSessions().then(
+      (all) => {
+        if (cancelled) return;
+        setSummaries(all.sessions.map(summarize));
+        setUnreadable(all.unreadable);
+        setLifetime(aggregateStats(all.sessions));
+        setHistoryError(null);
+      },
+      (error: unknown) => {
+        if (!cancelled) setHistoryError(error instanceof Error ? error.message : String(error));
+      },
+    );
     return () => {
       cancelled = true;
     };
-  }, [signature]);
+  }, [signature, archiveRevision]);
 
   const [wide, onLayout] = useWide(1000);
 
@@ -165,6 +180,17 @@ export function SessionScreen() {
             : undefined
         }
       >
+        {historyError ? (
+          <>
+            <Text accessibilityRole="alert" style={text.warn}>
+              Could not load session history: {historyError}. The totals shown may be out of date.
+            </Text>
+            <SecondaryButton
+              label="Reload history"
+              onPress={() => setArchiveRevision((revision) => revision + 1)}
+            />
+          </>
+        ) : null}
         {summaries.length === 0 ? (
           <Text style={text.note}>
             No Sessions recorded yet. One opens the first time you deal.
@@ -183,9 +209,10 @@ export function SessionScreen() {
         ) : null}
       </Panel>
 
+      <SessionBackupPanel onRestore={() => setArchiveRevision((revision) => revision + 1)} />
+
       <Text style={styles.footer}>
-        All of this lives on this device and nowhere else. No account, no sync, no network
-        (ADR-0003).
+        History stays on this device unless you export a backup. No account or automatic sync.
       </Text>
     </TrainerPage>
   );

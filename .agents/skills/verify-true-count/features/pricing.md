@@ -4,6 +4,7 @@
 
 ## Sub-features
 
+- Upfront preview disclosure: all current games, drills, local history and builders are free; purchases and trials are unavailable. Plus and Lifetime describe future plan previews.
 - Monthly / Yearly toggle (radio group): Plus is $5.99 / month or $49 / year ($4.08 a month, "Save 32%"); Lifetime $119 once; Free $0 (current plan)
 - Plan cards are a radio group; the chosen plan drives "Your order": name, total, trial timeline (Today → reminder 2 days before → trial ends after 7 days, dates counted from today after mount), "Due today"
 - Pay and "Start free trial with card" (Pay with card for Lifetime) show an in-place notice: "Purchases aren't available in this build"; Free shows "Keep playing free" instead
@@ -18,6 +19,4 @@
 
 `flows/pricing.mjs`: yearly prices and order by default, timeline shows real dates → Monthly swaps prices, order and renewal text → Yearly back → Lifetime: $119.00 total and due today → Pay shows the `status` notice → choosing a plan clears it → card button shows it again → FAQ 2 opens and closes.
 
-## Open product question
-
-"Advanced trainers: counting" in Plus conflicts with CONTEXT.md invariant 1 (no second paywall on training depth). The design's copy is kept; the product owner decides.
+The flow also asserts the preview disclosure and free training scope before inspecting prices. A price/timeline preview must not imply a purchasable entitlement.
