@@ -1,18 +1,20 @@
-# CONTEXT — True Count
+# CONTEXT — Tableside
 
 ## What this is
 
-**True Count** is a card-counting and advantage-play trainer for blackjack. It is a
-_training tool_, not a gambling product: no real money, no tokens, no wagering, no ads.
+**Tableside** is a casino-game trainer built on an auditable blackjack engine: card counting
+and basic strategy, plus roulette, craps, video poker and baccarat. It is a _training tool_,
+not a gambling product: no real money, no tokens, no wagering, no ads. The repository,
+package and bundle ids keep the project's original name, True Count.
 
-The product thesis: **True Count shows why a decision is wrong and makes its math inspectable.**
+The product thesis: **Tableside shows why a decision is wrong and makes its math inspectable.**
 
 ## Why we are building it
 
 The September category research and the October live CQ Nexus review (see
 `docs/research/`) guide three priorities:
 
-1. **Named Counting Systems and index practice.** True Count supports Hi-Lo, KO, Omega II,
+1. **Named Counting Systems and index practice.** Tableside supports Hi-Lo, KO, Omega II,
    Wong Halves, Zen and Red 7. The October CQ Nexus review found counting training but did
    not establish named-system selection or scored deviation drills across its paid surfaces.
 2. **"Doesn't teach" is the #1 product complaint in the category** (22% of low-star reviews
@@ -35,7 +37,7 @@ Use these terms exactly. Do not drift to synonyms.
 | **Shoe**                   | The set of decks in play, plus the cut card position. Owns all randomness.                                                                                           |
 | **Penetration**            | Fraction of the shoe dealt before the cut card. Expressed 0–1.                                                                                                       |
 | **Running Count (RC)**     | Sum of card tags seen so far, per the active Counting System.                                                                                                        |
-| **True Count (TC)**        | RC divided by estimated decks remaining. The product's namesake.                                                                                                     |
+| **True Count (TC)**        | RC divided by estimated decks remaining.                                                                                                                             |
 | **Counting System**        | A named tag assignment (Hi-Lo, KO, Omega II, Wong Halves, Zen, Red 7). Carries a tag table, a balanced/unbalanced flag, and an index set.                            |
 | **Balanced system**        | A system whose tags sum to zero over a full shoe. Hi-Lo, Omega II, Wong Halves, Zen are balanced; KO and Red 7 are not.                                              |
 | **Basic Strategy (BS)**    | The count-independent optimal play for a given Rule Set.                                                                                                             |
