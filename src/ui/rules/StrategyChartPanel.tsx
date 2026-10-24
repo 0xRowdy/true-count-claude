@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   cornerCell: { alignItems: "flex-start" },
-  cornerText: { ...ui(10, 600), color: colors.mutedForeground },
+  cornerText: { ...ui(11, 600), color: colors.mutedForeground },
   labelText: { ...ui(13, 600), color: colors.foreground, alignSelf: "flex-start", paddingLeft: 2 },
   headerText: { ...ui(13, 700), color: colors.foreground },
   cellText: { ...ui(12, 800) },
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  legendCode: { ...ui(10, 800) },
+  legendCode: { ...ui(11, 800) },
   legendLabel: { ...ui(12), color: colors.mutedForeground },
   footnote: text.small,
 });

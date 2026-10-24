@@ -5,7 +5,8 @@
     "version": "0.1.0",
     "orientation": "default",
     "scheme": "truecount",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0E1311",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.truecount.app"
@@ -17,7 +18,7 @@
       "bundler": "metro",
       "output": "static"
     },
-    "plugins": ["expo-router", "expo-font"],
+    "plugins": ["expo-router", "expo-font", "@react-native-community/datetimepicker"],
     "extra": {
       "router": {},
       "eas": {

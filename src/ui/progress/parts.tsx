@@ -136,7 +136,7 @@ export function LevelRing({
         <Text style={[display(48, 500), { color: colors.foreground, lineHeight: 56 }]}>
           {level}
         </Text>
-        <Text style={[ui(10, 700, { letterSpacing: 1.5 }), { color: colors.mutedForeground }]}>
+        <Text style={[ui(11, 700, { letterSpacing: 1.5 }), { color: colors.mutedForeground }]}>
           LEVEL
         </Text>
       </View>
@@ -179,14 +179,14 @@ export function WeeklyBars({
           >
             <Text
               style={[
-                last ? ui(11, 700) : ui(10),
+                last ? ui(11, 700) : ui(11),
                 { color: last ? colors.primary : colors.mutedForeground },
               ]}
             >
               {value}
             </Text>
             <View style={[styles.bar, { height: h, opacity }]} />
-            <Text style={[ui(10), { color: colors.mutedForeground }]}>{w.label}</Text>
+            <Text style={[ui(11), { color: colors.mutedForeground }]}>{w.label}</Text>
           </View>
         );
       })}

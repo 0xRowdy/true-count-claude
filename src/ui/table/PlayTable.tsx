@@ -48,7 +48,7 @@ import {
   type LucideIcon,
 } from "@/ui/ds";
 import { type ChipValue, formatMoney } from "@/ui/ds/format";
-import { colors, display, radius, ui } from "@/ui/ds/tokens";
+import { colors, display, radius, surfaces, textScale, ui } from "@/ui/ds/tokens";
 import { ACTION_NAME } from "@/ui/explanation/explanationFormat";
 import { useProfile } from "@/ui/profile/profileStore";
 import { useConfiguredRules } from "@/ui/rules/rulesStore";
@@ -646,10 +646,15 @@ function BankrollTip({ compact }: { compact: boolean }) {
   return (
     <View style={[styles.tip, compact && styles.tipCompact]} role="note">
       <View style={styles.tipHead}>
-        <icons.Lightbulb size={12} color={colors.coachAccent} strokeWidth={2} />
-        <Text style={[ui(9, 800, { letterSpacing: 1 }), { color: colors.coachAccent }]}>TIP</Text>
+        <icons.Lightbulb size={12} color={surfaces.hintInk} strokeWidth={2} />
+        <Text
+          style={[ui(11, 800, { letterSpacing: 1 }), { color: surfaces.hintInk }]}
+          maxFontSizeMultiplier={textScale.felt}
+        >
+          TIP
+        </Text>
       </View>
-      <Text style={[ui(11, 400, { lineHeight: 15 }), { color: colors.ink }]}>
+      <Text style={[ui(12), { color: colors.ink }]} maxFontSizeMultiplier={textScale.felt}>
         Keep bets near 2% of your bankroll.
       </Text>
     </View>
@@ -686,7 +691,7 @@ function PayoutStack({ net, paid }: { net: number; paid: string }) {
       <ChipStackView chips={chipStack(net, 4)} />
       <View style={styles.paid} accessible accessibilityLabel={`Won ${formatMoney(net)}, ${paid}`}>
         <Text style={[ui(15, 800), { color: felt.onCorrect }]}>+{formatMoney(net)}</Text>
-        <Text style={[ui(10, 600), { color: felt.onCorrectMuted }]}>{paid}</Text>
+        <Text style={[ui(11, 600), { color: felt.onCorrectMuted }]}>{paid}</Text>
       </View>
     </View>
   );
@@ -711,7 +716,7 @@ function HistoryRail({
 }) {
   return (
     <View style={styles.history} accessibilityLabel="Last hands">
-      <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
+      <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
         LAST
       </Text>
       {chips.length === 0 ? (
@@ -1097,7 +1102,7 @@ function ResultPanel({
       </View>
 
       <View style={styles.review}>
-        <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
+        <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
           DECISIONS THIS HAND
         </Text>
         {rows.length === 0 ? (

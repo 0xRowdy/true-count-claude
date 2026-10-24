@@ -69,7 +69,10 @@ export function Puck({ on }: { on: boolean }) {
           : { backgroundColor: craps.puckOff, borderColor: craps.puckOn },
       ]}
     >
-      <Text style={[ui(10, 800), { color: on ? craps.puckOff : craps.puckOn }]}>
+      <Text
+        style={[ui(10, 800), { color: on ? craps.puckOff : craps.puckOn }]}
+        maxFontSizeMultiplier={1}
+      >
         {on ? "ON" : "OFF"}
       </Text>
     </View>
@@ -84,7 +87,9 @@ function Win({ tag, compact = false }: { tag: WinTag; compact?: boolean }) {
     >
       <Text style={[ui(compact ? 11 : 14, 800), { color: craps.winInk }]}>{tag.amount}</Text>
       {tag.breakdown && !compact ? (
-        <Text style={[ui(9, 600), { color: craps.winInkMuted }]}>{tag.breakdown}</Text>
+        <Text style={[ui(9, 600), { color: craps.winInkMuted }]} maxFontSizeMultiplier={1}>
+          {tag.breakdown}
+        </Text>
       ) : null}
     </View>
   );
@@ -188,7 +193,7 @@ export function CrapsFelt({
               <Text style={[display(word ? 15 : 22, 600), { color: colors.feltText }]}>
                 {word ?? String(n)}
               </Text>
-              <Text style={[ui(10), { color: surfaces.feltTextFaint }]}>
+              <Text style={[ui(11), { color: surfaces.feltTextFaint }]}>
                 {payoutLabel("place", n)}
               </Text>
               {point === n ? (
@@ -216,7 +221,7 @@ export function CrapsFelt({
           <Text style={[display(20, 600, { letterSpacing: 2 }), { color: colors.feltText }]}>
             COME
           </Text>
-          <Text style={[ui(10), { color: surfaces.feltTextFaint }]}>pays 1:1</Text>
+          <Text style={[ui(11), { color: surfaces.feltTextFaint }]}>pays 1:1</Text>
           {comeStake > 0 ? (
             <View style={styles.stripChip} pointerEvents="none">
               <MiniChip amount={comeStake} />
@@ -237,7 +242,7 @@ export function CrapsFelt({
           <Text style={[display(20, 600, { letterSpacing: 2 }), { color: colors.feltText }]}>
             FIELD
           </Text>
-          <Text style={[ui(10), styles.centerText, { color: surfaces.feltTextFaint }]}>
+          <Text style={[ui(11), styles.centerText, { color: surfaces.feltTextFaint }]}>
             {`2 · 3 · 4 · 9 · 10 · 11 · 12   •   ${fieldPaysText(table.rules)}`}
           </Text>
           {fieldStake > 0 ? (
@@ -340,7 +345,10 @@ function ChipRow({
       <MiniChip amount={total} dim={off} />
       {off || chips[0]!.label ? (
         <View style={styles.chipTag}>
-          <Text style={[ui(7, 800, { letterSpacing: 0.5 }), { color: colors.feltText }]}>
+          <Text
+            style={[ui(7, 800, { letterSpacing: 0.5 }), { color: colors.feltText }]}
+            maxFontSizeMultiplier={1}
+          >
             {[chips[0]!.label, off ? "OFF" : null].filter(Boolean).join(" ")}
           </Text>
         </View>
@@ -362,7 +370,10 @@ function LineStack({ line }: { line: ReturnType<typeof lineChips> }) {
             <MiniChip amount={line.odds} />
           </View>
           <View style={styles.oddsTag} pointerEvents="none">
-            <Text style={[ui(8, 800, { letterSpacing: 0.5 }), { color: colors.feltText }]}>
+            <Text
+              style={[ui(8, 800, { letterSpacing: 0.5 }), { color: colors.feltText }]}
+              maxFontSizeMultiplier={1}
+            >
               {line.oddsLabel}
             </Text>
           </View>

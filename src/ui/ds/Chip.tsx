@@ -40,7 +40,12 @@ export function Chip({
         />
       </Svg>
       <View style={[StyleSheet.absoluteFill, styles.center]}>
-        <Text style={[ui(Math.round(16 * k), 800), { color: ink }]} numberOfLines={1}>
+        {/* Printed on the chip: it stays inside the inlay at any text size (the label is read aloud). */}
+        <Text
+          style={[ui(Math.round(16 * k), 800), { color: ink }]}
+          numberOfLines={1}
+          maxFontSizeMultiplier={1}
+        >
           {label}
         </Text>
       </View>

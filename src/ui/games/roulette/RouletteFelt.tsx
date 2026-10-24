@@ -117,7 +117,7 @@ export function RouletteFelt({ state, winners, onAdd, onRemove, onLoupe, onPick 
         ]}
       >
         {opts.diamond ? <Diamond fill={opts.fill ?? surfaces.transparent} /> : null}
-        <Text style={[ui(10, 700, { letterSpacing: 0.5 }), { color: colors.feltText }]}>
+        <Text style={[ui(11, 700, { letterSpacing: 0.5 }), { color: colors.feltText }]}>
           {label}
         </Text>
         {amount > 0 ? (
@@ -403,6 +403,7 @@ export function MiniChip({ amount, dim = false }: { amount: number; dim?: boolea
       <Text
         style={[ui(10, 800), { color: light ? surfaces.chipInkDark : surfaces.chipInkLight }]}
         numberOfLines={1}
+        maxFontSizeMultiplier={1}
       >
         {stackLabel(amount)}
       </Text>

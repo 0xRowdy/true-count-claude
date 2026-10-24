@@ -78,7 +78,12 @@ export function HandRow({
           {slot.keep ? (
             <View style={styles.keepTag} accessibilityLabel="Coach says keep">
               <icons.Lightbulb size={10} color={machine.lit} strokeWidth={2.5} />
-              <Text style={[ui(9, 800, { letterSpacing: 0.5 }), { color: machine.lit }]}>KEEP</Text>
+              <Text
+                style={[ui(9, 800, { letterSpacing: 0.5 }), { color: machine.lit }]}
+                maxFontSizeMultiplier={1}
+              >
+                KEEP
+              </Text>
             </View>
           ) : (
             <View style={styles.keepSpace} />
@@ -165,7 +170,7 @@ export function NotePointer() {
 export function MathTable({ rows }: { rows: MathRow[] }) {
   return (
     <View style={styles.math} accessibilityLabel="Holds ranked by expected return">
-      <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: colors.inkMuted }]}>
+      <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.inkMuted }]}>
         EVERY WAY TO HOLD, RANKED · AVERAGE BACK ON YOUR BET
       </Text>
       {rows.map((r) => (
@@ -231,7 +236,7 @@ export function DecisionLine({
   const Icon = correct ? icons.Check : icons.RotateCcw;
   return (
     <View style={styles.decisions}>
-      <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
+      <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
         DECISIONS THIS HAND
       </Text>
       <View style={styles.decisionRow}>
@@ -256,7 +261,7 @@ export function DecisionLine({
 export function DealtHand({ cards }: { cards: DealtCardView[] }) {
   return (
     <View style={styles.dealt} accessibilityLabel="The dealt hand">
-      <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
+      <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
         DEALT · YOUR HOLD VS THE BEST HOLD
       </Text>
       <View style={styles.dealtRow}>
@@ -267,11 +272,15 @@ export function DealtHand({ cards }: { cards: DealtCardView[] }) {
             </View>
             <Text
               style={[ui(9, 800, { letterSpacing: 0.5 }), { color: colors.foreground }]}
+              maxFontSizeMultiplier={1}
               accessibilityLabel={`${c.yours ? "you held" : "you let go"}${c.best ? ", best hold keeps" : ""}`}
             >
               {c.yours ? "YOU HELD" : " "}
             </Text>
-            <Text style={[ui(9, 800, { letterSpacing: 0.5 }), { color: colors.coachAccent }]}>
+            <Text
+              style={[ui(9, 800, { letterSpacing: 0.5 }), { color: surfaces.infoInk }]}
+              maxFontSizeMultiplier={1}
+            >
               {c.best ? "KEEP" : " "}
             </Text>
           </View>

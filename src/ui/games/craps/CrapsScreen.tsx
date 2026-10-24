@@ -103,7 +103,7 @@ export function CrapsScreen({ seed }: { seed?: string }) {
           />
 
           <View style={styles.rail}>
-            <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
+            <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
               ROLLS
             </Text>
             <View
@@ -132,7 +132,7 @@ export function CrapsScreen({ seed }: { seed?: string }) {
                     {h.tag ? (
                       <Text
                         style={[
-                          ui(10, 600),
+                          ui(11, 600),
                           { color: i === 0 ? craps.latestSub : colors.mutedForeground },
                         ]}
                       >

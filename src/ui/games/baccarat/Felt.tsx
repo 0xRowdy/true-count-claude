@@ -170,7 +170,7 @@ export function Spot({
       >
         {label.toUpperCase()}
       </Text>
-      <Text style={[ui(10), { color: surfaces.feltTextFaint }]}>{pays}</Text>
+      <Text style={[ui(11), { color: surfaces.feltTextFaint }]}>{pays}</Text>
     </>
   );
   const frame = [

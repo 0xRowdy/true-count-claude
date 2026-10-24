@@ -354,7 +354,7 @@ function UpNextHero({
               </View>
               <View style={styles.dealer}>
                 <Text
-                  style={[ui(10, 700, { letterSpacing: 1.5 }), { color: surfaces.feltTextMuted }]}
+                  style={[ui(11, 700, { letterSpacing: 1.5 }), { color: surfaces.feltTextMuted }]}
                 >
                   DEALER
                 </Text>

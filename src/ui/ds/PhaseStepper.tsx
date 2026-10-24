@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors, surfaces, ui } from "./tokens";
+import { colors, surfaces, textScale, ui } from "./tokens";
 
 export const TABLE_PHASES = ["Bet", "Deal", "Result", "Payout"] as const;
 
@@ -41,6 +41,8 @@ export function PhaseStepper({
                 ui(11, on ? 700 : 500, { letterSpacing: 0.3 }),
                 { color: on ? colors.foreground : colors.mutedForeground },
               ]}
+              numberOfLines={1}
+              maxFontSizeMultiplier={textScale.control}
             >
               {`${i + 1}  ${label}`}
             </Text>

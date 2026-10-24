@@ -443,16 +443,12 @@ export function VideoPokerScreen({ seed: seedParam }: { seed?: string }) {
         </View>
       </ScrollView>
       {rulesOpen ? (
-        <View style={styles.sheetLayer}>
-          <View style={styles.sheetColumn}>
-            <RulesSheet
-              current={state.settings.payTableId}
-              canSwitch={canChangeSettings(state)}
-              onSelect={(id) => setState((s) => setPayTable(s, id))}
-              onClose={() => setRulesOpen(false)}
-            />
-          </View>
-        </View>
+        <RulesSheet
+          current={state.settings.payTableId}
+          canSwitch={canChangeSettings(state)}
+          onSelect={(id) => setState((s) => setPayTable(s, id))}
+          onClose={() => setRulesOpen(false)}
+        />
       ) : null}
     </View>
   );
@@ -491,7 +487,7 @@ function BetControls({
   const table = getPayTable(state.settings.payTableId);
   return (
     <View style={styles.bet}>
-      <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
+      <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
         COINS
       </Text>
       <SegmentedControl
@@ -503,7 +499,7 @@ function BetControls({
         value={String(state.settings.coins)}
         onChange={(v) => onCoins(Number(v))}
       />
-      <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
+      <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
         COIN VALUE
       </Text>
       <SegmentedControl
@@ -562,14 +558,4 @@ const styles = StyleSheet.create({
   speed: { width: 110, height: 52, paddingHorizontal: 12 },
   lockNote: { color: colors.mutedForeground, marginTop: 8, textAlign: "center" },
   main: { flex: 1 },
-  sheetLayer: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    alignItems: "center",
-    zIndex: 10,
-  },
-  sheetColumn: { flex: 1, width: "100%", maxWidth: COLUMN },
 });

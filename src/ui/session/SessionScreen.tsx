@@ -57,6 +57,9 @@ import { loadAllSessions } from "./sessionStore";
 import { useSessionOverview } from "./usePlaySession";
 import { SessionBackupPanel } from "./SessionBackupPanel";
 
+/** Session history rows rendered at once; "Show older" adds another page. */
+const HISTORY_PAGE = 20;
+
 export function SessionScreen() {
   const overview = useSessionOverview();
   // Drill Sessions are written by the drill screens' own store. Its write counter is part of
@@ -67,6 +70,10 @@ export function SessionScreen() {
   const [lifetime, setLifetime] = useState(EMPTY_STATS);
   const [archiveRevision, setArchiveRevision] = useState(0);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  // History grows with every Session ever played; render the newest page, then more on request.
+  const [shownCount, setShownCount] = useState(HISTORY_PAGE);
+  const shown = summaries.slice(0, shownCount);
+  const hidden = summaries.length - shown.length;
 
   // Reloaded whenever the Session in hand changes identity or closes, which is exactly when
   // the history gains a row or an open run turns into a finished one.
@@ -196,10 +203,16 @@ export function SessionScreen() {
             No Sessions recorded yet. One opens the first time you deal.
           </Text>
         ) : wide ? (
-          <SessionHistoryTable summaries={summaries} />
+          <SessionHistoryTable summaries={shown} />
         ) : (
-          summaries.map((summary) => <SessionHistoryRow key={summary.id} summary={summary} />)
+          shown.map((summary) => <SessionHistoryRow key={summary.id} summary={summary} />)
         )}
+        {hidden > 0 ? (
+          <SecondaryButton
+            label={`Show ${Math.min(HISTORY_PAGE, hidden)} older (${hidden} more)`}
+            onPress={() => setShownCount((count) => count + HISTORY_PAGE)}
+          />
+        ) : null}
         {unreadable.length > 0 ? (
           <Text style={text.warn}>
             {unreadable.length} stored record{unreadable.length === 1 ? "" : "s"} could not be read

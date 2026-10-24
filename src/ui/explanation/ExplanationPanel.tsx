@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
   },
   seat: { gap: 4, flexShrink: 1 },
   seatLabel: {
-    ...ui(10, 700, { letterSpacing: 1.2, textTransform: "uppercase" }),
+    ...ui(11, 700, { letterSpacing: 1.2, textTransform: "uppercase" }),
     color: colors.feltText,
   },
   versus: { ...ui(13, 600), color: colors.feltText, paddingBottom: 22 },

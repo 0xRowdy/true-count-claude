@@ -22,7 +22,7 @@ function FeltChip({ chip }: { chip: ChipView }) {
   const ink = chip.mine ? colors.primaryForeground : live.white;
   return (
     <View style={[styles.chip, { backgroundColor: chip.color }]}>
-      <Text style={[ui(10, 800), { color: ink }]} numberOfLines={1}>
+      <Text style={[ui(10, 800), { color: ink }]} numberOfLines={1} maxFontSizeMultiplier={1}>
         {chipText(chip.amount)}
       </Text>
     </View>
@@ -197,7 +197,12 @@ export function CrapsFelt({
         >
           {tag ? (
             <View style={styles.youTag}>
-              <Text style={[ui(9, 800), { color: colors.primaryForeground }]}>{tag}</Text>
+              <Text
+                style={[ui(9, 800), { color: colors.primaryForeground }]}
+                maxFontSizeMultiplier={1}
+              >
+                {tag}
+              </Text>
             </View>
           ) : null}
           <ChipStack chips={chips.mine} />
@@ -230,7 +235,7 @@ export function CrapsFelt({
                 style={styles.hard}
               >
                 <Text style={[ui(13, 700), { color: colors.feltText }]}>Hard {n}</Text>
-                <Text style={[ui(10), { color: surfaces.feltTextFaint }]}>
+                <Text style={[ui(11), { color: surfaces.feltTextFaint }]}>
                   {payoutLabel("hard", n)}
                 </Text>
                 <View style={styles.hardChips} pointerEvents="none">

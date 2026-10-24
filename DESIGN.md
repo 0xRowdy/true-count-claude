@@ -17,6 +17,7 @@ colors:
   felt-glow: "#22704F"
   felt-line: "#EDE4CC99"
   felt-text: "#F1EAD6"
+  felt-print: "#E4E1CD"
   table-button: "#0B2A20CC"
   rail: "#3A2A1E"
   paper: "#F6F1E4"
@@ -26,6 +27,7 @@ colors:
   ink-muted: "#5E574B"
   card-face: "#FBF8F1"
   coach-accent: "#2D6CDF"
+  hint-ink: "#2256BD"
   info-ink: "#7FA8F2"
   correct: "#3FA877"
   correct-ink: "#1F7A50"
@@ -41,6 +43,7 @@ colors:
   chip-100: "#1D1F22"
   chip-500: "#6A3FA0"
   chip-1k: "#D99A2B"
+  scrim: "#000000A6"
 typography:
   display:
     fontFamily: "Fraunces, Georgia, serif"
@@ -239,6 +242,16 @@ components:
   practice-chip:
     rounded: "{rounded.pill}"
     size: "52px"
+  sheet:
+    backgroundColor: "{colors.popover}"
+    textColor: "{colors.foreground}"
+    rounded: "20px"
+    width: "100%"
+  tab-bar:
+    backgroundColor: "{colors.background}"
+    textColor: "{colors.muted-foreground}"
+  tab-bar-item-selected:
+    textColor: "{colors.primary}"
 ---
 
 # Design System: Tableside
@@ -279,7 +292,9 @@ There is no motion today: state changes are instant.
 - Fraunces for display and key figures; Inter for everything the player operates.
 - App surfaces are separated by tonal steps and 1px hairlines. Shadows belong to objects and
   overlays.
-- Every tap target is at least 44 × 44.
+- Every tap target meets the platform minimum: 44pt on iOS and the web, 48dp on Android.
+- On iOS and Android the platform's own tab bar, back bars and sheets carry navigation; the
+  web keeps its App Header.
 
 ## Colors
 
@@ -304,7 +319,10 @@ The table family: every game's felt is drawn from these.
 - **Deep Pit Green** (#123F2F): the felt's edge. Every felt is a radial gradient from
   **Lamp-Lit Felt** (#22704F) at the centre to Deep Pit Green at the edge.
 - **Chalk Line** (#EDE4CC at 60%): printed lines and bet-spot outlines on the felt.
-- **Felt Cream** (#F1EAD6): type printed on the felt ("BLACKJACK PAYS 3 TO 2").
+- **Felt Cream** (#F1EAD6): the brightest felt type: labels on bet spots and Table buttons.
+- **Felt Print** (#E4E1CD): every other line of type on the felt, from "BLACKJACK PAYS 3 TO 2"
+  to "pays 1:1" and the chip-rack caption. It is Felt Cream tinted 6% toward the felt and fully
+  opaque, so it reads 4.6:1 even at the lit centre, where a translucent cream fell to 2–3:1.
 - **Felt Shadow Button** (#0B2A20 at 80%): the fill of Table buttons that sit on felt.
 - **Walnut Rail** (#3A2A1E): the table's rail and the chip-rack shelf.
 
@@ -342,7 +360,9 @@ The coach's paper.
   the eyebrow and numeral colour on the landing page's paper sections. The design file also
   defines `destructive` (same value as Replay Coral) and `accent` (#24302B); neither is used
   by the design system today.
-- **Hint Blue** (#2D6CDF): the hint coach note's edge and icon.
+- **Hint Blue** (#2D6CDF): the hint coach note's edge, and the strategy chart's "Double" cells.
+- **Hint Ink** (#2256BD): hint text and icons on paper (the coach note's "HINT" line, the felt
+  tip): Hint Blue darkened to 5.9:1 on Coach Paper.
 - **Hint Blue Light** (#7FA8F2): informational text on dark surfaces (the strategy chart's
   "Ds" cells), where Hint Blue is too dark to read.
 
@@ -365,6 +385,9 @@ Nothing else sits on paper.
 
 **The Four-Colour Deck Rule.** Suits are always four colours. Hearts and diamonds never share
 red; a glance must separate them.
+
+**The One Ink Rule.** The felt prints in one opaque ink, Felt Print. Small felt type ranks by
+size, weight and tracking, never by fading the ink: translucent cream on lit green fails.
 
 **The Named Literal Rule.** Screens never carry a raw hex value. Design variables come from
 `colors`. A design literal gets a name in `surfaces` or `marketing`, or in a game's own map:
@@ -403,13 +426,30 @@ face. The bundled faces are Fraunces 400/500/600 and Inter 400/500/600/700/800.
 - **Caption** (Inter 400/500, 12px): metadata, rules lines under a table title, deltas.
 - **Eyebrow** (Inter 600, 12px, 2px tracking, uppercase): section kickers in gold on dark or
   rust on paper.
-- **Overline** (Inter 700, 9–10px, 1px tracking, uppercase): micro-labels such as "PRACTICE"
-  over the bankroll and the coach note's verdict line.
+- **Overline** (Inter 700, 11px, 1px tracking, uppercase): micro-labels such as "PRACTICE"
+  over the bankroll and the coach note's verdict line. 11 is the floor for words; only marks
+  printed on a game object (a chip's value, the craps puck's ON) go smaller.
+
+### Text Scaling
+
+Text follows the system size (Dynamic Type, Android font scale). Page copy, coach notes and
+fields scale freely and their containers grow with them: controls set a minimum height, never a
+fixed one. Text inside fixed table geometry is capped with `maxFontSizeMultiplier` from
+`textScale`:
+
+- **felt** (1.3×): everything printed on the felt, bet spots and the chip-rack caption;
+- **control** (1.6×): button labels, the Phase Stepper, segments and the Table Top Bar;
+- **1×**: marks printed on an object, such as a chip's denomination. These are read aloud through
+  the object's accessible label.
 
 ### Named Rules
 
 **The Serif Counts Rule.** Fraunces sets headlines and the numbers worth remembering.
 Everything the player taps, reads mid-hand or types is Inter.
+
+**The Fixed Felt Rule.** The felt is a drawing, not a layout: its type is capped at 1.3× so
+the table keeps its shape at any text size, and everything around the felt (bars, actions,
+notes) grows instead.
 
 **The 16 Floor Rule.** Running body copy is never smaller than 16px; the system sheet sets
 this as the minimum for older readers. Use 14px and below only for secondary lines, captions
@@ -421,13 +461,18 @@ and labels.
   panels pad 20–24.
 - **Pages:** app pages sit in a column capped at 1440, padded 32 / 32 / 48 on desktop. Below
   640 wide the padding becomes a 16pt gutter with 20 at the top.
-- **App header:**
+- **Navigation on iOS and Android:** the five areas (Lobby, Trainer, Strategies, Live,
+  Progress) are the platform's own tab bar (`app/(tabs)`): UITabBar with SF Symbols, Liquid
+  Glass on iOS 26; the Material navigation bar with Material Symbols on Android, every label
+  shown and the active pill in Secondary Fill. Each tab is a native stack: its root screen has
+  no bar and draws its own Fraunces title, and a screen pushed inside the tab gets the
+  platform's back bar. Games, Play and onboarding open over the tabs, full screen, with their
+  own Table Top Bar or step header. An installed app opens on onboarding or the Lobby, never on
+  the landing page.
+- **App header (web):**
   - full nav labels at 1040 wide and above;
   - icons only below 1040;
-  - below 640 the wordmark goes and the chip pill shortens to the number.
-
-  Phones use this same top icon bar. There is no bottom tab bar yet, and no per-platform
-  navigation.
+  - below 640 the wordmark and the avatar go and the chip pill shortens to the number.
 
 - **Content breakpoints:** observed across screens at 640 (narrow), 760, 900 (two columns) and
   1040–1200 (wide). Width is measured after mount (`onLayout`), never during render, so the
@@ -442,10 +487,15 @@ and labels.
 
   The coach note and tips appear on or beside the felt, never over the cards.
 
-- **Bottom sheets:** rise from the bottom over a dark scrim. They are up to 560 wide and 88%
-  tall, with 20pt top corners.
-- **Tap targets:** at least 44 × 44 (`MIN_TAP`). A smaller visual (36pt button, 40pt segment)
-  makes up the difference with `hitSlop`.
+- **Sheets:** every modal panel is the shared `Sheet` (see Components): up to 560 wide (430
+  for game rules, 720 for the bug report) and 88–92% tall.
+- **Insets:** the top inset is the root's; the bottom inset belongs to each screen. The native
+  tab bar draws its own, and screens pushed over the tabs pad for the home indicator.
+- **Keyboard:** scrolling pages adjust their insets so a focused field stays above the
+  keyboard (iOS); sheets rise with it.
+- **Tap targets:** at least `MIN_TAP`: 44pt on iOS and the web, 48dp on Android. A smaller
+  visual (36pt button, 40pt segment, 36pt tab) makes up the difference with `hitSlop`.
+  Roulette's number cells are 44pt tall, the board's densest row.
 
 ## Elevation & Depth
 
@@ -453,8 +503,8 @@ App surfaces are flat and layered by tone: Night Shift Black under Night Panel u
 Panel, each edge drawn with a 1px Pit Hairline. Shadows mark two things:
 
 - **physical table objects:** chips, cards, dice, the coach note and the roulette loupe;
-- **layers above the page:** sheets, menus and popovers, which may lift with the Note or Loupe
-  shadow.
+- **layers above the page:** sheets take the Loupe shadow; menus and popovers may take the
+  Note shadow.
 
 In-flow panels, stat cards and list rows never cast a shadow.
 
@@ -502,8 +552,9 @@ and restrained, so the eye goes to the table and the coach.
 
 ### Buttons
 
-- **Shape:** gently rounded (10px). Heights are 36 (sm), 44 (md, the default) and 52 (lg,
-  onboarding Back/Continue). Horizontal padding is 14 / 20 / 28.
+- **Shape:** gently rounded (10px). Minimum heights are 36 (sm), 44 (md, the default) and 52
+  (lg, onboarding Back/Continue); a button grows with its label at large text sizes, and the
+  label is capped at 1.6×. Horizontal padding is 14 / 20 / 28.
 - **Primary:** House Gold with Dark Gold Ink, Inter 600 15px, an optional 18px leading icon.
   One per view.
 - **Secondary:** Secondary Fill with a 1px Pit Hairline and Cream Type.
@@ -557,10 +608,18 @@ and restrained, so the eye goes to the table and the coach.
   padding, Body (16px) text in Cream Type. Placeholders are Sage Grey.
 - **Focus:** the border turns House Gold (`ring`) at 1.5px.
 - **Error:** the border turns Replay Coral, with the reason in text below.
+- **Dates:** on iOS and Android a date is the system date picker (iOS's compact control, the
+  Material date dialog), which cannot produce a malformed or past date. The web keeps a typed
+  `YYYY-MM-DD` field with inline validation.
 
 ### Navigation
 
-- **App Header** (68 tall):
+- **Tab bar (iOS, Android):** the system tab bar described in Layout. Selected items are House
+  Gold; the rest are Sage Grey.
+- **Back bar (iOS, Android):** the platform's navigation bar on screens pushed inside a tab:
+  Night Shift Black, no hairline, a back chevron (iOS shows its minimal glass button), no title.
+  Edge-swipe back on iOS and system Back on Android always work.
+- **App Header** (web, 68 tall):
   - left to right: the logo (a gold rounded square with a spade, plus the Fraunces wordmark),
     the five destinations (Lobby, Trainer, Strategies, Live tables, Progress), the practice
     chip pill, notifications and the avatar;
@@ -574,6 +633,19 @@ and restrained, so the eye goes to the table and the coach.
   - The current step has a solid gold bar and a bold Cream Type label.
   - Finished steps have gold at 40% and a muted label.
   - Steps still to come sit on Pit Hairline.
+
+### Sheet
+
+The one modal surface: table panels, rules, the bug report.
+
+- **Surface:** Raised Panel, 20pt top corners, a 1px Pit Hairline, the Loupe shadow, over a
+  black scrim at 65%. Its bottom edge clears the home indicator.
+- **Motion:** it rises 260ms with an ease-out curve while the scrim fades; with Reduce Motion
+  it appears in place.
+- **Closing:** a visible Close or Done in its header, a tap on the scrim, Back on Android,
+  Escape on the web, and on iOS and Android a drag down on the grabber (a 36×5 pill at the
+  top). A drag past 96pt, or a quick flick, dismisses.
+- **Keyboard:** it lifts above the keyboard.
 
 ### Notice
 
@@ -590,7 +662,7 @@ The dealer's note: the North Star made concrete.
   shadow, 358 wide (or full width).
 - **Header:** a 32pt dealer portrait, the name in 13px semibold Coach Ink, an Overline verdict
   line in the verdict ink, and an 18px verdict icon.
-  - **Hint:** "HINT · BASIC STRATEGY", lightbulb, Hint Blue.
+  - **Hint:** "HINT · BASIC STRATEGY", lightbulb, Hint Blue edge with Hint Ink.
   - **Mistake:** "LET'S REPLAY THAT", rotate-back icon, Replay Coral edge with Replay Rust
     ink.
   - **Good call:** "GOOD CALL", check icon, Good-Call Green edge with Good-Call Ink.
@@ -611,8 +683,8 @@ The dealer's note: the North Star made concrete.
   is Inter 800 and the suit glyph sits top-left, with a larger glyph bottom-right. Cards come
   in three sizes. The card back is an oxblood gradient (#7A2E2A to #5B1F1C) with a gold-tinted
   inner line.
-- **Felt:** a radial light from the centre to the edge, Chalk Line markings, Felt Cream rules
-  text set in Fraunces caps with wide tracking, and bet spots outlined in Chalk Line.
+- **Felt:** a radial light from the centre to the edge, Chalk Line markings, rules text in
+  Felt Print set in Fraunces caps with wide tracking, and bet spots outlined in Chalk Line.
 - **Dice:** red rounded cubes with white pips and the Die shadow.
 - **Per-game cabinets:** video poker swaps felt for a dark-blue cabinet gradient (#14233F to
   #0C1428) with a gold pay table. The paper-selected segments and House Gold primary action
@@ -629,21 +701,23 @@ The dealer's note: the North Star made concrete.
   the bankroll.
 - **Do** put the coach's voice on Coach Paper with a 4px verdict edge, beside the hand and
   never covering the cards.
-- **Do** keep every tap target at least 44 × 44, using `hitSlop` when the visual is smaller.
+- **Do** keep every tap target at least `MIN_TAP` (44pt iOS and web, 48dp Android), using
+  `hitSlop` when the visual is smaller.
 - **Do** select type weight by face name through `ui()` / `display()`, never `fontWeight`.
-- **Do** use Hint Blue Light (#7FA8F2) for informational text on dark surfaces.
-- **Do** give sheets, menus and popovers the Note or Loupe shadow when they float above the
-  page.
+- **Do** use Hint Blue Light (#7FA8F2) for informational text on dark surfaces and Hint Ink
+  (#2256BD) for hint text on paper.
+- **Do** open every modal panel with `Sheet`, so Back, the scrim, the grabber and the keyboard
+  behave the same everywhere.
+- **Do** give text containers a minimum height, never a fixed one, and cap text only through
+  `textScale` where geometry is fixed.
 
 ### Don't:
 
-- **Don't** import from `src/ui/theme.ts` or `src/ui/primitives.tsx`. They hold the
-  pre-Tableside slate palette (#0B0F14 background, #4ADE80 green accent). Four blackjack-table
-  components (`CardView`, `HandView`, `CountPanel`, `DecisionFeedback`) still use them;
-  migrate those to `@/ui/ds` when you touch them.
 - **Don't** put a raw hex value in a screen file.
-- **Don't** set Hint Blue (#2D6CDF) as text below 18px. It reaches only 4.3:1 on Coach Paper
-  and 3.5:1 on Night Panel; the hint note's verdict line currently falls short of 4.5:1.
+- **Don't** set Hint Blue (#2D6CDF) as text. It reaches only 4.3:1 on Coach Paper and 3.5:1 on
+  Night Panel; use Hint Ink on paper and Hint Blue Light on dark.
+- **Don't** fade felt type with alpha; use Felt Print.
+- **Don't** draw the App Header or any web-style global navigation on iOS or Android.
 - **Don't** grey out or hide a legal player action to steer the player. Disabled styling is
   only for actions that are genuinely unavailable.
 - **Don't** render a photorealistic 3D felt or casino-floor spectacle. The table is clean,

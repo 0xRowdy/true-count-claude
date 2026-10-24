@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-23T22:02:07.230Z",
+  "generatedAt": "2026-10-23T22:46:45.083Z",
   "title": "Design System: Tableside",
   "extensions": {
     "colorMeta": {
@@ -229,6 +229,21 @@
           "oklch(95% 0.028 90.9)"
         ]
       },
+      "felt-print": {
+        "role": "secondary",
+        "displayName": "Felt Print",
+        "canonical": "oklch(90.7% 0.027 99.9)",
+        "tonalRamp": [
+          "oklch(15% 0.027 99.9)",
+          "oklch(26.4% 0.027 99.9)",
+          "oklch(37.9% 0.027 99.9)",
+          "oklch(49.3% 0.027 99.9)",
+          "oklch(60.7% 0.027 99.9)",
+          "oklch(72.1% 0.027 99.9)",
+          "oklch(83.6% 0.027 99.9)",
+          "oklch(95% 0.027 99.9)"
+        ]
+      },
       "table-button": {
         "role": "secondary",
         "displayName": "Felt Shadow Button",
@@ -362,6 +377,21 @@
           "oklch(72.1% 0.187 261.2)",
           "oklch(83.6% 0.187 261.2)",
           "oklch(95% 0.187 261.2)"
+        ]
+      },
+      "hint-ink": {
+        "role": "feedback",
+        "displayName": "Hint Ink",
+        "canonical": "oklch(48.2% 0.172 262)",
+        "tonalRamp": [
+          "oklch(15% 0.172 262)",
+          "oklch(26.4% 0.172 262)",
+          "oklch(37.9% 0.172 262)",
+          "oklch(49.3% 0.172 262)",
+          "oklch(60.7% 0.172 262)",
+          "oklch(72.1% 0.172 262)",
+          "oklch(83.6% 0.172 262)",
+          "oklch(95% 0.172 262)"
         ]
       },
       "info-ink": {
@@ -588,6 +618,21 @@
           "oklch(83.6% 0.14 76.3)",
           "oklch(95% 0.14 76.3)"
         ]
+      },
+      "scrim": {
+        "role": "neutral",
+        "displayName": "Scrim",
+        "canonical": "oklch(0% 0 0 / 65%)",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26.4% 0 0)",
+          "oklch(37.9% 0 0)",
+          "oklch(49.3% 0 0)",
+          "oklch(60.7% 0 0)",
+          "oklch(72.1% 0 0)",
+          "oklch(83.6% 0 0)",
+          "oklch(95% 0 0)"
+        ]
       }
     },
     "typographyMeta": {
@@ -718,12 +763,12 @@
       "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 10px; border: 1px solid transparent; font: 600 15px/1 Inter, system-ui, sans-serif; cursor: pointer; transition: opacity 0.12s; background: #26312C; color: #F3EFE6; border-color: #2C3832; } .ds-btn-secondary:focus-visible { outline: 2px solid #D4AE62; outline-offset: 2px; } .ds-btn-secondary:active { opacity: 0.85; }"
     },
     {
-      "name": "Table Button",
-      "kind": "button",
-      "refersTo": "button-table",
-      "description": "A button that sits on the felt: deep felt fill, chalk-line border, felt cream text.",
-      "html": "<div class=\"ds-felt-swatch\"><button class=\"ds-btn-table\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><polygon points=\"6 3 20 12 6 21 6 3\"/></svg>Table</button></div>",
-      "css": ".ds-felt-swatch { padding: 24px; border-radius: 16px; background: radial-gradient(ellipse at center, #22704F 0%, #123F2F 100%); } .ds-btn-table { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 10px; border: 1px solid transparent; font: 600 15px/1 Inter, system-ui, sans-serif; cursor: pointer; transition: opacity 0.12s; background: #0B2A20CC; color: #F1EAD6; border-color: #EDE4CC99; } .ds-btn-table:focus-visible { outline: 2px solid #D4AE62; outline-offset: 2px; } .ds-btn-table:active { opacity: 0.85; }"
+      "name": "Sheet",
+      "kind": "custom",
+      "refersTo": "sheet",
+      "description": "The one modal surface: rises from the bottom over a scrim, grabber to drag down, Close in the header.",
+      "html": "<div class=\"ds-sheet-stage\"><div class=\"ds-sheet\" role=\"dialog\" aria-label=\"Rules and payouts\"><div class=\"ds-sheet-grab\"></div><div class=\"ds-sheet-head\"><span class=\"ds-sheet-title\">Rules &amp; payouts</span><button class=\"ds-sheet-done\">Done</button></div><p class=\"ds-sheet-body\">Practice chips only. Each pocket is equally likely on every spin; the wheel has no memory.</p></div></div>",
+      "css": ".ds-sheet-stage { height: 220px; display: flex; align-items: flex-end; justify-content: center; background: #000000A6; border-radius: 16px; overflow: hidden; } .ds-sheet { width: 100%; max-width: 430px; background: #1B2420; border: 1px solid #2C3832; border-bottom: 0; border-radius: 20px 20px 0 0; box-shadow: 0px 12px 32px #000000AA; padding: 0 20px 20px; } .ds-sheet-grab { width: 36px; height: 5px; border-radius: 3px; background: #A9B2AC80; margin: 8px auto 4px; } .ds-sheet-head { display: flex; align-items: center; justify-content: space-between; min-height: 44px; } .ds-sheet-title { font: 500 22px/1.2 Fraunces, Georgia, serif; color: #F3EFE6; } .ds-sheet-done { min-height: 44px; padding: 0 8px; border: 0; background: transparent; color: #D4AE62; font: 600 15px/1 Inter, system-ui, sans-serif; cursor: pointer; } .ds-sheet-done:focus-visible { outline: 2px solid #D4AE62; outline-offset: 2px; } .ds-sheet-body { margin: 4px 0 0; font: 400 14px/20px Inter, system-ui, sans-serif; color: #A9B2AC; }"
     },
     {
       "name": "Toggle Chip",
@@ -771,7 +816,7 @@
       "refersTo": "coach-note",
       "description": "Signature: the dealer's note on paper with a verdict-coloured left edge, the why, and up to two actions.",
       "html": "<div class=\"ds-note\" role=\"note\"><div class=\"ds-note-head\"><span class=\"ds-note-avatar\">M</span><span class=\"ds-note-who\"><span class=\"ds-note-name\">Marcus · your dealer</span><span class=\"ds-note-kind\">Hint · Basic strategy</span></span><span class=\"ds-note-icon\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5\"/><path d=\"M9 18h6\"/><path d=\"M10 22h4\"/></svg></span></div><p class=\"ds-note-title\">Hit. 12 against a dealer 7 is a hit.</p><p class=\"ds-note-body\">A 7 means the dealer likely makes 17+. Standing on 12 wins only ~26% of the time; hitting gives you a real chance to improve.</p><div class=\"ds-note-actions\"><button class=\"ds-note-btn ds-note-btn--solid\">Hit</button><button class=\"ds-note-btn\">Show the chart</button></div></div>",
-      "css": ".ds-note { width: 358px; max-width: 100%; display: grid; gap: 10px; padding: 14px 16px 16px; border-radius: 16px; border-left: 4px solid #2D6CDF; background: #F6F1E4; box-shadow: 0px 8px 24px #00000066; } .ds-note-head { display: flex; align-items: center; gap: 10px; } .ds-note-avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: #3A2A1E; color: #F6F1E4; font: 600 13px/1 Inter, system-ui, sans-serif; } .ds-note-who { flex: 1; display: grid; } .ds-note-name { font: 600 13px/1.3 Inter, system-ui, sans-serif; color: #1E1A14; } .ds-note-kind { font: 700 10px/1.3 Inter, system-ui, sans-serif; letter-spacing: 1px; text-transform: uppercase; color: #2D6CDF; } .ds-note-icon { color: #2D6CDF; display: flex; } .ds-note-title { margin: 0; font: 700 17px/22px Inter, system-ui, sans-serif; color: #1E1A14; } .ds-note-body { margin: 0; font: 400 14px/20px Inter, system-ui, sans-serif; color: #5E574B; } .ds-note-actions { display: flex; gap: 8px; } .ds-note-btn { min-height: 40px; padding: 6px 14px; border-radius: 10px; border: 1px solid #DCD3BE; background: transparent; color: #1E1A14; font: 600 14px/1.2 Inter, system-ui, sans-serif; cursor: pointer; } .ds-note-btn--solid { background: #1E1A14; border-color: #1E1A14; color: #F6F1E4; } .ds-note-btn:focus-visible { outline: 2px solid #D4AE62; outline-offset: 2px; } .ds-note-btn:active { opacity: 0.85; }"
+      "css": ".ds-note { width: 358px; max-width: 100%; display: grid; gap: 10px; padding: 14px 16px 16px; border-radius: 16px; border-left: 4px solid #2D6CDF; background: #F6F1E4; box-shadow: 0px 8px 24px #00000066; } .ds-note-head { display: flex; align-items: center; gap: 10px; } .ds-note-avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: #3A2A1E; color: #F6F1E4; font: 600 13px/1 Inter, system-ui, sans-serif; } .ds-note-who { flex: 1; display: grid; } .ds-note-name { font: 600 13px/1.3 Inter, system-ui, sans-serif; color: #1E1A14; } .ds-note-kind { font: 700 11px/1.3 Inter, system-ui, sans-serif; letter-spacing: 1px; text-transform: uppercase; color: #2256BD; } .ds-note-icon { color: #2256BD; display: flex; } .ds-note-title { margin: 0; font: 700 17px/22px Inter, system-ui, sans-serif; color: #1E1A14; } .ds-note-body { margin: 0; font: 400 14px/20px Inter, system-ui, sans-serif; color: #5E574B; } .ds-note-actions { display: flex; gap: 8px; } .ds-note-btn { min-height: 40px; padding: 6px 14px; border-radius: 10px; border: 1px solid #DCD3BE; background: transparent; color: #1E1A14; font: 600 14px/1.2 Inter, system-ui, sans-serif; cursor: pointer; } .ds-note-btn--solid { background: #1E1A14; border-color: #1E1A14; color: #F6F1E4; } .ds-note-btn:focus-visible { outline: 2px solid #D4AE62; outline-offset: 2px; } .ds-note-btn:active { opacity: 0.85; }"
     },
     {
       "name": "Practice Chip",
@@ -791,7 +836,8 @@
       "Coach notes on paper with a 4px edge coloured by verdict: Hint Blue, Replay Coral or Good-Call Green.",
       "Fraunces for display and key figures; Inter for everything the player operates.",
       "App surfaces are separated by tonal steps and 1px hairlines. Shadows belong to objects and overlays.",
-      "Every tap target is at least 44 × 44."
+      "Every tap target meets the platform minimum: 44pt on iOS and the web, 48dp on Android.",
+      "On iOS and Android the platform's own tab bar, back bars and sheets carry navigation; the web keeps its App Header."
     ],
     "rules": [
       {
@@ -810,6 +856,11 @@
         "section": "colors"
       },
       {
+        "name": "The One Ink Rule",
+        "body": "The felt prints in one opaque ink, Felt Print. Small felt type ranks by size, weight and tracking, never by fading the ink: translucent cream on lit green fails.",
+        "section": "colors"
+      },
+      {
         "name": "The Named Literal Rule",
         "body": "Screens never carry a raw hex value. Design variables come from `colors`. A design literal gets a name in `surfaces` or `marketing`, or in a game's own map: `felt` for blackjack, `craps`, `live`, `machine` for the video poker cabinet, and baccarat's `palette`.",
         "section": "colors"
@@ -817,6 +868,11 @@
       {
         "name": "The Serif Counts Rule",
         "body": "Fraunces sets headlines and the numbers worth remembering. Everything the player taps, reads mid-hand or types is Inter.",
+        "section": "typography"
+      },
+      {
+        "name": "The Fixed Felt Rule",
+        "body": "The felt is a drawing, not a layout: its type is capped at 1.3× so the table keeps its shape at any text size, and everything around the felt (bars, actions, notes) grows instead.",
         "section": "typography"
       },
       {
@@ -839,15 +895,17 @@
       "**Do** import colours, spacing, radii and type from `@/ui/ds` (`colors`, `space`, `radius`, `type`, `ui()`, `display()`), and name any new design literal in `surfaces`, `marketing` or the game's own palette map.",
       "**Do** keep House Gold to the one primary action, the current step, the chosen option and the bankroll.",
       "**Do** put the coach's voice on Coach Paper with a 4px verdict edge, beside the hand and never covering the cards.",
-      "**Do** keep every tap target at least 44 × 44, using `hitSlop` when the visual is smaller.",
+      "**Do** keep every tap target at least `MIN_TAP` (44pt iOS and web, 48dp Android), using `hitSlop` when the visual is smaller.",
       "**Do** select type weight by face name through `ui()` / `display()`, never `fontWeight`.",
-      "**Do** use Hint Blue Light (#7FA8F2) for informational text on dark surfaces.",
-      "**Do** give sheets, menus and popovers the Note or Loupe shadow when they float above the page."
+      "**Do** use Hint Blue Light (#7FA8F2) for informational text on dark surfaces and Hint Ink (#2256BD) for hint text on paper.",
+      "**Do** open every modal panel with `Sheet`, so Back, the scrim, the grabber and the keyboard behave the same everywhere.",
+      "**Do** give text containers a minimum height, never a fixed one, and cap text only through `textScale` where geometry is fixed."
     ],
     "donts": [
-      "**Don't** import from `src/ui/theme.ts` or `src/ui/primitives.tsx`. They hold the pre-Tableside slate palette (#0B0F14 background, #4ADE80 green accent). Four blackjack-table components (`CardView`, `HandView`, `CountPanel`, `DecisionFeedback`) still use them; migrate those to `@/ui/ds` when you touch them.",
       "**Don't** put a raw hex value in a screen file.",
-      "**Don't** set Hint Blue (#2D6CDF) as text below 18px. It reaches only 4.3:1 on Coach Paper and 3.5:1 on Night Panel; the hint note's verdict line currently falls short of 4.5:1.",
+      "**Don't** set Hint Blue (#2D6CDF) as text. It reaches only 4.3:1 on Coach Paper and 3.5:1 on Night Panel; use Hint Ink on paper and Hint Blue Light on dark.",
+      "**Don't** fade felt type with alpha; use Felt Print.",
+      "**Don't** draw the App Header or any web-style global navigation on iOS or Android.",
       "**Don't** grey out or hide a legal player action to steer the player. Disabled styling is only for actions that are genuinely unavailable.",
       "**Don't** render a photorealistic 3D felt or casino-floor spectacle. The table is clean, legible 2D.",
       "**Don't** add shadows to in-flow panels, stat cards or list rows.",

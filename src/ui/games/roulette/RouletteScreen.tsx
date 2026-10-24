@@ -199,7 +199,7 @@ export function RouletteScreen({ seed }: { seed?: string }) {
         />
 
         <View style={styles.history} accessibilityLabel="Last spins" role="list">
-          <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
+          <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
             LAST
           </Text>
           {recent.length === 0 ? (

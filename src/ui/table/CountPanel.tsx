@@ -15,7 +15,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { COUNTING_SYSTEMS, type CountingSystemId } from "@/engine/counting";
 import { NONE_PUBLISHED, unbalancedCountRowsFromReadout } from "@/ui/drills/unbalancedCount";
 import { Panel, SegmentedControl, StatRow, type Tone } from "@/ui/primitives";
-import { colors, spacing, type } from "@/ui/theme";
+import { colors, ui } from "@/ui/ds/tokens";
 import { formatCount } from "./format";
 import type { CountReadout, PlayTable } from "./usePlayTable";
 
@@ -136,7 +136,7 @@ export function SystemPanel({
 }
 
 const styles = StyleSheet.create({
-  spacer: { height: spacing.xs },
-  note: { ...type.caption, color: colors.textMuted, marginTop: spacing.xs },
-  source: { ...type.caption, color: colors.textMuted, fontSize: 12, fontStyle: "italic" },
+  spacer: { height: 4 },
+  note: { ...ui(13), color: colors.mutedForeground, marginTop: 4 },
+  source: { ...ui(12), color: colors.mutedForeground, fontStyle: "italic" },
 });

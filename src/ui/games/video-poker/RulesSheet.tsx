@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { MAX_COINS, getPayTable, type PayTableId } from "@/games/video-poker";
-import { colors, radius, ui } from "@/ui/ds";
+import { MIN_TAP, Sheet, colors, radius, ui } from "@/ui/ds";
 import { VP_GAMES, houseEdgeText, returnText } from "./model";
 import { X } from "@/ui/ds/icons";
 
@@ -31,51 +31,54 @@ export function RulesSheet({
   onClose: () => void;
 }) {
   return (
-    <View style={styles.scrim}>
-      <View role="dialog" aria-modal accessibilityLabel="Rules and pay tables" style={styles.sheet}>
-        <View style={styles.head}>
-          <Text accessibilityRole="header" style={[ui(18, 700), { color: colors.foreground }]}>
-            Rules & pay tables
-          </Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Close rules"
-            onPress={onClose}
-            style={styles.close}
-          >
-            <X size={22} color={colors.foreground} strokeWidth={2} />
-          </Pressable>
-        </View>
-        <ScrollView contentContainerStyle={styles.body}>
-          <Text style={[ui(14, 400, { lineHeight: 20 }), { color: colors.mutedForeground }]}>
-            One 52-card deck, shuffled fresh for every hand. You are dealt five cards: tap HOLD
-            under the ones to keep, then Draw replaces the rest once. The final hand is paid from
-            the pay table, per coin bet. Five coins pay 800 per coin on a royal flush (4,000 coins)
-            instead of 250, so the returns below assume five coins. Practice chips only.
-          </Text>
-          <Text style={[ui(14, 400, { lineHeight: 20 }), { color: colors.mutedForeground }]}>
-            Marcus grades every hold against the exact average return of all 32 ways to hold the
-            hand.
-          </Text>
-          {!canSwitch ? (
-            <Text style={[ui(13, 600), { color: colors.primary }]}>
-              Finish this hand to switch machines.
-            </Text>
-          ) : null}
-          <View role="radiogroup" accessibilityLabel="Game and pay table" style={{ gap: 10 }}>
-            {VP_GAMES.map((id) => (
-              <GameOption
-                key={id}
-                id={id}
-                selected={id === current}
-                canSwitch={canSwitch}
-                onSelect={() => onSelect(id)}
-              />
-            ))}
-          </View>
-        </ScrollView>
+    <Sheet
+      visible
+      onClose={onClose}
+      accessibilityLabel="Rules and pay tables"
+      scrimLabel="Dismiss rules"
+      maxHeight="92%"
+    >
+      <View style={styles.head}>
+        <Text accessibilityRole="header" style={[ui(18, 700), { color: colors.foreground }]}>
+          Rules & pay tables
+        </Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close rules"
+          onPress={onClose}
+          style={styles.close}
+        >
+          <X size={22} color={colors.foreground} strokeWidth={2} />
+        </Pressable>
       </View>
-    </View>
+      <ScrollView contentContainerStyle={styles.body}>
+        <Text style={[ui(14, 400, { lineHeight: 20 }), { color: colors.mutedForeground }]}>
+          One 52-card deck, shuffled fresh for every hand. You are dealt five cards: tap HOLD under
+          the ones to keep, then Draw replaces the rest once. The final hand is paid from the pay
+          table, per coin bet. Five coins pay 800 per coin on a royal flush (4,000 coins) instead of
+          250, so the returns below assume five coins. Practice chips only.
+        </Text>
+        <Text style={[ui(14, 400, { lineHeight: 20 }), { color: colors.mutedForeground }]}>
+          Marcus grades every hold against the exact average return of all 32 ways to hold the hand.
+        </Text>
+        {!canSwitch ? (
+          <Text style={[ui(13, 600), { color: colors.primary }]}>
+            Finish this hand to switch machines.
+          </Text>
+        ) : null}
+        <View role="radiogroup" accessibilityLabel="Game and pay table" style={{ gap: 10 }}>
+          {VP_GAMES.map((id) => (
+            <GameOption
+              key={id}
+              id={id}
+              selected={id === current}
+              canSwitch={canSwitch}
+              onSelect={() => onSelect(id)}
+            />
+          ))}
+        </View>
+      </ScrollView>
+    </Sheet>
   );
 }
 
@@ -142,27 +145,17 @@ function GameOption({
 }
 
 const styles = StyleSheet.create({
-  scrim: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    backgroundColor: colors.background,
-    zIndex: 10,
-  },
-  sheet: { flex: 1 },
   head: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingLeft: 16,
     paddingRight: 6,
-    height: 56,
+    minHeight: 56,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  close: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  close: { width: MIN_TAP, height: MIN_TAP, alignItems: "center", justifyContent: "center" },
   body: { padding: 16, gap: 14, paddingBottom: 32 },
   option: {
     gap: 10,

@@ -134,8 +134,13 @@ export const surfaces = {
   betSpot: "#FFFFFF08",
   /** Every felt's radial gradient: a lit centre falling off to `--felt-deep`. */
   feltGlow: "#22704F",
-  feltTextMuted: "#F1EAD6B3",
-  feltTextFaint: "#F1EAD6A6",
+  /**
+   * Small type printed on the felt (rules lines, labels, captions): felt cream tinted 6% toward
+   * the felt, opaque. Even at the glow's lit centre it reads 4.6:1, where a translucent cream
+   * fell to 2–3:1; the felt prints in one ink and ranks by size, weight and tracking instead.
+   */
+  feltTextMuted: "#E4E1CD",
+  feltTextFaint: "#E4E1CD",
   /** Chip rack rail: gradient top → bottom, with a lighter top edge. */
   rackFrom: "#3A2A1E",
   rackTo: "#2A1E15",
@@ -165,6 +170,14 @@ export const surfaces = {
    * is too dark to read as text on `--card`.
    */
   infoInk: "#7FA8F2",
+  /**
+   * Hint text on paper (the coach note's "HINT" line, the felt tip): `--coach-accent` darkened
+   * to 5.9:1 on `--paper`. `--coach-accent` itself stays the hint's edge and icon colour.
+   */
+  hintInk: "#2256BD",
+  /** Behind every sheet, and its drag handle. */
+  scrim: "#000000A6",
+  grabber: "#A9B2AC80",
   transparent: "transparent",
   /** Roulette: the hairline around a number cell, and the bet loupe's option tiles. */
   numberLine: "#EDE4CC55",
@@ -182,7 +195,7 @@ export const marketing = {
   /** Hand-total pill on felt. */
   feltPill: "#0B2A20E6",
   /** "Dealer must stand…" on felt. */
-  feltRule: "#EDE4CC80",
+  feltRule: surfaces.feltTextMuted,
   /** Plan cards on paper. */
   paperCard: "#FFFFFF80",
   /** Paper text on the ink Plus card: price note and description. */
@@ -220,8 +233,17 @@ export const radius = {
   pill: v["--radius-pill"],
 } as const;
 
-/** Minimum tap target, both axes. */
-export const MIN_TAP = 44;
+/**
+ * Caps on system text scaling (Dynamic Type, Android font scale) for text that sits inside fixed
+ * table geometry, passed as `maxFontSizeMultiplier`. Page copy, coach notes and fields are never
+ * capped. The minimum tap target lives in `tap.ts`: it depends on the platform.
+ */
+export const textScale = {
+  /** Printed on the felt, on chips and bet spots: the felt's drawing does not grow. */
+  felt: 1.3,
+  /** Controls in a row of fixed width: buttons, steppers, segments, the table top bar. */
+  control: 1.6,
+} as const;
 
 /** The design's font families (the `.pen` values). */
 export const fonts = {
@@ -283,7 +305,7 @@ export const type = {
   caption: ui(12, 400),
   captionStrong: ui(12, 500),
   eyebrow: ui(12, 600, { letterSpacing: 2, textTransform: "uppercase" }),
-  overline: ui(10, 700, { letterSpacing: 1, textTransform: "uppercase" }),
+  overline: ui(11, 700, { letterSpacing: 1, textTransform: "uppercase" }),
 } as const satisfies Record<string, TextStyle>;
 
 /** Shadows, as CSS box-shadow strings (supported by React Native 0.76+ and React Native Web). */

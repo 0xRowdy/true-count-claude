@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { formatMoney } from "./format";
 import { BookOpen, ChevronLeft } from "./icons";
-import { colors, ui } from "./tokens";
+import { MIN_TAP } from "./tap";
+import { colors, textScale, ui } from "./tokens";
 
 /**
  * The design's Table Top Bar (DqrMq): back, the game and its rules line, the practice
@@ -40,15 +41,21 @@ export function TableTopBar({
         <ChevronLeft size={24} color={colors.foreground} strokeWidth={2} />
       </Pressable>
       <View style={styles.titles}>
-        <Text accessibilityRole="header" style={[ui(16, 600), { color: colors.foreground }]}>
+        <Text
+          accessibilityRole="header"
+          style={[ui(16, 600), { color: colors.foreground }]}
+          numberOfLines={1}
+          maxFontSizeMultiplier={textScale.control}
+        >
           {title}
         </Text>
         {subtitle ? (
           // Two lines rather than an ellipsis: at 390 a long rules line ("… 5% commission")
           // would otherwise lose its last, most specific part.
           <Text
-            style={[ui(12, 400, { lineHeight: 15 }), { color: colors.mutedForeground }]}
+            style={[ui(12, 400), { color: colors.mutedForeground }]}
             numberOfLines={2}
+            maxFontSizeMultiplier={textScale.control}
           >
             {subtitle}
           </Text>
@@ -60,10 +67,18 @@ export function TableTopBar({
           accessible
           accessibilityLabel={`${bankrollLabel} bankroll ${formatMoney(bankroll)}`}
         >
-          <Text style={[ui(9, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
+          <Text
+            style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}
+            maxFontSizeMultiplier={textScale.control}
+          >
             {bankrollLabel.toUpperCase()}
           </Text>
-          <Text style={[ui(16, 700), { color: bankrollColor }]}>{formatMoney(bankroll)}</Text>
+          <Text
+            style={[ui(16, 700), { color: bankrollColor }]}
+            maxFontSizeMultiplier={textScale.control}
+          >
+            {formatMoney(bankroll)}
+          </Text>
         </View>
       ) : null}
       <Pressable
@@ -89,7 +104,7 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     backgroundColor: colors.background,
   },
-  square: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  square: { width: MIN_TAP, height: MIN_TAP, alignItems: "center", justifyContent: "center" },
   titles: { flex: 1, gap: 1 },
   bankroll: { alignItems: "flex-end", paddingHorizontal: 6 },
 });

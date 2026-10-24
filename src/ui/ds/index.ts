@@ -4,6 +4,7 @@
  */
 
 export * from "./tokens";
+export { MIN_TAP } from "./tap";
 export * from "./format";
 export * as icons from "./icons";
 export type { LucideIcon } from "./icons";
@@ -29,6 +30,7 @@ export { PlayingCard } from "./PlayingCard";
 export { ProgressBar } from "./ProgressBar";
 export { SegmentedControl, type SegmentOption } from "./SegmentedControl";
 export { SelectableCard } from "./SelectableCard";
+export { Sheet } from "./Sheet";
 export { StatCard, type DeltaTone } from "./StatCard";
 export { StrategyCard, type StrategyCardProps } from "./StrategyCard";
 export { TableTopBar } from "./TableTopBar";
