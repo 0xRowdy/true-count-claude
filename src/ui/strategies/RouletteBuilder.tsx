@@ -9,11 +9,13 @@ import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import {
   type Pocket,
-  type ProgressionKind,
+  type ProgressionAction,
   type RouletteRules,
   AMERICAN_RULES,
   EUROPEAN_RULES,
   FRENCH_RULES,
+  DEFAULT_CUSTOM_PROGRESSION,
+  PROGRESSION_ACTIONS,
   getSpot,
   pocketColor,
   spotTitle,
@@ -58,6 +60,7 @@ import {
   outcomeTable,
   progressionOptions,
   progressionWarning,
+  progressionDescription,
   removeBet,
   rouletteRulesLine,
   sessionCards,
@@ -238,7 +241,6 @@ function LayoutEditor({
 }) {
   const cov = coverage(layout);
   const table = outcomeTable(layout);
-  const [customNotice, setCustomNotice] = useState(false);
   return (
     <Card>
       <View style={s.head}>
@@ -341,10 +343,7 @@ function LayoutEditor({
           accessibilityRole="radiogroup"
           accessibilityLabel="After each spin"
         >
-          {[
-            ...progressionOptions(layout),
-            { id: "custom" as const, label: "Custom", detail: "Write your own rule" },
-          ].map((o) => {
+          {progressionOptions(layout).map((o) => {
             const on = o.id === layout.progression;
             return (
               <Pressable
@@ -353,11 +352,7 @@ function LayoutEditor({
                 accessibilityLabel={o.label}
                 aria-checked={on}
                 onPress={() => {
-                  if (o.id === "custom") setCustomNotice(true);
-                  else {
-                    setCustomNotice(false);
-                    if (!readOnly) setLayout({ ...layout, progression: o.id as ProgressionKind });
-                  }
+                  if (!readOnly) setLayout({ ...layout, progression: o.id });
                 }}
                 style={[s.prog, on && { backgroundColor: colors.paper }]}
               >
@@ -373,11 +368,8 @@ function LayoutEditor({
             );
           })}
         </View>
-        {customNotice ? (
-          <Text role="status" style={[ui(13), { color: colors.primary }]}>
-            Custom progressions are coming soon. This build simulates flat betting, Martingale and
-            D'Alembert.
-          </Text>
+        {layout.progression === "custom" ? (
+          <CustomProgressionEditor layout={layout} readOnly={readOnly} setLayout={setLayout} />
         ) : null}
         <InfoNote text={progressionWarning(layout)} />
       </View>
@@ -398,6 +390,78 @@ function LayoutEditor({
         </View>
       </View>
     </Card>
+  );
+}
+
+function CustomProgressionEditor({
+  layout,
+  readOnly,
+  setLayout,
+}: {
+  layout: RouletteLayoutPlan;
+  readOnly: boolean;
+  setLayout: (layout: RouletteLayoutPlan) => void;
+}) {
+  const custom = layout.customProgression ?? DEFAULT_CUSTOM_PROGRESSION;
+  const labels: Record<ProgressionAction, string> = {
+    reset: "Reset to base",
+    hold: "Keep stake",
+    add: "Add units",
+    subtract: "Remove units",
+    double: "Double stake",
+  };
+  const update = (next: typeof custom) => {
+    if (!readOnly) setLayout({ ...layout, customProgression: next });
+  };
+  return (
+    <View style={p.gap8}>
+      {(["afterLoss", "afterWin"] as const).map((field) => (
+        <View key={field} style={p.gap8}>
+          <Label>{field === "afterLoss" ? "After a losing spin" : "After a winning spin"}</Label>
+          <View
+            style={s.customActions}
+            accessibilityRole="radiogroup"
+            accessibilityLabel={field === "afterLoss" ? "After a loss" : "After a win"}
+          >
+            {PROGRESSION_ACTIONS.map((action) => (
+              <Pressable
+                key={action}
+                accessibilityRole="radio"
+                accessibilityLabel={labels[action]}
+                aria-checked={custom[field] === action}
+                onPress={() => update({ ...custom, [field]: action })}
+                style={[
+                  s.customAction,
+                  custom[field] === action && { backgroundColor: colors.paper },
+                ]}
+              >
+                <Text
+                  style={[
+                    ui(13, 600),
+                    { color: custom[field] === action ? colors.ink : colors.foreground },
+                  ]}
+                >
+                  {labels[action]}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      ))}
+      <Stepper
+        label="Unit change"
+        value={String(custom.units)}
+        onMinus={() => update({ ...custom, units: Math.max(1, custom.units - 1) })}
+        onPlus={() => update({ ...custom, units: Math.min(10, custom.units + 1) })}
+      />
+      <Text style={[ui(13), { color: colors.mutedForeground }]}>
+        One unit is your whole base layout. Add or remove 1–10 units; the first spin starts at one
+        unit.
+      </Text>
+      <Text role="status" style={[ui(14), { color: colors.foreground }]}>
+        {progressionDescription(layout)}.
+      </Text>
+    </View>
   );
 }
 
@@ -1051,6 +1115,7 @@ const s = StyleSheet.create({
   colNet: { width: 70, textAlign: "right" },
   progTrack: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 4,
     padding: 4,
     borderRadius: 10,
@@ -1058,11 +1123,19 @@ const s = StyleSheet.create({
   },
   prog: {
     flex: 1,
+    minWidth: 120,
     alignItems: "center",
     gap: 1,
     paddingVertical: 8,
     paddingHorizontal: 10,
     borderRadius: 7,
+  },
+  customActions: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  customAction: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: colors.muted,
   },
   sessionRow: { flexDirection: "row", gap: 10, flexWrap: "wrap" },
   sessionCard: {

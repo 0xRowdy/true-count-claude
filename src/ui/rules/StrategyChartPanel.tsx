@@ -15,7 +15,14 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { type LayoutChangeEvent, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  type LayoutChangeEvent,
+  ScrollView,
+  type ScrollViewInstance,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import type { RuleSet } from "@/engine/rules";
 import {
   type ChartCode,
@@ -168,7 +175,7 @@ export function StrategyChartGrid({
   density?: ChartDensity;
 }) {
   const size = DENSITY[density];
-  const scroller = useRef<ScrollView>(null);
+  const scroller = useRef<ScrollViewInstance>(null);
   const highlightColumn = highlight ? DEALER_UPCARDS.indexOf(highlight.upcard) : -1;
 
   const [viewport, setViewport] = useState(0);
@@ -376,7 +383,7 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   cornerCell: { alignItems: "flex-start" },
-  cornerText: { ...ui(10, 600), color: colors.mutedForeground },
+  cornerText: { ...ui(11, 600), color: colors.mutedForeground },
   labelText: { ...ui(13, 600), color: colors.foreground, alignSelf: "flex-start", paddingLeft: 2 },
   headerText: { ...ui(13, 700), color: colors.foreground },
   cellText: { ...ui(12, 800) },
@@ -407,7 +414,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  legendCode: { ...ui(10, 800) },
+  legendCode: { ...ui(11, 800) },
   legendLabel: { ...ui(12), color: colors.mutedForeground },
   footnote: text.small,
 });

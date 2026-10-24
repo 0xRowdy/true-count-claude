@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import type { LucideIcon } from "./icons";
-import { colors, MIN_TAP, radius, surfaces, ui } from "./tokens";
+import { MIN_TAP } from "./tap";
+import { colors, radius, surfaces, textScale, ui } from "./tokens";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "table";
 export type ButtonSize = "sm" | "md" | "lg";
@@ -73,7 +74,8 @@ export function Button({
       style={({ pressed }) => [
         styles.base,
         {
-          height: s.height,
+          // A minimum, not a height: at large text sizes the label grows and the button with it.
+          minHeight: s.height,
           paddingHorizontal: s.px,
           backgroundColor: v.bg,
           borderColor: v.border ?? surfaces.transparent,
@@ -85,7 +87,11 @@ export function Button({
       ]}
     >
       {Icon ? <Icon size={s.icon} color={v.fg} strokeWidth={2} /> : null}
-      <Text style={[ui(s.font, 600), { color: v.fg }]} numberOfLines={1}>
+      <Text
+        style={[ui(s.font, 600), styles.label, { color: v.fg }]}
+        numberOfLines={1}
+        maxFontSizeMultiplier={textScale.control}
+      >
         {label}
       </Text>
       {trailing ? <View>{trailing}</View> : null}
@@ -102,7 +108,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     alignSelf: "flex-start",
+    paddingVertical: 6,
   },
+  label: { flexShrink: 1 },
   full: { alignSelf: "stretch" },
   pressed: { opacity: 0.85 },
   disabled: { opacity: 0.45 },

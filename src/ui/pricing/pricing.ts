@@ -16,7 +16,7 @@ export const PRICES = {
 } as const;
 
 export const TRIAL_DAYS = 7;
-/** The reminder goes out this many days before the trial ends. */
+/** The preview places a hypothetical reminder this many days before the trial ends. */
 export const REMINDER_DAYS_BEFORE = 2;
 
 /** "$49", "$5.99", "$0" — whole dollars without cents. */
@@ -48,11 +48,11 @@ export function planView(plan: PlanId, billing: Billing): PlanView {
       return billing === "yearly"
         ? {
             price: `${dollars(PRICES.plusYearly)} / year`,
-            sub: `${dollarsCents(Math.floor((PRICES.plusYearly / 12) * 100) / 100)} a month, billed yearly · ${TRIAL_DAYS}-day free trial`,
+            sub: `${dollarsCents(Math.floor((PRICES.plusYearly / 12) * 100) / 100)} a month, billed yearly · example ${TRIAL_DAYS}-day trial`,
           }
         : {
             price: `${dollars(PRICES.plusMonthly)} / month`,
-            sub: `Billed monthly · ${TRIAL_DAYS}-day free trial`,
+            sub: `Billed monthly · example ${TRIAL_DAYS}-day trial`,
           };
     case "lifetime":
       return {
@@ -74,7 +74,7 @@ export interface Order {
   total: string;
   dueToday: string;
   timeline: TimelineEntry[];
-  /** Whether this plan starts with a free trial (shows "Start free trial with card"). */
+  /** Whether this plan's example includes a free trial (shows "Free trial (unavailable)"). */
   trial: boolean;
   /** Free is already the player's plan: nothing to buy. */
   purchasable: boolean;
@@ -104,11 +104,14 @@ export function order(plan: PlanId, billing: Billing, today: string | null): Ord
   if (plan === "lifetime") {
     return {
       name: "Tableside Lifetime",
-      detail: "Web, iOS and Android, one account",
+      detail: "Example price only. Training stays free in this build.",
       total: dollarsCents(PRICES.lifetime),
       dueToday: dollarsCents(PRICES.lifetime),
       timeline: [
-        { when: "Today", text: `One payment of ${dollars(PRICES.lifetime)}. No renewals.` },
+        {
+          when: "Today",
+          text: `Example: one payment of ${dollars(PRICES.lifetime)} with no renewals. Purchases are unavailable.`,
+        },
       ],
       trial: false,
       purchasable: true,
@@ -118,20 +121,20 @@ export function order(plan: PlanId, billing: Billing, today: string | null): Ord
   const amount = yearly ? PRICES.plusYearly : PRICES.plusMonthly;
   return {
     name: `Tableside Plus, ${billing}`,
-    detail: "Web, iOS and Android, one account",
+    detail: "Example price only. Training stays free in this build.",
     total: dollarsCents(amount),
     dueToday: dollarsCents(0),
     timeline: [
-      { when: "Today", text: "Free trial starts. Nothing charged." },
+      { when: "Today", text: "Example: a seven-day trial would start. No trial starts here." },
       {
         when: dayLabel(today, TRIAL_DAYS - REMINDER_DAYS_BEFORE),
-        text: `We'll email and notify you ${REMINDER_DAYS_BEFORE} days before.`,
+        text: `Example: a reminder would arrive ${REMINDER_DAYS_BEFORE} days before. No reminders are sent.`,
       },
       {
         when: dayLabel(today, TRIAL_DAYS),
         text: yearly
-          ? `Trial ends. ${dollars(amount)} for the year unless you cancel.`
-          : `Trial ends. ${dollars(amount)} a month unless you cancel.`,
+          ? `Example: ${dollars(amount)} for the year after the trial. No subscription starts here.`
+          : `Example: ${dollars(amount)} a month after the trial. No subscription starts here.`,
       },
     ],
     trial: true,

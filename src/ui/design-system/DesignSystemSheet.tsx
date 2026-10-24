@@ -142,8 +142,8 @@ function Swatch({ token }: { token: PenColor }) {
   return (
     <View style={styles.swatch} accessible accessibilityLabel={`${token} ${hex}`}>
       <View style={[styles.swatchChip, { backgroundColor: hex }]} />
-      <Text style={[ui(10), { color: colors.mutedForeground }]}>{token.slice(2)}</Text>
-      <Text style={[ui(10), { color: surfaces.caption }]}>{hex}</Text>
+      <Text style={[ui(11), { color: colors.mutedForeground }]}>{token.slice(2)}</Text>
+      <Text style={[ui(11), { color: surfaces.caption }]}>{hex}</Text>
     </View>
   );
 }

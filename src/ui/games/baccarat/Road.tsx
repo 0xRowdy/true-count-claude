@@ -36,7 +36,7 @@ export function Road({
           hitSlop={12}
           style={styles.title}
         >
-          <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
+          <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
             {kind === "bead" ? "BEAD ROAD · THIS SHOE" : "BIG ROAD · THIS SHOE"}
           </Text>
           <ArrowLeftRight size={12} color={colors.primary} strokeWidth={2.25} />
@@ -56,7 +56,7 @@ function Legend({ color, label }: { color: string; label: string }) {
   return (
     <View style={styles.legendItem}>
       <View style={[styles.dot, { backgroundColor: color }]} />
-      <Text style={[ui(10), { color: colors.mutedForeground }]}>{label}</Text>
+      <Text style={[ui(11), { color: colors.mutedForeground }]}>{label}</Text>
     </View>
   );
 }
@@ -94,7 +94,9 @@ function Bead({ cell }: { cell: RoadCell }) {
       testID={cell.latest ? "latest-bead" : undefined}
       style={[styles.bead, { backgroundColor: FILL[cell.letter] }, cell.latest && styles.latest]}
     >
-      <Text style={[ui(10, 800), { color: pal.beadInk }]}>{cell.letter}</Text>
+      <Text style={[ui(10, 800), { color: pal.beadInk }]} maxFontSizeMultiplier={1}>
+        {cell.letter}
+      </Text>
     </View>
   );
 }
@@ -111,7 +113,11 @@ function BigBead({ cell }: { cell: RoadCell }) {
         cell.latest && { boxShadow: `0px 0px 0px 2px ${colors.primary}` },
       ]}
     >
-      {cell.ties > 0 ? <Text style={[ui(9, 800), { color: pal.beadTie }]}>{cell.ties}</Text> : null}
+      {cell.ties > 0 ? (
+        <Text style={[ui(9, 800), { color: pal.beadTie }]} maxFontSizeMultiplier={1}>
+          {cell.ties}
+        </Text>
+      ) : null}
     </View>
   );
 }

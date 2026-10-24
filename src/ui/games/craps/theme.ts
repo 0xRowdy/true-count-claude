@@ -27,7 +27,6 @@ export const craps = {
   puckOff: colors.chip100,
   /** Center bets button and sheet rows. */
   centerButton: surfaces.tableButton,
-  scrim: "#000000AA",
   /** A bet that is off this roll. */
   offWash: "#00000055",
 } as const;

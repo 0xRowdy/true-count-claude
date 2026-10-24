@@ -482,7 +482,7 @@ export function InspectorHead({
 }) {
   return (
     <View style={styles.gap4}>
-      <Text style={[ui(10, 700, { letterSpacing: 1.2 }), { color: colors.mutedForeground }]}>
+      <Text style={[ui(11, 700, { letterSpacing: 1.2 }), { color: colors.mutedForeground }]}>
         {eyebrow.toUpperCase()}
       </Text>
       <Text accessibilityRole="header" style={[display(22, 500), { color: colors.foreground }]}>

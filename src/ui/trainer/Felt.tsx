@@ -24,8 +24,7 @@ import {
   type BadgeTone,
   type CardSize,
 } from "@/ui/ds";
-import { RESULT_LABEL, describeTotal } from "@/ui/table/HandView";
-import { formatChips, formatNet } from "@/ui/table/format";
+import { RESULT_LABEL, describeTotal, formatChips, formatNet } from "@/ui/table/format";
 import { signColor } from "./kit";
 
 /** The felt surface: felt fading to deep felt, 16 radius, a faint felt-line edge. */

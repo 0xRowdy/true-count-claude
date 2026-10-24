@@ -8,6 +8,7 @@ The marketing page at `/` (design frame `Do2ZB`): nav, hero with the felt-table 
 - Game tiles link to the route map: `/play`, `/games/roulette`, `/games/craps`, `/games/video-poker`, `/games/baccarat`
 - Nav: Games / How coaching works / Community strategies scroll to their section; Pricing → `/pricing`
 - Sign in: no backend, so it opens an in-place notice ("No account needed: your progress stays on this device"), never a form
+- Privacy, Terms and Accessibility footer buttons open a dismissible notice and scroll it into view. The landing flow checks all three inside a 390 × 844 phone viewport without manually scrolling to the notice.
 - "See the coach in 40s" and the coach note's buttons open `/play` (Show the chart → `/drills`)
 - Responsive: 1440 design layout; stacked below 1200; phones (<760) get a 16pt gutter and the coach note moves under the scaled table
 

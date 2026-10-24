@@ -1,7 +1,8 @@
 /**
  * The browser tab title for every route, in one place: "<Page> · Tableside", and just
- * "Tableside" on the landing page. Rendered by the root layout with expo-router's `Head`, so it
- * is in the prerendered HTML too (expo-router leaves `document.title` alone on web).
+ * "Tableside" on the landing page. Prerendered into the exported HTML by `app/+html.tsx`, and kept
+ * current after navigation by the root layout with expo-router's `Head` (expo-router leaves
+ * `document.title` alone on web).
  */
 
 export const PRODUCT_NAME = "Tableside";

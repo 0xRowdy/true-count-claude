@@ -7,6 +7,9 @@
  * the bankroll the engine holds by more than the last decimal place shown.
  */
 
+import { type Hand, evaluate, isBlackjack } from "@/engine/hand";
+import type { HandResult } from "@/engine/round";
+
 /** Chips, to at most two decimals, with the trailing zeros dropped. `12.5` renders "$12.50". */
 export function formatChips(amount: number): string {
   const sign = amount < 0 ? "-" : "";
@@ -26,4 +29,22 @@ export function formatCount(count: number): string {
   if (count === 0) return "0";
   const rendered = Number.isInteger(count) ? String(Math.abs(count)) : Math.abs(count).toFixed(1);
   return `${count > 0 ? "+" : "-"}${rendered}`;
+}
+
+/** A settled hand's result, as the felt and the review name it. */
+export const RESULT_LABEL: Record<HandResult, string> = {
+  blackjack: "Blackjack",
+  win: "Win",
+  push: "Push",
+  lose: "Lose",
+  bust: "Bust",
+  surrender: "Surrendered",
+};
+
+/** A hand total in the words a player uses: "soft 18", "20", "Bust 23", "Blackjack". */
+export function describeTotal(hand: Hand): string {
+  if (isBlackjack(hand)) return "Blackjack";
+  const value = evaluate(hand.cards);
+  if (value.busted) return `Bust ${value.total}`;
+  return value.soft ? `Soft ${value.total}` : `${value.total}`;
 }

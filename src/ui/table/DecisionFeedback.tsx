@@ -23,7 +23,7 @@ import {
   insuranceVerdict,
 } from "@/ui/explanation/explanationFormat";
 import { Panel, SecondaryButton, SegmentedControl } from "@/ui/primitives";
-import { colors, spacing, type } from "@/ui/theme";
+import { colors, ui } from "@/ui/ds/tokens";
 import type { TableDecision } from "./tableExplanation";
 
 function verdictOf(decision: TableDecision): VerdictView {
@@ -111,8 +111,8 @@ export function DecisionFeedback({
 }
 
 const styles = StyleSheet.create({
-  headline: { ...type.body, fontSize: 16, fontWeight: "700" },
-  detail: { ...type.caption, color: colors.textMuted, lineHeight: 19 },
-  accessory: { gap: spacing.sm },
+  headline: { ...ui(16, 700, { lineHeight: 22 }), color: colors.foreground },
+  detail: { ...ui(13, 400, { lineHeight: 19 }), color: colors.mutedForeground },
+  accessory: { gap: 8 },
   toggle: { alignSelf: "flex-start" },
 });

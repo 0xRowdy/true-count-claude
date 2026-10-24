@@ -17,15 +17,17 @@ export function Felt({
   const id = `f${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   return (
     <View style={[styles.felt, style]}>
-      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Defs>
-          <RadialGradient id={id} cx="50%" cy={`${centerY * 100}%`} rx="75%" ry="80%">
-            <Stop offset={0} stopColor={builder.feltFrom} />
-            <Stop offset={1} stopColor={builder.feltTo} />
-          </RadialGradient>
-        </Defs>
-        <Rect x={0} y={0} width="100%" height="100%" fill={`url(#${id})`} />
-      </Svg>
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Svg width="100%" height="100%">
+          <Defs>
+            <RadialGradient id={id} cx="50%" cy={`${centerY * 100}%`} rx="75%" ry="80%">
+              <Stop offset={0} stopColor={builder.feltFrom} />
+              <Stop offset={1} stopColor={builder.feltTo} />
+            </RadialGradient>
+          </Defs>
+          <Rect x={0} y={0} width="100%" height="100%" fill={`url(#${id})`} />
+        </Svg>
+      </View>
       {children}
     </View>
   );

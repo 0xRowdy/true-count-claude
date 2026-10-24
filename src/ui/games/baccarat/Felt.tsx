@@ -21,15 +21,17 @@ export function FeltSurface({ children }: { children: ReactNode }) {
   const id = `felt${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   return (
     <View style={styles.felt}>
-      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Defs>
-          <RadialGradient id={id} cx="50%" cy="30%" rx="80%" ry="65%" fx="50%" fy="30%">
-            <Stop offset={0} stopColor={pal.feltGlow} />
-            <Stop offset={1} stopColor={pal.feltDeep} />
-          </RadialGradient>
-        </Defs>
-        <Rect x={0} y={0} width="100%" height="100%" fill={`url(#${id})`} />
-      </Svg>
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Svg width="100%" height="100%">
+          <Defs>
+            <RadialGradient id={id} cx="50%" cy="30%" rx="80%" ry="65%" fx="50%" fy="30%">
+              <Stop offset={0} stopColor={pal.feltGlow} />
+              <Stop offset={1} stopColor={pal.feltDeep} />
+            </RadialGradient>
+          </Defs>
+          <Rect x={0} y={0} width="100%" height="100%" fill={`url(#${id})`} />
+        </Svg>
+      </View>
       {children}
     </View>
   );
@@ -168,7 +170,7 @@ export function Spot({
       >
         {label.toUpperCase()}
       </Text>
-      <Text style={[ui(10), { color: surfaces.feltTextFaint }]}>{pays}</Text>
+      <Text style={[ui(11), { color: surfaces.feltTextFaint }]}>{pays}</Text>
     </>
   );
   const frame = [

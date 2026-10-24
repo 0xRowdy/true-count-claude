@@ -1,0 +1,916 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-23T22:46:45.083Z",
+  "title": "Design System: Tableside",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "House Gold",
+        "canonical": "oklch(76.9% 0.105 83.4)",
+        "tonalRamp": [
+          "oklch(15% 0.105 83.4)",
+          "oklch(26.4% 0.105 83.4)",
+          "oklch(37.9% 0.105 83.4)",
+          "oklch(49.3% 0.105 83.4)",
+          "oklch(60.7% 0.105 83.4)",
+          "oklch(72.1% 0.105 83.4)",
+          "oklch(83.6% 0.105 83.4)",
+          "oklch(95% 0.105 83.4)"
+        ]
+      },
+      "primary-foreground": {
+        "role": "primary",
+        "displayName": "Dark Gold Ink",
+        "canonical": "oklch(19.4% 0.027 87.4)",
+        "tonalRamp": [
+          "oklch(15% 0.027 87.4)",
+          "oklch(26.4% 0.027 87.4)",
+          "oklch(37.9% 0.027 87.4)",
+          "oklch(49.3% 0.027 87.4)",
+          "oklch(60.7% 0.027 87.4)",
+          "oklch(72.1% 0.027 87.4)",
+          "oklch(83.6% 0.027 87.4)",
+          "oklch(95% 0.027 87.4)"
+        ]
+      },
+      "background": {
+        "role": "neutral",
+        "displayName": "Night Shift Black",
+        "canonical": "oklch(18.1% 0.009 169.2)",
+        "tonalRamp": [
+          "oklch(15% 0.009 169.2)",
+          "oklch(26.4% 0.009 169.2)",
+          "oklch(37.9% 0.009 169.2)",
+          "oklch(49.3% 0.009 169.2)",
+          "oklch(60.7% 0.009 169.2)",
+          "oklch(72.1% 0.009 169.2)",
+          "oklch(83.6% 0.009 169.2)",
+          "oklch(95% 0.009 169.2)"
+        ]
+      },
+      "card": {
+        "role": "neutral",
+        "displayName": "Night Panel",
+        "canonical": "oklch(22.3% 0.012 167.4)",
+        "tonalRamp": [
+          "oklch(15% 0.012 167.4)",
+          "oklch(26.4% 0.012 167.4)",
+          "oklch(37.9% 0.012 167.4)",
+          "oklch(49.3% 0.012 167.4)",
+          "oklch(60.7% 0.012 167.4)",
+          "oklch(72.1% 0.012 167.4)",
+          "oklch(83.6% 0.012 167.4)",
+          "oklch(95% 0.012 167.4)"
+        ]
+      },
+      "popover": {
+        "role": "neutral",
+        "displayName": "Raised Panel",
+        "canonical": "oklch(25% 0.015 166.3)",
+        "tonalRamp": [
+          "oklch(15% 0.015 166.3)",
+          "oklch(26.4% 0.015 166.3)",
+          "oklch(37.9% 0.015 166.3)",
+          "oklch(49.3% 0.015 166.3)",
+          "oklch(60.7% 0.015 166.3)",
+          "oklch(72.1% 0.015 166.3)",
+          "oklch(83.6% 0.015 166.3)",
+          "oklch(95% 0.015 166.3)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Quiet Fill",
+        "canonical": "oklch(26.3% 0.015 166.5)",
+        "tonalRamp": [
+          "oklch(15% 0.015 166.5)",
+          "oklch(26.4% 0.015 166.5)",
+          "oklch(37.9% 0.015 166.5)",
+          "oklch(49.3% 0.015 166.5)",
+          "oklch(60.7% 0.015 166.5)",
+          "oklch(72.1% 0.015 166.5)",
+          "oklch(83.6% 0.015 166.5)",
+          "oklch(95% 0.015 166.5)"
+        ]
+      },
+      "secondary": {
+        "role": "neutral",
+        "displayName": "Secondary Fill",
+        "canonical": "oklch(30.1% 0.017 165.9)",
+        "tonalRamp": [
+          "oklch(15% 0.017 165.9)",
+          "oklch(26.4% 0.017 165.9)",
+          "oklch(37.9% 0.017 165.9)",
+          "oklch(49.3% 0.017 165.9)",
+          "oklch(60.7% 0.017 165.9)",
+          "oklch(72.1% 0.017 165.9)",
+          "oklch(83.6% 0.017 165.9)",
+          "oklch(95% 0.017 165.9)"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Pit Hairline",
+        "canonical": "oklch(32.8% 0.019 163.5)",
+        "tonalRamp": [
+          "oklch(15% 0.019 163.5)",
+          "oklch(26.4% 0.019 163.5)",
+          "oklch(37.9% 0.019 163.5)",
+          "oklch(49.3% 0.019 163.5)",
+          "oklch(60.7% 0.019 163.5)",
+          "oklch(72.1% 0.019 163.5)",
+          "oklch(83.6% 0.019 163.5)",
+          "oklch(95% 0.019 163.5)"
+        ]
+      },
+      "foreground": {
+        "role": "neutral",
+        "displayName": "Cream Type",
+        "canonical": "oklch(95.3% 0.013 86.8)",
+        "tonalRamp": [
+          "oklch(15% 0.013 86.8)",
+          "oklch(26.4% 0.013 86.8)",
+          "oklch(37.9% 0.013 86.8)",
+          "oklch(49.3% 0.013 86.8)",
+          "oklch(60.7% 0.013 86.8)",
+          "oklch(72.1% 0.013 86.8)",
+          "oklch(83.6% 0.013 86.8)",
+          "oklch(95% 0.013 86.8)"
+        ]
+      },
+      "muted-foreground": {
+        "role": "neutral",
+        "displayName": "Sage Grey",
+        "canonical": "oklch(75.5% 0.013 156.9)",
+        "tonalRamp": [
+          "oklch(15% 0.013 156.9)",
+          "oklch(26.4% 0.013 156.9)",
+          "oklch(37.9% 0.013 156.9)",
+          "oklch(49.3% 0.013 156.9)",
+          "oklch(60.7% 0.013 156.9)",
+          "oklch(72.1% 0.013 156.9)",
+          "oklch(83.6% 0.013 156.9)",
+          "oklch(95% 0.013 156.9)"
+        ]
+      },
+      "felt": {
+        "role": "secondary",
+        "displayName": "Pit Green",
+        "canonical": "oklch(42.1% 0.075 165.1)",
+        "tonalRamp": [
+          "oklch(15% 0.075 165.1)",
+          "oklch(26.4% 0.075 165.1)",
+          "oklch(37.9% 0.075 165.1)",
+          "oklch(49.3% 0.075 165.1)",
+          "oklch(60.7% 0.075 165.1)",
+          "oklch(72.1% 0.075 165.1)",
+          "oklch(83.6% 0.075 165.1)",
+          "oklch(95% 0.075 165.1)"
+        ]
+      },
+      "felt-deep": {
+        "role": "secondary",
+        "displayName": "Deep Pit Green",
+        "canonical": "oklch(33.2% 0.057 166)",
+        "tonalRamp": [
+          "oklch(15% 0.057 166)",
+          "oklch(26.4% 0.057 166)",
+          "oklch(37.9% 0.057 166)",
+          "oklch(49.3% 0.057 166)",
+          "oklch(60.7% 0.057 166)",
+          "oklch(72.1% 0.057 166)",
+          "oklch(83.6% 0.057 166)",
+          "oklch(95% 0.057 166)"
+        ]
+      },
+      "felt-glow": {
+        "role": "secondary",
+        "displayName": "Lamp-Lit Felt",
+        "canonical": "oklch(48.9% 0.093 161.4)",
+        "tonalRamp": [
+          "oklch(15% 0.093 161.4)",
+          "oklch(26.4% 0.093 161.4)",
+          "oklch(37.9% 0.093 161.4)",
+          "oklch(49.3% 0.093 161.4)",
+          "oklch(60.7% 0.093 161.4)",
+          "oklch(72.1% 0.093 161.4)",
+          "oklch(83.6% 0.093 161.4)",
+          "oklch(95% 0.093 161.4)"
+        ]
+      },
+      "felt-line": {
+        "role": "secondary",
+        "displayName": "Chalk Line",
+        "canonical": "oklch(92% 0.033 89.9 / 60%)",
+        "tonalRamp": [
+          "oklch(15% 0.033 89.9)",
+          "oklch(26.4% 0.033 89.9)",
+          "oklch(37.9% 0.033 89.9)",
+          "oklch(49.3% 0.033 89.9)",
+          "oklch(60.7% 0.033 89.9)",
+          "oklch(72.1% 0.033 89.9)",
+          "oklch(83.6% 0.033 89.9)",
+          "oklch(95% 0.033 89.9)"
+        ]
+      },
+      "felt-text": {
+        "role": "secondary",
+        "displayName": "Felt Cream",
+        "canonical": "oklch(93.7% 0.028 90.9)",
+        "tonalRamp": [
+          "oklch(15% 0.028 90.9)",
+          "oklch(26.4% 0.028 90.9)",
+          "oklch(37.9% 0.028 90.9)",
+          "oklch(49.3% 0.028 90.9)",
+          "oklch(60.7% 0.028 90.9)",
+          "oklch(72.1% 0.028 90.9)",
+          "oklch(83.6% 0.028 90.9)",
+          "oklch(95% 0.028 90.9)"
+        ]
+      },
+      "felt-print": {
+        "role": "secondary",
+        "displayName": "Felt Print",
+        "canonical": "oklch(90.7% 0.027 99.9)",
+        "tonalRamp": [
+          "oklch(15% 0.027 99.9)",
+          "oklch(26.4% 0.027 99.9)",
+          "oklch(37.9% 0.027 99.9)",
+          "oklch(49.3% 0.027 99.9)",
+          "oklch(60.7% 0.027 99.9)",
+          "oklch(72.1% 0.027 99.9)",
+          "oklch(83.6% 0.027 99.9)",
+          "oklch(95% 0.027 99.9)"
+        ]
+      },
+      "table-button": {
+        "role": "secondary",
+        "displayName": "Felt Shadow Button",
+        "canonical": "oklch(25.8% 0.041 168.7 / 80%)",
+        "tonalRamp": [
+          "oklch(15% 0.041 168.7)",
+          "oklch(26.4% 0.041 168.7)",
+          "oklch(37.9% 0.041 168.7)",
+          "oklch(49.3% 0.041 168.7)",
+          "oklch(60.7% 0.041 168.7)",
+          "oklch(72.1% 0.041 168.7)",
+          "oklch(83.6% 0.041 168.7)",
+          "oklch(95% 0.041 168.7)"
+        ]
+      },
+      "rail": {
+        "role": "secondary",
+        "displayName": "Walnut Rail",
+        "canonical": "oklch(30% 0.031 58.1)",
+        "tonalRamp": [
+          "oklch(15% 0.031 58.1)",
+          "oklch(26.4% 0.031 58.1)",
+          "oklch(37.9% 0.031 58.1)",
+          "oklch(49.3% 0.031 58.1)",
+          "oklch(60.7% 0.031 58.1)",
+          "oklch(72.1% 0.031 58.1)",
+          "oklch(83.6% 0.031 58.1)",
+          "oklch(95% 0.031 58.1)"
+        ]
+      },
+      "paper": {
+        "role": "tertiary",
+        "displayName": "Coach Paper",
+        "canonical": "oklch(95.8% 0.018 89.4)",
+        "tonalRamp": [
+          "oklch(15% 0.018 89.4)",
+          "oklch(26.4% 0.018 89.4)",
+          "oklch(37.9% 0.018 89.4)",
+          "oklch(49.3% 0.018 89.4)",
+          "oklch(60.7% 0.018 89.4)",
+          "oklch(72.1% 0.018 89.4)",
+          "oklch(83.6% 0.018 89.4)",
+          "oklch(95% 0.018 89.4)"
+        ]
+      },
+      "paper-2": {
+        "role": "tertiary",
+        "displayName": "Paper Shade",
+        "canonical": "oklch(92.6% 0.025 89.2)",
+        "tonalRamp": [
+          "oklch(15% 0.025 89.2)",
+          "oklch(26.4% 0.025 89.2)",
+          "oklch(37.9% 0.025 89.2)",
+          "oklch(49.3% 0.025 89.2)",
+          "oklch(60.7% 0.025 89.2)",
+          "oklch(72.1% 0.025 89.2)",
+          "oklch(83.6% 0.025 89.2)",
+          "oklch(95% 0.025 89.2)"
+        ]
+      },
+      "paper-border": {
+        "role": "tertiary",
+        "displayName": "Paper Edge",
+        "canonical": "oklch(86.8% 0.03 87.6)",
+        "tonalRamp": [
+          "oklch(15% 0.03 87.6)",
+          "oklch(26.4% 0.03 87.6)",
+          "oklch(37.9% 0.03 87.6)",
+          "oklch(49.3% 0.03 87.6)",
+          "oklch(60.7% 0.03 87.6)",
+          "oklch(72.1% 0.03 87.6)",
+          "oklch(83.6% 0.03 87.6)",
+          "oklch(95% 0.03 87.6)"
+        ]
+      },
+      "ink": {
+        "role": "tertiary",
+        "displayName": "Coach Ink",
+        "canonical": "oklch(22% 0.013 78)",
+        "tonalRamp": [
+          "oklch(15% 0.013 78)",
+          "oklch(26.4% 0.013 78)",
+          "oklch(37.9% 0.013 78)",
+          "oklch(49.3% 0.013 78)",
+          "oklch(60.7% 0.013 78)",
+          "oklch(72.1% 0.013 78)",
+          "oklch(83.6% 0.013 78)",
+          "oklch(95% 0.013 78)"
+        ]
+      },
+      "ink-muted": {
+        "role": "tertiary",
+        "displayName": "Faded Ink",
+        "canonical": "oklch(46% 0.021 81.2)",
+        "tonalRamp": [
+          "oklch(15% 0.021 81.2)",
+          "oklch(26.4% 0.021 81.2)",
+          "oklch(37.9% 0.021 81.2)",
+          "oklch(49.3% 0.021 81.2)",
+          "oklch(60.7% 0.021 81.2)",
+          "oklch(72.1% 0.021 81.2)",
+          "oklch(83.6% 0.021 81.2)",
+          "oklch(95% 0.021 81.2)"
+        ]
+      },
+      "card-face": {
+        "role": "tertiary",
+        "displayName": "Card Stock",
+        "canonical": "oklch(98% 0.01 87.5)",
+        "tonalRamp": [
+          "oklch(15% 0.01 87.5)",
+          "oklch(26.4% 0.01 87.5)",
+          "oklch(37.9% 0.01 87.5)",
+          "oklch(49.3% 0.01 87.5)",
+          "oklch(60.7% 0.01 87.5)",
+          "oklch(72.1% 0.01 87.5)",
+          "oklch(83.6% 0.01 87.5)",
+          "oklch(95% 0.01 87.5)"
+        ]
+      },
+      "coach-accent": {
+        "role": "feedback",
+        "displayName": "Hint Blue",
+        "canonical": "oklch(55.7% 0.187 261.2)",
+        "tonalRamp": [
+          "oklch(15% 0.187 261.2)",
+          "oklch(26.4% 0.187 261.2)",
+          "oklch(37.9% 0.187 261.2)",
+          "oklch(49.3% 0.187 261.2)",
+          "oklch(60.7% 0.187 261.2)",
+          "oklch(72.1% 0.187 261.2)",
+          "oklch(83.6% 0.187 261.2)",
+          "oklch(95% 0.187 261.2)"
+        ]
+      },
+      "hint-ink": {
+        "role": "feedback",
+        "displayName": "Hint Ink",
+        "canonical": "oklch(48.2% 0.172 262)",
+        "tonalRamp": [
+          "oklch(15% 0.172 262)",
+          "oklch(26.4% 0.172 262)",
+          "oklch(37.9% 0.172 262)",
+          "oklch(49.3% 0.172 262)",
+          "oklch(60.7% 0.172 262)",
+          "oklch(72.1% 0.172 262)",
+          "oklch(83.6% 0.172 262)",
+          "oklch(95% 0.172 262)"
+        ]
+      },
+      "info-ink": {
+        "role": "feedback",
+        "displayName": "Hint Blue Light",
+        "canonical": "oklch(73.2% 0.117 261.7)",
+        "tonalRamp": [
+          "oklch(15% 0.117 261.7)",
+          "oklch(26.4% 0.117 261.7)",
+          "oklch(37.9% 0.117 261.7)",
+          "oklch(49.3% 0.117 261.7)",
+          "oklch(60.7% 0.117 261.7)",
+          "oklch(72.1% 0.117 261.7)",
+          "oklch(83.6% 0.117 261.7)",
+          "oklch(95% 0.117 261.7)"
+        ]
+      },
+      "correct": {
+        "role": "feedback",
+        "displayName": "Good-Call Green",
+        "canonical": "oklch(65.8% 0.122 159.8)",
+        "tonalRamp": [
+          "oklch(15% 0.122 159.8)",
+          "oklch(26.4% 0.122 159.8)",
+          "oklch(37.9% 0.122 159.8)",
+          "oklch(49.3% 0.122 159.8)",
+          "oklch(60.7% 0.122 159.8)",
+          "oklch(72.1% 0.122 159.8)",
+          "oklch(83.6% 0.122 159.8)",
+          "oklch(95% 0.122 159.8)"
+        ]
+      },
+      "correct-ink": {
+        "role": "feedback",
+        "displayName": "Good-Call Ink",
+        "canonical": "oklch(51.6% 0.107 158.4)",
+        "tonalRamp": [
+          "oklch(15% 0.107 158.4)",
+          "oklch(26.4% 0.107 158.4)",
+          "oklch(37.9% 0.107 158.4)",
+          "oklch(49.3% 0.107 158.4)",
+          "oklch(60.7% 0.107 158.4)",
+          "oklch(72.1% 0.107 158.4)",
+          "oklch(83.6% 0.107 158.4)",
+          "oklch(95% 0.107 158.4)"
+        ]
+      },
+      "mistake": {
+        "role": "feedback",
+        "displayName": "Replay Coral",
+        "canonical": "oklch(68.8% 0.133 35.8)",
+        "tonalRamp": [
+          "oklch(15% 0.133 35.8)",
+          "oklch(26.4% 0.133 35.8)",
+          "oklch(37.9% 0.133 35.8)",
+          "oklch(49.3% 0.133 35.8)",
+          "oklch(60.7% 0.133 35.8)",
+          "oklch(72.1% 0.133 35.8)",
+          "oklch(83.6% 0.133 35.8)",
+          "oklch(95% 0.133 35.8)"
+        ]
+      },
+      "mistake-ink": {
+        "role": "feedback",
+        "displayName": "Replay Rust",
+        "canonical": "oklch(54% 0.148 35.1)",
+        "tonalRamp": [
+          "oklch(15% 0.148 35.1)",
+          "oklch(26.4% 0.148 35.1)",
+          "oklch(37.9% 0.148 35.1)",
+          "oklch(49.3% 0.148 35.1)",
+          "oklch(60.7% 0.148 35.1)",
+          "oklch(72.1% 0.148 35.1)",
+          "oklch(83.6% 0.148 35.1)",
+          "oklch(95% 0.148 35.1)"
+        ]
+      },
+      "suit-spade": {
+        "role": "suit",
+        "displayName": "Spade",
+        "canonical": "oklch(20.4% 0.007 258.4)",
+        "tonalRamp": [
+          "oklch(15% 0.007 258.4)",
+          "oklch(26.4% 0.007 258.4)",
+          "oklch(37.9% 0.007 258.4)",
+          "oklch(49.3% 0.007 258.4)",
+          "oklch(60.7% 0.007 258.4)",
+          "oklch(72.1% 0.007 258.4)",
+          "oklch(83.6% 0.007 258.4)",
+          "oklch(95% 0.007 258.4)"
+        ]
+      },
+      "suit-heart": {
+        "role": "suit",
+        "displayName": "Heart",
+        "canonical": "oklch(55% 0.188 26.5)",
+        "tonalRamp": [
+          "oklch(15% 0.188 26.5)",
+          "oklch(26.4% 0.188 26.5)",
+          "oklch(37.9% 0.188 26.5)",
+          "oklch(49.3% 0.188 26.5)",
+          "oklch(60.7% 0.188 26.5)",
+          "oklch(72.1% 0.188 26.5)",
+          "oklch(83.6% 0.188 26.5)",
+          "oklch(95% 0.188 26.5)"
+        ]
+      },
+      "suit-diamond": {
+        "role": "suit",
+        "displayName": "Diamond",
+        "canonical": "oklch(50.2% 0.164 259)",
+        "tonalRamp": [
+          "oklch(15% 0.164 259)",
+          "oklch(26.4% 0.164 259)",
+          "oklch(37.9% 0.164 259)",
+          "oklch(49.3% 0.164 259)",
+          "oklch(60.7% 0.164 259)",
+          "oklch(72.1% 0.164 259)",
+          "oklch(83.6% 0.164 259)",
+          "oklch(95% 0.164 259)"
+        ]
+      },
+      "suit-club": {
+        "role": "suit",
+        "displayName": "Club",
+        "canonical": "oklch(51.2% 0.126 150.6)",
+        "tonalRamp": [
+          "oklch(15% 0.126 150.6)",
+          "oklch(26.4% 0.126 150.6)",
+          "oklch(37.9% 0.126 150.6)",
+          "oklch(49.3% 0.126 150.6)",
+          "oklch(60.7% 0.126 150.6)",
+          "oklch(72.1% 0.126 150.6)",
+          "oklch(83.6% 0.126 150.6)",
+          "oklch(95% 0.126 150.6)"
+        ]
+      },
+      "chip-1": {
+        "role": "chip",
+        "displayName": "Chip 1",
+        "canonical": "oklch(92.9% 0.021 88.7)",
+        "tonalRamp": [
+          "oklch(15% 0.021 88.7)",
+          "oklch(26.4% 0.021 88.7)",
+          "oklch(37.9% 0.021 88.7)",
+          "oklch(49.3% 0.021 88.7)",
+          "oklch(60.7% 0.021 88.7)",
+          "oklch(72.1% 0.021 88.7)",
+          "oklch(83.6% 0.021 88.7)",
+          "oklch(95% 0.021 88.7)"
+        ]
+      },
+      "chip-5": {
+        "role": "chip",
+        "displayName": "Chip 5",
+        "canonical": "oklch(53.2% 0.163 27.3)",
+        "tonalRamp": [
+          "oklch(15% 0.163 27.3)",
+          "oklch(26.4% 0.163 27.3)",
+          "oklch(37.9% 0.163 27.3)",
+          "oklch(49.3% 0.163 27.3)",
+          "oklch(60.7% 0.163 27.3)",
+          "oklch(72.1% 0.163 27.3)",
+          "oklch(83.6% 0.163 27.3)",
+          "oklch(95% 0.163 27.3)"
+        ]
+      },
+      "chip-25": {
+        "role": "chip",
+        "displayName": "Chip 25",
+        "canonical": "oklch(52.9% 0.106 154.6)",
+        "tonalRamp": [
+          "oklch(15% 0.106 154.6)",
+          "oklch(26.4% 0.106 154.6)",
+          "oklch(37.9% 0.106 154.6)",
+          "oklch(49.3% 0.106 154.6)",
+          "oklch(60.7% 0.106 154.6)",
+          "oklch(72.1% 0.106 154.6)",
+          "oklch(83.6% 0.106 154.6)",
+          "oklch(95% 0.106 154.6)"
+        ]
+      },
+      "chip-100": {
+        "role": "chip",
+        "displayName": "Chip 100",
+        "canonical": "oklch(23.8% 0.006 258.4)",
+        "tonalRamp": [
+          "oklch(15% 0.006 258.4)",
+          "oklch(26.4% 0.006 258.4)",
+          "oklch(37.9% 0.006 258.4)",
+          "oklch(49.3% 0.006 258.4)",
+          "oklch(60.7% 0.006 258.4)",
+          "oklch(72.1% 0.006 258.4)",
+          "oklch(83.6% 0.006 258.4)",
+          "oklch(95% 0.006 258.4)"
+        ]
+      },
+      "chip-500": {
+        "role": "chip",
+        "displayName": "Chip 500",
+        "canonical": "oklch(46.7% 0.152 301.1)",
+        "tonalRamp": [
+          "oklch(15% 0.152 301.1)",
+          "oklch(26.4% 0.152 301.1)",
+          "oklch(37.9% 0.152 301.1)",
+          "oklch(49.3% 0.152 301.1)",
+          "oklch(60.7% 0.152 301.1)",
+          "oklch(72.1% 0.152 301.1)",
+          "oklch(83.6% 0.152 301.1)",
+          "oklch(95% 0.152 301.1)"
+        ]
+      },
+      "chip-1k": {
+        "role": "chip",
+        "displayName": "Chip 1K",
+        "canonical": "oklch(73% 0.14 76.3)",
+        "tonalRamp": [
+          "oklch(15% 0.14 76.3)",
+          "oklch(26.4% 0.14 76.3)",
+          "oklch(37.9% 0.14 76.3)",
+          "oklch(49.3% 0.14 76.3)",
+          "oklch(60.7% 0.14 76.3)",
+          "oklch(72.1% 0.14 76.3)",
+          "oklch(83.6% 0.14 76.3)",
+          "oklch(95% 0.14 76.3)"
+        ]
+      },
+      "scrim": {
+        "role": "neutral",
+        "displayName": "Scrim",
+        "canonical": "oklch(0% 0 0 / 65%)",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(26.4% 0 0)",
+          "oklch(37.9% 0 0)",
+          "oklch(49.3% 0 0)",
+          "oklch(60.7% 0 0)",
+          "oklch(72.1% 0 0)",
+          "oklch(83.6% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Desktop page titles; the landing page's hero takes this face larger."
+      },
+      "heading": {
+        "displayName": "Heading",
+        "purpose": "Base for screen titles and section headlines; screens scale it 30–48 at weight 500."
+      },
+      "section": {
+        "displayName": "Section",
+        "purpose": "Sub-section headings."
+      },
+      "stat-value": {
+        "displayName": "Stat Value",
+        "purpose": "The figures that matter: accuracy, level, drill numerals."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card and option titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Running copy, onboarding answers, inputs. The 16px floor for body copy."
+      },
+      "body-sm": {
+        "displayName": "Body Small",
+        "purpose": "Coach-note bodies, descriptions, secondary paragraphs."
+      },
+      "button": {
+        "displayName": "Button",
+        "purpose": "Button labels (14 small, 16 large)."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Field, stat-card and segment labels."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Metadata and rules lines under a table title."
+      },
+      "caption-strong": {
+        "displayName": "Caption Strong",
+        "purpose": "Badge and tag labels, deltas."
+      },
+      "eyebrow": {
+        "displayName": "Eyebrow",
+        "purpose": "Section kickers: gold on dark, rust on paper."
+      },
+      "overline": {
+        "displayName": "Overline",
+        "purpose": "Micro-labels: PRACTICE over the bankroll, the coach note's verdict line."
+      }
+    },
+    "shadows": [
+      {
+        "name": "chip",
+        "value": "0px 2px 4px #00000066",
+        "purpose": "A practice chip resting on felt or the rack."
+      },
+      {
+        "name": "card",
+        "value": "0px 2px 6px #00000055",
+        "purpose": "A playing card on the felt."
+      },
+      {
+        "name": "note",
+        "value": "0px 8px 24px #00000066",
+        "purpose": "The coach note; also the strength for popovers and menus."
+      },
+      {
+        "name": "die",
+        "value": "0px 4px 8px #00000088",
+        "purpose": "A thrown die."
+      },
+      {
+        "name": "loupe",
+        "value": "0px 12px 32px #000000AA",
+        "purpose": "The roulette bet loupe; also the strength for sheets."
+      },
+      {
+        "name": "pill",
+        "value": "0px 6px 18px #00000066",
+        "purpose": "A raised pill floating over the landing hero table."
+      }
+    ],
+    "motion": [],
+    "breakpoints": [
+      {
+        "name": "narrow",
+        "value": "640px"
+      },
+      {
+        "name": "two-column",
+        "value": "900px"
+      },
+      {
+        "name": "header-labels",
+        "value": "1040px"
+      },
+      {
+        "name": "wide",
+        "value": "1100px"
+      },
+      {
+        "name": "page-max",
+        "value": "1440px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one House Gold action per view (Deal, Start training, Continue).",
+      "html": "<button class=\"ds-btn-primary\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><polygon points=\"6 3 20 12 6 21 6 3\"/></svg>Start training</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 10px; border: 1px solid transparent; font: 600 15px/1 Inter, system-ui, sans-serif; cursor: pointer; transition: opacity 0.12s; background: #D4AE62; color: #1A1406; } .ds-btn-primary:focus-visible { outline: 2px solid #D4AE62; outline-offset: 2px; } .ds-btn-primary:active { opacity: 0.85; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Supporting actions beside the primary (Clear, Back, Free play instead).",
+      "html": "<button class=\"ds-btn-secondary\">Back</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 10px; border: 1px solid transparent; font: 600 15px/1 Inter, system-ui, sans-serif; cursor: pointer; transition: opacity 0.12s; background: #26312C; color: #F3EFE6; border-color: #2C3832; } .ds-btn-secondary:focus-visible { outline: 2px solid #D4AE62; outline-offset: 2px; } .ds-btn-secondary:active { opacity: 0.85; }"
+    },
+    {
+      "name": "Sheet",
+      "kind": "custom",
+      "refersTo": "sheet",
+      "description": "The one modal surface: rises from the bottom over a scrim, grabber to drag down, Close in the header.",
+      "html": "<div class=\"ds-sheet-stage\"><div class=\"ds-sheet\" role=\"dialog\" aria-label=\"Rules and payouts\"><div class=\"ds-sheet-grab\"></div><div class=\"ds-sheet-head\"><span class=\"ds-sheet-title\">Rules &amp; payouts</span><button class=\"ds-sheet-done\">Done</button></div><p class=\"ds-sheet-body\">Practice chips only. Each pocket is equally likely on every spin; the wheel has no memory.</p></div></div>",
+      "css": ".ds-sheet-stage { height: 220px; display: flex; align-items: flex-end; justify-content: center; background: #000000A6; border-radius: 16px; overflow: hidden; } .ds-sheet { width: 100%; max-width: 430px; background: #1B2420; border: 1px solid #2C3832; border-bottom: 0; border-radius: 20px 20px 0 0; box-shadow: 0px 12px 32px #000000AA; padding: 0 20px 20px; } .ds-sheet-grab { width: 36px; height: 5px; border-radius: 3px; background: #A9B2AC80; margin: 8px auto 4px; } .ds-sheet-head { display: flex; align-items: center; justify-content: space-between; min-height: 44px; } .ds-sheet-title { font: 500 22px/1.2 Fraunces, Georgia, serif; color: #F3EFE6; } .ds-sheet-done { min-height: 44px; padding: 0 8px; border: 0; background: transparent; color: #D4AE62; font: 600 15px/1 Inter, system-ui, sans-serif; cursor: pointer; } .ds-sheet-done:focus-visible { outline: 2px solid #D4AE62; outline-offset: 2px; } .ds-sheet-body { margin: 4px 0 0; font: 400 14px/20px Inter, system-ui, sans-serif; color: #A9B2AC; }"
+    },
+    {
+      "name": "Toggle Chip",
+      "kind": "chip",
+      "refersTo": "toggle-chip",
+      "description": "A checkbox pill (onboarding game picks). Selected inverts to cream with a check.",
+      "html": "<div class=\"ds-chip-row\"><button class=\"ds-toggle-chip ds-toggle-chip--on\" aria-pressed=\"true\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"/></svg>Blackjack</button><button class=\"ds-toggle-chip\" aria-pressed=\"false\">Craps</button></div>",
+      "css": ".ds-chip-row { display: flex; gap: 8px; flex-wrap: wrap; } .ds-toggle-chip { display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid #2C3832; background: #161D1A; color: #F3EFE6; font: 500 15px/1 Inter, system-ui, sans-serif; cursor: pointer; } .ds-toggle-chip--on { background: #F3EFE6; border-color: #F3EFE6; color: #0E1311; } .ds-toggle-chip:focus-visible { outline: 2px solid #D4AE62; outline-offset: 2px; } .ds-toggle-chip:active { opacity: 0.85; }"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "custom",
+      "refersTo": "segmented-option-selected",
+      "description": "Equal-width radio segments on a quiet track; the chosen one is coach paper.",
+      "html": "<div class=\"ds-seg\" role=\"radiogroup\" aria-label=\"How often the coach speaks up\"><button class=\"ds-seg-opt ds-seg-opt--on\" role=\"radio\" aria-checked=\"true\">Every decision</button><button class=\"ds-seg-opt\" role=\"radio\" aria-checked=\"false\">Mistakes</button><button class=\"ds-seg-opt\" role=\"radio\" aria-checked=\"false\">When asked</button></div>",
+      "css": ".ds-seg { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: #1E2723; max-width: 360px; } .ds-seg-opt { flex: 1; height: 40px; padding: 0 8px; border: 0; border-radius: 9px; background: transparent; color: #A9B2AC; font: 500 13px/1 Inter, system-ui, sans-serif; cursor: pointer; white-space: nowrap; } .ds-seg-opt--on { background: #F6F1E4; color: #1E1A14; font-weight: 600; } .ds-seg-opt:focus-visible { outline: 2px solid #D4AE62; outline-offset: 1px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "52pt field on Night Panel; the border turns House Gold on focus, Replay Coral on error.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Trip date</span><input class=\"ds-input\" placeholder=\"YYYY-MM-DD\" /></label>",
+      "css": ".ds-field { display: grid; gap: 8px; max-width: 320px; } .ds-field-label { font: 600 15px/1.2 Inter, system-ui, sans-serif; color: #F3EFE6; } .ds-input { height: 52px; padding: 0 16px; border-radius: 10px; border: 1px solid #2C3832; background: #161D1A; color: #F3EFE6; font: 400 16px/24px Inter, system-ui, sans-serif; outline: none; } .ds-input::placeholder { color: #A9B2AC; } .ds-input:focus { border: 1.5px solid #D4AE62; padding: 0 15.5px; }"
+    },
+    {
+      "name": "App Header Nav",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "The five destinations; the active one sits on Quiet Fill. Collapses to icons below 1040.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Main\"><a class=\"ds-nav-item ds-nav-item--on\" href=\"#\" aria-current=\"page\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect width=\"7\" height=\"7\" x=\"3\" y=\"3\" rx=\"1\"/><rect width=\"7\" height=\"7\" x=\"14\" y=\"3\" rx=\"1\"/><rect width=\"7\" height=\"7\" x=\"14\" y=\"14\" rx=\"1\"/><rect width=\"7\" height=\"7\" x=\"3\" y=\"14\" rx=\"1\"/></svg>Lobby</a><a class=\"ds-nav-item\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M22 10v6\"/><path d=\"M2 10l10-5 10 5-10 5z\"/><path d=\"M6 12v5c3 3 9 3 12 0v-5\"/></svg>Trainer</a><a class=\"ds-nav-item\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m16 6 4 14\"/><path d=\"M12 6v14\"/><path d=\"M8 8v12\"/><path d=\"M4 4v16\"/></svg>Strategies</a><a class=\"ds-nav-item\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/></svg>Live tables</a><a class=\"ds-nav-item\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 3v16a2 2 0 0 0 2 2h16\"/><path d=\"m19 9-5 5-4-4-3 3\"/></svg>Progress</a></nav>",
+      "css": ".ds-nav { display: flex; gap: 4px; align-items: center; padding: 12px 16px; background: #0E1311; border-bottom: 1px solid #2C3832; } .ds-nav-item { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 8px 14px; border-radius: 10px; color: #A9B2AC; font: 500 14px/1 Inter, system-ui, sans-serif; text-decoration: none; } .ds-nav-item--on { background: #1E2723; color: #F3EFE6; } .ds-nav-item:focus-visible { outline: 2px solid #D4AE62; outline-offset: 2px; }"
+    },
+    {
+      "name": "Stat Card",
+      "kind": "card",
+      "refersTo": "stat-card",
+      "description": "Label, a Fraunces figure, and a toned delta. Flat: hairline, no shadow.",
+      "html": "<div class=\"ds-stat\" role=\"group\" aria-label=\"Decision accuracy: 94.2%\"><span class=\"ds-stat-label\">Decision accuracy</span><span class=\"ds-stat-value\">94.2%</span><span class=\"ds-stat-delta\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><polyline points=\"22 7 13.5 15.5 8.5 10.5 2 17\"/><polyline points=\"16 7 22 7 22 13\"/></svg>+3.1 pts this week</span></div>",
+      "css": ".ds-stat { display: grid; gap: 6px; width: 220px; padding: 20px; border-radius: 16px; border: 1px solid #2C3832; background: #161D1A; } .ds-stat-label { font: 500 13px/1.2 Inter, system-ui, sans-serif; color: #A9B2AC; } .ds-stat-value { font: 500 34px/1.1 Fraunces, Georgia, serif; color: #F3EFE6; } .ds-stat-delta { display: inline-flex; align-items: center; gap: 4px; font: 500 12px/1.2 Inter, system-ui, sans-serif; color: #3FA877; }"
+    },
+    {
+      "name": "Coach Note",
+      "kind": "custom",
+      "refersTo": "coach-note",
+      "description": "Signature: the dealer's note on paper with a verdict-coloured left edge, the why, and up to two actions.",
+      "html": "<div class=\"ds-note\" role=\"note\"><div class=\"ds-note-head\"><span class=\"ds-note-avatar\">M</span><span class=\"ds-note-who\"><span class=\"ds-note-name\">Marcus · your dealer</span><span class=\"ds-note-kind\">Hint · Basic strategy</span></span><span class=\"ds-note-icon\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5\"/><path d=\"M9 18h6\"/><path d=\"M10 22h4\"/></svg></span></div><p class=\"ds-note-title\">Hit. 12 against a dealer 7 is a hit.</p><p class=\"ds-note-body\">A 7 means the dealer likely makes 17+. Standing on 12 wins only ~26% of the time; hitting gives you a real chance to improve.</p><div class=\"ds-note-actions\"><button class=\"ds-note-btn ds-note-btn--solid\">Hit</button><button class=\"ds-note-btn\">Show the chart</button></div></div>",
+      "css": ".ds-note { width: 358px; max-width: 100%; display: grid; gap: 10px; padding: 14px 16px 16px; border-radius: 16px; border-left: 4px solid #2D6CDF; background: #F6F1E4; box-shadow: 0px 8px 24px #00000066; } .ds-note-head { display: flex; align-items: center; gap: 10px; } .ds-note-avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: #3A2A1E; color: #F6F1E4; font: 600 13px/1 Inter, system-ui, sans-serif; } .ds-note-who { flex: 1; display: grid; } .ds-note-name { font: 600 13px/1.3 Inter, system-ui, sans-serif; color: #1E1A14; } .ds-note-kind { font: 700 11px/1.3 Inter, system-ui, sans-serif; letter-spacing: 1px; text-transform: uppercase; color: #2256BD; } .ds-note-icon { color: #2256BD; display: flex; } .ds-note-title { margin: 0; font: 700 17px/22px Inter, system-ui, sans-serif; color: #1E1A14; } .ds-note-body { margin: 0; font: 400 14px/20px Inter, system-ui, sans-serif; color: #5E574B; } .ds-note-actions { display: flex; gap: 8px; } .ds-note-btn { min-height: 40px; padding: 6px 14px; border-radius: 10px; border: 1px solid #DCD3BE; background: transparent; color: #1E1A14; font: 600 14px/1.2 Inter, system-ui, sans-serif; cursor: pointer; } .ds-note-btn--solid { background: #1E1A14; border-color: #1E1A14; color: #F6F1E4; } .ds-note-btn:focus-visible { outline: 2px solid #D4AE62; outline-offset: 2px; } .ds-note-btn:active { opacity: 0.85; }"
+    },
+    {
+      "name": "Practice Chip",
+      "kind": "custom",
+      "refersTo": "practice-chip",
+      "description": "Signature table object: denomination colour, six edge spots, inlay ring, Chip shadow; gold ring when selected in the rack.",
+      "html": "<div class=\"ds-rack\"><button class=\"ds-chip-slot\" aria-label=\"$1 chip\" aria-pressed=\"false\"><span class=\"ds-chip\"><svg width=\"52\" height=\"52\" viewBox=\"0 0 52 52\" aria-hidden=\"true\"><circle cx=\"26\" cy=\"26\" r=\"26\" fill=\"#EDE7D8\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(0 26 26)\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(60 26 26)\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(120 26 26)\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(180 26 26)\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(240 26 26)\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(300 26 26)\"/><circle cx=\"26\" cy=\"26\" r=\"17\" fill=\"none\" stroke=\"#FFFFFFB3\" stroke-width=\"1.5\"/></svg><span class=\"ds-chip-label\" style=\"color:#1E1A14\">1</span></span></button><button class=\"ds-chip-slot\" aria-label=\"$5 chip\" aria-pressed=\"false\"><span class=\"ds-chip\"><svg width=\"52\" height=\"52\" viewBox=\"0 0 52 52\" aria-hidden=\"true\"><circle cx=\"26\" cy=\"26\" r=\"26\" fill=\"#B83A33\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(0 26 26)\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(60 26 26)\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(120 26 26)\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(180 26 26)\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(240 26 26)\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(300 26 26)\"/><circle cx=\"26\" cy=\"26\" r=\"17\" fill=\"none\" stroke=\"#FFFFFFB3\" stroke-width=\"1.5\"/></svg><span class=\"ds-chip-label\" style=\"color:#FFFFFF\">5</span></span></button><button class=\"ds-chip-slot ds-chip-slot--on\" aria-label=\"$25 chip\" aria-pressed=\"true\"><span class=\"ds-chip\"><svg width=\"52\" height=\"52\" viewBox=\"0 0 52 52\" aria-hidden=\"true\"><circle cx=\"26\" cy=\"26\" r=\"26\" fill=\"#2E7D4F\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(0 26 26)\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(60 26 26)\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(120 26 26)\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(180 26 26)\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(240 26 26)\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(300 26 26)\"/><circle cx=\"26\" cy=\"26\" r=\"17\" fill=\"none\" stroke=\"#FFFFFFB3\" stroke-width=\"1.5\"/></svg><span class=\"ds-chip-label\" style=\"color:#FFFFFF\">25</span></span></button><button class=\"ds-chip-slot\" aria-label=\"$100 chip\" aria-pressed=\"false\"><span class=\"ds-chip\"><svg width=\"52\" height=\"52\" viewBox=\"0 0 52 52\" aria-hidden=\"true\"><circle cx=\"26\" cy=\"26\" r=\"26\" fill=\"#1D1F22\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(0 26 26)\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(60 26 26)\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(120 26 26)\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(180 26 26)\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(240 26 26)\"/><rect x=\"23\" y=\"0\" width=\"6\" height=\"8\" rx=\"1.5\" fill=\"#FFFFFFEE\" transform=\"rotate(300 26 26)\"/><circle cx=\"26\" cy=\"26\" r=\"17\" fill=\"none\" stroke=\"#FFFFFFB3\" stroke-width=\"1.5\"/></svg><span class=\"ds-chip-label\" style=\"color:#FFFFFF\">100</span></span></button></div>",
+      "css": ".ds-rack { display: flex; gap: 8px; padding: 12px 16px; background: linear-gradient(180deg, #3A2A1E, #2A1E15); border-top: 1px solid #5A4330; } .ds-chip-slot { width: 56px; height: 56px; display: grid; place-items: center; border-radius: 50%; border: 2.5px solid transparent; background: transparent; padding: 0; cursor: pointer; } .ds-chip-slot--on { border-color: #D4AE62; } .ds-chip-slot:focus-visible { outline: 2px solid #D4AE62; outline-offset: 2px; } .ds-chip { position: relative; width: 52px; height: 52px; border-radius: 50%; box-shadow: 0px 2px 4px #00000066; } .ds-chip svg { display: block; } .ds-chip-label { position: absolute; inset: 0; display: grid; place-items: center; font: 800 16px/1 Inter, system-ui, sans-serif; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Dealer at Your Shoulder",
+    "overview": "Tableside is a dark card room with a real table at its centre. The table is physical: baize\nfelt lit from the middle, a walnut rail, and chips, cards and dice drawn as objects you could\npick up. The teaching voice is a dealer standing beside you. It speaks through a note on warm\npaper that sits next to the hand rather than covering it, so the reason arrives while the\ncards are still on the felt. Everything else (navigation, panels, statistics) is quiet chrome\nthat makes room for the table and the coach.\n\nThe mood is **premium · instructional**.\n\n- **Premium** comes from material and restraint. There is one gold, and it marks action, place\n  and money. A Fraunces serif sets headlines and the figures that matter, in cream type on\n  near-black.\n- **Instructional** comes from the paper layer and from numbers that are always legible and\n  traceable.\n\nThe interface is clean, legible 2D. It never chases a photorealistic 3D felt or casino-floor\nspectacle (ADR-0005); \"clean\" is still never a licence for a spreadsheet.\n\nThe layout is phone-first and comfortably dense. A table screen stacks a top bar and phase\nstepper, the felt, a status line, a row of equal-width actions, and the chip rack on its rail.\nApp screens are one column on phones and open to two or three on desktop inside a 1440 frame.\nThere is no motion today: state changes are instant.",
+    "keyCharacteristics": [
+      "Near-black green canvas (Night Shift Black), cream type, a single gold accent (House Gold).",
+      "Felt, rail, chips, cards and dice rendered as tactile objects with their own shadows.",
+      "Coach notes on paper with a 4px edge coloured by verdict: Hint Blue, Replay Coral or Good-Call Green.",
+      "Fraunces for display and key figures; Inter for everything the player operates.",
+      "App surfaces are separated by tonal steps and 1px hairlines. Shadows belong to objects and overlays.",
+      "Every tap target meets the platform minimum: 44pt on iOS and the web, 48dp on Android.",
+      "On iOS and Android the platform's own tab bar, back bars and sheets carry navigation; the web keeps its App Header."
+    ],
+    "rules": [
+      {
+        "name": "The House Gold Rule",
+        "body": "Gold means _act here_, _you are here_ or _money_. Use it for the primary action, the current step, the chosen option and the bankroll. Never use it as decoration, and give each view only one gold-filled button.",
+        "section": "colors"
+      },
+      {
+        "name": "The Paper Is the Coach Rule",
+        "body": "Paper carries the teaching voice: coach notes, table tips and the landing page's teaching sections. Inside a control, paper marks the one chosen option. Nothing else sits on paper.",
+        "section": "colors"
+      },
+      {
+        "name": "The Four-Colour Deck Rule",
+        "body": "Suits are always four colours. Hearts and diamonds never share red; a glance must separate them.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Ink Rule",
+        "body": "The felt prints in one opaque ink, Felt Print. Small felt type ranks by size, weight and tracking, never by fading the ink: translucent cream on lit green fails.",
+        "section": "colors"
+      },
+      {
+        "name": "The Named Literal Rule",
+        "body": "Screens never carry a raw hex value. Design variables come from `colors`. A design literal gets a name in `surfaces` or `marketing`, or in a game's own map: `felt` for blackjack, `craps`, `live`, `machine` for the video poker cabinet, and baccarat's `palette`.",
+        "section": "colors"
+      },
+      {
+        "name": "The Serif Counts Rule",
+        "body": "Fraunces sets headlines and the numbers worth remembering. Everything the player taps, reads mid-hand or types is Inter.",
+        "section": "typography"
+      },
+      {
+        "name": "The Fixed Felt Rule",
+        "body": "The felt is a drawing, not a layout: its type is capped at 1.3× so the table keeps its shape at any text size, and everything around the felt (bars, actions, notes) grows instead.",
+        "section": "typography"
+      },
+      {
+        "name": "The 16 Floor Rule",
+        "body": "Running body copy is never smaller than 16px; the system sheet sets this as the minimum for older readers. Use 14px and below only for secondary lines, captions and labels.",
+        "section": "typography"
+      },
+      {
+        "name": "The Lift Has a Reason Rule",
+        "body": "A shadow means one of two things: this is an object on the table, or this is a layer above the page. If it is neither, it is flat.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Tactile Felt, Quiet Chrome Rule",
+        "body": "Objects on the table look physical: chips have edge spots and an inlay, and cards have card stock and a hairline edge. Felt is lit from the centre, and these objects carry shadows. The chrome around the table stays flat, hairlined and restrained, so the eye goes to the table and the coach.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "**Do** import colours, spacing, radii and type from `@/ui/ds` (`colors`, `space`, `radius`, `type`, `ui()`, `display()`), and name any new design literal in `surfaces`, `marketing` or the game's own palette map.",
+      "**Do** keep House Gold to the one primary action, the current step, the chosen option and the bankroll.",
+      "**Do** put the coach's voice on Coach Paper with a 4px verdict edge, beside the hand and never covering the cards.",
+      "**Do** keep every tap target at least `MIN_TAP` (44pt iOS and web, 48dp Android), using `hitSlop` when the visual is smaller.",
+      "**Do** select type weight by face name through `ui()` / `display()`, never `fontWeight`.",
+      "**Do** use Hint Blue Light (#7FA8F2) for informational text on dark surfaces and Hint Ink (#2256BD) for hint text on paper.",
+      "**Do** open every modal panel with `Sheet`, so Back, the scrim, the grabber and the keyboard behave the same everywhere.",
+      "**Do** give text containers a minimum height, never a fixed one, and cap text only through `textScale` where geometry is fixed."
+    ],
+    "donts": [
+      "**Don't** put a raw hex value in a screen file.",
+      "**Don't** set Hint Blue (#2D6CDF) as text. It reaches only 4.3:1 on Coach Paper and 3.5:1 on Night Panel; use Hint Ink on paper and Hint Blue Light on dark.",
+      "**Don't** fade felt type with alpha; use Felt Print.",
+      "**Don't** draw the App Header or any web-style global navigation on iOS or Android.",
+      "**Don't** grey out or hide a legal player action to steer the player. Disabled styling is only for actions that are genuinely unavailable.",
+      "**Don't** render a photorealistic 3D felt or casino-floor spectacle. The table is clean, legible 2D.",
+      "**Don't** add shadows to in-flow panels, stat cards or list rows.",
+      "**Don't** use gold as decoration, or put two gold-filled buttons in one view.",
+      "**Don't** set running body copy below 16px."
+    ]
+  }
+}

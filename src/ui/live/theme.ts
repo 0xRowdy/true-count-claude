@@ -26,5 +26,4 @@ export const live = {
   /** Your seat's gold wash (--primary at 12%). */
   youWash: "#D4AE621F",
   white: surfaces.chipInkLight,
-  scrim: "#000000AA",
 } as const;

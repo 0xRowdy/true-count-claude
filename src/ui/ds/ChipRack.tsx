@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { Chip } from "./Chip";
 import { CHIP_VALUES, formatMoney, type ChipValue } from "./format";
 import { Gradient } from "./Gradient";
-import { surfaces, ui } from "./tokens";
+import { surfaces, textScale, ui } from "./tokens";
 
 /**
  * The design's Chip Rack (e2gA4): the wooden rail with every denomination; the selected chip
@@ -41,7 +41,9 @@ export function ChipRack({
           />
         ))}
       </View>
-      <Text style={[ui(11), styles.caption]}>{text}</Text>
+      <Text style={[ui(12), styles.caption]} maxFontSizeMultiplier={textScale.felt}>
+        {text}
+      </Text>
     </View>
   );
 }

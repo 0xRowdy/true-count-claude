@@ -1,11 +1,12 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { liveTableSubtitle, occupancyLabel } from "@/games/craps";
 import { AppShell } from "@/ui/ds/AppShell";
 import { Badge } from "@/ui/ds/Badge";
 import { Button } from "@/ui/ds/Button";
 import { Chip } from "@/ui/ds/Chip";
+import { Sheet } from "@/ui/ds/Sheet";
 import { formatMoney } from "@/ui/ds/format";
 import { colors, display, radius, ui } from "@/ui/ds/tokens";
 import { CrapsFelt } from "./CrapsFelt";
@@ -218,41 +219,40 @@ export function LiveCrapsScreen() {
         </View>
       </View>
 
-      <Modal
+      <Sheet
         visible={rulesOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setRulesOpen(false)}
+        onClose={() => setRulesOpen(false)}
+        accessibilityLabel="Table rules"
+        scrimLabel="Dismiss table rules"
+        maxWidth={520}
       >
-        <View style={styles.scrim}>
-          <View style={styles.sheet} role="dialog" accessibilityLabel="Table rules">
-            <View style={styles.sheetHead}>
-              <Text style={[display(22, 500), styles.flex, { color: colors.foreground }]}>
-                Table rules
-              </Text>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Close table rules"
-                onPress={() => setRulesOpen(false)}
-                hitSlop={12}
-              >
-                <X size={20} color={colors.mutedForeground} strokeWidth={2} />
-              </Pressable>
-            </View>
-            {rulesSummary(state).map((line) => (
-              <Text
-                key={line}
-                style={[ui(14, 400, { lineHeight: 20 }), { color: colors.foreground }]}
-              >
-                {`· ${line}`}
-              </Text>
-            ))}
-            <Text style={[ui(12), { color: colors.mutedForeground }]}>
-              {`Your practice bankroll at this table: ${formatMoney(you.bankroll)}`}
+        <View style={styles.sheet}>
+          <View style={styles.sheetHead}>
+            <Text style={[display(22, 500), styles.flex, { color: colors.foreground }]}>
+              Table rules
             </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Close table rules"
+              onPress={() => setRulesOpen(false)}
+              hitSlop={12}
+            >
+              <X size={20} color={colors.mutedForeground} strokeWidth={2} />
+            </Pressable>
           </View>
+          {rulesSummary(state).map((line) => (
+            <Text
+              key={line}
+              style={[ui(14, 400, { lineHeight: 20 }), { color: colors.foreground }]}
+            >
+              {`· ${line}`}
+            </Text>
+          ))}
+          <Text style={[ui(12), { color: colors.mutedForeground }]}>
+            {`Your practice bankroll at this table: ${formatMoney(you.bankroll)}`}
+          </Text>
         </View>
-      </Modal>
+      </Sheet>
     </AppShell>
   );
 }
@@ -322,22 +322,6 @@ const styles = StyleSheet.create({
   bigButton: { height: 48 },
   social: { width: 360, gap: 16 },
   socialStacked: { width: "100%" },
-  scrim: {
-    flex: 1,
-    backgroundColor: live.scrim,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-  },
-  sheet: {
-    width: "100%",
-    maxWidth: 520,
-    gap: 12,
-    padding: 24,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-  },
+  sheet: { gap: 12, paddingTop: 4, paddingHorizontal: 24, paddingBottom: 24 },
   sheetHead: { flexDirection: "row", alignItems: "center", gap: 12 },
 });

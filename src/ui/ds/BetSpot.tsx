@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
-import { colors, surfaces, ui } from "./tokens";
+import { colors, surfaces, textScale, ui } from "./tokens";
 
 /**
  * The design's Bet Spot (I8XUJG): an outlined area on the felt with a label and its payout.
@@ -28,8 +28,20 @@ export function BetSpot({
 }) {
   const body = (
     <>
-      <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.feltText }]}>{label}</Text>
-      {pays ? <Text style={[ui(10), { color: surfaces.feltTextMuted }]}>{pays}</Text> : null}
+      <Text
+        style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.feltText }]}
+        maxFontSizeMultiplier={textScale.felt}
+      >
+        {label}
+      </Text>
+      {pays ? (
+        <Text
+          style={[ui(11), { color: surfaces.feltTextMuted }]}
+          maxFontSizeMultiplier={textScale.felt}
+        >
+          {pays}
+        </Text>
+      ) : null}
       {children}
     </>
   );

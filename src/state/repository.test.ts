@@ -127,6 +127,50 @@ describe("the active Session pointer", () => {
 });
 
 describe("export and import", () => {
+  it("keeps local history when a restore write fails and safely resumes on retry", async () => {
+    const memory = createMemoryStore();
+    let fail = true;
+    const repository = createSessionRepository({
+      store: {
+        ...memory,
+        async setItem(key, value) {
+          if (fail && key.endsWith("/session/b")) throw new Error("Storage full");
+          await memory.setItem(key, value);
+        },
+      },
+    });
+    const local = buildSession({ id: "local", rounds: 2 });
+    await repository.save(local);
+    const source = createSessionRepository({ store: createMemoryStore() });
+    await source.save(buildSession({ id: "a", rounds: 1, startedAt: 2_000 }));
+    await source.save(buildSession({ id: "b", rounds: 1, startedAt: 1_000 }));
+    const archive = await source.exportAll(3_000);
+
+    await expect(repository.importArchive(archive)).rejects.toThrow("Storage full");
+    expect(await repository.load("local")).toEqual(local);
+    expect((await repository.loadActiveSession())?.id).toBe("local");
+
+    fail = false;
+    const retried = await repository.importArchive(archive);
+    expect(retried.skippedExisting).toEqual(["a"]);
+    expect(retried.imported).toEqual(["b"]);
+    expect((await repository.loadAll()).sessions).toHaveLength(3);
+  });
+
+  it("keeps the first copy when an archive repeats a Session id", async () => {
+    const source = createSessionRepository({ store: createMemoryStore() });
+    await source.save(buildSession({ id: "repeated", rounds: 3 }));
+    const archive = JSON.parse(await source.exportAll(1));
+    archive.sessions.push(buildSession({ id: "repeated", rounds: 1 }));
+
+    const destination = createSessionRepository({ store: createMemoryStore() });
+    const report = await destination.importArchive(JSON.stringify(archive));
+
+    expect(report.imported).toEqual(["repeated"]);
+    expect(report.skippedExisting).toEqual(["repeated"]);
+    expect((await destination.load("repeated"))?.rounds).toHaveLength(3);
+  });
+
   it("exports readable JSON and imports it into a clean device", async () => {
     const source = createSessionRepository({ store: createMemoryStore() });
     await source.save(endSession(buildSession({ id: "a", rounds: 3 }), "user", 20_000));
@@ -174,12 +218,12 @@ describe("export and import", () => {
     expect(await destination.load("someone-elses")).not.toBeNull();
   });
 
-  it("reports a file that is not a True Count archive", async () => {
+  it("reports a file that is not a Tableside session backup", async () => {
     const repository = createSessionRepository({ store: createMemoryStore() });
     const report = await repository.importArchive(JSON.stringify({ format: "something-else" }));
 
     expect(report.imported).toEqual([]);
-    expect(report.unreadable[0]!.reason).toMatch(/Not a True Count archive/);
+    expect(report.unreadable[0]!.reason).toMatch(/Not a Tableside session backup/);
   });
 });
 

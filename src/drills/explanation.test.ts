@@ -215,6 +215,18 @@ describe("decision explanation", () => {
     expect(explanation.evs.hit).toBeGreaterThan(explanation.evs.stand as number);
   });
 
+  it("shows dealer blackjack risk while early surrender is still available", () => {
+    const explanation = explainDecision(
+      situation({
+        player: ["10", "6"],
+        upcard: "A",
+        rules: { ...S17_NO_SURRENDER, surrender: "early" },
+      }),
+    );
+    expect(explanation.dealer?.blackjack).toBeGreaterThan(0);
+    expect(explanation.evs.surrender).toBe(-0.5);
+  });
+
   it("omits the EVs and says why when there is no shoe behind the question", () => {
     const explanation = explainDecision({
       ...situation({ player: ["10", "6"], upcard: "10", rules: S17_NO_SURRENDER }),

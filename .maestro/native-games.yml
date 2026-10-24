@@ -1,0 +1,135 @@
+appId: com.truecount.app
+name: Native roulette, craps, baccarat, and video poker
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: Play free
+    timeout: 30000
+- openLink: truecount://games/roulette?seed=7
+- runFlow:
+    when:
+      platform: iOS
+      visible: "^Open$"
+    commands:
+      - tapOn: "^Open$"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "^RED,.*"
+    direction: DOWN
+- tapOn: "^RED,.*"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "^Spin$"
+    direction: DOWN
+- tapOn: "^Spin$"
+- extendedWaitUntil:
+    visible: "Pay out"
+    timeout: 20000
+- takeScreenshot: native-roulette-result
+- tapOn: Pay out
+- tapOn: Next spin
+- openLink: truecount://games/baccarat?seed=7
+- runFlow:
+    when:
+      platform: iOS
+      visible: "^Open$"
+    commands:
+      - tapOn: "^Open$"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "^Banker, pays.*"
+    direction: DOWN
+- tapOn: "^Banker, pays.*"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "^Deal · .*"
+    direction: DOWN
+- tapOn: "^Deal · .*"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: Next hand
+    direction: DOWN
+    timeout: 30000
+- takeScreenshot: native-baccarat-result
+- tapOn: Next hand
+- openLink: truecount://games/video-poker?seed=1981
+- runFlow:
+    when:
+      platform: iOS
+      visible: "^Open$"
+    commands:
+      - tapOn: "^Open$"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: 'Deal, bet \$5'
+    direction: DOWN
+- tapOn: 'Deal, bet \$5'
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: Hold 9 of spades
+    direction: UP
+    timeout: 15000
+- assertVisible: Hold 9 of hearts
+- takeScreenshot: native-video-poker-seeded-deal
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "^(Hint|Ask Marcus for a hint)$"
+    direction: DOWN
+- tapOn: "^(Hint|Ask Marcus for a hint)$"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "^(Hold these [0-9]|Hold this 1|Hold all 5|Draw five new)$"
+    direction: DOWN
+- tapOn: "^(Hold these [0-9]|Hold this 1|Hold all 5|Draw five new)$"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: Draw
+    direction: DOWN
+- tapOn: Draw
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: '^(Collect \$.*|Continue)$'
+    direction: DOWN
+    timeout: 20000
+- takeScreenshot: native-video-poker-result
+- tapOn: '^(Collect \$.*|Continue)$'
+- assertVisible: 'Deal again, bet \$5'
+- openLink: truecount://games/craps?seed=337
+- runFlow:
+    when:
+      platform: iOS
+      visible: "^Open$"
+    commands:
+      - tapOn: "^Open$"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "^Pass line.*"
+    direction: DOWN
+- tapOn: "^Pass line.*"
+- scrollUntilVisible:
+    element:
+      text: "^Come-out roll$"
+      below:
+        text: "^Clear$"
+    direction: DOWN
+- tapOn:
+    text: "^Come-out roll$"
+    below:
+      text: "^Clear$"
+- extendedWaitUntil:
+    visible: "Point is 6 · the puck is on"
+    timeout: 20000
+- takeScreenshot: native-craps-point

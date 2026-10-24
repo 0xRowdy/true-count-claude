@@ -20,10 +20,13 @@ import type { BetPlan } from "../games/craps";
 import {
   type Bet,
   type ProgressionKind,
+  type CustomProgression,
   type RouletteRules,
   type SessionRules,
   getSpot,
   validateRouletteRules,
+  DEFAULT_CUSTOM_PROGRESSION,
+  PROGRESSION_ACTIONS,
 } from "../games/roulette";
 import type { KeyValueStore } from "./store";
 
@@ -102,8 +105,12 @@ export interface RouletteLayoutPlan {
   readonly rules: RouletteRules;
   readonly bets: readonly Bet[];
   readonly progression: ProgressionKind;
+  readonly customProgression?: CustomProgression;
   readonly session: SessionRules;
 }
+
+/** The builder runs 200 sessions at once; cap saved plans to keep that work interactive. */
+export const MAX_ROULETTE_DRAFT_SPINS = 1000;
 
 export interface RouletteDraft extends DraftCommon {
   readonly game: "roulette";
@@ -119,7 +126,7 @@ export const STRATEGIES_KEY = "tableside/strategies/v1";
 export const NOTE_LIMIT = 160;
 
 const CHART_CODES: ReadonlySet<string> = new Set(["H", "S", "D", "Ds", "P", "Rh", "Rs", "Rp"]);
-const PROGRESSIONS: ReadonlySet<string> = new Set(["flat", "martingale", "dalembert"]);
+const PROGRESSIONS: ReadonlySet<string> = new Set(["flat", "martingale", "dalembert", "custom"]);
 
 type Json = Record<string, unknown>;
 
@@ -180,6 +187,18 @@ function isBetPlan(v: unknown): v is BetPlan {
   );
 }
 
+function cleanCustomProgression(v: unknown): CustomProgression {
+  if (!isObject(v)) return DEFAULT_CUSTOM_PROGRESSION;
+  return {
+    afterLoss: PROGRESSION_ACTIONS.find((a) => a === v.afterLoss) ?? "add",
+    afterWin: PROGRESSION_ACTIONS.find((a) => a === v.afterWin) ?? "reset",
+    units:
+      typeof v.units === "number" && Number.isInteger(v.units) && v.units >= 1 && v.units <= 10
+        ? v.units
+        : 1,
+  };
+}
+
 function cleanLayout(v: unknown): RouletteLayoutPlan | undefined {
   if (!isObject(v) || !isRouletteRules(v.rules) || !Array.isArray(v.bets)) return undefined;
   const rules = v.rules;
@@ -188,12 +207,17 @@ function cleanLayout(v: unknown): RouletteLayoutPlan | undefined {
       isObject(b) &&
       isString(b.spotId) &&
       typeof b.amount === "number" &&
+      Number.isFinite(b.amount) &&
       b.amount > 0 &&
       getSpot(rules, b.spotId) !== undefined,
   );
   const session = isObject(v.session) ? v.session : {};
   const maxSpins =
-    typeof session.maxSpins === "number" && session.maxSpins > 0 ? session.maxSpins : 60;
+    typeof session.maxSpins === "number" &&
+    Number.isInteger(session.maxSpins) &&
+    session.maxSpins > 0
+      ? Math.min(MAX_ROULETTE_DRAFT_SPINS, session.maxSpins)
+      : 60;
   return {
     rules,
     bets: bets.map((b) => ({ spotId: b.spotId, amount: b.amount })),
@@ -201,10 +225,21 @@ function cleanLayout(v: unknown): RouletteLayoutPlan | undefined {
       isString(v.progression) && PROGRESSIONS.has(v.progression)
         ? (v.progression as ProgressionKind)
         : "flat",
+    ...(v.progression === "custom" || v.customProgression !== undefined
+      ? { customProgression: cleanCustomProgression(v.customProgression) }
+      : {}),
     session: {
       maxSpins,
-      ...(typeof session.stopWhenUp === "number" ? { stopWhenUp: session.stopWhenUp } : {}),
-      ...(typeof session.stopWhenDown === "number" ? { stopWhenDown: session.stopWhenDown } : {}),
+      ...(typeof session.stopWhenUp === "number" &&
+      Number.isFinite(session.stopWhenUp) &&
+      session.stopWhenUp > 0
+        ? { stopWhenUp: session.stopWhenUp }
+        : {}),
+      ...(typeof session.stopWhenDown === "number" &&
+      Number.isFinite(session.stopWhenDown) &&
+      session.stopWhenDown > 0
+        ? { stopWhenDown: session.stopWhenDown }
+        : {}),
     },
   };
 }

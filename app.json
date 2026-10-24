@@ -5,21 +5,20 @@
     "version": "0.1.0",
     "orientation": "default",
     "scheme": "truecount",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0E1311",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.truecount.app"
     },
     "android": {
-      "package": "com.truecount.app",
-      "edgeToEdgeEnabled": true
+      "package": "com.truecount.app"
     },
     "web": {
       "bundler": "metro",
       "output": "static"
     },
-    "plugins": ["expo-router", "expo-font"],
+    "plugins": ["expo-router", "expo-font", "@react-native-community/datetimepicker"],
     "extra": {
       "router": {},
       "eas": {

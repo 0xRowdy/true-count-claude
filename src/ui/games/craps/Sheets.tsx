@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import {
   type Bet,
   type CrapsTable,
@@ -20,6 +20,8 @@ import {
   payoutLabel,
   tableLabel,
 } from "@/games/craps";
+import { Sheet as BottomSheet } from "@/ui/ds/Sheet";
+import { MIN_TAP } from "@/ui/ds/tap";
 import { colors, display, radius, ui } from "@/ui/ds/tokens";
 import { Info, X } from "@/ui/ds/icons";
 import {
@@ -32,7 +34,6 @@ import {
   stakeOn,
   wouldDropBelowMinimum,
 } from "./model";
-import { craps } from "./theme";
 
 function Sheet({
   visible,
@@ -46,26 +47,20 @@ function Sheet({
   children: ReactNode;
 }) {
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.scrim}>
-        <View style={styles.sheet} role="dialog" accessibilityLabel={title}>
-          <View style={styles.head}>
-            <Text style={[display(22, 500), styles.flex, { color: colors.foreground }]}>
-              {title}
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Close ${title.toLowerCase()}`}
-              onPress={onClose}
-              style={styles.close}
-            >
-              <X size={20} color={colors.mutedForeground} strokeWidth={2} />
-            </Pressable>
-          </View>
-          <ScrollView contentContainerStyle={styles.body}>{children}</ScrollView>
-        </View>
+    <BottomSheet visible={visible} onClose={onClose} accessibilityLabel={title} maxWidth={430}>
+      <View style={styles.head}>
+        <Text style={[display(22, 500), styles.flex, { color: colors.foreground }]}>{title}</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Close ${title.toLowerCase()}`}
+          onPress={onClose}
+          style={styles.close}
+        >
+          <X size={20} color={colors.mutedForeground} strokeWidth={2} />
+        </Pressable>
       </View>
-    </Modal>
+      <ScrollView contentContainerStyle={styles.body}>{children}</ScrollView>
+    </BottomSheet>
   );
 }
 
@@ -322,30 +317,13 @@ export function RulesSheet({
 }
 
 const styles = StyleSheet.create({
-  scrim: {
-    flex: 1,
-    backgroundColor: craps.scrim,
-    justifyContent: "flex-end",
-    alignItems: "center",
-  },
-  sheet: {
-    width: "100%",
-    maxWidth: 430,
-    maxHeight: "86%",
-    backgroundColor: colors.popover,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
   head: {
     flexDirection: "row",
     alignItems: "center",
     paddingLeft: 20,
     paddingRight: 8,
-    paddingTop: 8,
   },
-  close: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  close: { width: MIN_TAP, height: MIN_TAP, alignItems: "center", justifyContent: "center" },
   body: { gap: 10, paddingHorizontal: 20, paddingBottom: 24, paddingTop: 4 },
   flex: { flex: 1 },
   center: {

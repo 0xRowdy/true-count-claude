@@ -1,9 +1,6 @@
 /**
- * Shared UI vocabulary.
- *
- * Every screen builds from these so the app reads as one tool rather than four. See
- * `docs/adr/0005-explanation-first-over-visual-fidelity.md`: the interface is a precision
- * instrument, not a simulated casino floor.
+ * The Play table panel's vocabulary (TableSheet, CountPanel, DecisionFeedback), drawn from the
+ * design system's tokens (`@/ui/ds`) like every other screen.
  *
  * Two of these components encode product invariants rather than taste:
  *
@@ -11,24 +8,23 @@
  *   render exactly what `legalActions` returns and nothing else. Greying out a legal split
  *   corrupts the user's own accuracy statistics, a complaint that appears three times in one
  *   competitor's reviews.
- * - Hit targets are at least 44pt and spaced. "Mis-tapped the wrong action" is a recurring
+ * - Hit targets meet the platform minimum (`MIN_TAP`) and are spaced. "Mis-tapped the wrong action" is a recurring
  *   review theme across the category.
  */
 
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View, type ViewStyle } from "react-native";
-import { colors, radius, spacing, type } from "./theme";
-
-const MIN_HIT_TARGET = 44;
+import { MIN_TAP } from "./ds/tap";
+import { colors, radius, surfaces, ui } from "./ds/tokens";
 
 export type Tone = "neutral" | "good" | "bad" | "warn" | "info";
 
 const toneColor: Record<Tone, string> = {
-  neutral: colors.text,
-  good: colors.accent,
-  bad: colors.danger,
-  warn: colors.warning,
-  info: colors.info,
+  neutral: colors.foreground,
+  good: colors.correct,
+  bad: colors.mistake,
+  warn: colors.primary,
+  info: surfaces.infoInk,
 };
 
 /** A titled container. The default surface for grouping related information. */
@@ -43,7 +39,11 @@ export function Panel({
 }) {
   return (
     <View style={[styles.panel, style]}>
-      {title ? <Text style={styles.panelTitle}>{title}</Text> : null}
+      {title ? (
+        <Text accessibilityRole="header" style={styles.panelTitle}>
+          {title}
+        </Text>
+      ) : null}
       {children}
     </View>
   );
@@ -129,7 +129,10 @@ export function SecondaryButton({
   );
 }
 
-/** A row of mutually exclusive choices. Used for counting system, speed, and drill mode. */
+/**
+ * A row of mutually exclusive choices that wraps (counting system, count visibility). The
+ * chosen one is House Gold, as selection is across the system.
+ */
 export function SegmentedControl<T extends string>({
   options,
   value,
@@ -140,7 +143,7 @@ export function SegmentedControl<T extends string>({
   onChange: (next: T) => void;
 }) {
   return (
-    <View style={styles.segmented}>
+    <View style={styles.segmented} accessibilityRole="radiogroup">
       {options.map((option) => {
         const selected = option.value === value;
         return (
@@ -149,6 +152,7 @@ export function SegmentedControl<T extends string>({
             onPress={() => onChange(option.value)}
             accessibilityRole="radio"
             accessibilityState={{ selected }}
+            aria-checked={selected}
             style={[styles.segment, selected && styles.segmentSelected]}
           >
             <Text style={[styles.segmentLabel, selected && styles.segmentLabelSelected]}>
@@ -171,93 +175,61 @@ export function Badge({ label, tone = "neutral" }: { label: string; tone?: Tone 
   );
 }
 
-/**
- * Constrains content to a comfortable measure and centres it on wide screens.
- *
- * `width` picks the cap. Prose and settings want `"reading"`, because a line of text
- * that runs the full width of a desktop monitor is hard to read. A play table or a
- * strategy chart wants `"wide"` — those are laid out in columns and genuinely use the
- * space. Neither is letterboxing: there is no fixed aspect ratio and nothing is scaled,
- * the content simply stops growing past the point where it stops helping.
- */
-export function Screen({
-  children,
-  width = "reading",
-}: {
-  children: ReactNode;
-  width?: "reading" | "wide";
-}) {
-  return <View style={[styles.screen, width === "wide" && styles.screenWide]}>{children}</View>;
-}
-
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-    padding: spacing.md,
-    gap: spacing.md,
-    width: "100%",
-    maxWidth: 780,
-    alignSelf: "center",
-  },
-  screenWide: { maxWidth: 1280 },
   panel: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: spacing.md,
-    gap: spacing.sm,
+    padding: 16,
+    gap: 8,
   },
-  panelTitle: { ...type.heading, color: colors.text, marginBottom: spacing.xs },
-  statRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  statLabel: { ...type.caption, color: colors.textMuted },
-  statValue: { ...type.mono, ...type.caption },
+  panelTitle: { ...ui(17, 600), color: colors.foreground, marginBottom: 4 },
+  statRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 },
+  statLabel: { ...ui(13), color: colors.mutedForeground, flexShrink: 1 },
+  statValue: { ...ui(13, 600), fontVariant: ["tabular-nums"] },
   actionButton: {
-    minHeight: MIN_HIT_TARGET,
+    minHeight: MIN_TAP,
     minWidth: 96,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: 16,
     borderWidth: 1.5,
     borderRadius: radius.md,
-    backgroundColor: colors.surfaceRaised,
+    backgroundColor: colors.secondary,
   },
-  actionLabel: { ...type.body, fontWeight: "700", letterSpacing: 0.3 },
+  actionLabel: { ...ui(15, 700), letterSpacing: 0.3 },
   secondaryButton: {
-    minHeight: MIN_HIT_TARGET,
+    minHeight: MIN_TAP,
     justifyContent: "center",
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: 16,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.md,
+    backgroundColor: colors.secondary,
   },
-  secondaryLabel: { ...type.body, color: colors.textMuted },
-  disabled: { opacity: 0.4 },
-  pressed: { opacity: 0.65 },
-  segmented: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-  },
+  secondaryLabel: { ...ui(15, 500), color: colors.foreground },
+  disabled: { opacity: 0.45 },
+  pressed: { opacity: 0.85 },
+  segmented: { flexDirection: "row", flexWrap: "wrap", gap: 4 },
   segment: {
-    minHeight: MIN_HIT_TARGET,
+    minHeight: MIN_TAP,
     justifyContent: "center",
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.sm,
+    paddingHorizontal: 16,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
   },
-  segmentSelected: { borderColor: colors.accent, backgroundColor: colors.accentMuted },
-  segmentLabel: { ...type.caption, color: colors.textMuted },
-  segmentLabelSelected: { color: colors.accent, fontWeight: "600" },
+  segmentSelected: { borderColor: colors.primary, backgroundColor: surfaces.primaryWash },
+  segmentLabel: { ...ui(13, 500), color: colors.mutedForeground },
+  segmentLabelSelected: { ...ui(13, 600), color: colors.primary },
   badge: {
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: radius.sm,
     borderWidth: 1,
     alignSelf: "flex-start",
   },
-  badgeLabel: { ...type.caption, fontWeight: "600" },
+  badgeLabel: ui(12, 600),
 });

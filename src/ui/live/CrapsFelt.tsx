@@ -22,7 +22,7 @@ function FeltChip({ chip }: { chip: ChipView }) {
   const ink = chip.mine ? colors.primaryForeground : live.white;
   return (
     <View style={[styles.chip, { backgroundColor: chip.color }]}>
-      <Text style={[ui(10, 800), { color: ink }]} numberOfLines={1}>
+      <Text style={[ui(10, 800), { color: ink }]} numberOfLines={1} maxFontSizeMultiplier={1}>
         {chipText(chip.amount)}
       </Text>
     </View>
@@ -93,15 +93,17 @@ function Felt({ children }: { children: ReactNode }) {
   const id = `f${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   return (
     <View style={styles.felt}>
-      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Defs>
-          <RadialGradient id={id} cx={0.45} cy={0.4} rx={0.7} ry={0.8} fx={0.45} fy={0.4}>
-            <Stop offset={0} stopColor={live.feltGlow} />
-            <Stop offset={1} stopColor={live.feltDeep} />
-          </RadialGradient>
-        </Defs>
-        <Rect x={0} y={0} width="100%" height="100%" rx={18} ry={18} fill={`url(#${id})`} />
-      </Svg>
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Svg width="100%" height="100%">
+          <Defs>
+            <RadialGradient id={id} cx={0.45} cy={0.4} rx={0.7} ry={0.8} fx={0.45} fy={0.4}>
+              <Stop offset={0} stopColor={live.feltGlow} />
+              <Stop offset={1} stopColor={live.feltDeep} />
+            </RadialGradient>
+          </Defs>
+          <Rect x={0} y={0} width="100%" height="100%" rx={18} ry={18} fill={`url(#${id})`} />
+        </Svg>
+      </View>
       {children}
     </View>
   );
@@ -195,7 +197,12 @@ export function CrapsFelt({
         >
           {tag ? (
             <View style={styles.youTag}>
-              <Text style={[ui(9, 800), { color: colors.primaryForeground }]}>{tag}</Text>
+              <Text
+                style={[ui(9, 800), { color: colors.primaryForeground }]}
+                maxFontSizeMultiplier={1}
+              >
+                {tag}
+              </Text>
             </View>
           ) : null}
           <ChipStack chips={chips.mine} />
@@ -228,7 +235,7 @@ export function CrapsFelt({
                 style={styles.hard}
               >
                 <Text style={[ui(13, 700), { color: colors.feltText }]}>Hard {n}</Text>
-                <Text style={[ui(10), { color: surfaces.feltTextFaint }]}>
+                <Text style={[ui(11), { color: surfaces.feltTextFaint }]}>
                   {payoutLabel("hard", n)}
                 </Text>
                 <View style={styles.hardChips} pointerEvents="none">

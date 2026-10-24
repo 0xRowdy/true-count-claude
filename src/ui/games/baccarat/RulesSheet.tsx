@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "expo-router";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { RANKS } from "@/engine/cards";
 import { cardsRemaining, remainingComposition, verifyComposition } from "@/engine/shoe";
 import {
@@ -29,8 +29,8 @@ import {
   radius,
   ui,
 } from "@/ui/ds";
+import { Sheet } from "@/ui/ds/Sheet";
 import { ChevronRight, ShieldCheck } from "@/ui/ds/icons";
-import { baccaratPalette as pal } from "./palette";
 
 const TABLEAU: readonly [string, string][] = [
   ["Natural 8 or 9 on either side", "Both stand. The coup is over."],
@@ -97,181 +97,173 @@ export function RulesSheet({
   const intact = verifyComposition(shoe.shoe);
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.scrim}>
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      accessibilityLabel="Baccarat rules and payouts"
+      scrimLabel="Close rules"
+      maxWidth={430}
+      maxHeight="92%"
+    >
+      <View style={styles.sheetHead}>
+        <Text accessibilityRole="header" style={[display(24, 500), { color: colors.foreground }]}>
+          Rules & payouts
+        </Text>
         <Pressable
-          style={StyleSheet.absoluteFill}
           accessibilityRole="button"
-          accessibilityLabel="Close rules"
+          accessibilityLabel="Close"
           onPress={onClose}
-        />
-        <View style={styles.sheet} role="dialog" aria-label="Baccarat rules and payouts">
-          <View style={styles.sheetHead}>
-            <Text
-              accessibilityRole="header"
-              style={[display(24, 500), { color: colors.foreground }]}
-            >
-              Rules & payouts
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Close"
-              onPress={onClose}
-              style={styles.close}
-            >
-              <Text style={[ui(15, 600), { color: colors.primary }]}>Done</Text>
-            </Pressable>
-          </View>
-          <ScrollView contentContainerStyle={styles.body}>
-            <Text style={[ui(13), { color: colors.mutedForeground }]}>{describeRules(rules)}</Text>
+          style={styles.close}
+        >
+          <Text style={[ui(15, 600), { color: colors.primary }]}>Done</Text>
+        </Pressable>
+      </View>
+      <ScrollView contentContainerStyle={styles.body}>
+        <Text style={[ui(13), { color: colors.mutedForeground }]}>{describeRules(rules)}</Text>
 
-            <Section title="Variant">
-              {canChange ? (
-                <>
-                  <SegmentedControl
-                    accessibilityLabel="Variant"
-                    value={rules.variant}
-                    onChange={setVariant}
-                    options={[
-                      { value: "punto-banco", label: "Punto Banco" },
-                      { value: "ez", label: "EZ Baccarat" },
-                    ]}
+        <Section title="Variant">
+          {canChange ? (
+            <>
+              <SegmentedControl
+                accessibilityLabel="Variant"
+                value={rules.variant}
+                onChange={setVariant}
+                options={[
+                  { value: "punto-banco", label: "Punto Banco" },
+                  { value: "ez", label: "EZ Baccarat" },
+                ]}
+              />
+              <Text style={styles.note}>
+                {rules.variant === "ez"
+                  ? "No commission: a Banker win with a three-card 7 (Dragon 7) pushes instead."
+                  : commissionTip(rules)}
+              </Text>
+              <Text style={styles.label}>Tie pays</Text>
+              <SegmentedControl
+                accessibilityLabel="Tie pays"
+                value={String(rules.tiePays)}
+                onChange={(v) => onChange({ ...rules, tiePays: v === "9" ? 9 : 8 })}
+                options={[
+                  { value: "8", label: "8 to 1" },
+                  { value: "9", label: "9 to 1" },
+                ]}
+              />
+              <Text style={styles.label}>Side bets (optional)</Text>
+              <View style={styles.chips}>
+                {offeredSides.map((bet) => (
+                  <ToggleChip
+                    key={bet}
+                    label={BET_LABELS[bet]}
+                    selected={rules.sideBets.includes(bet)}
+                    onPress={() => toggleSide(bet)}
                   />
-                  <Text style={styles.note}>
-                    {rules.variant === "ez"
-                      ? "No commission: a Banker win with a three-card 7 (Dragon 7) pushes instead."
-                      : commissionTip(rules)}
-                  </Text>
-                  <Text style={styles.label}>Tie pays</Text>
-                  <SegmentedControl
-                    accessibilityLabel="Tie pays"
-                    value={String(rules.tiePays)}
-                    onChange={(v) => onChange({ ...rules, tiePays: v === "9" ? 9 : 8 })}
-                    options={[
-                      { value: "8", label: "8 to 1" },
-                      { value: "9", label: "9 to 1" },
-                    ]}
-                  />
-                  <Text style={styles.label}>Side bets (optional)</Text>
-                  <View style={styles.chips}>
-                    {offeredSides.map((bet) => (
-                      <ToggleChip
-                        key={bet}
-                        label={BET_LABELS[bet]}
-                        selected={rules.sideBets.includes(bet)}
-                        onPress={() => toggleSide(bet)}
-                      />
-                    ))}
-                  </View>
-                </>
-              ) : (
-                <Text style={styles.note}>
-                  Finish this coup to change the variant, the tie payout or the side bets.
-                </Text>
-              )}
-            </Section>
-
-            <Section title="Payouts and house edge">
-              {edges.map((row, i) => (
-                <View key={row.bet} style={[styles.row, i > 0 && styles.rowLine]}>
-                  <Text style={[ui(14, 600), styles.rowName]}>{BET_LABELS[row.bet]}</Text>
-                  <Text style={[ui(13), { color: colors.mutedForeground }]}>
-                    {payLabel(rules, row.bet)}
-                  </Text>
-                  <Text
-                    style={[
-                      ui(14, 700),
-                      styles.edge,
-                      {
-                        color:
-                          i === 0
-                            ? colors.correct
-                            : row.edge > 0.05
-                              ? colors.mistake
-                              : colors.foreground,
-                      },
-                    ]}
-                  >
-                    {row.label}
-                  </Text>
-                </View>
-              ))}
-              <Text style={styles.note}>
-                Exact figures, enumerated over every possible coup from a fresh {rules.decks}-deck
-                shoe. Lowest edge first.
-              </Text>
-            </Section>
-
-            <Section title="The third-card rule">
-              {TABLEAU.map(([when, what], i) => (
-                <View key={when} style={[styles.row, i > 0 && styles.rowLine]}>
-                  <Text style={[ui(13, 600), styles.rowName]}>{when}</Text>
-                  <Text style={[ui(13), styles.tableauWhat]}>{what}</Text>
-                </View>
-              ))}
-              <Text style={styles.note}>
-                Nobody chooses: the dealer follows this table every time. Tap “Why these draws?”
-                after a coup to see which rows applied.
-              </Text>
-            </Section>
-
-            <Section title={`This shoe · #${shoeIndex + 1}`}>
-              <Text style={[ui(14, 600), { color: colors.foreground }]}>
-                {`${left} of ${total} cards left · seed ${shoe.shoe.seed}`}
-              </Text>
-              <Text style={styles.note}>
-                {shoe.burn
-                  ? `Burn: ${cardLabel(shoe.burn.exposed.rank, shoe.burn.exposed.suit)} turned up, ${shoe.burn.burned.length} burned face down. `
-                  : ""}
-                {isCutCardOut(shoe)
-                  ? "The cut card is out: one more coup, then a fresh shoe."
-                  : `The cut card sits ${shoe.rules.cardsBehindCut} cards from the back.`}
-              </Text>
-              <View style={styles.ranks} accessibilityLabel="Cards left by rank">
-                {RANKS.map((rank) => (
-                  <View key={rank} style={styles.rank}>
-                    <Text style={[ui(12, 700), { color: colors.foreground }]}>{rank}</Text>
-                    <Text style={[ui(11), { color: colors.mutedForeground }]}>
-                      {composition[rank]}
-                    </Text>
-                  </View>
                 ))}
               </View>
-              <View style={styles.check}>
-                <ShieldCheck size={16} color={intact ? colors.correct : colors.mistake} />
-                <Text style={[ui(13, 600), { color: intact ? colors.correct : colors.mistake }]}>
-                  {intact
-                    ? `Composition check passed: dealt + left = ${shoe.rules.decks} full decks`
-                    : "Composition check failed"}
-                </Text>
+            </>
+          ) : (
+            <Text style={styles.note}>
+              Finish this coup to change the variant, the tie payout or the side bets.
+            </Text>
+          )}
+        </Section>
+
+        <Section title="Payouts and house edge">
+          {edges.map((row, i) => (
+            <View key={row.bet} style={[styles.row, i > 0 && styles.rowLine]}>
+              <Text style={[ui(14, 600), styles.rowName]}>{BET_LABELS[row.bet]}</Text>
+              <Text style={[ui(13), { color: colors.mutedForeground }]}>
+                {payLabel(rules, row.bet)}
+              </Text>
+              <Text
+                style={[
+                  ui(14, 700),
+                  styles.edge,
+                  {
+                    color:
+                      i === 0
+                        ? colors.correct
+                        : row.edge > 0.05
+                          ? colors.mistake
+                          : colors.foreground,
+                  },
+                ]}
+              >
+                {row.label}
+              </Text>
+            </View>
+          ))}
+          <Text style={styles.note}>
+            Exact figures, enumerated over every possible coup from a fresh {rules.decks}-deck shoe.
+            Lowest edge first.
+          </Text>
+        </Section>
+
+        <Section title="The third-card rule">
+          {TABLEAU.map(([when, what], i) => (
+            <View key={when} style={[styles.row, i > 0 && styles.rowLine]}>
+              <Text style={[ui(13, 600), styles.rowName]}>{when}</Text>
+              <Text style={[ui(13), styles.tableauWhat]}>{what}</Text>
+            </View>
+          ))}
+          <Text style={styles.note}>
+            Nobody chooses: the dealer follows this table every time. Tap “Why these draws?” after a
+            coup to see which rows applied.
+          </Text>
+        </Section>
+
+        <Section title={`This shoe · #${shoeIndex + 1}`}>
+          <Text style={[ui(14, 600), { color: colors.foreground }]}>
+            {`${left} of ${total} cards left · seed ${shoe.shoe.seed}`}
+          </Text>
+          <Text style={styles.note}>
+            {shoe.burn
+              ? `Burn: ${cardLabel(shoe.burn.exposed.rank, shoe.burn.exposed.suit)} turned up, ${shoe.burn.burned.length} burned face down. `
+              : ""}
+            {isCutCardOut(shoe)
+              ? "The cut card is out: one more coup, then a fresh shoe."
+              : `The cut card sits ${shoe.rules.cardsBehindCut} cards from the back.`}
+          </Text>
+          <View style={styles.ranks} accessibilityLabel="Cards left by rank">
+            {RANKS.map((rank) => (
+              <View key={rank} style={styles.rank}>
+                <Text style={[ui(12, 700), { color: colors.foreground }]}>{rank}</Text>
+                <Text style={[ui(11), { color: colors.mutedForeground }]}>{composition[rank]}</Text>
               </View>
-              <Link href="/shoe-integrity" asChild>
-                <Pressable accessibilityRole="link" style={styles.link}>
-                  <Text style={[ui(14, 600), { color: colors.primary }]}>
-                    How we prove a shoe is fair
-                  </Text>
-                  <ChevronRight size={16} color={colors.primary} />
-                </Pressable>
-              </Link>
-            </Section>
-            <Button
-              label="Back to the table"
-              variant="secondary"
-              fullWidth
-              onPress={onClose}
-              icon={icons.ArrowLeft}
-            />
-          </ScrollView>
-        </View>
-      </View>
-    </Modal>
+            ))}
+          </View>
+          <View style={styles.check}>
+            <ShieldCheck size={16} color={intact ? colors.correct : colors.mistake} />
+            <Text style={[ui(13, 600), { color: intact ? colors.correct : colors.mistake }]}>
+              {intact
+                ? `Composition check passed: dealt + left = ${shoe.rules.decks} full decks`
+                : "Composition check failed"}
+            </Text>
+          </View>
+          <Link href="/shoe-integrity" asChild>
+            <Pressable accessibilityRole="link" style={styles.link}>
+              <Text style={[ui(14, 600), { color: colors.primary }]}>
+                How we prove a shoe is fair
+              </Text>
+              <ChevronRight size={16} color={colors.primary} />
+            </Pressable>
+          </Link>
+        </Section>
+        <Button
+          label="Back to the table"
+          variant="secondary"
+          fullWidth
+          onPress={onClose}
+          icon={icons.ArrowLeft}
+        />
+      </ScrollView>
+    </Sheet>
   );
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View style={styles.section}>
-      <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
+      <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
         {title.toUpperCase()}
       </Text>
       {children}
@@ -280,22 +272,11 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 const styles = StyleSheet.create({
-  scrim: { flex: 1, backgroundColor: pal.scrim, justifyContent: "flex-end", alignItems: "center" },
-  sheet: {
-    width: "100%",
-    maxWidth: 430,
-    maxHeight: "92%",
-    backgroundColor: colors.card,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
   sheetHead: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 16,
+    paddingTop: 4,
     paddingHorizontal: 16,
     paddingBottom: 8,
   },

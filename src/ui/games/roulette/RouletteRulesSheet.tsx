@@ -19,7 +19,7 @@ import {
   getLayout,
   houseEdgeOf,
 } from "@/games/roulette";
-import { Button, SegmentedControl, colors, radius, ui } from "@/ui/ds";
+import { Button, MIN_TAP, SegmentedControl, Sheet, colors, radius, ui } from "@/ui/ds";
 import { type WheelChoice, WHEEL_OPTIONS, WHEEL_RULES } from "./rouletteTable";
 
 const ORDER: BetType[] = [
@@ -62,8 +62,14 @@ export function RouletteRulesSheet({
           : BET_TYPE_NAMES[t];
 
   return (
-    <View style={styles.scrim}>
-      <View role="dialog" accessibilityLabel="Roulette rules and payouts" style={styles.sheet}>
+    <Sheet
+      visible
+      onClose={onClose}
+      accessibilityLabel="Roulette rules and payouts"
+      scrimLabel="Dismiss rules"
+      maxHeight="92%"
+    >
+      <View style={styles.sheet}>
         <View style={styles.head}>
           <Text
             accessibilityRole="header"
@@ -145,29 +151,14 @@ export function RouletteRulesSheet({
           <Button label="Done" onPress={onClose} fullWidth />
         </ScrollView>
       </View>
-    </View>
+    </Sheet>
   );
 }
 
 const styles = StyleSheet.create({
-  scrim: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 50,
-    backgroundColor: colors.background,
-    justifyContent: "flex-end",
-  },
-  sheet: {
-    flex: 1,
-    backgroundColor: colors.card,
-    padding: 16,
-    gap: 12,
-  },
-  head: { flexDirection: "row", alignItems: "center", minHeight: 44 },
-  close: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  sheet: { flexShrink: 1, paddingHorizontal: 16, paddingBottom: 16, gap: 12 },
+  head: { flexDirection: "row", alignItems: "center", minHeight: MIN_TAP },
+  close: { width: MIN_TAP, height: MIN_TAP, alignItems: "center", justifyContent: "center" },
   table: {
     borderRadius: radius.md,
     borderWidth: 1,

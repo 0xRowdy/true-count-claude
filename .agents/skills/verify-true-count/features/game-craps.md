@@ -25,3 +25,7 @@ Lobby → Craps card, or `/games/craps`. `?seed=<n>` replays the dice: seed 337 
 - The dice tumble for 650 ms and the Result shows for 1.4 s before the Payout: wait on the phase stepper (`progressbar` "Step 4 of 4: Payout").
 - Spots are buttons whose names start with the spot ("Pass line, your bet $10"): match with a `^` regex.
 - During Roll and Result the felt shows the layout as it was when the dice went out; the bankroll is held at its pre-roll value until the Payout.
+
+## Recovery proof
+
+`flows/recovery-report.mjs` sets this game's saved bankroll ledger to zero while preserving its history, taps the reset once, verifies $2,000 and unchanged hand/decision logs, reloads to prove persistence, and starts another real round. It leaves the previous game before changing storage so its page-exit settlement cannot overwrite the test setup.

@@ -42,6 +42,13 @@ const repository: SessionRepository = createSessionRepository({
 let state: DrillSessionState = { status: "idle", open: {}, error: null, revision: 0 };
 const listeners = new Set<() => void>();
 let writes: Promise<unknown> = Promise.resolve();
+// A complete snapshot supersedes a failed write only for the same Session.
+const writeErrors = new Map<string, string>();
+let loadError: string | null = null;
+
+function storageError(): string | null {
+  return writeErrors.values().next().value ?? loadError;
+}
 
 function publish(next: DrillSessionState): void {
   state = next;
@@ -82,22 +89,26 @@ export function loadOpenDrillSessions(): void {
   publish({ ...state, status: "loading" });
   void repository.loadAll().then(
     (result) => {
+      loadError = null;
       // Anything written while the read was in flight wins over what the read found.
       publish({
         ...state,
         status: "ready",
         open: { ...openDrillSessions(result.sessions), ...state.open },
-        error: null,
+        error: storageError(),
       });
     },
-    (error: unknown) => publish({ ...state, status: "failed", error: describe(error) }),
+    (error: unknown) => {
+      loadError = describe(error);
+      publish({ ...state, status: "failed", error: storageError() });
+    },
   );
 }
 
 /** Publishes a drill's open Session and persists it. */
 export function saveDrillSession(drillId: DrillId, session: Session): void {
   publish({ ...state, open: { ...state.open, [drillId]: session } });
-  enqueue(() => repository.save(session));
+  enqueue(session.id, () => repository.save(session));
 }
 
 /** Forgets a Session that has lost every record it held — an undo back to nothing. */
@@ -107,7 +118,7 @@ export function discardDrillSession(drillId: DrillId, id: string): void {
     delete open[drillId];
     publish({ ...state, open });
   }
-  enqueue(() => repository.remove(id));
+  enqueue(id, () => repository.remove(id));
 }
 
 /** The explicit end. Returns the closed Session so the screen can show what it kept. */
@@ -116,15 +127,29 @@ export function endDrillSession(drillId: DrillId, session: Session): Session {
   const open = { ...state.open };
   delete open[drillId];
   publish({ ...state, open });
-  enqueue(() => repository.save(ended));
+  enqueue(ended.id, () => repository.save(ended));
   return ended;
 }
 
-function enqueue(work: () => Promise<void>): void {
+/** A backup must include the latest answer, including a write still in flight. */
+export async function flushDrillSessionWrites(): Promise<void> {
+  await writes;
+  // Backup/import reads history afresh; only unresolved writes make that read incomplete.
+  const error = writeErrors.values().next().value;
+  if (error) throw new Error(error);
+}
+
+function enqueue(id: string, work: () => Promise<void>): void {
   writes = writes
     .then(work)
-    .then(() => publish({ ...state, revision: state.revision + 1 }))
-    .catch((error: unknown) => publish({ ...state, error: describe(error) }));
+    .then(() => {
+      writeErrors.delete(id);
+      publish({ ...state, error: storageError(), revision: state.revision + 1 });
+    })
+    .catch((error: unknown) => {
+      writeErrors.set(id, describe(error));
+      publish({ ...state, error: storageError() });
+    });
 }
 
 function describe(error: unknown): string {

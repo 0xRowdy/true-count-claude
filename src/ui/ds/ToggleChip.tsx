@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text } from "react-native";
 import { Check } from "./icons";
+import { MIN_TAP } from "./tap";
 import { colors, radius, ui } from "./tokens";
 
 /**
@@ -32,7 +33,7 @@ export function ToggleChip({
 
 const styles = StyleSheet.create({
   chip: {
-    height: 44,
+    minHeight: MIN_TAP,
     flexDirection: "row",
     alignItems: "center",
     gap: 6,

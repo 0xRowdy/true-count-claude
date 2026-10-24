@@ -1,0 +1,57 @@
+name: Repack native previews with current JavaScript
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        type: choice
+        options: [ios, android]
+        required: true
+      build_id:
+        type: string
+        required: true
+
+jobs:
+  repack:
+    type: repack
+    params:
+      build_id: ${{ inputs.build_id }}
+      profile: "${{ inputs.platform == 'ios' ? 'preview-simulator' : 'preview' }}"
+      embed_bundle_assets: true
+      js_bundle_only: true
+
+  smoke:
+    needs: [repack]
+    if: ${{ inputs.platform == 'ios' }}
+    runs_on: macos-medium
+    steps:
+      - uses: eas/checkout
+      - uses: eas/download_build
+        id: app
+        with:
+          build_id: ${{ needs.repack.outputs.build_id }}
+          extensions: [app]
+      - name: Install Maestro
+        run: |
+          set -euo pipefail
+          curl -fL https://github.com/mobile-dev-inc/Maestro/releases/download/cli-2.11.0/maestro.zip -o /tmp/maestro.zip
+          echo '5384593cb4e7a106489e75a821d157dd43f4e438df6bc308b72e82c685e1283a  /tmp/maestro.zip' | shasum -a 256 -c -
+          unzip -q /tmp/maestro.zip -d /tmp/maestro-cli
+      - name: Run native smoke test
+        env:
+          MAESTRO_CLI_NO_ANALYTICS: "1"
+          MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: "true"
+        run: |
+          set -euo pipefail
+          mkdir -p native-evidence
+          simulator_id=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; devices=json.load(sys.stdin)["devices"]; print(next(d["udid"] for runtime,items in devices.items() if "iOS" in runtime for d in items if "iPhone" in d["name"]))')
+          xcrun simctl boot "$simulator_id" || true
+          xcrun simctl bootstatus "$simulator_id" -b
+          xcrun simctl install "$simulator_id" "${{ steps.app.outputs.artifact_path }}"
+          /tmp/maestro-cli/maestro/bin/maestro --device "$simulator_id" test .maestro --format junit --output native-evidence/results.xml --test-output-dir native-evidence
+      - uses: eas/upload_artifact
+        if: ${{ always() }}
+        with:
+          type: other
+          name: native-smoke-evidence
+          path: native-evidence/**/*

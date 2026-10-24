@@ -23,3 +23,7 @@ Lobby → Roulette game card, or `/games/roulette`.
 
 - React Native Web keeps hidden copies mounted: always `filter({ visible: true })`.
 - Long-press is `delayLongPress={450}`. React Native Web ignores `accessibilityActions` and never long-presses from the keyboard, hence the L key and the Bets touching button. `picked` follows presses, not focus.
+
+## Recovery proof
+
+`flows/recovery-report.mjs` sets this game's saved bankroll ledger to zero while preserving its history, taps the reset once, verifies $2,000 and unchanged hand/decision logs, reloads to prove persistence, and starts another real round. It leaves the previous game before changing storage so its page-exit settlement cannot overwrite the test setup.

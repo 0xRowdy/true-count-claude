@@ -30,6 +30,7 @@ import { DEFAULT_RULES } from "@/engine/rules";
 import {
   type RoundState,
   currentLegalActions,
+  earlySurrenderPending,
   insuranceStake,
   visibleDealerCards,
 } from "@/engine/round";
@@ -47,7 +48,7 @@ import {
   type LucideIcon,
 } from "@/ui/ds";
 import { type ChipValue, formatMoney } from "@/ui/ds/format";
-import { colors, display, radius, ui } from "@/ui/ds/tokens";
+import { colors, display, radius, surfaces, textScale, ui } from "@/ui/ds/tokens";
 import { ACTION_NAME } from "@/ui/explanation/explanationFormat";
 import { useProfile } from "@/ui/profile/profileStore";
 import { useConfiguredRules } from "@/ui/rules/rulesStore";
@@ -349,7 +350,7 @@ export function PlayTable() {
         {round ? (
           <HandBox
             label="Dealer's hand"
-            holeCard={!round.dealerHoleCardRevealed}
+            holeCard={!round.dealerHoleCardRevealed && round.dealerHand.cards.length > 1}
             spread={!round.dealerHoleCardRevealed}
             cards={visibleDealerCards(round)}
             tilt={false}
@@ -569,6 +570,7 @@ export function PlayTable() {
                   ) : (
                     <ActionBar
                       legal={currentLegalActions(round)}
+                      earlySurrender={earlySurrenderPending(round)}
                       handLabel={
                         round.playerHands.length > 1
                           ? `Hand ${round.activeHandIndex + 1} of ${round.playerHands.length}`
@@ -644,10 +646,15 @@ function BankrollTip({ compact }: { compact: boolean }) {
   return (
     <View style={[styles.tip, compact && styles.tipCompact]} role="note">
       <View style={styles.tipHead}>
-        <icons.Lightbulb size={12} color={colors.coachAccent} strokeWidth={2} />
-        <Text style={[ui(9, 800, { letterSpacing: 1 }), { color: colors.coachAccent }]}>TIP</Text>
+        <icons.Lightbulb size={12} color={surfaces.hintInk} strokeWidth={2} />
+        <Text
+          style={[ui(11, 800, { letterSpacing: 1 }), { color: surfaces.hintInk }]}
+          maxFontSizeMultiplier={textScale.felt}
+        >
+          TIP
+        </Text>
       </View>
-      <Text style={[ui(11, 400, { lineHeight: 15 }), { color: colors.ink }]}>
+      <Text style={[ui(12), { color: colors.ink }]} maxFontSizeMultiplier={textScale.felt}>
         Keep bets near 2% of your bankroll.
       </Text>
     </View>
@@ -684,7 +691,7 @@ function PayoutStack({ net, paid }: { net: number; paid: string }) {
       <ChipStackView chips={chipStack(net, 4)} />
       <View style={styles.paid} accessible accessibilityLabel={`Won ${formatMoney(net)}, ${paid}`}>
         <Text style={[ui(15, 800), { color: felt.onCorrect }]}>+{formatMoney(net)}</Text>
-        <Text style={[ui(10, 600), { color: felt.onCorrectMuted }]}>{paid}</Text>
+        <Text style={[ui(11, 600), { color: felt.onCorrectMuted }]}>{paid}</Text>
       </View>
     </View>
   );
@@ -709,7 +716,7 @@ function HistoryRail({
 }) {
   return (
     <View style={styles.history} accessibilityLabel="Last hands">
-      <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
+      <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
         LAST
       </Text>
       {chips.length === 0 ? (
@@ -752,9 +759,7 @@ function Notices({
   const items: ReactNode[] = [];
   if (capNote) items.push(<Badge key="cap" label={capNote} tone="primary" />);
   if (table.justShuffled) {
-    items.push(
-      <Badge key="shuffle" label="Cut card reached — new shoe, count reset" tone="primary" />,
-    );
+    items.push(<Badge key="shuffle" label="New shoe, count reset" tone="primary" />);
   } else if (cutCardOut && table.round !== null) {
     items.push(
       <Badge key="cut" label="Cut card is out — last round on this shoe" tone="mistake" />,
@@ -940,11 +945,13 @@ function OutOfChips({
 
 function ActionBar({
   legal,
+  earlySurrender,
   handLabel,
   withheldStake,
   onAction,
 }: {
   legal: readonly Action[];
+  earlySurrender: boolean;
   handLabel: string | null;
   /**
    * The engine withholds the insurance offer when the bankroll cannot cover the stake, rather
@@ -956,6 +963,12 @@ function ActionBar({
   const ordered = ACTION_ORDER.filter((action) => legal.includes(action));
   return (
     <View style={styles.actionBlock}>
+      {earlySurrender ? (
+        <Text style={[ui(13, 400, { lineHeight: 19 }), { color: colors.mutedForeground }]}>
+          Early surrender keeps half your bet before the dealer checks for blackjack. Choose another
+          action to continue; it takes effect only if the dealer has no blackjack.
+        </Text>
+      ) : null}
       {handLabel ? (
         <Text style={[ui(12, 600, { letterSpacing: 0.5 }), { color: colors.mutedForeground }]}>
           {handLabel.toUpperCase()}
@@ -1089,7 +1102,7 @@ function ResultPanel({
       </View>
 
       <View style={styles.review}>
-        <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
+        <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
           DECISIONS THIS HAND
         </Text>
         {rows.length === 0 ? (

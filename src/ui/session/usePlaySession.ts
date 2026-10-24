@@ -43,6 +43,7 @@ import {
   configureRules,
   createPlayTable,
   dealRound,
+  prepareRound,
   isBroke,
   nextRound,
   playAction,
@@ -206,6 +207,7 @@ export function usePlaySession(
         advance(() => start);
         return;
       }
+      start = prepareRound(start);
       // Dealing settles the question of which table this is, so a restore that is still in
       // flight must not arrive later and rebuild the table underneath the hand.
       restored.current = true;

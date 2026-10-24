@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { colors, ui } from "./tokens";
+import { MIN_TAP } from "./tap";
+import { colors, textScale, ui } from "./tokens";
 
 export interface SegmentOption<T extends string> {
   value: T;
@@ -36,13 +37,14 @@ export function SegmentedControl<T extends string>({
             accessibilityLabel={o.label}
             aria-checked={on}
             onPress={() => onChange?.(o.value)}
-            // 40pt segments on a 4pt-padded track: the slop makes each one a 44pt target.
-            hitSlop={2}
+            // 40pt segments on a 4pt-padded track: the slop brings each to the platform minimum.
+            hitSlop={(MIN_TAP - 40) / 2}
             style={[styles.segment, on && styles.on]}
           >
             <Text
               style={[ui(13, on ? 600 : 500), { color: on ? colors.ink : colors.mutedForeground }]}
               numberOfLines={1}
+              maxFontSizeMultiplier={textScale.control}
             >
               {o.label}
             </Text>
@@ -63,7 +65,7 @@ const styles = StyleSheet.create({
   },
   segment: {
     flex: 1,
-    height: 40,
+    minHeight: 40,
     borderRadius: 9,
     alignItems: "center",
     justifyContent: "center",

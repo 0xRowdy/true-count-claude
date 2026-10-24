@@ -12,6 +12,54 @@ import { endSession } from "./session";
 import { verifyReplay } from "./replay";
 
 describe("the session archive", () => {
+  it.each([
+    { hand: {} },
+    { count: {} },
+    { actionTaken: "invented-action" },
+    { playedInstead: ["stand"] },
+    { shoeDealtCount: 10_000 },
+    { shoeIndex: -1 },
+  ])("rejects malformed decision fields used by replay: %j", (corruption) => {
+    const session = buildSession({ rounds: 1 });
+    const parsed = parseArchive(
+      JSON.stringify({
+        ...createArchive([], 1),
+        sessions: [{ ...session, decisions: [{ ...session.decisions[0], ...corruption }] }],
+      }),
+    );
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.sessions).toEqual([]);
+    expect(parsed.skipped).toHaveLength(1);
+  });
+
+  it.each([
+    { rounds: [null] },
+    { rounds: [{ index: 0, at: 1, net: 0, hands: [null] }] },
+    { decisions: [null] },
+    { countChecks: [null] },
+    { countChecks: [{ index: 0, at: 1, verdict: "correct" }] },
+    { conversionChecks: [null] },
+    { conversionChecks: [{ index: 0, at: 1, verdict: "correct" }] },
+    { indexPlays: [null] },
+    { indexPlays: [{ index: 0, at: 1, verdict: "correct" }] },
+    { countingSystemChanges: [null] },
+    { bankroll: "not a number" },
+    { rules: {} },
+  ])("rejects malformed nested history before it reaches Statistics: %j", (corruption) => {
+    const session = buildSession({ rounds: 1 });
+    const parsed = parseArchive(
+      JSON.stringify({
+        ...createArchive([], 1),
+        sessions: [{ ...session, ...corruption }],
+      }),
+    );
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.sessions).toEqual([]);
+    expect(parsed.skipped).toHaveLength(1);
+  });
+
   it("stamps the format and the schema version it was written at", () => {
     const archive = createArchive([buildSession({ rounds: 1 })], 12_345);
 
