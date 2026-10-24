@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Text,
   View,
+  type ScrollViewInstance,
   type StyleProp,
   type ViewStyle,
 } from "react-native";
@@ -149,7 +150,7 @@ export function WeeklyBars({
 }: {
   weeks: ReadonlyArray<{ label: string; rate: number | null; total: number }>;
 }) {
-  const scroll = useRef<ScrollView>(null);
+  const scroll = useRef<ScrollViewInstance>(null);
   const rates = weeks.map((w) => w.rate).filter((r): r is number => r !== null);
   // Scale like the design: the bars start from a floor below the lowest week.
   const floor = rates.length ? Math.max(0, Math.min(...rates) - 0.08) : 0;

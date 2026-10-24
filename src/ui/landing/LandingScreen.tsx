@@ -8,6 +8,7 @@ import {
   Text,
   View,
   type LayoutChangeEvent,
+  type ScrollViewInstance,
 } from "react-native";
 import {
   Badge,
@@ -123,7 +124,7 @@ const FOOTER_NOTICES = {
 export function LandingScreen() {
   const router = useRouter();
   const playHref = usePlayFreeHref();
-  const scroller = useRef<ScrollView>(null);
+  const scroller = useRef<ScrollViewInstance>(null);
   const offsets = useRef<Partial<Record<Section, number>>>({});
   const [width, setWidth] = useState<number | null>(null);
   const [signInOpen, setSignInOpen] = useState(false);

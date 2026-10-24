@@ -8,7 +8,14 @@
  */
 
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  type ScrollViewInstance,
+} from "react-native";
 import { router } from "expo-router";
 import Info from "lucide-react-native/icons/info";
 import RotateCw from "lucide-react-native/icons/rotate-cw";
@@ -142,7 +149,7 @@ export function RouletteScreen({ seed }: { seed?: string }) {
   }, [state.phase, state.history.length, state.settlement]);
 
   // Bring the winning number into view when the ball lands.
-  const scroller = useRef<ScrollView>(null);
+  const scroller = useRef<ScrollViewInstance>(null);
   const [viewH, setViewH] = useState(0);
   useEffect(() => {
     if (state.phase !== "result" || !state.settlement) return;

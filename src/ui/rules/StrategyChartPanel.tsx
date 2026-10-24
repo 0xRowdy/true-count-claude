@@ -15,7 +15,14 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { type LayoutChangeEvent, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  type LayoutChangeEvent,
+  ScrollView,
+  type ScrollViewInstance,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import type { RuleSet } from "@/engine/rules";
 import {
   type ChartCode,
@@ -168,7 +175,7 @@ export function StrategyChartGrid({
   density?: ChartDensity;
 }) {
   const size = DENSITY[density];
-  const scroller = useRef<ScrollView>(null);
+  const scroller = useRef<ScrollViewInstance>(null);
   const highlightColumn = highlight ? DEALER_UPCARDS.indexOf(highlight.upcard) : -1;
 
   const [viewport, setViewport] = useState(0);

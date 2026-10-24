@@ -13,6 +13,7 @@ import {
   Text,
   View,
   type LayoutChangeEvent,
+  type PressableInstance,
 } from "react-native";
 import Svg, { Defs, Path, RadialGradient, Rect, Stop } from "react-native-svg";
 import Minus from "lucide-react-native/icons/minus";
@@ -431,8 +432,8 @@ function Loupe({
 
   // Focus moves into the loupe when it opens and back to whatever opened it when it closes;
   // Escape closes it (web; native screen readers move by the dialog role).
-  const firstRef = useRef<View | null>(null);
-  const optionRefs = useRef(new Map<string, View>());
+  const firstRef = useRef<PressableInstance | null>(null);
+  const optionRefs = useRef(new Map<string, PressableInstance>());
   // When a Remove button takes the last chip off, it disappears: keep focus on its option.
   const removeFrom = (spotId: string, last: boolean) => {
     onRemove(spotId);
@@ -529,7 +530,7 @@ function Loupe({
                 return (
                   <View key={o.spotId} style={styles.optionSlot}>
                     <Pressable
-                      ref={(el: View | null) => {
+                      ref={(el: PressableInstance | null) => {
                         if (o === options[0]) firstRef.current = el;
                         if (el) optionRefs.current.set(o.spotId, el);
                         else optionRefs.current.delete(o.spotId);
