@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { Coup } from "@/games/baccarat";
-import { colors, ui } from "@/ui/ds";
+import { colors, textScale, type, ui } from "@/ui/ds";
 import { type RoadCell, type RoadView, beadRoadView, bigRoadView } from "./baccaratTable";
 import { ArrowLeftRight } from "@/ui/ds/icons";
 import { baccaratPalette as pal } from "./palette";
@@ -36,7 +36,7 @@ export function Road({
           hitSlop={12}
           style={styles.title}
         >
-          <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
+          <Text style={[type.overline, { color: colors.mutedForeground }]}>
             {kind === "bead" ? "BEAD ROAD · THIS SHOE" : "BIG ROAD · THIS SHOE"}
           </Text>
           <ArrowLeftRight size={12} color={colors.primary} strokeWidth={2.25} />
@@ -94,7 +94,7 @@ function Bead({ cell }: { cell: RoadCell }) {
       testID={cell.latest ? "latest-bead" : undefined}
       style={[styles.bead, { backgroundColor: FILL[cell.letter] }, cell.latest && styles.latest]}
     >
-      <Text style={[ui(10, 800), { color: pal.beadInk }]} maxFontSizeMultiplier={1}>
+      <Text style={[ui(10, 800), { color: pal.beadInk }]} maxFontSizeMultiplier={textScale.fixed}>
         {cell.letter}
       </Text>
     </View>
@@ -114,7 +114,7 @@ function BigBead({ cell }: { cell: RoadCell }) {
       ]}
     >
       {cell.ties > 0 ? (
-        <Text style={[ui(9, 800), { color: pal.beadTie }]} maxFontSizeMultiplier={1}>
+        <Text style={[ui(9, 800), { color: pal.beadTie }]} maxFontSizeMultiplier={textScale.fixed}>
           {cell.ties}
         </Text>
       ) : null}

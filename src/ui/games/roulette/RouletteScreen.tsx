@@ -36,6 +36,7 @@ import {
   colors,
   radius,
   surfaces,
+  type,
   ui,
   type ChipValue,
 } from "@/ui/ds";
@@ -199,9 +200,7 @@ export function RouletteScreen({ seed }: { seed?: string }) {
         />
 
         <View style={styles.history} accessibilityLabel="Last spins" role="list">
-          <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
-            LAST
-          </Text>
+          <Text style={[type.overline, { color: colors.mutedForeground }]}>LAST</Text>
           {recent.length === 0 ? (
             <Text style={[ui(12), { color: colors.mutedForeground }]}>No spins yet</Text>
           ) : (

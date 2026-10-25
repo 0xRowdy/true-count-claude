@@ -4,5 +4,5 @@ import { TabStack } from "@/ui/navigation/TabStack";
 export const unstable_settings = { anchor: "strategies/index" };
 
 export default function StrategiesLayout() {
-  return <TabStack root="strategies/index" />;
+  return <TabStack root={unstable_settings.anchor} />;
 }

@@ -442,6 +442,9 @@ fixed one. Text inside fixed table geometry is capped with `maxFontSizeMultiplie
 - **1×**: marks printed on an object, such as a chip's denomination. These are read aloud through
   the object's accessible label.
 
+On the felt, `FeltText` applies the ink and the cap together: Felt Print at 1.3×, or 1× with
+`fixed` for a glyph inside a fixed shape (a chip's value, the puck, a tag on a bet spot).
+
 ### Named Rules
 
 **The Serif Counts Rule.** Fraunces sets headlines and the numbers worth remembering.
@@ -488,7 +491,7 @@ and labels.
   The coach note and tips appear on or beside the felt, never over the cards.
 
 - **Sheets:** every modal panel is the shared `Sheet` (see Components): up to 560 wide (430
-  for game rules, 720 for the bug report) and 88–92% tall.
+  for game rules, 720 for the bug report) and up to 92% tall.
 - **Insets:** the top inset is the root's; the bottom inset belongs to each screen. The native
   tab bar draws its own, and screens pushed over the tabs pad for the home indicator.
 - **Keyboard:** scrolling pages adjust their insets so a focused field stays above the
@@ -642,9 +645,13 @@ The one modal surface: table panels, rules, the bug report.
   black scrim at 65%. Its bottom edge clears the home indicator.
 - **Motion:** it rises 260ms with an ease-out curve while the scrim fades; with Reduce Motion
   it appears in place.
-- **Closing:** a visible Close or Done in its header, a tap on the scrim, Back on Android,
-  Escape on the web, and on iOS and Android a drag down on the grabber (a 36×5 pill at the
-  top). A drag past 96pt, or a quick flick, dismisses.
+- **Header:** the same on every sheet. The title is Fraunces 500 22 in Cream Type (the Play
+  table panel puts its tabs there instead), with a 44pt close button at the right: a 20px X in
+  Sage Grey, read aloud as "Close" and the sheet's name. No rule under it; the body scrolls
+  beneath, 20 in from the sides. The header's X is a sheet's only exit button.
+- **Closing:** the header's X, a tap on the scrim, Back on Android, Escape on the web, and on
+  iOS and Android a drag down on the grabber (a 36×5 pill at the top). A drag past 96pt, or a
+  quick flick, dismisses.
 - **Keyboard:** it lifts above the keyboard.
 
 ### Notice

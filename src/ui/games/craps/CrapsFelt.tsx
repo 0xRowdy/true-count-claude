@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import {
   type CrapsTable,
@@ -11,8 +11,9 @@ import {
   payoutLabel,
 } from "@/games/craps";
 import { Die, type DieValue } from "@/ui/ds/Die";
+import { FeltText } from "@/ui/ds/FeltText";
 import { CHIP_VALUES, chipColors, type ChipValue } from "@/ui/ds/format";
-import { colors, display, radius, surfaces, ui } from "@/ui/ds/tokens";
+import { colors, display, radius, type, ui } from "@/ui/ds/tokens";
 import { LayoutGrid } from "@/ui/ds/icons";
 import {
   type Call,
@@ -49,9 +50,9 @@ export function MiniChip({ amount, dim = false }: { amount: number; dim?: boolea
   const { fill, ink } = chipColors(chipFor(amount));
   return (
     <View style={[styles.mini, { backgroundColor: fill }, dim && styles.dim]}>
-      <Text style={[ui(amount >= 1000 ? 9 : 10, 800), { color: ink }]} numberOfLines={1}>
+      <FeltText fixed style={[ui(amount >= 1000 ? 9 : 10, 800), { color: ink }]} numberOfLines={1}>
         {shortAmount(amount)}
-      </Text>
+      </FeltText>
     </View>
   );
 }
@@ -69,12 +70,9 @@ export function Puck({ on }: { on: boolean }) {
           : { backgroundColor: craps.puckOff, borderColor: craps.puckOn },
       ]}
     >
-      <Text
-        style={[ui(10, 800), { color: on ? craps.puckOff : craps.puckOn }]}
-        maxFontSizeMultiplier={1}
-      >
+      <FeltText fixed style={[ui(10, 800), { color: on ? craps.puckOff : craps.puckOn }]}>
         {on ? "ON" : "OFF"}
-      </Text>
+      </FeltText>
     </View>
   );
 }
@@ -85,11 +83,13 @@ function Win({ tag, compact = false }: { tag: WinTag; compact?: boolean }) {
       style={[styles.win, compact && styles.winCompact]}
       accessibilityLabel={`Won ${tag.amount}`}
     >
-      <Text style={[ui(compact ? 11 : 14, 800), { color: craps.winInk }]}>{tag.amount}</Text>
+      <FeltText fixed style={[ui(compact ? 11 : 14, 800), { color: craps.winInk }]}>
+        {tag.amount}
+      </FeltText>
       {tag.breakdown && !compact ? (
-        <Text style={[ui(9, 600), { color: craps.winInkMuted }]} maxFontSizeMultiplier={1}>
+        <FeltText fixed style={[ui(9, 600), { color: craps.winInkMuted }]}>
           {tag.breakdown}
-        </Text>
+        </FeltText>
       ) : null}
     </View>
   );
@@ -164,15 +164,15 @@ export function CrapsFelt({
           </View>
         ) : null}
         <View style={styles.call}>
-          <Text
+          <FeltText
             accessibilityRole="header"
             aria-level={2}
             aria-live="polite"
             style={[display(24, 500), { color: colors.feltText }]}
           >
             {call.headline}
-          </Text>
-          <Text style={[ui(13, 600), { color: craps.callSub }]}>{call.detail}</Text>
+          </FeltText>
+          <FeltText style={[ui(13, 600), { color: craps.callSub }]}>{call.detail}</FeltText>
         </View>
       </View>
 
@@ -190,12 +190,10 @@ export function CrapsFelt({
             { kind: "place", number: n },
             styles.number,
             <>
-              <Text style={[display(word ? 15 : 22, 600), { color: colors.feltText }]}>
+              <FeltText style={[display(word ? 15 : 22, 600), { color: colors.feltText }]}>
                 {word ?? String(n)}
-              </Text>
-              <Text style={[ui(11), { color: surfaces.feltTextFaint }]}>
-                {payoutLabel("place", n)}
-              </Text>
+              </FeltText>
+              <FeltText style={ui(11)}>{payoutLabel("place", n)}</FeltText>
               {point === n ? (
                 <View style={styles.puckOnNumber} pointerEvents="none">
                   <Puck on />
@@ -218,10 +216,10 @@ export function CrapsFelt({
         { kind: "come" },
         styles.come,
         <>
-          <Text style={[display(20, 600, { letterSpacing: 2 }), { color: colors.feltText }]}>
+          <FeltText style={[display(20, 600, { letterSpacing: 2 }), { color: colors.feltText }]}>
             COME
-          </Text>
-          <Text style={[ui(11), { color: surfaces.feltTextFaint }]}>pays 1:1</Text>
+          </FeltText>
+          <FeltText style={ui(11)}>pays 1:1</FeltText>
           {comeStake > 0 ? (
             <View style={styles.stripChip} pointerEvents="none">
               <MiniChip amount={comeStake} />
@@ -239,12 +237,12 @@ export function CrapsFelt({
         { kind: "field" },
         styles.field,
         <>
-          <Text style={[display(20, 600, { letterSpacing: 2 }), { color: colors.feltText }]}>
+          <FeltText style={[display(20, 600, { letterSpacing: 2 }), { color: colors.feltText }]}>
             FIELD
-          </Text>
-          <Text style={[ui(11), styles.centerText, { color: surfaces.feltTextFaint }]}>
+          </FeltText>
+          <FeltText style={[ui(11), styles.centerText]}>
             {`2 · 3 · 4 · 9 · 10 · 11 · 12   •   ${fieldPaysText(table.rules)}`}
-          </Text>
+          </FeltText>
           {fieldStake > 0 ? (
             <View style={styles.stripChip} pointerEvents="none">
               <MiniChip amount={fieldStake} />
@@ -263,9 +261,9 @@ export function CrapsFelt({
           { kind: "dontCome" },
           styles.dontCome,
           <>
-            <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.feltText }]}>
+            <FeltText style={[type.overline, { color: colors.feltText }]}>
               {"DON'T COME · BAR 12"}
-            </Text>
+            </FeltText>
             {point === null ? (
               <View style={styles.offPuck} pointerEvents="none">
                 <Puck on={false} />
@@ -286,7 +284,7 @@ export function CrapsFelt({
           style={({ pressed }) => [styles.box, styles.centerButton, pressed && styles.pressed]}
         >
           <LayoutGrid size={14} color={colors.feltText} strokeWidth={2} />
-          <Text style={[ui(12, 700), { color: colors.feltText }]}>Center bets</Text>
+          <FeltText style={[ui(12, 700), { color: colors.feltText }]}>Center bets</FeltText>
         </Pressable>
       </View>
 
@@ -294,9 +292,9 @@ export function CrapsFelt({
         { kind: "pass" },
         [styles.pass, pass.flat > 0 && styles.mine],
         <>
-          <Text style={[display(20, 600, { letterSpacing: 2 }), { color: colors.feltText }]}>
+          <FeltText style={[display(20, 600, { letterSpacing: 2 }), { color: colors.feltText }]}>
             PASS LINE
-          </Text>
+          </FeltText>
           <LineStack line={pass} />
           {wins.pass ? (
             <View style={styles.lineWin} pointerEvents="none">
@@ -311,9 +309,9 @@ export function CrapsFelt({
         { kind: "dontPass" },
         [styles.dontPass, dontPass.flat > 0 && styles.mine],
         <>
-          <Text style={[display(15, 600, { letterSpacing: 2 }), { color: colors.feltText }]}>
+          <FeltText style={[display(15, 600, { letterSpacing: 2 }), { color: colors.feltText }]}>
             {"DON'T PASS BAR"}
-          </Text>
+          </FeltText>
           <LineStack line={dontPass} />
           {wins.dontPass ? (
             <View style={styles.lineWinSmall} pointerEvents="none">
@@ -345,12 +343,9 @@ function ChipRow({
       <MiniChip amount={total} dim={off} />
       {off || chips[0]!.label ? (
         <View style={styles.chipTag}>
-          <Text
-            style={[ui(7, 800, { letterSpacing: 0.5 }), { color: colors.feltText }]}
-            maxFontSizeMultiplier={1}
-          >
+          <FeltText fixed style={[ui(7, 800, { letterSpacing: 0.5 }), { color: colors.feltText }]}>
             {[chips[0]!.label, off ? "OFF" : null].filter(Boolean).join(" ")}
-          </Text>
+          </FeltText>
         </View>
       ) : null}
     </View>
@@ -370,12 +365,12 @@ function LineStack({ line }: { line: ReturnType<typeof lineChips> }) {
             <MiniChip amount={line.odds} />
           </View>
           <View style={styles.oddsTag} pointerEvents="none">
-            <Text
+            <FeltText
+              fixed
               style={[ui(8, 800, { letterSpacing: 0.5 }), { color: colors.feltText }]}
-              maxFontSizeMultiplier={1}
             >
               {line.oddsLabel}
-            </Text>
+            </FeltText>
           </View>
         </>
       ) : null}

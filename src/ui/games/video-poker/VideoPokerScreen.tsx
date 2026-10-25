@@ -25,6 +25,7 @@ import {
   colors,
   icons,
   radius,
+  type,
   ui,
 } from "@/ui/ds";
 import { useProfile } from "@/ui/profile/profileStore";
@@ -487,9 +488,7 @@ function BetControls({
   const table = getPayTable(state.settings.payTableId);
   return (
     <View style={styles.bet}>
-      <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
-        COINS
-      </Text>
+      <Text style={[type.overline, { color: colors.mutedForeground }]}>COINS</Text>
       <SegmentedControl
         accessibilityLabel="Coins"
         options={COIN_OPTIONS.map((c) => ({
@@ -499,9 +498,7 @@ function BetControls({
         value={String(state.settings.coins)}
         onChange={(v) => onCoins(Number(v))}
       />
-      <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
-        COIN VALUE
-      </Text>
+      <Text style={[type.overline, { color: colors.mutedForeground }]}>COIN VALUE</Text>
       <SegmentedControl
         accessibilityLabel="Coin value"
         options={DENOMINATION_OPTIONS.map((d) => ({

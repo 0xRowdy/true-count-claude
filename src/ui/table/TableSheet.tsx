@@ -10,14 +10,21 @@
  */
 
 import { Link } from "expo-router";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import type { CountingSystemId } from "@/engine/counting";
 import { type RuleSet, describeRules } from "@/engine/rules";
 import { isCutCardReached } from "@/engine/shoe";
 import { ReportBugButton } from "@/ui/bug-report/ReportBugButton";
-import { Button, Sheet, Tabs, icons } from "@/ui/ds";
+import { Panel, Sheet, Tabs } from "@/ui/ds";
 import { colors, ui } from "@/ui/ds/tokens";
-import { Badge, Panel, SecondaryButton, StatRow, ActionButton } from "@/ui/primitives";
+import {
+  ActionButton,
+  SecondaryButton,
+  StatRow,
+  ToneBadge,
+  type Tone,
+  toneColor,
+} from "@/ui/trainer/kit";
 import { matchingPreset } from "@/ui/rules/presets";
 import {
   SessionControlBar,
@@ -83,100 +90,91 @@ export function TableSheet({
     <Sheet
       visible={tab !== null}
       onClose={onClose}
-      accessibilityLabel="Table panel"
-      scrimLabel="Dismiss the panel"
-    >
-      <View style={styles.header}>
+      header={
         <Tabs
           options={TABS}
           value={tab ?? "why"}
           onChange={onChangeTab}
           accessibilityLabel="Table panel"
         />
-        <Button
-          label="Close"
-          variant="ghost"
-          size="sm"
-          icon={icons.X}
-          onPress={onClose}
-          accessibilityLabel="Close"
-        />
-      </View>
-      <ScrollView contentContainerStyle={styles.body}>
-        {tab === "why" ? (
-          decisions.length > 0 ? (
-            <DecisionFeedback
-              key={`${decisions.length}:${focus ?? "latest"}`}
-              decisions={decisions}
-              focus={focus}
-              roundOver={roundOver}
-              expanded={explanationOpen}
-              onChangeExpanded={onChangeExplanationOpen}
-            />
-          ) : (
-            <Text style={[ui(14, 400, { lineHeight: 20 }), styles.muted]}>
-              No decisions yet this hand. Every play you make is graded here the moment you make it
-              — the EV of each option, the chart cell behind it, and what the count did to it.
-            </Text>
-          )
-        ) : null}
+      }
+      accessibilityLabel="Table panel"
+      scrimLabel="Dismiss the panel"
+      gap={12}
+    >
+      {tab === "why" ? (
+        decisions.length > 0 ? (
+          <DecisionFeedback
+            key={`${decisions.length}:${focus ?? "latest"}`}
+            decisions={decisions}
+            focus={focus}
+            roundOver={roundOver}
+            expanded={explanationOpen}
+            onChangeExpanded={onChangeExplanationOpen}
+          />
+        ) : (
+          <Text style={[ui(14, 400, { lineHeight: 20 }), styles.muted]}>
+            No decisions yet this hand. Every play you make is graded here the moment you make it —
+            the EV of each option, the chart cell behind it, and what the count did to it.
+          </Text>
+        )
+      ) : null}
 
-        {tab === "count" ? (
-          <>
-            <CountPanel
-              readout={countReadout(table)}
-              systemName={table.system.name}
-              visibility={visibility}
-              onChangeVisibility={onChangeVisibility}
-            />
-            <SystemPanel table={table} onChange={(id: CountingSystemId) => play.setSystem(id)} />
-            <ShoePanel table={table} onShuffle={onShuffle} />
-          </>
-        ) : null}
+      {tab === "count" ? (
+        <>
+          <CountPanel
+            readout={countReadout(table)}
+            systemName={table.system.name}
+            visibility={visibility}
+            onChangeVisibility={onChangeVisibility}
+          />
+          <SystemPanel table={table} onChange={(id: CountingSystemId) => play.setSystem(id)} />
+          <ShoePanel table={table} onShuffle={onShuffle} />
+        </>
+      ) : null}
 
-        {tab === "table" ? (
-          <>
-            <View style={styles.report}>
-              <ReportBugButton
-                screen="Play table"
-                table={{
-                  shoe: table.shoe,
-                  round: table.round,
-                  bankroll: table.bankroll,
-                  shoeIndex: table.shoeIndex,
-                }}
-                rules={table.rules}
-                countingSystem={table.system.name}
-              />
-            </View>
-            {play.pendingRules ? (
-              <PendingTablePanel
-                current={table.rules}
-                pending={play.pendingRules}
-                hold={play.rulesHold}
-                onSwitch={play.switchTable}
-              />
-            ) : null}
-            <TablePanel rules={table.rules} />
-            <SessionControlBar
-              session={play.session}
-              recording={play.recording}
-              error={play.error}
-              onEnd={() => play.end()}
-              onStartNew={onStartNew}
-            >
-              <Link href="/session" style={styles.link}>
-                Statistics →
-              </Link>
-            </SessionControlBar>
-            {play.ended ? (
-              <SessionEndedPanel session={play.ended} stats={play.stats} onStartNew={onStartNew} />
-            ) : null}
-            <BankrollPanel table={table} />
-            <SessionStatsPanel session={play.session} stats={play.stats} />
-          </>
-        ) : null}
-      </ScrollView>
+      {tab === "table" ? (
+        <>
+          <View style={styles.report}>
+            <ReportBugButton
+              screen="Play table"
+              table={{
+                shoe: table.shoe,
+                round: table.round,
+                bankroll: table.bankroll,
+                shoeIndex: table.shoeIndex,
+              }}
+              rules={table.rules}
+              countingSystem={table.system.name}
+            />
+          </View>
+          {play.pendingRules ? (
+            <PendingTablePanel
+              current={table.rules}
+              pending={play.pendingRules}
+              hold={play.rulesHold}
+              onSwitch={play.switchTable}
+            />
+          ) : null}
+          <TablePanel rules={table.rules} />
+          <SessionControlBar
+            session={play.session}
+            recording={play.recording}
+            error={play.error}
+            onEnd={() => play.end()}
+            onStartNew={onStartNew}
+          >
+            <Link href="/session" style={styles.link}>
+              Statistics →
+            </Link>
+          </SessionControlBar>
+          {play.ended ? (
+            <SessionEndedPanel session={play.ended} stats={play.stats} onStartNew={onStartNew} />
+          ) : null}
+          <BankrollPanel table={table} />
+          <SessionStatsPanel session={play.session} stats={play.stats} />
+        </>
+      ) : null}
     </Sheet>
   );
 }
@@ -190,7 +188,7 @@ export function TableSheet({
 function TablePanel({ rules }: { rules: RuleSet }) {
   const preset = matchingPreset(rules);
   return (
-    <Panel title="Table">
+    <Panel title="Table" padding={16} gap={8}>
       {preset ? <Text style={styles.tableName}>{preset.name}</Text> : null}
       <Text style={styles.tableRules}>Dealing {describeRules(rules)}</Text>
       <Link href="/rules" style={styles.link}>
@@ -232,10 +230,10 @@ function PendingTablePanel({
   const preset = matchingPreset(pending);
   const action = hold === null ? null : HOLD_ACTION[hold];
   return (
-    <Panel>
-      <Badge label="NEW TABLE WAITING" tone="warn" />
-      <StatRow label="Dealing now" value={describeRules(current)} />
-      <StatRow
+    <Panel padding={16} gap={8}>
+      <ToneBadge label="NEW TABLE WAITING" tone="warn" />
+      <RuleLine label="Dealing now" value={describeRules(current)} />
+      <RuleLine
         label={preset ? `Configured — ${preset.name}` : "Configured"}
         value={describeRules(pending)}
         tone="info"
@@ -255,10 +253,28 @@ function PendingTablePanel({
   );
 }
 
+/** A Rule Set under its label, so the whole string reads on one line on a phone. */
+function RuleLine({
+  label,
+  value,
+  tone = "neutral",
+}: {
+  label: string;
+  value: string;
+  tone?: Tone;
+}) {
+  return (
+    <View style={styles.ruleLine}>
+      <Text style={[ui(14), styles.muted]}>{label}</Text>
+      <Text style={[ui(14, 600), { color: toneColor[tone] }]}>{value}</Text>
+    </View>
+  );
+}
+
 function BankrollPanel({ table }: { table: PlayTable }) {
   const atRisk = amountAtRisk(table);
   return (
-    <Panel title="Bankroll">
+    <Panel title="Bankroll" padding={16} gap={8}>
       <StatRow label="Available" value={formatChips(availableBankroll(table))} />
       {atRisk > 0 ? <StatRow label="On the felt" value={formatChips(atRisk)} tone="warn" /> : null}
       {/* Rounds, not hands: a split resolves two hands in one round. */}
@@ -276,7 +292,7 @@ function ShoePanel({ table, onShuffle }: { table: PlayTable; onShuffle: () => vo
   const shoe = currentShoe(table);
   const cutCardOut = isCutCardReached(shoe);
   return (
-    <Panel title="Shoe">
+    <Panel title="Shoe" padding={16} gap={8}>
       <StatRow label="Session seed" value={table.sessionSeed} />
       <StatRow label="Shoe" value={`#${table.shoeIndex + 1} · seed ${shoe.seed}`} />
       <StatRow label="Dealt" value={`${shoe.dealtCount} of ${shoe.cards.length}`} />
@@ -295,17 +311,8 @@ function ShoePanel({ table, onShuffle }: { table: PlayTable; onShuffle: () => vo
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  body: { gap: 12, padding: 16, paddingBottom: 32 },
   muted: { color: colors.mutedForeground },
+  ruleLine: { gap: 2 },
   report: { alignSelf: "flex-start" },
   link: { ...ui(15, 500), color: colors.primary, minHeight: 44, paddingTop: 10 },
   tableName: { ...ui(16, 600), color: colors.foreground },

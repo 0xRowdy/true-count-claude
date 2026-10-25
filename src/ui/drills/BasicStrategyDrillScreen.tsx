@@ -355,5 +355,5 @@ const styles = StyleSheet.create({
   columnNarrow: { width: "100%", gap: 24 },
   divider: { height: 1, backgroundColor: colors.feltLine, opacity: 0.4 },
   hands: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
-  feltNote: { ...ui(14), color: surfaces.feltTextMuted },
+  feltNote: { ...ui(14), color: surfaces.feltPrint },
 });

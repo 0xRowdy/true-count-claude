@@ -4,5 +4,5 @@ import { TabStack } from "@/ui/navigation/TabStack";
 export const unstable_settings = { anchor: "progress" };
 
 export default function ProgressLayout() {
-  return <TabStack root="progress" />;
+  return <TabStack root={unstable_settings.anchor} />;
 }

@@ -9,7 +9,7 @@ import type { ChipValue } from "@/ui/ds/format";
 import { PhaseStepper } from "@/ui/ds/PhaseStepper";
 import { TableTopBar } from "@/ui/ds/TableTopBar";
 import { TestingBanner, useTestedStrategy } from "@/ui/strategies/TestingBanner";
-import { colors, radius, ui } from "@/ui/ds/tokens";
+import { colors, radius, type, ui } from "@/ui/ds/tokens";
 import { CrapsFelt } from "./CrapsFelt";
 import { Dices, Eraser, Layers, Lightbulb, Repeat, Undo2 } from "@/ui/ds/icons";
 import {
@@ -103,9 +103,7 @@ export function CrapsScreen({ seed }: { seed?: string }) {
           />
 
           <View style={styles.rail}>
-            <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
-              ROLLS
-            </Text>
+            <Text style={[type.overline, { color: colors.mutedForeground }]}>ROLLS</Text>
             <View
               style={styles.history}
               role="list"

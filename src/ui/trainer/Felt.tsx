@@ -8,13 +8,14 @@
  */
 
 import type { ReactNode } from "react";
-import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import type { Card } from "@/engine/cards";
 import { type Hand, evaluate } from "@/engine/hand";
 import type { HandOutcome, HandResult } from "@/engine/round";
 import {
   Badge,
   CardBack,
+  FeltText,
   Gradient,
   PlayingCard,
   colors,
@@ -24,7 +25,8 @@ import {
   type BadgeTone,
   type CardSize,
 } from "@/ui/ds";
-import { RESULT_LABEL, describeTotal, formatChips, formatNet } from "@/ui/table/format";
+import { RESULT_LABEL, formatChips, formatNet } from "@/ui/table/format";
+import { dealerTotal, playerTotal } from "@/ui/table/tableView";
 import { signColor } from "./kit";
 
 /** The felt surface: felt fading to deep felt, 16 radius, a faint felt-line edge. */
@@ -39,7 +41,7 @@ export function Felt({ children, style }: { children: ReactNode; style?: StylePr
 
 /** A small tracked label on felt ("DEALER", "YOU"). */
 export function FeltLabel({ children }: { children: ReactNode }) {
-  return <Text style={styles.label}>{children}</Text>;
+  return <FeltText style={styles.label}>{children}</FeltText>;
 }
 
 /** Cards in a row that wraps rather than overflowing; `holeCard` adds the face-down card. */
@@ -94,7 +96,7 @@ export function DealerHand({
     cards.length === 0
       ? "—"
       : revealed
-        ? describeTotal({ cards, fromSplit: false, doubled: false, surrendered: false, bet: 0 })
+        ? dealerTotal(cards).text
         : `Showing ${evaluate(cards).total}`;
   return (
     <View style={styles.seat}>
@@ -128,13 +130,11 @@ export function PlayerHand({
     <View style={[styles.seat, styles.playerSeat, active && styles.activeSeat]}>
       <View style={styles.seatHead}>
         <FeltLabel>{active ? `▸ ${label}` : label}</FeltLabel>
-        <TotalPill text={describeTotal(hand)} />
+        <TotalPill text={playerTotal(hand).text} />
       </View>
       <CardFan cards={hand.cards} size={size} />
       <View style={styles.footer}>
-        <Text style={styles.wager}>
-          {formatChips(wagered)} practice{hand.doubled ? " · doubled" : ""}
-        </Text>
+        <FeltText style={styles.wager}>{formatChips(wagered)} practice</FeltText>
         {outcome ? (
           <View style={styles.outcome}>
             <Badge
@@ -142,9 +142,9 @@ export function PlayerHand({
               tone={RESULT_TONE[outcome.result]}
               showIcon={false}
             />
-            <Text style={[styles.net, { color: signColor(outcome.net) }]}>
+            <FeltText style={[styles.net, { color: signColor(outcome.net) }]}>
               {formatNet(outcome.net)}
-            </Text>
+            </FeltText>
           </View>
         ) : null}
       </View>
@@ -155,7 +155,7 @@ export function PlayerHand({
 function TotalPill({ text }: { text: string }) {
   return (
     <View style={styles.total}>
-      <Text style={[ui(13, 600), { color: colors.feltText }]}>{text}</Text>
+      <FeltText style={[ui(13, 600), { color: colors.feltText }]}>{text}</FeltText>
     </View>
   );
 }
@@ -172,7 +172,6 @@ const styles = StyleSheet.create({
   },
   label: {
     ...ui(11, 700, { letterSpacing: 1.6, textTransform: "uppercase" }),
-    color: surfaces.feltTextMuted,
   },
   fan: { flexDirection: "row", flexWrap: "wrap", gap: 6, alignItems: "center" },
   seat: { gap: 10 },
@@ -198,7 +197,7 @@ const styles = StyleSheet.create({
     borderColor: colors.feltLine,
   },
   footer: { gap: 6 },
-  wager: { ...ui(12, 500), color: surfaces.feltTextMuted, fontVariant: ["tabular-nums"] },
+  wager: { ...ui(12, 500), fontVariant: ["tabular-nums"] },
   outcome: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
   net: { ...ui(13, 700), fontVariant: ["tabular-nums"] },
 });

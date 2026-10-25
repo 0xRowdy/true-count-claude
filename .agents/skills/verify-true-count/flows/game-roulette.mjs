@@ -163,7 +163,7 @@ export default async ({ page, url, shot, log, check }) => {
   await visible(page.getByRole("radio", { name: "American" })).click();
   check(await visible(page.getByText("7.89%")).isVisible(), "top line edge in the payout table");
   await shot("rules-american");
-  await visible(page.getByRole("button", { name: "Done" })).click();
+  await visible(page.getByRole("button", { name: "Close roulette rules and payouts" })).click();
   check(
     await visible(page.getByText("American · double zero · $5–$1,000")).isVisible(),
     "American wheel subtitle",

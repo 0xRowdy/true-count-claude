@@ -3,6 +3,7 @@ import { Platform, View } from "react-native";
 import { colors } from "@/ui/ds/tokens";
 import { LandingScreen } from "@/ui/landing/LandingScreen";
 import { useProfile } from "@/ui/profile/profileStore";
+import { usePlayFreeHref } from "@/ui/profile/usePlayFreeHref";
 
 /**
  * `/`. On the web, the landing page. An installed app does not open on its own marketing page:
@@ -13,8 +14,9 @@ export default function Home() {
 }
 
 function NativeStart() {
-  const { profile, ready } = useProfile();
+  const { ready } = useProfile();
+  const href = usePlayFreeHref();
   // Storage answers within a frame or two; until then, the app's background rather than a guess.
   if (!ready) return <View style={{ flex: 1, backgroundColor: colors.background }} />;
-  return <Redirect href={profile.onboarded ? "/lobby" : "/onboarding"} />;
+  return <Redirect href={href} />;
 }

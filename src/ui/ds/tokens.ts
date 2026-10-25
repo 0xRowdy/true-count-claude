@@ -135,12 +135,12 @@ export const surfaces = {
   /** Every felt's radial gradient: a lit centre falling off to `--felt-deep`. */
   feltGlow: "#22704F",
   /**
-   * Small type printed on the felt (rules lines, labels, captions): felt cream tinted 6% toward
-   * the felt, opaque. Even at the glow's lit centre it reads 4.6:1, where a translucent cream
-   * fell to 2–3:1; the felt prints in one ink and ranks by size, weight and tracking instead.
+   * Felt Print: every line of type on the felt but the brightest labels (rules lines, labels,
+   * captions). Felt cream tinted 6% toward the felt, opaque: even at the glow's lit centre it
+   * reads 4.6:1, where a translucent cream fell to 2–3:1. The felt prints in this one ink and
+   * ranks by size, weight and tracking instead. `FeltText` applies it.
    */
-  feltTextMuted: "#E4E1CD",
-  feltTextFaint: "#E4E1CD",
+  feltPrint: "#E4E1CD",
   /** Chip rack rail: gradient top → bottom, with a lighter top edge. */
   rackFrom: "#3A2A1E",
   rackTo: "#2A1E15",
@@ -194,8 +194,6 @@ export const marketing = {
   feltGlow: surfaces.feltGlow,
   /** Hand-total pill on felt. */
   feltPill: "#0B2A20E6",
-  /** "Dealer must stand…" on felt. */
-  feltRule: surfaces.feltTextMuted,
   /** Plan cards on paper. */
   paperCard: "#FFFFFF80",
   /** Paper text on the ink Plus card: price note and description. */
@@ -243,6 +241,8 @@ export const textScale = {
   felt: 1.3,
   /** Controls in a row of fixed width: buttons, steppers, segments, the table top bar. */
   control: 1.6,
+  /** Glyphs inside a fixed shape (chip values, pucks, beads, tags): never scaled. */
+  fixed: 1,
 } as const;
 
 /** The design's font families (the `.pen` values). */

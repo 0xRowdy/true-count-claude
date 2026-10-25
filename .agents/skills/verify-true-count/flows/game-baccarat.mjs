@@ -242,7 +242,7 @@ export default async ({ page, url, shot, log, check }) => {
   );
   await page.waitForTimeout(500); // the sheet fades in
   await shot("rules-sheet");
-  await visible(page.getByRole("button", { name: "Close", exact: true })).click();
+  await visible(page.getByRole("button", { name: "Close baccarat rules and payouts" })).click();
 
   // Phone width: no sideways scroll.
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);

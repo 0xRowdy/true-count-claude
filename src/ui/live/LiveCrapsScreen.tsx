@@ -20,7 +20,6 @@ import {
   Plus,
   Radio,
   UserPlus,
-  X,
 } from "@/ui/ds/icons";
 import { OpenSeat, SeatCard } from "./Seats";
 import {
@@ -222,36 +221,18 @@ export function LiveCrapsScreen() {
       <Sheet
         visible={rulesOpen}
         onClose={() => setRulesOpen(false)}
-        accessibilityLabel="Table rules"
+        title="Table rules"
         scrimLabel="Dismiss table rules"
         maxWidth={520}
       >
-        <View style={styles.sheet}>
-          <View style={styles.sheetHead}>
-            <Text style={[display(22, 500), styles.flex, { color: colors.foreground }]}>
-              Table rules
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Close table rules"
-              onPress={() => setRulesOpen(false)}
-              hitSlop={12}
-            >
-              <X size={20} color={colors.mutedForeground} strokeWidth={2} />
-            </Pressable>
-          </View>
-          {rulesSummary(state).map((line) => (
-            <Text
-              key={line}
-              style={[ui(14, 400, { lineHeight: 20 }), { color: colors.foreground }]}
-            >
-              {`· ${line}`}
-            </Text>
-          ))}
-          <Text style={[ui(12), { color: colors.mutedForeground }]}>
-            {`Your practice bankroll at this table: ${formatMoney(you.bankroll)}`}
+        {rulesSummary(state).map((line) => (
+          <Text key={line} style={[ui(14, 400, { lineHeight: 20 }), { color: colors.foreground }]}>
+            {`· ${line}`}
           </Text>
-        </View>
+        ))}
+        <Text style={[ui(12), { color: colors.mutedForeground }]}>
+          {`Your practice bankroll at this table: ${formatMoney(you.bankroll)}`}
+        </Text>
       </Sheet>
     </AppShell>
   );
@@ -322,6 +303,4 @@ const styles = StyleSheet.create({
   bigButton: { height: 48 },
   social: { width: 360, gap: 16 },
   socialStacked: { width: "100%" },
-  sheet: { gap: 12, paddingTop: 4, paddingHorizontal: 24, paddingBottom: 24 },
-  sheetHead: { flexDirection: "row", alignItems: "center", gap: 12 },
 });

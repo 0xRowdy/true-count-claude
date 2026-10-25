@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import type { SegmentOption } from "./SegmentedControl";
-import { MIN_TAP } from "./tap";
+import { slopTo } from "./tap";
 import { colors, textScale, ui } from "./tokens";
 
 /**
@@ -34,8 +34,8 @@ export function Tabs<T extends string>({
               accessibilityLabel={o.label}
               aria-selected={on}
               onPress={() => onChange?.(o.value)}
-              // 36pt tabs inside a 4pt-padded track; the slop brings each to the platform minimum.
-              hitSlop={(MIN_TAP - 36) / 2}
+              // Tabs inside a 4pt-padded track; the slop brings each to the platform minimum.
+              hitSlop={slopTo(TAB_H)}
               style={[styles.tab, on && styles.on]}
             >
               <Text
@@ -55,6 +55,8 @@ export function Tabs<T extends string>({
   );
 }
 
+const TAB_H = 36;
+
 const styles = StyleSheet.create({
   scroller: { flexGrow: 0 },
   track: {
@@ -68,7 +70,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
   },
   tab: {
-    minHeight: 36,
+    minHeight: TAB_H,
     justifyContent: "center",
     paddingVertical: 8,
     paddingHorizontal: 14,
