@@ -2,14 +2,13 @@ import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/d
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { localIsoDate } from "@/state/profile";
 import { Button, colors, icons, ui } from "@/ui/ds";
+import { shortDate } from "./startingPoint";
 
 /** "2026-11-14" → a local Date at midnight (the picker works in local days, as the profile does). */
 function toDate(iso: string): Date {
   const [y, m, d] = iso.split("-").map(Number);
   return new Date(y!, m! - 1, d!);
 }
-
-const LONG = new Intl.DateTimeFormat(undefined, { month: "long", day: "numeric", year: "numeric" });
 
 /**
  * The trip date on iOS and Android: the system date picker, which cannot produce a malformed
@@ -51,12 +50,10 @@ export function TripDatePicker({
 
   return (
     <Button
-      label={value ? LONG.format(shown) : "Or pick a date"}
+      label={value ? shortDate(value) : "Or pick a date"}
       variant="secondary"
       icon={icons.Calendar}
-      accessibilityLabel={
-        value ? `Trip date, ${LONG.format(shown)}. Change it` : "Pick a trip date"
-      }
+      accessibilityLabel={value ? `Trip date, ${shortDate(value)}. Change it` : "Pick a trip date"}
       onPress={() =>
         DateTimePickerAndroid.open({ value: shown, mode: "date", minimumDate, onValueChange: pick })
       }
