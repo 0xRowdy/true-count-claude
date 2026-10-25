@@ -24,7 +24,8 @@ import {
   type BadgeTone,
   type CardSize,
 } from "@/ui/ds";
-import { RESULT_LABEL, describeTotal, formatChips, formatNet } from "@/ui/table/format";
+import { RESULT_LABEL, formatChips, formatNet } from "@/ui/table/format";
+import { dealerTotal, playerTotal } from "@/ui/table/tableView";
 import { signColor } from "./kit";
 
 /** The felt surface: felt fading to deep felt, 16 radius, a faint felt-line edge. */
@@ -94,7 +95,7 @@ export function DealerHand({
     cards.length === 0
       ? "—"
       : revealed
-        ? describeTotal({ cards, fromSplit: false, doubled: false, surrendered: false, bet: 0 })
+        ? dealerTotal(cards).text
         : `Showing ${evaluate(cards).total}`;
   return (
     <View style={styles.seat}>
@@ -128,13 +129,11 @@ export function PlayerHand({
     <View style={[styles.seat, styles.playerSeat, active && styles.activeSeat]}>
       <View style={styles.seatHead}>
         <FeltLabel>{active ? `▸ ${label}` : label}</FeltLabel>
-        <TotalPill text={describeTotal(hand)} />
+        <TotalPill text={playerTotal(hand).text} />
       </View>
       <CardFan cards={hand.cards} size={size} />
       <View style={styles.footer}>
-        <Text style={styles.wager}>
-          {formatChips(wagered)} practice{hand.doubled ? " · doubled" : ""}
-        </Text>
+        <Text style={styles.wager}>{formatChips(wagered)} practice</Text>
         {outcome ? (
           <View style={styles.outcome}>
             <Badge
