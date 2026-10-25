@@ -60,11 +60,11 @@ export default async ({ page, url, shot, check }) => {
     await page.waitForTimeout(350); // Let the report modal finish its fade before capture.
     await shot("current-hand-report");
     await page
-      .getByRole("button", { name: "Close", exact: true })
+      .getByRole("button", { name: "Close the bug report" })
       .filter({ visible: true })
       .last()
       .click();
-    await button("Close").click();
+    await button("Close table panel").click();
     await button("Stand").click();
     await button(/^(Collect \$|Continue$)/).waitFor();
     await page.waitForFunction(() =>

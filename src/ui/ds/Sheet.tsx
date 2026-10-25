@@ -78,6 +78,22 @@ function dragToDismiss(offset: Animated.Value, close: { readonly current: () => 
   });
 }
 
+/** What heads a sheet: a title, or a header of its own (with the dialog's name to read out). */
+type SheetHeading =
+  | {
+      /** A plain text title. It also names the dialog, unless `accessibilityLabel` does. */
+      title: string;
+      header?: undefined;
+      /** The dialog's accessible name, e.g. "Baccarat rules and payouts". */
+      accessibilityLabel?: string;
+    }
+  | {
+      /** Drawn in the title's place, e.g. the Play table panel's tabs. */
+      header: ReactNode;
+      title?: undefined;
+      accessibilityLabel: string;
+    };
+
 /**
  * The bottom sheet: the one modal surface for table panels, rules and forms (a layer above the
  * page, so it takes the Loupe shadow). It behaves as each platform's sheet does:
@@ -87,25 +103,26 @@ function dragToDismiss(offset: Animated.Value, close: { readonly current: () => 
  * - on iOS and Android the grabber drags it down, and a long or quick drag dismisses it;
  * - it lifts above the keyboard, and its bottom edge clears the home indicator.
  *
- * Given a `title`, the sheet draws it with a close button and scrolls `children` beneath.
- * Without one, callers draw the header (with a visible Close or Done) and the body.
+ * Every sheet has the same header: its title (or, for the Play table panel, its tabs) and a
+ * close button at the right. `children` scroll beneath it.
  */
 export function Sheet({
   visible,
   onClose,
   title,
+  header,
   accessibilityLabel = title,
+  closeLabel = `Close ${(accessibilityLabel ?? "").toLowerCase()}`,
   scrimLabel = "Dismiss",
   maxWidth = 560,
-  maxHeight = "88%",
+  maxHeight = "92%",
+  gap = 10,
   children,
-}: {
+}: SheetHeading & {
   visible: boolean;
   onClose: () => void;
-  /** A plain text title, drawn with a close button above a scrolling body. */
-  title?: string;
-  /** The dialog's accessible name, e.g. "Table panel". Defaults to `title`. */
-  accessibilityLabel?: string;
+  /** The header's close button, read aloud. Defaults to "Close" and the dialog's name. */
+  closeLabel?: string;
   /**
    * The scrim's accessible name: it is a close button for pointer and screen-reader users. Keep
    * it distinct from the header's own Close, so the two are never announced alike.
@@ -113,6 +130,8 @@ export function Sheet({
   scrimLabel?: string;
   maxWidth?: number;
   maxHeight?: DimensionValue;
+  /** Space between the body's children. */
+  gap?: number;
   children: ReactNode;
 }) {
   const insets = useSafeAreaInsets();
@@ -180,26 +199,29 @@ export function Sheet({
               <View style={styles.grabber} />
             </View>
           ) : null}
-          {title === undefined ? (
-            children
-          ) : (
-            <>
-              <View style={styles.head}>
-                <Text accessibilityRole="header" style={[display(22, 500), styles.title]}>
-                  {title}
-                </Text>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Close ${title.toLowerCase()}`}
-                  onPress={onClose}
-                  style={styles.close}
-                >
-                  <X size={20} color={colors.mutedForeground} strokeWidth={2} />
-                </Pressable>
-              </View>
-              <ScrollView contentContainerStyle={styles.body}>{children}</ScrollView>
-            </>
-          )}
+          <View style={styles.head}>
+            {header === undefined ? (
+              <Text accessibilityRole="header" style={[display(22, 500), styles.title]}>
+                {title}
+              </Text>
+            ) : (
+              <View style={styles.slot}>{header}</View>
+            )}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={closeLabel}
+              onPress={onClose}
+              style={styles.close}
+            >
+              <X size={20} color={colors.mutedForeground} strokeWidth={2} />
+            </Pressable>
+          </View>
+          <ScrollView
+            contentContainerStyle={[styles.body, { gap }]}
+            keyboardShouldPersistTaps="handled"
+          >
+            {children}
+          </ScrollView>
         </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
@@ -228,6 +250,7 @@ const styles = StyleSheet.create({
   grabber: { width: 36, height: 5, borderRadius: 3, backgroundColor: surfaces.grabber },
   head: { flexDirection: "row", alignItems: "center", paddingLeft: 20, paddingRight: 8 },
   title: { flex: 1, color: colors.foreground },
+  slot: { flex: 1 },
   close: { width: MIN_TAP, height: MIN_TAP, alignItems: "center", justifyContent: "center" },
-  body: { gap: 10, paddingHorizontal: 20, paddingBottom: 24, paddingTop: 4 },
+  body: { paddingHorizontal: 20, paddingBottom: 24, paddingTop: 4 },
 });

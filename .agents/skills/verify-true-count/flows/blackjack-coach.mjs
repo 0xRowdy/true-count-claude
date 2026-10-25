@@ -158,7 +158,7 @@ export default async ({ page, url, shot, log, check }) => {
       "the miss opens its Explanation",
     );
     await shot("miss-explained");
-    await visible(page.getByRole("button", { name: "Close", exact: true })).click();
+    await visible(page.getByRole("button", { name: "Close table panel" })).click();
     await visible(page.getByRole("button", { name: /^(Collect \$|Continue$)/ })).click();
   }
   check(caught, `the coach caught a wrong stand within ${MAX_ROUNDS} rounds`);
