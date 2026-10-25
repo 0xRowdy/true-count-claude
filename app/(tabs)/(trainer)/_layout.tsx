@@ -4,5 +4,5 @@ import { TabStack } from "@/ui/navigation/TabStack";
 export const unstable_settings = { anchor: "drills/index" };
 
 export default function TrainerLayout() {
-  return <TabStack root="drills/index" />;
+  return <TabStack root={unstable_settings.anchor} />;
 }

@@ -48,7 +48,7 @@ import {
   type LucideIcon,
 } from "@/ui/ds";
 import { type ChipValue, formatMoney } from "@/ui/ds/format";
-import { colors, display, radius, surfaces, textScale, ui } from "@/ui/ds/tokens";
+import { colors, display, radius, surfaces, textScale, type, ui } from "@/ui/ds/tokens";
 import { ACTION_NAME } from "@/ui/explanation/explanationFormat";
 import { useProfile } from "@/ui/profile/profileStore";
 import { useConfiguredRules } from "@/ui/rules/rulesStore";
@@ -716,9 +716,7 @@ function HistoryRail({
 }) {
   return (
     <View style={styles.history} accessibilityLabel="Last hands">
-      <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
-        LAST
-      </Text>
+      <Text style={[type.overline, { color: colors.mutedForeground }]}>LAST</Text>
       {chips.length === 0 ? (
         <Text style={[ui(12), { color: colors.mutedForeground }]}>No hands yet</Text>
       ) : (
@@ -1102,9 +1100,7 @@ function ResultPanel({
       </View>
 
       <View style={styles.review}>
-        <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
-          DECISIONS THIS HAND
-        </Text>
+        <Text style={[type.overline, { color: colors.mutedForeground }]}>DECISIONS THIS HAND</Text>
         {rows.length === 0 ? (
           <ReviewItem
             mark={{ bg: colors.muted, icon: icons.Minus }}

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 import type { LucideIcon } from "./icons";
-import { MIN_TAP } from "./tap";
+import { slopTo } from "./tap";
 import { colors, radius, surfaces, textScale, ui } from "./tokens";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "table";
@@ -70,7 +70,7 @@ export function Button({
       disabled={disabled}
       aria-disabled={disabled}
       testID={testID}
-      hitSlop={s.height < MIN_TAP ? (MIN_TAP - s.height) / 2 : undefined}
+      hitSlop={slopTo(s.height)}
       style={({ pressed }) => [
         styles.base,
         {

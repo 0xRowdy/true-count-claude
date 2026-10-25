@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import {
   AccessibilityInfo,
   Animated,
@@ -8,12 +8,16 @@ import {
   PanResponder,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
+  Text,
   View,
   type DimensionValue,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, shadow, surfaces } from "./tokens";
+import { X } from "./icons";
+import { MIN_TAP } from "./tap";
+import { colors, display, shadow, surfaces } from "./tokens";
 
 const NATIVE = Platform.OS !== "web";
 /** How far below its resting place the sheet starts, and where a dismissing drag sends it. */
@@ -22,19 +26,56 @@ const OFFSCREEN = 640;
 const DISMISS_DISTANCE = 96;
 const DISMISS_VELOCITY = 1;
 
+// Reduce Motion, asked once for every sheet: one query at launch and one listener, so a sheet
+// knows the answer the moment it mounts instead of animating before it arrives.
+let reduceMotion = false;
+const motionListeners = new Set<() => void>();
+if (NATIVE) {
+  const set = (on: boolean) => {
+    reduceMotion = on;
+    motionListeners.forEach((listener) => listener());
+  };
+  void AccessibilityInfo.isReduceMotionEnabled().then(set);
+  AccessibilityInfo.addEventListener("reduceMotionChanged", set);
+}
+
+function subscribeReduceMotion(listener: () => void): () => void {
+  motionListeners.add(listener);
+  return () => motionListeners.delete(listener);
+}
+
 function useReduceMotion(): boolean {
-  const [reduce, setReduce] = useState(false);
-  useEffect(() => {
-    if (!NATIVE) return;
-    let live = true;
-    void AccessibilityInfo.isReduceMotionEnabled().then((on) => live && setReduce(on));
-    const sub = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduce);
-    return () => {
-      live = false;
-      sub.remove();
-    };
-  }, []);
-  return reduce;
+  return useSyncExternalStore(
+    subscribeReduceMotion,
+    () => reduceMotion,
+    () => false,
+  );
+}
+
+/**
+ * The grabber's drag: the sheet follows the finger down, then closes past a distance or speed,
+ * or settles back. Built from the two values it moves, so it holds nothing else of the caller.
+ */
+function dragToDismiss(offset: Animated.Value, close: { readonly current: () => void }) {
+  const settle = () =>
+    Animated.spring(offset, { toValue: 0, bounciness: 0, useNativeDriver: true }).start();
+  return PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => g.dy > 4 && Math.abs(g.dy) > Math.abs(g.dx),
+    onPanResponderMove: (_, g) => offset.setValue(Math.max(0, g.dy)),
+    onPanResponderRelease: (_, g) => {
+      if (g.dy > DISMISS_DISTANCE || g.vy > DISMISS_VELOCITY) {
+        Animated.timing(offset, {
+          toValue: OFFSCREEN,
+          duration: 180,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        }).start(() => close.current());
+      } else {
+        settle();
+      }
+    },
+    onPanResponderTerminate: settle,
+  });
 }
 
 /**
@@ -46,12 +87,14 @@ function useReduceMotion(): boolean {
  * - on iOS and Android the grabber drags it down, and a long or quick drag dismisses it;
  * - it lifts above the keyboard, and its bottom edge clears the home indicator.
  *
- * Callers draw the header (with a visible Close or Done) and the body.
+ * Given a `title`, the sheet draws it with a close button and scrolls `children` beneath.
+ * Without one, callers draw the header (with a visible Close or Done) and the body.
  */
 export function Sheet({
   visible,
   onClose,
-  accessibilityLabel,
+  title,
+  accessibilityLabel = title,
   scrimLabel = "Dismiss",
   maxWidth = 560,
   maxHeight = "88%",
@@ -59,8 +102,10 @@ export function Sheet({
 }: {
   visible: boolean;
   onClose: () => void;
-  /** The dialog's accessible name, e.g. "Table panel". */
-  accessibilityLabel: string;
+  /** A plain text title, drawn with a close button above a scrolling body. */
+  title?: string;
+  /** The dialog's accessible name, e.g. "Table panel". Defaults to `title`. */
+  accessibilityLabel?: string;
   /**
    * The scrim's accessible name: it is a close button for pointer and screen-reader users. Keep
    * it distinct from the header's own Close, so the two are never announced alike.
@@ -93,26 +138,8 @@ export function Sheet({
     }).start();
   }, [visible, reduceMotion, offset]);
 
-  const [drag] = useState(() =>
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, g) => g.dy > 4 && Math.abs(g.dy) > Math.abs(g.dx),
-      onPanResponderMove: (_, g) => offset.setValue(Math.max(0, g.dy)),
-      onPanResponderRelease: (_, g) => {
-        if (g.dy > DISMISS_DISTANCE || g.vy > DISMISS_VELOCITY) {
-          Animated.timing(offset, {
-            toValue: OFFSCREEN,
-            duration: 180,
-            easing: Easing.in(Easing.cubic),
-            useNativeDriver: true,
-          }).start(() => closing.current());
-        } else {
-          Animated.spring(offset, { toValue: 0, bounciness: 0, useNativeDriver: true }).start();
-        }
-      },
-      onPanResponderTerminate: () =>
-        Animated.spring(offset, { toValue: 0, bounciness: 0, useNativeDriver: true }).start(),
-    }),
-  );
+  // The web has no grabber to drag.
+  const [drag] = useState(() => (NATIVE ? dragToDismiss(offset, closing) : null));
 
   return (
     <Modal
@@ -143,7 +170,7 @@ export function Sheet({
             { transform: [{ translateY: offset }] },
           ]}
         >
-          {NATIVE ? (
+          {drag ? (
             <View
               style={styles.grabArea}
               accessibilityElementsHidden
@@ -153,7 +180,26 @@ export function Sheet({
               <View style={styles.grabber} />
             </View>
           ) : null}
-          {children}
+          {title === undefined ? (
+            children
+          ) : (
+            <>
+              <View style={styles.head}>
+                <Text accessibilityRole="header" style={[display(22, 500), styles.title]}>
+                  {title}
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Close ${title.toLowerCase()}`}
+                  onPress={onClose}
+                  style={styles.close}
+                >
+                  <X size={20} color={colors.mutedForeground} strokeWidth={2} />
+                </Pressable>
+              </View>
+              <ScrollView contentContainerStyle={styles.body}>{children}</ScrollView>
+            </>
+          )}
         </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
@@ -180,4 +226,8 @@ const styles = StyleSheet.create({
   },
   grabArea: { alignItems: "center", paddingTop: 8, paddingBottom: 4 },
   grabber: { width: 36, height: 5, borderRadius: 3, backgroundColor: surfaces.grabber },
+  head: { flexDirection: "row", alignItems: "center", paddingLeft: 20, paddingRight: 8 },
+  title: { flex: 1, color: colors.foreground },
+  close: { width: MIN_TAP, height: MIN_TAP, alignItems: "center", justifyContent: "center" },
+  body: { gap: 10, paddingHorizontal: 20, paddingBottom: 24, paddingTop: 4 },
 });

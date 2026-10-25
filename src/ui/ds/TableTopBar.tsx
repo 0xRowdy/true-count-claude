@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { formatMoney } from "./format";
 import { BookOpen, ChevronLeft } from "./icons";
 import { MIN_TAP } from "./tap";
-import { colors, textScale, ui } from "./tokens";
+import { colors, textScale, type, ui } from "./tokens";
 
 /**
  * The design's Table Top Bar (DqrMq): back, the game and its rules line, the practice
@@ -68,7 +68,7 @@ export function TableTopBar({
           accessibilityLabel={`${bankrollLabel} bankroll ${formatMoney(bankroll)}`}
         >
           <Text
-            style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}
+            style={[type.overline, { color: colors.mutedForeground }]}
             maxFontSizeMultiplier={textScale.control}
           >
             {bankrollLabel.toUpperCase()}

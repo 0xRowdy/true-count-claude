@@ -12,7 +12,7 @@ import {
 } from "@/games/craps";
 import { Die, type DieValue } from "@/ui/ds/Die";
 import { CHIP_VALUES, chipColors, type ChipValue } from "@/ui/ds/format";
-import { colors, display, radius, surfaces, ui } from "@/ui/ds/tokens";
+import { colors, display, radius, surfaces, textScale, type, ui } from "@/ui/ds/tokens";
 import { LayoutGrid } from "@/ui/ds/icons";
 import {
   type Call,
@@ -71,7 +71,7 @@ export function Puck({ on }: { on: boolean }) {
     >
       <Text
         style={[ui(10, 800), { color: on ? craps.puckOff : craps.puckOn }]}
-        maxFontSizeMultiplier={1}
+        maxFontSizeMultiplier={textScale.fixed}
       >
         {on ? "ON" : "OFF"}
       </Text>
@@ -87,7 +87,10 @@ function Win({ tag, compact = false }: { tag: WinTag; compact?: boolean }) {
     >
       <Text style={[ui(compact ? 11 : 14, 800), { color: craps.winInk }]}>{tag.amount}</Text>
       {tag.breakdown && !compact ? (
-        <Text style={[ui(9, 600), { color: craps.winInkMuted }]} maxFontSizeMultiplier={1}>
+        <Text
+          style={[ui(9, 600), { color: craps.winInkMuted }]}
+          maxFontSizeMultiplier={textScale.fixed}
+        >
           {tag.breakdown}
         </Text>
       ) : null}
@@ -193,7 +196,7 @@ export function CrapsFelt({
               <Text style={[display(word ? 15 : 22, 600), { color: colors.feltText }]}>
                 {word ?? String(n)}
               </Text>
-              <Text style={[ui(11), { color: surfaces.feltTextFaint }]}>
+              <Text style={[ui(11), { color: surfaces.feltTextMuted }]}>
                 {payoutLabel("place", n)}
               </Text>
               {point === n ? (
@@ -221,7 +224,7 @@ export function CrapsFelt({
           <Text style={[display(20, 600, { letterSpacing: 2 }), { color: colors.feltText }]}>
             COME
           </Text>
-          <Text style={[ui(11), { color: surfaces.feltTextFaint }]}>pays 1:1</Text>
+          <Text style={[ui(11), { color: surfaces.feltTextMuted }]}>pays 1:1</Text>
           {comeStake > 0 ? (
             <View style={styles.stripChip} pointerEvents="none">
               <MiniChip amount={comeStake} />
@@ -242,7 +245,7 @@ export function CrapsFelt({
           <Text style={[display(20, 600, { letterSpacing: 2 }), { color: colors.feltText }]}>
             FIELD
           </Text>
-          <Text style={[ui(11), styles.centerText, { color: surfaces.feltTextFaint }]}>
+          <Text style={[ui(11), styles.centerText, { color: surfaces.feltTextMuted }]}>
             {`2 · 3 · 4 · 9 · 10 · 11 · 12   •   ${fieldPaysText(table.rules)}`}
           </Text>
           {fieldStake > 0 ? (
@@ -263,9 +266,7 @@ export function CrapsFelt({
           { kind: "dontCome" },
           styles.dontCome,
           <>
-            <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.feltText }]}>
-              {"DON'T COME · BAR 12"}
-            </Text>
+            <Text style={[type.overline, { color: colors.feltText }]}>{"DON'T COME · BAR 12"}</Text>
             {point === null ? (
               <View style={styles.offPuck} pointerEvents="none">
                 <Puck on={false} />
@@ -347,7 +348,7 @@ function ChipRow({
         <View style={styles.chipTag}>
           <Text
             style={[ui(7, 800, { letterSpacing: 0.5 }), { color: colors.feltText }]}
-            maxFontSizeMultiplier={1}
+            maxFontSizeMultiplier={textScale.fixed}
           >
             {[chips[0]!.label, off ? "OFF" : null].filter(Boolean).join(" ")}
           </Text>
@@ -372,7 +373,7 @@ function LineStack({ line }: { line: ReturnType<typeof lineChips> }) {
           <View style={styles.oddsTag} pointerEvents="none">
             <Text
               style={[ui(8, 800, { letterSpacing: 0.5 }), { color: colors.feltText }]}
-              maxFontSizeMultiplier={1}
+              maxFontSizeMultiplier={textScale.fixed}
             >
               {line.oddsLabel}
             </Text>

@@ -10,7 +10,7 @@ import {
   payoutLabel,
 } from "@/games/craps";
 import { Die, type DieValue } from "@/ui/ds/Die";
-import { colors, display, radius, surfaces, ui } from "@/ui/ds/tokens";
+import { colors, display, radius, surfaces, textScale, ui } from "@/ui/ds/tokens";
 import { Info, Timer } from "@/ui/ds/icons";
 import { type ChipView, type Spot, chipText, chipsOn, yourLineTag, yourStakeOn } from "./session";
 import { live } from "./theme";
@@ -22,7 +22,11 @@ function FeltChip({ chip }: { chip: ChipView }) {
   const ink = chip.mine ? colors.primaryForeground : live.white;
   return (
     <View style={[styles.chip, { backgroundColor: chip.color }]}>
-      <Text style={[ui(10, 800), { color: ink }]} numberOfLines={1} maxFontSizeMultiplier={1}>
+      <Text
+        style={[ui(10, 800), { color: ink }]}
+        numberOfLines={1}
+        maxFontSizeMultiplier={textScale.fixed}
+      >
         {chipText(chip.amount)}
       </Text>
     </View>
@@ -199,7 +203,7 @@ export function CrapsFelt({
             <View style={styles.youTag}>
               <Text
                 style={[ui(9, 800), { color: colors.primaryForeground }]}
-                maxFontSizeMultiplier={1}
+                maxFontSizeMultiplier={textScale.fixed}
               >
                 {tag}
               </Text>
@@ -235,7 +239,7 @@ export function CrapsFelt({
                 style={styles.hard}
               >
                 <Text style={[ui(13, 700), { color: colors.feltText }]}>Hard {n}</Text>
-                <Text style={[ui(11), { color: surfaces.feltTextFaint }]}>
+                <Text style={[ui(11), { color: surfaces.feltTextMuted }]}>
                   {payoutLabel("hard", n)}
                 </Text>
                 <View style={styles.hardChips} pointerEvents="none">
@@ -266,7 +270,7 @@ export function CrapsFelt({
             <Text style={[ui(13, 700), { color: colors.feltText }]}>{label}</Text>
             <View style={styles.oneRollRight}>
               <ChipStack chips={b.chips} max={2} />
-              <Text style={[ui(12), { color: surfaces.feltTextFaint }]}>{payoutLabel(bet)}</Text>
+              <Text style={[ui(12), { color: surfaces.feltTextMuted }]}>{payoutLabel(bet)}</Text>
             </View>
           </SpotBox>
         );
@@ -313,12 +317,12 @@ export function CrapsFelt({
             ]}
             max={2}
           />
-          <Text style={[ui(12), { color: surfaces.feltTextFaint }]}>{payoutLabel("aces")}</Text>
+          <Text style={[ui(12), { color: surfaces.feltTextMuted }]}>{payoutLabel("aces")}</Text>
         </View>
       </View>
       <View style={styles.edgeNote}>
-        <Info size={12} color={surfaces.feltTextFaint} strokeWidth={2} />
-        <Text style={[ui(11), styles.flex, { color: surfaces.feltTextFaint }]}>
+        <Info size={12} color={surfaces.feltTextMuted} strokeWidth={2} />
+        <Text style={[ui(11), styles.flex, { color: surfaces.feltTextMuted }]}>
           House edge 9–17% on center bets
         </Text>
       </View>
@@ -382,7 +386,7 @@ export function CrapsFelt({
                   >
                     {word ?? String(n)}
                   </Text>
-                  <Text style={[ui(narrow ? 9 : 11), { color: surfaces.feltTextFaint }]}>
+                  <Text style={[ui(narrow ? 9 : 11), { color: surfaces.feltTextMuted }]}>
                     {narrow ? payoutLabel("place", n) : `place ${payoutLabel("place", n)}`}
                   </Text>
                   {!narrow && point === n ? (
@@ -406,7 +410,7 @@ export function CrapsFelt({
               <Text style={[display(16, 600, { letterSpacing: 3 }), { color: colors.feltText }]}>
                 COME
               </Text>
-              <Text style={[ui(11), { color: surfaces.feltTextFaint }]}>pays 1:1</Text>
+              <Text style={[ui(11), { color: surfaces.feltTextMuted }]}>pays 1:1</Text>
             </>,
             "27%",
           )}
@@ -418,7 +422,7 @@ export function CrapsFelt({
               <Text style={[display(24, 600, { letterSpacing: 3 }), { color: colors.feltText }]}>
                 FIELD
               </Text>
-              <Text style={[ui(11), styles.centerText, { color: surfaces.feltTextFaint }]}>
+              <Text style={[ui(11), styles.centerText, { color: surfaces.feltTextMuted }]}>
                 {`2 · 3 · 4 · 9 · 10 · 11 · 12  •  ${fieldPaysCopy(state)}`}
               </Text>
             </>,

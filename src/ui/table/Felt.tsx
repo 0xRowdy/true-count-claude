@@ -11,7 +11,7 @@ import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import type { Card } from "@/engine/cards";
 import { CardBack, Chip, PlayingCard, type CardSize, type LucideIcon } from "@/ui/ds";
 import { formatMoney, type ChipValue } from "@/ui/ds/format";
-import { colors, display, surfaces, textScale, ui } from "@/ui/ds/tokens";
+import { colors, display, surfaces, textScale, type, ui } from "@/ui/ds/tokens";
 import { felt } from "./feltTokens";
 import type { TotalTone } from "./tableView";
 
@@ -77,10 +77,7 @@ export function ShoeButton({ onPress }: { onPress: () => void }) {
       hitSlop={4}
       style={({ pressed }) => [styles.shoe, pressed && styles.pressed]}
     >
-      <Text
-        style={[ui(11, 700, { letterSpacing: 1 }), { color: felt.label }]}
-        maxFontSizeMultiplier={textScale.felt}
-      >
+      <Text style={[type.overline, { color: felt.label }]} maxFontSizeMultiplier={textScale.felt}>
         SHOE
       </Text>
     </Pressable>

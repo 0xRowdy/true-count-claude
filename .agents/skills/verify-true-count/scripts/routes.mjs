@@ -16,11 +16,17 @@ export async function discoverRoutes(page, url) {
     );
     const next = layouts.filter((t) => !opened.has(t));
     if (next.length === 0) break;
+    const items = page.locator('[data-testid="sitemap-item"]');
+    const rows = await items.count();
     for (const text of next) {
       opened.add(text);
       await page.getByText(text, { exact: true }).first().click();
     }
-    await page.waitForTimeout(200);
+    // An opened row renders its children: wait for the first new one, not for a fixed pause.
+    await items
+      .nth(rows)
+      .waitFor({ state: "attached", timeout: 2000 })
+      .catch(() => {});
   }
   const hrefs = await page.$$eval("a[href]", (as) => as.map((a) => a.getAttribute("href")));
   const routes = [...new Set(hrefs.filter((h) => h?.startsWith("/") && !IGNORED.has(h)))].sort();

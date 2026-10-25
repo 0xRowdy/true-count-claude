@@ -27,9 +27,10 @@ import {
   display,
   icons,
   radius,
+  Sheet,
+  type,
   ui,
 } from "@/ui/ds";
-import { Sheet } from "@/ui/ds/Sheet";
 import { ChevronRight, ShieldCheck } from "@/ui/ds/icons";
 
 const TABLEAU: readonly [string, string][] = [
@@ -263,9 +264,7 @@ export function RulesSheet({
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View style={styles.section}>
-      <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
-        {title.toUpperCase()}
-      </Text>
+      <Text style={[type.overline, { color: colors.mutedForeground }]}>{title.toUpperCase()}</Text>
       {children}
     </View>
   );

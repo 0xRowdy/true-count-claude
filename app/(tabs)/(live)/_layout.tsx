@@ -4,5 +4,5 @@ import { TabStack } from "@/ui/navigation/TabStack";
 export const unstable_settings = { anchor: "live/index" };
 
 export default function LiveLayout() {
-  return <TabStack root="live/index" />;
+  return <TabStack root={unstable_settings.anchor} />;
 }

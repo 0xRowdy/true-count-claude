@@ -8,24 +8,17 @@
  *   render exactly what `legalActions` returns and nothing else. Greying out a legal split
  *   corrupts the user's own accuracy statistics, a complaint that appears three times in one
  *   competitor's reviews.
- * - Hit targets meet the platform minimum (`MIN_TAP`) and are spaced. "Mis-tapped the wrong action" is a recurring
- *   review theme across the category.
+ * - Hit targets meet the platform minimum (`MIN_TAP`) and are spaced. "Mis-tapped the wrong
+ *   action" is a recurring review theme across the category.
  */
 
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View, type ViewStyle } from "react-native";
 import { MIN_TAP } from "./ds/tap";
 import { colors, radius, surfaces, ui } from "./ds/tokens";
+import { type Tone, toneColor } from "./trainer/kit";
 
-export type Tone = "neutral" | "good" | "bad" | "warn" | "info";
-
-const toneColor: Record<Tone, string> = {
-  neutral: colors.foreground,
-  good: colors.correct,
-  bad: colors.mistake,
-  warn: colors.primary,
-  info: surfaces.infoInk,
-};
+export type { Tone };
 
 /** A titled container. The default surface for grouping related information. */
 export function Panel({

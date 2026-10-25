@@ -87,7 +87,7 @@ export const text = StyleSheet.create({
   info: { ...ui(13, 400, { lineHeight: 19 }), color: surfaces.infoInk, flexShrink: 1 },
   warn: { ...ui(13, 400, { lineHeight: 19 }), color: colors.primary, flexShrink: 1 },
   bad: { ...ui(13, 400, { lineHeight: 19 }), color: colors.mistake, flexShrink: 1 },
-  /** Muted uppercase group title, the design's "HARD TOTALS" (10/700, tracked). */
+  /** Muted uppercase group title, the design's "HARD TOTALS" (11/700, tracked). */
   overline: {
     ...ui(11, 700, { letterSpacing: 1.2, textTransform: "uppercase" }),
     color: colors.mutedForeground,

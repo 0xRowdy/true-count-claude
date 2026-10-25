@@ -140,7 +140,6 @@ export const surfaces = {
    * fell to 2–3:1; the felt prints in one ink and ranks by size, weight and tracking instead.
    */
   feltTextMuted: "#E4E1CD",
-  feltTextFaint: "#E4E1CD",
   /** Chip rack rail: gradient top → bottom, with a lighter top edge. */
   rackFrom: "#3A2A1E",
   rackTo: "#2A1E15",
@@ -243,6 +242,8 @@ export const textScale = {
   felt: 1.3,
   /** Controls in a row of fixed width: buttons, steppers, segments, the table top bar. */
   control: 1.6,
+  /** Glyphs inside a fixed shape (chip values, pucks, beads, tags): never scaled. */
+  fixed: 1,
 } as const;
 
 /** The design's font families (the `.pen` values). */

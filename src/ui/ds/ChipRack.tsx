@@ -64,5 +64,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  caption: { color: surfaces.feltTextFaint, textAlign: "center" },
+  caption: { color: surfaces.feltTextMuted, textAlign: "center" },
 });

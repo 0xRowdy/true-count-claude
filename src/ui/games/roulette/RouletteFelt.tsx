@@ -27,7 +27,7 @@ import {
   pocketColor,
   straightId,
 } from "@/games/roulette";
-import { colors, shadow, surfaces, ui } from "@/ui/ds";
+import { colors, shadow, surfaces, textScale, ui } from "@/ui/ds";
 import {
   type TableState,
   CELL_H,
@@ -403,7 +403,7 @@ export function MiniChip({ amount, dim = false }: { amount: number; dim?: boolea
       <Text
         style={[ui(10, 800), { color: light ? surfaces.chipInkDark : surfaces.chipInkLight }]}
         numberOfLines={1}
-        maxFontSizeMultiplier={1}
+        maxFontSizeMultiplier={textScale.fixed}
       >
         {stackLabel(amount)}
       </Text>

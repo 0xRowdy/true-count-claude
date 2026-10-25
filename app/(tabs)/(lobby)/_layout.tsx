@@ -4,5 +4,5 @@ import { TabStack } from "@/ui/navigation/TabStack";
 export const unstable_settings = { anchor: "lobby" };
 
 export default function LobbyLayout() {
-  return <TabStack root="lobby" />;
+  return <TabStack root={unstable_settings.anchor} />;
 }

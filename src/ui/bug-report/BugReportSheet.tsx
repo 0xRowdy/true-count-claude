@@ -94,64 +94,62 @@ export function BugReportSheet({ report, onClose }: { report: BugReport; onClose
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.sheet}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Report a bug</Text>
-            <SecondaryButton label="Close" icon={X} onPress={onClose} />
-          </View>
-
-          <Text style={styles.prose}>
-            This captures the exact game you were looking at — the Shoe&apos;s seed, the cards dealt
-            so far, the round&apos;s actions, the Rule Set and the Counting System — so we can
-            replay it card for card instead of guessing.
-          </Text>
-
-          <SecondaryButton label="See the known issues first →" onPress={onKnownIssues} />
-
-          <Text style={styles.label}>What went wrong? (optional)</Text>
-          <TextInput
-            value={note}
-            onChangeText={setNote}
-            placeholder="e.g. Split was not offered on a pair of 8s"
-            placeholderTextColor={colors.mutedForeground}
-            multiline
-            style={styles.input}
-            accessibilityLabel="What went wrong"
-          />
-
-          <View style={styles.row}>
-            <ActionButton label="Copy report" icon={Copy} tone="good" onPress={onCopy} />
-            <SecondaryButton label={web ? "Download report" : "Share report"} onPress={onShare} />
-            <SecondaryButton label="Open a GitHub issue" onPress={onOpenIssue} />
-          </View>
-
-          {outcome ? (
-            <Text style={[styles.outcome, { color: outcome.ok ? colors.correct : colors.primary }]}>
-              {outcome.message}
-            </Text>
-          ) : null}
-
-          <Text style={styles.note}>
-            Copy and {web ? "download" : "share"} work offline and need no account. The GitHub issue
-            needs a network and a GitHub account.
-          </Text>
-
-          <Text style={styles.label}>Exactly what will be shared</Text>
-          <Text style={styles.note}>
-            Game state only: no name, no account, no device identifier, no location. Beyond the
-            game, just the app version and platform, and your note if you write one. The Session id
-            is made from the moment that Session started. Nothing leaves this device until you copy
-            or share it.
-          </Text>
-          <ScrollView style={styles.preview} nestedScrollEnabled>
-            <Text style={styles.previewText} selectable>
-              {text}
-            </Text>
-          </ScrollView>
-          <Text style={styles.meta}>
-            {fileName} · {text.split("\n").length} lines
-          </Text>
+        <View style={styles.header}>
+          <Text style={styles.title}>Report a bug</Text>
+          <SecondaryButton label="Close" icon={X} onPress={onClose} />
         </View>
+
+        <Text style={styles.prose}>
+          This captures the exact game you were looking at — the Shoe&apos;s seed, the cards dealt
+          so far, the round&apos;s actions, the Rule Set and the Counting System — so we can replay
+          it card for card instead of guessing.
+        </Text>
+
+        <SecondaryButton label="See the known issues first →" onPress={onKnownIssues} />
+
+        <Text style={styles.label}>What went wrong? (optional)</Text>
+        <TextInput
+          value={note}
+          onChangeText={setNote}
+          placeholder="e.g. Split was not offered on a pair of 8s"
+          placeholderTextColor={colors.mutedForeground}
+          multiline
+          style={styles.input}
+          accessibilityLabel="What went wrong"
+        />
+
+        <View style={styles.row}>
+          <ActionButton label="Copy report" icon={Copy} tone="good" onPress={onCopy} />
+          <SecondaryButton label={web ? "Download report" : "Share report"} onPress={onShare} />
+          <SecondaryButton label="Open a GitHub issue" onPress={onOpenIssue} />
+        </View>
+
+        {outcome ? (
+          <Text style={[styles.outcome, { color: outcome.ok ? colors.correct : colors.primary }]}>
+            {outcome.message}
+          </Text>
+        ) : null}
+
+        <Text style={styles.note}>
+          Copy and {web ? "download" : "share"} work offline and need no account. The GitHub issue
+          needs a network and a GitHub account.
+        </Text>
+
+        <Text style={styles.label}>Exactly what will be shared</Text>
+        <Text style={styles.note}>
+          Game state only: no name, no account, no device identifier, no location. Beyond the game,
+          just the app version and platform, and your note if you write one. The Session id is made
+          from the moment that Session started. Nothing leaves this device until you copy or share
+          it.
+        </Text>
+        <ScrollView style={styles.preview} nestedScrollEnabled>
+          <Text style={styles.previewText} selectable>
+            {text}
+          </Text>
+        </ScrollView>
+        <Text style={styles.meta}>
+          {fileName} · {text.split("\n").length} lines
+        </Text>
       </ScrollView>
     </Sheet>
   );
@@ -159,8 +157,7 @@ export function BugReportSheet({ report, onClose }: { report: BugReport; onClose
 
 const styles = StyleSheet.create({
   scroll: { flexShrink: 1 },
-  scrollContent: { paddingTop: 4, paddingHorizontal: 20, paddingBottom: 24 },
-  sheet: { gap: 16 },
+  scrollContent: { gap: 16, paddingTop: 4, paddingHorizontal: 20, paddingBottom: 24 },
   header: {
     flexDirection: "row",
     flexWrap: "wrap",

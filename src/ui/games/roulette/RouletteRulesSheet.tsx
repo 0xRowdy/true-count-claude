@@ -19,7 +19,7 @@ import {
   getLayout,
   houseEdgeOf,
 } from "@/games/roulette";
-import { Button, MIN_TAP, SegmentedControl, Sheet, colors, radius, ui } from "@/ui/ds";
+import { Button, MIN_TAP, SegmentedControl, Sheet, colors, radius, type, ui } from "@/ui/ds";
 import { type WheelChoice, WHEEL_OPTIONS, WHEEL_RULES } from "./rouletteTable";
 
 const ORDER: BetType[] = [
@@ -88,9 +88,7 @@ export function RouletteRulesSheet({
         </View>
         <ScrollView contentContainerStyle={{ gap: 14, paddingBottom: 4 }}>
           <View style={{ gap: 8 }}>
-            <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
-              WHEEL
-            </Text>
+            <Text style={[type.overline, { color: colors.mutedForeground }]}>WHEEL</Text>
             <SegmentedControl
               accessibilityLabel="Wheel"
               options={WHEEL_OPTIONS}

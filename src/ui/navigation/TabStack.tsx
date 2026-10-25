@@ -2,6 +2,15 @@ import { Stack } from "expo-router";
 import { Platform } from "react-native";
 import { colors } from "@/ui/ds/tokens";
 
+/** The platform's back bar on the app background: a bare chevron, no title, no hairline. */
+export const BACK_BAR = {
+  headerTitle: "",
+  headerStyle: { backgroundColor: colors.background },
+  headerTintColor: colors.foreground,
+  headerShadowVisible: false,
+  headerBackButtonDisplayMode: "minimal",
+} as const;
+
 /**
  * The stack inside one native tab (Lobby, Trainer, Strategies, Live, Progress).
  *
@@ -14,12 +23,8 @@ export function TabStack({ root }: { root: string }) {
   return (
     <Stack
       screenOptions={({ route }) => ({
+        ...BACK_BAR,
         headerShown: Platform.OS !== "web" && route.name !== root,
-        headerTitle: "",
-        headerStyle: { backgroundColor: colors.background },
-        headerTintColor: colors.foreground,
-        headerShadowVisible: false,
-        headerBackButtonDisplayMode: "minimal",
         contentStyle: { backgroundColor: colors.background },
       })}
     />

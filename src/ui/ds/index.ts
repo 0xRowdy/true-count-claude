@@ -4,7 +4,7 @@
  */
 
 export * from "./tokens";
-export { MIN_TAP } from "./tap";
+export { MIN_TAP, slopTo } from "./tap";
 export * from "./format";
 export * as icons from "./icons";
 export type { LucideIcon } from "./icons";

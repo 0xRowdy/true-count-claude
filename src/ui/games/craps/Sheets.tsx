@@ -1,5 +1,4 @@
-import type { ReactNode } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import {
   type Bet,
   type CrapsTable,
@@ -20,10 +19,9 @@ import {
   payoutLabel,
   tableLabel,
 } from "@/games/craps";
-import { Sheet as BottomSheet } from "@/ui/ds/Sheet";
-import { MIN_TAP } from "@/ui/ds/tap";
-import { colors, display, radius, ui } from "@/ui/ds/tokens";
-import { Info, X } from "@/ui/ds/icons";
+import { Sheet } from "@/ui/ds/Sheet";
+import { colors, radius, type, ui } from "@/ui/ds/tokens";
+import { Info } from "@/ui/ds/icons";
 import {
   type Spot,
   CENTER_KINDS,
@@ -34,35 +32,6 @@ import {
   stakeOn,
   wouldDropBelowMinimum,
 } from "./model";
-
-function Sheet({
-  visible,
-  title,
-  onClose,
-  children,
-}: {
-  visible: boolean;
-  title: string;
-  onClose: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <BottomSheet visible={visible} onClose={onClose} accessibilityLabel={title} maxWidth={430}>
-      <View style={styles.head}>
-        <Text style={[display(22, 500), styles.flex, { color: colors.foreground }]}>{title}</Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Close ${title.toLowerCase()}`}
-          onPress={onClose}
-          style={styles.close}
-        >
-          <X size={20} color={colors.mutedForeground} strokeWidth={2} />
-        </Pressable>
-      </View>
-      <ScrollView contentContainerStyle={styles.body}>{children}</ScrollView>
-    </BottomSheet>
-  );
-}
 
 function SmallButton({
   label,
@@ -131,19 +100,15 @@ export function CenterBetsSheet({
     );
   };
   return (
-    <Sheet visible={visible} title="Center bets" onClose={onClose}>
+    <Sheet visible={visible} title="Center bets" onClose={onClose} maxWidth={430}>
       <Text style={[ui(13), { color: colors.mutedForeground }]}>
         {`Tap to bet ${formatDollars(chip)}. Hardways are off on the come-out unless you call them on.`}
       </Text>
-      <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
-        HARDWAYS
-      </Text>
+      <Text style={[type.overline, { color: colors.mutedForeground }]}>HARDWAYS</Text>
       {([6, 8, 4, 10] as const).map((n) =>
         row({ kind: "hard", number: n }, payoutLabel("hard", n)),
       )}
-      <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
-        ONE ROLL
-      </Text>
+      <Text style={[type.overline, { color: colors.mutedForeground }]}>ONE ROLL</Text>
       {CENTER_KINDS.map((k) => row({ kind: k }, payoutLabel(k)))}
       <View style={styles.note}>
         <Info size={14} color={colors.mutedForeground} strokeWidth={2} />
@@ -184,7 +149,7 @@ export function EditBetsSheet({
 }) {
   const mine = betsOf(table);
   return (
-    <Sheet visible={visible} title="Your bets" onClose={onClose}>
+    <Sheet visible={visible} title="Your bets" onClose={onClose} maxWidth={430}>
       {mine.length === 0 ? (
         <Text style={[ui(14), { color: colors.mutedForeground }]}>
           No bets yet. Pick a chip and tap a spot on the felt.
@@ -278,7 +243,7 @@ export function RulesSheet({
   onClose: () => void;
 }) {
   return (
-    <Sheet visible={visible} title="Rules and payouts" onClose={onClose}>
+    <Sheet visible={visible} title="Rules and payouts" onClose={onClose} maxWidth={430}>
       <Text style={[ui(14, 600), { color: colors.foreground }]}>{tableLabel(table.rules)}</Text>
       <Text style={[ui(14, 400, { lineHeight: 20 }), { color: colors.foreground }]}>
         {`${fullOddsRule(table.rules)}. ${explainBet("odds", table.rules)}`}
@@ -317,14 +282,6 @@ export function RulesSheet({
 }
 
 const styles = StyleSheet.create({
-  head: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingLeft: 20,
-    paddingRight: 8,
-  },
-  close: { width: MIN_TAP, height: MIN_TAP, alignItems: "center", justifyContent: "center" },
-  body: { gap: 10, paddingHorizontal: 20, paddingBottom: 24, paddingTop: 4 },
   flex: { flex: 1 },
   center: {
     flexDirection: "row",
