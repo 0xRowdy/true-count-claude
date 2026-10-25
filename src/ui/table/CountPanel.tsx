@@ -14,8 +14,9 @@
 import { StyleSheet, Text, View } from "react-native";
 import { COUNTING_SYSTEMS, type CountingSystemId } from "@/engine/counting";
 import { NONE_PUBLISHED, unbalancedCountRowsFromReadout } from "@/ui/drills/unbalancedCount";
-import { Panel, SegmentedControl, StatRow, type Tone } from "@/ui/primitives";
+import { Panel } from "@/ui/ds";
 import { colors, ui } from "@/ui/ds/tokens";
+import { Choice, StatRow, type Tone } from "@/ui/trainer/kit";
 import { formatCount } from "./format";
 import type { CountReadout, PlayTable } from "./usePlayTable";
 
@@ -46,11 +47,12 @@ export function CountPanel({
     system && readout.pivot !== null ? unbalancedCountRowsFromReadout(system, readout.pivot) : [];
 
   return (
-    <Panel title="Count">
-      <SegmentedControl
+    <Panel title="Count" padding={16} gap={8}>
+      <Choice
         options={VISIBILITY_OPTIONS}
         value={visibility}
         onChange={onChangeVisibility}
+        accessibilityLabel="Count visibility"
       />
 
       <View style={styles.spacer} />
@@ -117,8 +119,13 @@ export function SystemPanel({
   const options = COUNTING_SYSTEMS.map((system) => ({ value: system.id, label: system.name }));
 
   return (
-    <Panel title="Counting system">
-      <SegmentedControl options={options} value={table.system.id} onChange={onChange} />
+    <Panel title="Counting system" padding={16} gap={8}>
+      <Choice
+        options={options}
+        value={table.system.id}
+        onChange={onChange}
+        accessibilityLabel="Counting system"
+      />
       <Text style={styles.note}>
         Level {table.system.level} · {table.system.balanced ? "balanced" : "unbalanced"}
         {table.system.usesAceSideCount ? " · needs an ace side count" : ""}

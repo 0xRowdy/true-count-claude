@@ -15,9 +15,16 @@ import type { CountingSystemId } from "@/engine/counting";
 import { type RuleSet, describeRules } from "@/engine/rules";
 import { isCutCardReached } from "@/engine/shoe";
 import { ReportBugButton } from "@/ui/bug-report/ReportBugButton";
-import { Button, Sheet, Tabs, icons } from "@/ui/ds";
+import { Button, Panel, Sheet, Tabs, icons } from "@/ui/ds";
 import { colors, ui } from "@/ui/ds/tokens";
-import { Badge, Panel, SecondaryButton, StatRow, ActionButton } from "@/ui/primitives";
+import {
+  ActionButton,
+  SecondaryButton,
+  StatRow,
+  ToneBadge,
+  type Tone,
+  toneColor,
+} from "@/ui/trainer/kit";
 import { matchingPreset } from "@/ui/rules/presets";
 import {
   SessionControlBar,
@@ -190,7 +197,7 @@ export function TableSheet({
 function TablePanel({ rules }: { rules: RuleSet }) {
   const preset = matchingPreset(rules);
   return (
-    <Panel title="Table">
+    <Panel title="Table" padding={16} gap={8}>
       {preset ? <Text style={styles.tableName}>{preset.name}</Text> : null}
       <Text style={styles.tableRules}>Dealing {describeRules(rules)}</Text>
       <Link href="/rules" style={styles.link}>
@@ -232,10 +239,10 @@ function PendingTablePanel({
   const preset = matchingPreset(pending);
   const action = hold === null ? null : HOLD_ACTION[hold];
   return (
-    <Panel>
-      <Badge label="NEW TABLE WAITING" tone="warn" />
-      <StatRow label="Dealing now" value={describeRules(current)} />
-      <StatRow
+    <Panel padding={16} gap={8}>
+      <ToneBadge label="NEW TABLE WAITING" tone="warn" />
+      <RuleLine label="Dealing now" value={describeRules(current)} />
+      <RuleLine
         label={preset ? `Configured — ${preset.name}` : "Configured"}
         value={describeRules(pending)}
         tone="info"
@@ -255,10 +262,28 @@ function PendingTablePanel({
   );
 }
 
+/** A Rule Set under its label, so the whole string reads on one line on a phone. */
+function RuleLine({
+  label,
+  value,
+  tone = "neutral",
+}: {
+  label: string;
+  value: string;
+  tone?: Tone;
+}) {
+  return (
+    <View style={styles.ruleLine}>
+      <Text style={[ui(14), styles.muted]}>{label}</Text>
+      <Text style={[ui(14, 600), { color: toneColor[tone] }]}>{value}</Text>
+    </View>
+  );
+}
+
 function BankrollPanel({ table }: { table: PlayTable }) {
   const atRisk = amountAtRisk(table);
   return (
-    <Panel title="Bankroll">
+    <Panel title="Bankroll" padding={16} gap={8}>
       <StatRow label="Available" value={formatChips(availableBankroll(table))} />
       {atRisk > 0 ? <StatRow label="On the felt" value={formatChips(atRisk)} tone="warn" /> : null}
       {/* Rounds, not hands: a split resolves two hands in one round. */}
@@ -276,7 +301,7 @@ function ShoePanel({ table, onShuffle }: { table: PlayTable; onShuffle: () => vo
   const shoe = currentShoe(table);
   const cutCardOut = isCutCardReached(shoe);
   return (
-    <Panel title="Shoe">
+    <Panel title="Shoe" padding={16} gap={8}>
       <StatRow label="Session seed" value={table.sessionSeed} />
       <StatRow label="Shoe" value={`#${table.shoeIndex + 1} · seed ${shoe.seed}`} />
       <StatRow label="Dealt" value={`${shoe.dealtCount} of ${shoe.cards.length}`} />
@@ -306,6 +331,7 @@ const styles = StyleSheet.create({
   },
   body: { gap: 12, padding: 16, paddingBottom: 32 },
   muted: { color: colors.mutedForeground },
+  ruleLine: { gap: 2 },
   report: { alignSelf: "flex-start" },
   link: { ...ui(15, 500), color: colors.primary, minHeight: 44, paddingTop: 10 },
   tableName: { ...ui(16, 600), color: colors.foreground },
