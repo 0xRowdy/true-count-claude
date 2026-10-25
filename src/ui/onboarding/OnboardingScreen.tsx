@@ -442,15 +442,13 @@ export function OnboardingScreen() {
                 center={{ x: 0.3, y: 0 }}
                 size={{ width: 2, height: 2.4 }}
               />
-              <Text
-                style={[ui(11, 700, { letterSpacing: 1.5 }), { color: surfaces.feltTextMuted }]}
-              >
+              <Text style={[ui(11, 700, { letterSpacing: 1.5 }), { color: surfaces.feltPrint }]}>
                 {owner}
               </Text>
               <Text style={[display(28, 500), { color: colors.feltText }]}>
                 {GOAL_TITLE[profile.goal]}
               </Text>
-              <Text style={[ui(13), { color: surfaces.feltTextMuted }]}>Updates as you answer</Text>
+              <Text style={[ui(13), { color: surfaces.feltPrint }]}>Updates as you answer</Text>
             </View>
             <View style={styles.plan}>
               {stops.map((s, i) => {

@@ -16,7 +16,16 @@ import {
   formatDollars,
   oddsLabel,
 } from "@/games/craps";
-import { Button, SegmentedControl, colors, display, textScale, ui, StatCard } from "@/ui/ds";
+import {
+  Button,
+  SegmentedControl,
+  colors,
+  display,
+  surfaces,
+  textScale,
+  ui,
+  StatCard,
+} from "@/ui/ds";
 import type { CrapsDraft } from "@/state/strategies";
 import {
   type HitKind,
@@ -357,7 +366,7 @@ function PlanFelt({ plan, preview }: { plan: BetPlan; preview: PreviewChoice }) 
                 >
                   {word ?? n}
                 </Text>
-                <Text style={[ui(11), { color: builder.feltCaption }]}>{PAYS[n]}</Text>
+                <Text style={[ui(11), { color: surfaces.feltPrint }]}>{PAYS[n]}</Text>
                 {isPoint ? (
                   <View style={s.puck}>
                     <Text

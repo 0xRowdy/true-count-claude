@@ -21,6 +21,7 @@ export { Chip } from "./Chip";
 export { ChipRack } from "./ChipRack";
 export { CoachNote, type CoachAction, type CoachVariant } from "./CoachNote";
 export { Die, type DieValue } from "./Die";
+export { FeltText } from "./FeltText";
 export { Gradient } from "./Gradient";
 export { ListRow, type ListRowTone } from "./ListRow";
 export { Panel } from "./Panel";

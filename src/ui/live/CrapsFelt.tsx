@@ -1,5 +1,5 @@
 import { useId, useState, type ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View, type DimensionValue } from "react-native";
+import { Pressable, StyleSheet, View, type DimensionValue } from "react-native";
 import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import {
   type LiveTableState,
@@ -10,7 +10,8 @@ import {
   payoutLabel,
 } from "@/games/craps";
 import { Die, type DieValue } from "@/ui/ds/Die";
-import { colors, display, radius, surfaces, textScale, ui } from "@/ui/ds/tokens";
+import { FeltText } from "@/ui/ds/FeltText";
+import { colors, display, radius, surfaces, ui } from "@/ui/ds/tokens";
 import { Info, Timer } from "@/ui/ds/icons";
 import { type ChipView, type Spot, chipText, chipsOn, yourLineTag, yourStakeOn } from "./session";
 import { live } from "./theme";
@@ -22,13 +23,9 @@ function FeltChip({ chip }: { chip: ChipView }) {
   const ink = chip.mine ? colors.primaryForeground : live.white;
   return (
     <View style={[styles.chip, { backgroundColor: chip.color }]}>
-      <Text
-        style={[ui(10, 800), { color: ink }]}
-        numberOfLines={1}
-        maxFontSizeMultiplier={textScale.fixed}
-      >
+      <FeltText fixed style={[ui(10, 800), { color: ink }]} numberOfLines={1}>
         {chipText(chip.amount)}
-      </Text>
+      </FeltText>
     </View>
   );
 }
@@ -59,9 +56,12 @@ function Puck({ on, size = 30 }: { on: boolean; size?: number }) {
           : { backgroundColor: live.puckOff, borderColor: live.puckOn },
       ]}
     >
-      <Text style={[ui(size < 30 ? 8 : 10, 800), { color: on ? live.puckOff : live.puckOn }]}>
+      <FeltText
+        fixed
+        style={[ui(size < 30 ? 8 : 10, 800), { color: on ? live.puckOff : live.puckOn }]}
+      >
         {on ? "ON" : "OFF"}
-      </Text>
+      </FeltText>
     </View>
   );
 }
@@ -201,12 +201,9 @@ export function CrapsFelt({
         >
           {tag ? (
             <View style={styles.youTag}>
-              <Text
-                style={[ui(9, 800), { color: colors.primaryForeground }]}
-                maxFontSizeMultiplier={textScale.fixed}
-              >
+              <FeltText fixed style={[ui(9, 800), { color: colors.primaryForeground }]}>
                 {tag}
-              </Text>
+              </FeltText>
             </View>
           ) : null}
           <ChipStack chips={chips.mine} />
@@ -217,9 +214,9 @@ export function CrapsFelt({
 
   const center = (
     <View style={[styles.center, narrow && styles.centerNarrow]}>
-      <Text style={[ui(11, 700, { letterSpacing: 1.5 }), { color: colors.feltText }]}>
+      <FeltText style={[ui(11, 700, { letterSpacing: 1.5 }), { color: colors.feltText }]}>
         CENTER BETS
-      </Text>
+      </FeltText>
       {(
         [
           [6, 8],
@@ -238,10 +235,8 @@ export function CrapsFelt({
                 onPress={() => onSpot(spot)}
                 style={styles.hard}
               >
-                <Text style={[ui(13, 700), { color: colors.feltText }]}>Hard {n}</Text>
-                <Text style={[ui(11), { color: surfaces.feltTextMuted }]}>
-                  {payoutLabel("hard", n)}
-                </Text>
+                <FeltText style={[ui(13, 700), { color: colors.feltText }]}>Hard {n}</FeltText>
+                <FeltText style={ui(11)}>{payoutLabel("hard", n)}</FeltText>
                 <View style={styles.hardChips} pointerEvents="none">
                   <ChipStack chips={b.chips} max={2} />
                 </View>
@@ -267,10 +262,10 @@ export function CrapsFelt({
             onPress={() => onSpot(spot)}
             style={[styles.oneRoll, bet === "anySeven" && { backgroundColor: live.anySeven }]}
           >
-            <Text style={[ui(13, 700), { color: colors.feltText }]}>{label}</Text>
+            <FeltText style={[ui(13, 700), { color: colors.feltText }]}>{label}</FeltText>
             <View style={styles.oneRollRight}>
               <ChipStack chips={b.chips} max={2} />
-              <Text style={[ui(12), { color: surfaces.feltTextMuted }]}>{payoutLabel(bet)}</Text>
+              <FeltText style={ui(12)}>{payoutLabel(bet)}</FeltText>
             </View>
           </SpotBox>
         );
@@ -289,7 +284,7 @@ export function CrapsFelt({
             return (
               <View key={bet} style={styles.acesRow}>
                 {i > 0 ? (
-                  <Text style={[ui(13, 700), { color: colors.feltText }]}>{" / "}</Text>
+                  <FeltText style={[ui(13, 700), { color: colors.feltText }]}>{" / "}</FeltText>
                 ) : null}
                 <Pressable
                   accessibilityRole="button"
@@ -299,11 +294,11 @@ export function CrapsFelt({
                   onPress={() => onSpot(spot)}
                   hitSlop={{ top: 12, bottom: 12, left: 4, right: 4 }}
                 >
-                  <Text
+                  <FeltText
                     style={[ui(13, 700), { color: mine > 0 ? colors.primary : colors.feltText }]}
                   >
                     {label}
-                  </Text>
+                  </FeltText>
                 </Pressable>
               </View>
             );
@@ -317,14 +312,12 @@ export function CrapsFelt({
             ]}
             max={2}
           />
-          <Text style={[ui(12), { color: surfaces.feltTextMuted }]}>{payoutLabel("aces")}</Text>
+          <FeltText style={ui(12)}>{payoutLabel("aces")}</FeltText>
         </View>
       </View>
       <View style={styles.edgeNote}>
-        <Info size={12} color={surfaces.feltTextMuted} strokeWidth={2} />
-        <Text style={[ui(11), styles.flex, { color: surfaces.feltTextMuted }]}>
-          House edge 9–17% on center bets
-        </Text>
+        <Info size={12} color={surfaces.feltPrint} strokeWidth={2} />
+        <FeltText style={[ui(11), styles.flex]}>House edge 9–17% on center bets</FeltText>
       </View>
     </View>
   );
@@ -345,21 +338,19 @@ export function CrapsFelt({
               </View>
             ) : null}
             <View style={[styles.call, narrow && styles.callNarrow]}>
-              <Text
+              <FeltText
                 accessibilityRole="header"
                 aria-level={2}
                 aria-live="polite"
                 style={[display(22, 400), { color: colors.feltText }]}
               >
                 {last ? last.call : "Come-out roll. Place your bets."}
-              </Text>
-              {last ? (
-                <Text style={[ui(13), { color: surfaces.feltTextMuted }]}>{last.summary}</Text>
-              ) : null}
+              </FeltText>
+              {last ? <FeltText style={ui(13)}>{last.summary}</FeltText> : null}
             </View>
             <View style={styles.timer} accessibilityLabel={timer}>
               <Timer size={16} color={colors.feltText} strokeWidth={2} />
-              <Text style={[ui(13, 600), { color: colors.feltText }]}>{timer}</Text>
+              <FeltText style={[ui(13, 600), { color: colors.feltText }]}>{timer}</FeltText>
             </View>
           </View>
 
@@ -378,17 +369,17 @@ export function CrapsFelt({
                 >
                   {/* Phones: the puck and chips sit in the flow, above and below the number. */}
                   {narrow && point === n ? <Puck on size={22} /> : null}
-                  <Text
+                  <FeltText
                     style={[
                       word ? display(narrow ? 15 : 20, 600) : display(narrow ? 22 : 28, 600),
                       { color: colors.feltText },
                     ]}
                   >
                     {word ?? String(n)}
-                  </Text>
-                  <Text style={[ui(narrow ? 9 : 11), { color: surfaces.feltTextMuted }]}>
+                  </FeltText>
+                  <FeltText style={ui(narrow ? 9 : 11)}>
                     {narrow ? payoutLabel("place", n) : `place ${payoutLabel("place", n)}`}
-                  </Text>
+                  </FeltText>
                   {!narrow && point === n ? (
                     <View style={styles.puckSpot}>
                       <Puck on />
@@ -407,10 +398,12 @@ export function CrapsFelt({
             "Come",
             56,
             <>
-              <Text style={[display(16, 600, { letterSpacing: 3 }), { color: colors.feltText }]}>
+              <FeltText
+                style={[display(16, 600, { letterSpacing: 3 }), { color: colors.feltText }]}
+              >
                 COME
-              </Text>
-              <Text style={[ui(11), { color: surfaces.feltTextMuted }]}>pays 1:1</Text>
+              </FeltText>
+              <FeltText style={ui(11)}>pays 1:1</FeltText>
             </>,
             "27%",
           )}
@@ -419,12 +412,14 @@ export function CrapsFelt({
             "Field",
             60,
             <>
-              <Text style={[display(24, 600, { letterSpacing: 3 }), { color: colors.feltText }]}>
+              <FeltText
+                style={[display(24, 600, { letterSpacing: 3 }), { color: colors.feltText }]}
+              >
                 FIELD
-              </Text>
-              <Text style={[ui(11), styles.centerText, { color: surfaces.feltTextMuted }]}>
+              </FeltText>
+              <FeltText style={[ui(11), styles.centerText]}>
                 {`2 · 3 · 4 · 9 · 10 · 11 · 12  •  ${fieldPaysCopy(state)}`}
-              </Text>
+              </FeltText>
             </>,
             "16%",
           )}
@@ -433,9 +428,9 @@ export function CrapsFelt({
               { kind: "dontCome" },
               "Don't come",
               44,
-              <Text style={[ui(12, 700, { letterSpacing: 1.5 }), { color: colors.feltText }]}>
+              <FeltText style={[ui(12, 700, { letterSpacing: 1.5 }), { color: colors.feltText }]}>
                 {"DON'T COME · BAR 12"}
-              </Text>,
+              </FeltText>,
               "70%",
             )}
             {point === null ? (
@@ -447,9 +442,9 @@ export function CrapsFelt({
           {line(
             "pass",
             "Pass line",
-            <Text style={[display(24, 600, { letterSpacing: 3 }), { color: colors.feltText }]}>
+            <FeltText style={[display(24, 600, { letterSpacing: 3 }), { color: colors.feltText }]}>
               PASS LINE
-            </Text>,
+            </FeltText>,
             68,
             pass,
             passTag,
@@ -457,9 +452,9 @@ export function CrapsFelt({
           {line(
             "dontPass",
             "Don't pass bar",
-            <Text style={[display(16, 600, { letterSpacing: 3 }), { color: colors.feltText }]}>
+            <FeltText style={[display(16, 600, { letterSpacing: 3 }), { color: colors.feltText }]}>
               {"DON'T PASS BAR"}
-            </Text>,
+            </FeltText>,
             44,
             dontPass,
             dontTag,

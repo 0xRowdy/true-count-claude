@@ -41,6 +41,7 @@ import {
   Button,
   ChipRack,
   CoachNote,
+  FeltText,
   PhaseStepper,
   TableTopBar,
   icons,
@@ -48,7 +49,7 @@ import {
   type LucideIcon,
 } from "@/ui/ds";
 import { type ChipValue, formatMoney } from "@/ui/ds/format";
-import { colors, display, radius, surfaces, textScale, type, ui } from "@/ui/ds/tokens";
+import { colors, display, radius, surfaces, type, ui } from "@/ui/ds/tokens";
 import { ACTION_NAME } from "@/ui/explanation/explanationFormat";
 import { useProfile } from "@/ui/profile/profileStore";
 import { useConfiguredRules } from "@/ui/rules/rulesStore";
@@ -647,16 +648,9 @@ function BankrollTip({ compact }: { compact: boolean }) {
     <View style={[styles.tip, compact && styles.tipCompact]} role="note">
       <View style={styles.tipHead}>
         <icons.Lightbulb size={12} color={surfaces.hintInk} strokeWidth={2} />
-        <Text
-          style={[ui(11, 800, { letterSpacing: 1 }), { color: surfaces.hintInk }]}
-          maxFontSizeMultiplier={textScale.felt}
-        >
-          TIP
-        </Text>
+        <Text style={[ui(11, 800, { letterSpacing: 1 }), { color: surfaces.hintInk }]}>TIP</Text>
       </View>
-      <Text style={[ui(12), { color: colors.ink }]} maxFontSizeMultiplier={textScale.felt}>
-        Keep bets near 2% of your bankroll.
-      </Text>
+      <Text style={[ui(12), { color: colors.ink }]}>Keep bets near 2% of your bankroll.</Text>
     </View>
   );
 }
@@ -665,12 +659,12 @@ function CollectHint({ round }: { round: RoundState }) {
   const amount = collectAmount(round);
   return (
     <View style={styles.collectHint}>
-      <icons.ArrowDown size={14} color={felt.collect} strokeWidth={2} />
-      <Text style={[ui(12, 600), { color: felt.collect }]}>
+      <icons.ArrowDown size={14} color={surfaces.feltPrint} strokeWidth={2} />
+      <FeltText style={ui(12, 600)}>
         {amount > 0
           ? `${formatMoney(amount)} moving to your rack`
           : `Dealer takes ${formatMoney(handStake(round))}`}
-      </Text>
+      </FeltText>
     </View>
   );
 }

@@ -442,6 +442,9 @@ fixed one. Text inside fixed table geometry is capped with `maxFontSizeMultiplie
 - **1×**: marks printed on an object, such as a chip's denomination. These are read aloud through
   the object's accessible label.
 
+On the felt, `FeltText` applies the ink and the cap together: Felt Print at 1.3×, or 1× with
+`fixed` for a glyph inside a fixed shape (a chip's value, the puck, a tag on a bet spot).
+
 ### Named Rules
 
 **The Serif Counts Rule.** Fraunces sets headlines and the numbers worth remembering.

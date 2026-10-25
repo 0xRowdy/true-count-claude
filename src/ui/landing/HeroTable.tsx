@@ -162,9 +162,9 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 40,
   },
   centered: { position: "absolute", left: 0, width: FELT.w, textAlign: "center" },
-  dealerLabel: { ...ui(11, 700, { letterSpacing: 1.5 }), color: surfaces.feltTextMuted },
+  dealerLabel: { ...ui(11, 700, { letterSpacing: 1.5 }), color: surfaces.feltPrint },
   pays: { ...display(22, 500, { letterSpacing: 3 }), color: colors.feltLine },
-  rule: { ...ui(12, 400, { letterSpacing: 1.5 }), color: marketing.feltRule },
+  rule: { ...ui(12, 400, { letterSpacing: 1.5 }), color: surfaces.feltPrint },
   total: {
     left: 188,
     top: 330,

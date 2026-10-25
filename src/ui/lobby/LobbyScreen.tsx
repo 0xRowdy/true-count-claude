@@ -305,7 +305,7 @@ function UpNextHero({
         <Text style={[display(30, 500, { lineHeight: 34.5 }), { color: colors.feltText }]}>
           {next.title}
         </Text>
-        <Text style={[ui(15, 400, { lineHeight: 22.5 }), { color: surfaces.feltTextMuted }]}>
+        <Text style={[ui(15, 400, { lineHeight: 22.5 }), { color: surfaces.feltPrint }]}>
           {next.why}
         </Text>
         <View style={styles.heroActions}>
@@ -325,7 +325,7 @@ function UpNextHero({
               label="Load sample data (demo, not saved)"
               style={styles.demoLink}
             >
-              <Text style={[ui(13, 500), { color: surfaces.feltTextMuted }]}>
+              <Text style={[ui(13, 500), { color: surfaces.feltPrint }]}>
                 Load sample data · demo, not saved
               </Text>
             </LinkBox>
@@ -353,9 +353,7 @@ function UpNextHero({
                 </View>
               </View>
               <View style={styles.dealer}>
-                <Text
-                  style={[ui(11, 700, { letterSpacing: 1.5 }), { color: surfaces.feltTextMuted }]}
-                >
+                <Text style={[ui(11, 700, { letterSpacing: 1.5 }), { color: surfaces.feltPrint }]}>
                   DEALER
                 </Text>
                 <PlayingCard rank={next.hand.dealer[0]} suit={next.hand.dealer[1]} />

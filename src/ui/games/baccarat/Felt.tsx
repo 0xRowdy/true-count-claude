@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import type { Card } from "@/engine/cards";
 import {
@@ -11,7 +11,7 @@ import {
   handTotal,
   payLabel,
 } from "@/games/baccarat";
-import { Chip, PlayingCard, colors, display, surfaces, ui } from "@/ui/ds";
+import { Chip, FeltText, PlayingCard, colors, display, ui } from "@/ui/ds";
 import { chipStack, formatAmount } from "./baccaratTable";
 import { Minus } from "@/ui/ds/icons";
 import { baccaratPalette as pal } from "./palette";
@@ -70,9 +70,9 @@ export function HandPanel({
             { backgroundColor: side === "player" ? pal.dotPlayer : pal.dotBanker },
           ]}
         />
-        <Text style={[ui(12, 800, { letterSpacing: 1.5 }), { color: colors.feltText }]}>
+        <FeltText style={[ui(12, 800, { letterSpacing: 1.5 }), { color: colors.feltText }]}>
           {name}
-        </Text>
+        </FeltText>
       </View>
       <View style={styles.cards}>
         {cards.length === 0 ? (
@@ -86,10 +86,10 @@ export function HandPanel({
         {cards.length === 1 ? <View style={styles.slot} /> : null}
       </View>
       <View style={styles.total}>
-        <Text style={[display(34, 500, { lineHeight: 37 }), { color: colors.feltText }]}>
+        <FeltText style={[display(34, 500, { lineHeight: 37 }), { color: colors.feltText }]}>
           {total ?? " "}
-        </Text>
-        <Text style={[ui(12), { color: surfaces.feltTextMuted }]}>{caption ?? " "}</Text>
+        </FeltText>
+        <FeltText style={ui(12)}>{caption ?? " "}</FeltText>
       </View>
     </View>
   );
@@ -155,22 +155,24 @@ export function Spot({
         <View
           style={[styles.tag, compact ? styles.tagCompact : null, { backgroundColor: tag.fill }]}
         >
-          <Text style={[ui(compact ? 11 : 13, 800), { color: tag.ink }]}>{tag.text}</Text>
+          <FeltText fixed style={[ui(compact ? 11 : 13, 800), { color: tag.ink }]}>
+            {tag.text}
+          </FeltText>
         </View>
       ) : stake > 0 ? (
         <View style={[styles.tag, compact ? styles.tagCompact : null, styles.stake]}>
-          <Text style={[ui(compact ? 11 : 13, 800), { color: colors.feltText }]}>
+          <FeltText fixed style={[ui(compact ? 11 : 13, 800), { color: colors.feltText }]}>
             {formatAmount(stake)}
-          </Text>
+          </FeltText>
         </View>
       ) : null}
-      <Text
+      <FeltText
         style={[ui(compact ? 10 : 11, 800, { letterSpacing: 1 }), { color: colors.feltText }]}
         numberOfLines={1}
       >
         {label.toUpperCase()}
-      </Text>
-      <Text style={[ui(11), { color: surfaces.feltTextMuted }]}>{pays}</Text>
+      </FeltText>
+      <FeltText style={ui(11)}>{pays}</FeltText>
     </>
   );
   const frame = [
