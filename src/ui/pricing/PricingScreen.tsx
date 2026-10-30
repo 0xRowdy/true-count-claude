@@ -1,7 +1,8 @@
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { localIsoDate } from "@/state/profile";
+import { usePurchase } from "@/ui/account/usePurchase";
 import {
   AppShell,
   Badge,
@@ -14,7 +15,15 @@ import {
   Tag,
   ui,
 } from "@/ui/ds";
-import { Apple, Check, ChevronDown, ChevronUp, CreditCard, ShieldCheck } from "@/ui/ds/icons";
+import {
+  Apple,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  CreditCard,
+  RotateCcw,
+  ShieldCheck,
+} from "@/ui/ds/icons";
 import { order, planView, yearlySaving, type Billing, type PlanId } from "./pricing";
 
 const PLANS: ReadonlyArray<{ id: PlanId; name: string; features: readonly string[] }> = [
@@ -67,25 +76,38 @@ const WIDE = 1100;
  * Monthly/Yearly changes the prices, choosing a plan updates "Your order" (its trial dates
  * counted from today, after mount), and the FAQ opens and closes.
  *
- * No payment is ever processed: "Pay" and the card button show an in-place notice that
- * purchases are not available in this build.
+ * "Pay" and the card button buy through `usePurchase` (ADR-0007): sign in first, then Stripe
+ * Checkout on the web or the App Store / Google Play in the apps. A build that can't sell shows
+ * an in-place notice and charges nothing. `?plan=&billing=` (back from sign-in or a canceled
+ * Checkout) picks the plan again, after mount.
  */
 export function PricingScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ plan?: string; billing?: string }>();
   const [billing, setBilling] = useState<Billing>("yearly");
   const [plan, setPlan] = useState<PlanId>("plus");
   const [open, setOpen] = useState<number | null>(0);
-  const [notice, setNotice] = useState(false);
   const [width, setWidth] = useState<number | null>(null);
+  const purchase = usePurchase();
   // The timeline's dates are a clock read: after mount only (hydration).
   const [today, setToday] = useState<string | null>(null);
   useEffect(() => setToday(localIsoDate(new Date())), []);
+  useEffect(() => {
+    if (params.plan === "plus" || params.plan === "lifetime") setPlan(params.plan);
+    if (params.billing === "monthly" || params.billing === "yearly") setBilling(params.billing);
+  }, [params.plan, params.billing]);
 
   const wide = width === null || width >= WIDE;
   const o = order(plan, billing, today);
+  const current = purchase.current;
+  // Already this plan, or Lifetime (which covers everything): manage it, don't buy it again.
+  const owned = current === "lifetime" || (current === "plus" && plan !== "lifetime");
   const choose = (id: PlanId) => {
     setPlan(id);
-    setNotice(false);
+    purchase.clearNotice();
+  };
+  const pay = () => {
+    if (plan !== "free") void purchase.buy(plan, billing);
   };
 
   return (
@@ -156,13 +178,17 @@ export function PricingScreen() {
                     <View style={styles.planText}>
                       <View style={styles.nameRow}>
                         <Text style={[ui(19, 600), styles.fg]}>{p.name}</Text>
-                        {p.id === "free" ? (
+                        {p.id === current ? (
                           <Badge icon={Check} tone="correct" label="Current plan" />
-                        ) : p.id === "plus" ? (
+                        ) : p.id === "plus" && current === "free" ? (
                           <Tag label="Best for trip prep" />
                         ) : null}
                       </View>
-                      <Text style={[ui(13), styles.muted]}>{view.sub}</Text>
+                      <Text style={[ui(13), styles.muted]}>
+                        {p.id === "free" && current !== "free"
+                          ? "Every game and the coach, free for good"
+                          : view.sub}
+                      </Text>
                     </View>
                     {wide ? <Text style={[display(28, 500), styles.fg]}>{view.price}</Text> : null}
                   </View>
@@ -262,12 +288,21 @@ export function PricingScreen() {
             <Text style={[ui(15, 600), styles.fg]}>Due today</Text>
             <Text style={[display(24, 500), styles.fg]}>{o.dueToday}</Text>
           </View>
-          {o.purchasable ? (
+          {o.purchasable && owned ? (
+            <Button
+              size="lg"
+              label="Manage your plan"
+              onPress={() => router.push("/account")}
+              fullWidth
+              style={{ height: 52 }}
+            />
+          ) : o.purchasable ? (
             <View style={styles.pay}>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Pay"
-                onPress={() => setNotice(true)}
+                aria-busy={purchase.busy}
+                onPress={purchase.busy ? undefined : pay}
                 style={({ pressed }) => [styles.wallet, pressed && { opacity: 0.85 }]}
               >
                 <Apple size={18} color={marketing.walletInk} strokeWidth={2} />
@@ -277,30 +312,39 @@ export function PricingScreen() {
                 size="lg"
                 icon={CreditCard}
                 label={o.trial ? "Start free trial with card" : "Pay with card"}
-                onPress={() => setNotice(true)}
+                onPress={purchase.busy ? undefined : pay}
                 fullWidth
                 style={{ height: 52 }}
               />
+              {purchase.restore ? (
+                <Button
+                  label="Restore purchases"
+                  icon={RotateCcw}
+                  variant="ghost"
+                  onPress={purchase.restore}
+                  fullWidth
+                />
+              ) : null}
             </View>
           ) : (
             <Button
               size="lg"
-              label="Keep playing free"
-              onPress={() => router.push("/lobby")}
+              label={current === "free" ? "Keep playing free" : "Manage your plan"}
+              onPress={() => router.push(current === "free" ? "/lobby" : "/account")}
               fullWidth
               style={{ height: 52 }}
             />
           )}
-          {notice ? (
+          {purchase.notice ? (
             <Notice
-              title="Purchases aren't available in this build"
-              body="Nothing was charged and no card details were asked for. Every game and the coach are free to use right now."
-              onClose={() => setNotice(false)}
+              title={purchase.notice.title}
+              body={purchase.notice.body}
+              onClose={purchase.clearNotice}
             />
           ) : null}
           <Text style={[ui(12, 400, { lineHeight: 18 }), styles.muted]}>
-            Cancel any time in Settings → Plan, in two taps. Bought on iPhone or Android? Manage it
-            in your app store. Purchases restore on every device.
+            Cancel any time from Account → Plan, in two taps. Bought on iPhone or Android? Manage it
+            in your app store. Purchases follow your account to every device.
           </Text>
           <View style={styles.responsible}>
             <ShieldCheck size={18} color={colors.correct} strokeWidth={2} />

@@ -199,6 +199,18 @@ export const marketing = {
   pillShadow: "0px 6px 18px #00000066",
 } as const;
 
+/**
+ * Sign-in buttons in the providers' own colours, not ours: their brand rules fix them. Apple's
+ * white style (for dark backgrounds) and Google's Neutral theme, each the background of its
+ * logo artwork so the mark sits on its own colour.
+ */
+export const brand = {
+  apple: "#FFFFFF",
+  appleInk: "#000000",
+  google: "#F2F2F2",
+  googleInk: "#1F1F1F",
+} as const;
+
 export type ColorToken = keyof typeof colors;
 
 /** 4-pt spacing scale, keyed like the design (`--space-4` → `space[4]`). */

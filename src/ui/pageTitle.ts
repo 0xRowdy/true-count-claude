@@ -28,6 +28,8 @@ const PAGES: Readonly<Record<string, string>> = {
   "/live/craps": "Live craps",
   "/progress": "Progress",
   "/pricing": "Pricing",
+  "/sign-in": "Sign in",
+  "/account": "Account",
   "/rules": "Your table",
   "/shoe-integrity": "Shoe integrity",
   "/session": "Statistics",

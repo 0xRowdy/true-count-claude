@@ -46,11 +46,14 @@ export function AppHeader({
   active,
   chips,
   onNotifications,
+  accountHref,
 }: {
   active?: NavKey;
   /** Practice chip balance shown in the pill; the pill is hidden until one is passed. */
   chips?: number;
   onNotifications?: () => void;
+  /** Where the avatar leads (the account page); a plain avatar without one. */
+  accountHref?: string;
 }) {
   const [width, setWidth] = useState<number | null>(null);
   const iconsOnly = width !== null && width < ICONS_ONLY;
@@ -127,7 +130,15 @@ export function AppHeader({
             <Bell size={20} color={colors.mutedForeground} strokeWidth={2} />
           </Pressable>
         )}
-        <Avatar name="You" source={portraits.player} size={34} />
+        {accountHref ? (
+          <Link href={accountHref} asChild>
+            <Pressable accessibilityRole="link" accessibilityLabel="Account" style={styles.account}>
+              <Avatar name="You" source={portraits.player} size={34} />
+            </Pressable>
+          </Link>
+        ) : (
+          <Avatar name="You" source={portraits.player} size={34} />
+        )}
       </View>
     </View>
   );
@@ -161,6 +172,8 @@ const styles = StyleSheet.create({
   navItemTight: { paddingHorizontal: 8, minWidth: 36 },
   navItemOn: { backgroundColor: colors.muted },
   right: { flexDirection: "row", alignItems: "center", gap: 16 },
+  // The 34pt avatar inside a 44pt tap target.
+  account: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
   rightCompact: { gap: 8 },
   pill: {
     flexDirection: "row",

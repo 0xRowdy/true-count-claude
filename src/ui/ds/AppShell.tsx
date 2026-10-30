@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Stack } from "expo-router";
 import { ScrollView, StyleSheet, View } from "react-native";
+import { ACCOUNTS_AVAILABLE } from "@/ui/account/backend";
 import { useChipBalance, useProgressView } from "@/ui/progress/progressStore";
 import { AppHeader, type NavKey } from "./AppHeader";
 import { colors } from "./tokens";
@@ -36,7 +37,11 @@ export function AppShell({
     <View style={styles.root} onLayout={(e) => setNarrow(e.nativeEvent.layout.width < NARROW)}>
       {/* The shell is the page chrome: no stack header above it, whichever route uses it. */}
       <Stack.Screen options={{ headerShown: false }} />
-      <AppHeader active={active} chips={chips ?? stored} />
+      <AppHeader
+        active={active}
+        chips={chips ?? stored}
+        accountHref={ACCOUNTS_AVAILABLE ? "/account" : undefined}
+      />
       {/* "handled": a tap on a button inside the page lands even while a field has focus. */}
       <ScrollView
         style={styles.scroll}

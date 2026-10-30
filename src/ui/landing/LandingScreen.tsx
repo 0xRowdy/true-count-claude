@@ -1,4 +1,5 @@
 import { Link, Stack, useRouter } from "expo-router";
+import { ACCOUNTS_AVAILABLE } from "@/ui/account/backend";
 import { useRef, useState, type ReactNode } from "react";
 import {
   Image,
@@ -168,15 +169,28 @@ export function LandingScreen() {
               </>
             )}
           </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Sign in"
-            aria-expanded={signInOpen}
-            onPress={() => setSignInOpen((open) => !open)}
-            style={styles.navTap}
-          >
-            <Text style={[ui(15, 500), { color: colors.foreground }]}>Sign in</Text>
-          </Pressable>
+          {ACCOUNTS_AVAILABLE ? (
+            <Link href="/sign-in" asChild>
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel="Sign in"
+                style={styles.navTap}
+              >
+                <Text style={[ui(15, 500), { color: colors.foreground }]}>Sign in</Text>
+              </Pressable>
+            </Link>
+          ) : (
+            // No backend in this build: an honest notice in place of a sign-in that goes nowhere.
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Sign in"
+              aria-expanded={signInOpen}
+              onPress={() => setSignInOpen((open) => !open)}
+              style={styles.navTap}
+            >
+              <Text style={[ui(15, 500), { color: colors.foreground }]}>Sign in</Text>
+            </Pressable>
+          )}
           <Link href={playHref} asChild>
             <Pressable
               accessibilityRole="link"

@@ -9,7 +9,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.truecount.app"
+      "bundleIdentifier": "com.truecount.app",
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "com.truecount.app",
@@ -19,7 +20,13 @@
       "bundler": "metro",
       "output": "static"
     },
-    "plugins": ["expo-router", "expo-font"],
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-apple-authentication"
+    ],
     "extra": {
       "router": {},
       "eas": {
