@@ -1,12 +1,13 @@
 # Pricing
 
-`/pricing` (design frame `VcZwn`), inside the App Shell with no active nav item. **No payment is ever processed.**
+`/pricing` (design frame `VcZwn`), inside the App Shell with no active nav item. Purchases go through `usePurchase` (ADR-0007, `account.md`); in a build with no backend, which is what CI and `launch` build, **no payment is ever processed**.
 
 ## Sub-features
 
 - Monthly / Yearly toggle (radio group): Plus is $5.99 / month or $49 / year ($4.08 a month, "Save 32%"); Lifetime $119 once; Free $0 (current plan)
 - Plan cards are a radio group; the chosen plan drives "Your order": name, total, trial timeline (Today → reminder 2 days before → trial ends after 7 days, dates counted from today after mount), "Due today"
-- Pay and "Start free trial with card" (Pay with card for Lifetime) show an in-place notice: "Purchases aren't available in this build"; Free shows "Keep playing free" instead
+- Pay and "Start free trial with card" (Pay with card for Lifetime): with no backend, an in-place notice "Purchases aren't available in this build"; with one, sign-in first, then Stripe Checkout (web) or the store (apps). Free shows "Keep playing free"; a plan the Account already has shows "Manage your plan"
+- `?plan=plus|lifetime&billing=monthly|yearly` chooses the plan after mount (back from sign-in or a canceled Checkout)
 - FAQ accordion (buttons with `aria-expanded`)
 - The "You're paying for training tools, not chips" box
 
