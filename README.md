@@ -36,7 +36,8 @@ the exact shoe, the governing chart cell, and how the count moved the play. A **
 button on every screen produces a report that proves it can rebuild the shoe from its seed and
 replay the round.
 
-Everything runs offline, stored on the device. No account, no ads.
+Everything runs offline, stored on the device. No account needed and no ads; an optional
+account (Google or Apple) carries a paid plan across web, iPhone and Android (ADR-0007).
 
 ## Numbers
 
@@ -64,7 +65,11 @@ src/drills/   The four drills: question generation, scoring, Explanations. UI-fr
 src/ui/       React Native components, shared across all three platforms.
 src/state/    Session and persistence.
 app/          Expo Router routes.
+convex/       Optional backend: accounts, plans, Stripe and RevenueCat webhooks.
 ```
+
+Accounts and billing need a Convex deployment and provider credentials:
+`docs/accounts-and-billing.md`. Without them the app builds and runs exactly as before.
 
 ## Read before contributing
 

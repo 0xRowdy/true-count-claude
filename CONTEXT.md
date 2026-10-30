@@ -47,6 +47,9 @@ Use these terms exactly. Do not drift to synonyms.
 | **Explanation**            | The _why_ behind a Decision verdict: per-action EV, the governing chart cell, and the count's effect. Never omitted.                                                 |
 | **Session**                | A bounded run of Play or Drill, with its own stats and a replayable Decision log.                                                                                    |
 | **Shoe Integrity Panel**   | The user-facing proof that the shoe is fair: remaining composition, RC returning to zero at the cut card, exportable history.                                        |
+| **Account**                | Optional sign-in (Google or Apple) that holds a Plan across devices. Never required to train; practice stays on the device (ADR-0007).                               |
+| **Plan**                   | What an Account has: Free, Plus or Lifetime. Resolved on the server from its Entitlements, so every platform shows the same one.                                     |
+| **Entitlement**            | One store's record of one purchase (Stripe on the web, App Store, Google Play): status, expiry, renewal. Inputs to the Plan.                                         |
 
 ## Non-negotiable product invariants
 
@@ -86,7 +89,13 @@ src/
 ├── ui/            # React Native components, shared across all three platforms
 ├── state/         # Session/persistence
 └── app/           # Expo Router routes
+convex/            # Backend (ADR-0007): Accounts, Entitlements, Stripe and RevenueCat webhooks
+└── lib/           # Pure: Plan resolution, store payload mapping. Unit-tested like the engine
 ```
+
+The backend is optional by construction: a build without `EXPO_PUBLIC_CONVEX_URL` has no
+Accounts and is the trainer exactly as before. Nothing in `src/engine`, `src/drills` or
+`src/state` knows the backend exists; only `src/ui/account` and the pricing screen do.
 
 `src/engine` is the deep module at the core. It is pure, synchronous, and fully unit-tested,
 which is what makes invariants 4 and 5 enforceable in CI. Nothing in `engine` may import from
