@@ -13,12 +13,16 @@ export default defineConfig({
     // rendered — see `src/ui/shoe-integrity/integrity.test.ts`.
     //
     // A test that needs to render a component does not belong in this project.
+    //
+    // `convex/lib` is the backend's pure core (Plan resolution, store payload mapping): no
+    // Convex runtime, so it runs here on the same terms (ADR-0007).
     include: [
       "src/engine/**/*.test.ts",
       "src/games/**/*.test.ts",
       "src/drills/**/*.test.ts",
       "src/state/**/*.test.ts",
       "src/ui/**/*.test.ts",
+      "convex/lib/**/*.test.ts",
     ],
     environment: "node",
     // Several suites enumerate whole decks or every rule set and take one to three seconds on

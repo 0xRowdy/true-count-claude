@@ -201,6 +201,8 @@ export default tseslint.config(
       ".expo/**",
       "expo-env.d.ts",
       "assets/**",
+      // Written by `npx convex dev`; committed so CI typechecks without a deployment.
+      "convex/_generated/**",
 
       // Parallel agents run in git worktrees here. Their trees are separate
       // checkouts, and linting them fails CI on code that is not ours.
@@ -261,6 +263,18 @@ export default tseslint.config(
   {
     files: ["*.config.{js,mjs,ts}", "*.config.*.{js,mjs,ts}"],
     languageOptions: { globals: { ...globals.node } },
+  },
+
+  // Operator scripts (e.g. the Apple client secret) run in Node on a developer's machine.
+  {
+    files: ["scripts/**/*.mjs"],
+    languageOptions: { globals: { ...globals.node } },
+  },
+
+  // Metro loads its config with require(), so it is CommonJS.
+  {
+    files: ["metro.config.js"],
+    rules: { "@typescript-eslint/no-require-imports": "off" },
   },
 
   // Agent skill harnesses (e.g. verify-true-count's server, Playwright driver and flows)
