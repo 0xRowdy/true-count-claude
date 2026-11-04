@@ -12,7 +12,7 @@ export type PlanId = "free" | "plus" | "lifetime";
 export const PRICES = {
   plusMonthly: 5.99,
   plusYearly: 49,
-  lifetime: 119,
+  lifetime: 199.99,
 } as const;
 
 export const TRIAL_DAYS = 7;

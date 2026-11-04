@@ -8,7 +8,7 @@ describe("pricing", () => {
       price: "$49 / year",
       sub: "$4.08 a month, billed yearly · 7-day free trial",
     });
-    expect(planView("lifetime", "yearly").price).toBe("$119 once");
+    expect(planView("lifetime", "yearly").price).toBe("$199.99 once");
   });
 
   it("switches Plus to monthly", () => {
@@ -34,7 +34,7 @@ describe("pricing", () => {
   });
 
   it("charges Lifetime today and nothing on Free", () => {
-    expect(order("lifetime", "monthly", null)).toMatchObject({ dueToday: "$119.00", trial: false });
+    expect(order("lifetime", "monthly", null)).toMatchObject({ dueToday: "$199.99", trial: false });
     expect(order("free", "yearly", null)).toMatchObject({ dueToday: "$0.00", purchasable: false });
   });
 });

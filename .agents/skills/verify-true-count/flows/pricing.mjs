@@ -49,7 +49,10 @@ export default async ({ page, url, shot, check }) => {
     "Lifetime selected",
   );
   check(await order.getByText("Tableside Lifetime").isVisible(), "order: Lifetime");
-  check((await order.getByText("$119.00").count()) === 2, "Lifetime: $119.00 total and due today");
+  check(
+    (await order.getByText("$199.99", { exact: true }).count()) === 2,
+    "Lifetime: $199.99 total and due today",
+  );
 
   // Pay: nothing is processed, the notice says so.
   await visible(page.getByRole("button", { name: "Pay", exact: true })).click();

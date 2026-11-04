@@ -65,7 +65,7 @@ Net revenue on US iOS, before income tax:
 | Sale | IAP (SBP 15%) | Link-out, Stripe (2.9% + 30¢; +0.7% Billing on subscriptions) | Link-out, Stripe + Managed Payments (+3.5%) |
 | --- | --- | --- | --- |
 | Plus yearly $49 | $41.65 | ~$46.94 | ~$45.22 |
-| Lifetime $119 | $101.15 | ~$115.25 | ~$111.08 |
+| Lifetime $199.99 | $169.99 | ~$193.89 | ~$186.89 |
 
 Fees are from [stripe.com/pricing](https://stripe.com/pricing). The table excludes sales tax,
 international card (+1.5%) and currency conversion (+1%) surcharges, and any future Apple fee

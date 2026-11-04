@@ -4,7 +4,7 @@
 
 ## Sub-features
 
-- Monthly / Yearly toggle (radio group): Plus is $5.99 / month or $49 / year ($4.08 a month, "Save 32%"); Lifetime $119 once; Free $0 (current plan)
+- Monthly / Yearly toggle (radio group): Plus is $5.99 / month or $49 / year ($4.08 a month, "Save 32%"); Lifetime $199.99 once; Free $0 (current plan)
 - Plan cards are a radio group; the chosen plan drives "Your order": name, total, trial timeline (Today → reminder 2 days before → trial ends after 7 days, dates counted from today after mount), "Due today"
 - Pay and "Start free trial with card" (Pay with card for Lifetime): with no backend, an in-place notice "Purchases aren't available in this build"; with one, sign-in first, then Stripe Checkout (web) or the store (apps). Free shows "Keep playing free"; a plan the Account already has shows "Manage your plan"
 - `?plan=plus|lifetime&billing=monthly|yearly` chooses the plan after mount (back from sign-in or a canceled Checkout)
@@ -17,7 +17,7 @@
 
 ## Driving it with Playwright
 
-`flows/pricing.mjs`: yearly prices and order by default, timeline shows real dates → Monthly swaps prices, order and renewal text → Yearly back → Lifetime: $119.00 total and due today → Pay shows the `status` notice → choosing a plan clears it → card button shows it again → FAQ 2 opens and closes.
+`flows/pricing.mjs`: yearly prices and order by default, timeline shows real dates → Monthly swaps prices, order and renewal text → Yearly back → Lifetime: $199.99 total and due today → Pay shows the `status` notice → choosing a plan clears it → card button shows it again → FAQ 2 opens and closes.
 
 ## Open product question
 

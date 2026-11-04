@@ -98,7 +98,7 @@ const PLANS = [
   },
   {
     name: "Lifetime",
-    amount: "$119",
+    amount: "$199.99",
     per: "one payment, yours for good",
     desc: "Everything in Plus with no subscription. Good if you just want to own it.",
   },

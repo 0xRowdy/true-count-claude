@@ -20,6 +20,8 @@ Everything below is per deployment. The dev deployment is `determined-kookabura-
 - Linked: `.env.local` (git-ignored) names the deployment and sets `EXPO_PUBLIC_CONVEX_URL` and
   `EXPO_PUBLIC_CONVEX_SITE_URL`, which the app reads at build time.
 - `BETTER_AUTH_SECRET` (random) and `SITE_URL=http://localhost:8081` (`pnpm web`).
+- Stripe lives in the **TrueCountCoach sandbox** (`acct_1UY6osBd4pt3HDch`), not its parent
+  account of nearly the same name.
 - Functions and both components deployed. Until the providers below are configured, sign-in
   answers "Provider not found" and checkout answers "Purchases aren't set up on this server
   yet", both in place, with nothing charged.
@@ -69,17 +71,21 @@ store build: in Expo Go the token is issued to Expo Go's bundle id and is refuse
 1. Products (test mode first):
    - **Tableside Plus**: two recurring prices, $5.99 / month and $49 / year. No trial on the
      price: Checkout adds the 7-day trial to a player's first subscription only.
-   - **Tableside Lifetime**: one-time price $119.
+   - **Tableside Lifetime**: one-time price $199.99.
 2. Settings → Billing → **Customer portal**: allow canceling, switching between the monthly
-   and yearly price, and updating payment methods. "Manage billing" on the account page opens it.
-3. Developers → Webhooks → endpoint `<site>/stripe/webhook` with these events:
+   and yearly price, and updating payment methods. Leave quantity changes off: Plus is for one
+   player. "Manage billing" on the account page opens it.
+3. Workbench → [Webhooks](https://dashboard.stripe.com/webhooks) → Create an event destination
+   (or `stripe webhook_endpoints create`): endpoint `<site>/stripe/webhook`, API version
+   `2026-08-26.dahlia` (the one the `stripe` package pins), with these events:
    `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
    `charge.refunded`, `customer.created`, `customer.updated`, `customer.deleted`,
    `customer.subscription.created`, `customer.subscription.updated`,
    `customer.subscription.deleted`, `invoice.created`, `invoice.finalized`, `invoice.updated`,
    `invoice.paid`, `invoice.payment_failed`, `payment_intent.succeeded`,
    `payment_intent.payment_failed`.
-4. Set `STRIPE_SECRET_KEY` (`sk_test_…`), `STRIPE_WEBHOOK_SECRET` (`whsec_…` from the endpoint),
+4. Set `STRIPE_SECRET_KEY` (`sk_test_…`), `STRIPE_WEBHOOK_SECRET` (`whsec_…`, shown only when
+   the endpoint is created),
    `STRIPE_PRICE_PLUS_MONTHLY`, `STRIPE_PRICE_PLUS_YEARLY`, `STRIPE_PRICE_LIFETIME` (`price_…`).
 
 Try it: sign in on `pnpm web`, Pricing → Start free trial → card `4242 4242 4242 4242`. Stripe
