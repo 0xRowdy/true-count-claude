@@ -97,7 +97,7 @@ function PlanPanel({ account, checkedOut }: { account: Account; checkedOut: bool
     try {
       window.location.assign(await billingPortalUrl());
     } catch (e) {
-      setMessage(billingFailure(e));
+      setMessage(billingFailure(e, "We couldn't open billing. Nothing changed; please try again."));
       setBusy(false);
     }
   };
@@ -173,6 +173,7 @@ function PlanPanel({ account, checkedOut }: { account: Account; checkedOut: bool
 
 function SessionPanel() {
   const router = useRouter();
+  const [failure, setFailure] = useState<string | null>(null);
   return (
     <Panel style={styles.panel}>
       <Button
@@ -180,10 +181,18 @@ function SessionPanel() {
         icon={LogOut}
         variant="secondary"
         onPress={async () => {
-          await signOut();
-          router.replace("/lobby");
+          setFailure(null);
+          try {
+            await signOut();
+            router.replace("/lobby");
+          } catch (e) {
+            setFailure(e instanceof Error ? e.message : String(e));
+          }
         }}
       />
+      {failure ? (
+        <Notice title="You're still signed in" body={failure} onClose={() => setFailure(null)} />
+      ) : null}
       <Text style={[ui(13, 400, { lineHeight: 19 }), styles.muted]}>
         Signing out keeps your practice on this device. Sign back in any time to get your plan back.
       </Text>

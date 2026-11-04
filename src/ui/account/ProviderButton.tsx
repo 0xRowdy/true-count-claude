@@ -57,11 +57,14 @@ export function ProviderButton({
   provider,
   onPress,
   busy = false,
+  disabled = false,
 }: {
   provider: Provider;
   onPress: () => void;
   /** This provider's sign-in is in flight: a spinner replaces the logo and presses are ignored. */
   busy?: boolean;
+  /** The other provider's sign-in is in flight: a second one would overwrite its state. */
+  disabled?: boolean;
 }) {
   const b = BRAND[provider];
   return (
@@ -69,11 +72,14 @@ export function ProviderButton({
       accessibilityRole="button"
       accessibilityLabel={b.label}
       aria-busy={busy}
-      onPress={busy ? undefined : onPress}
+      aria-disabled={disabled}
+      disabled={busy || disabled}
+      onPress={onPress}
       style={({ pressed }) => [
         styles.button,
         { backgroundColor: b.bg, paddingLeft: b.padLeft },
-        pressed && !busy && styles.pressed,
+        pressed && styles.pressed,
+        disabled && styles.disabled,
       ]}
     >
       {busy ? (
@@ -93,6 +99,7 @@ export function ProviderButton({
 }
 
 const styles = StyleSheet.create({
+  disabled: { opacity: 0.5 },
   button: {
     height: 52,
     flexDirection: "row",

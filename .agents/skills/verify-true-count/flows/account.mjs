@@ -61,8 +61,14 @@ export default async ({ page, url, shot, check, log }) => {
 
   // A sign-in the provider refused comes back as ?error= and is explained in place.
   await page.goto(url("/sign-in?error=please_restart_the_process"), { waitUntil: "networkidle" });
-  await visible(page.getByRole("status", { name: "That sign-in didn't go through" })).waitFor();
+  const urlNotice = visible(page.getByRole("status", { name: "That sign-in didn't go through" }));
+  await urlNotice.waitFor();
   check(true, "?error= shows the sign-in failure notice");
+  await urlNotice.getByRole("button", { name: "Dismiss" }).click();
+  check(
+    (await page.getByRole("status", { name: "That sign-in didn't go through" }).count()) === 0,
+    "closing it sticks, though the URL still says ?error=",
+  );
 
   // Google: either off to the provider, or (credentials not set on this deployment) the
   // backend's refusal, explained in place. Either way the button did something real.

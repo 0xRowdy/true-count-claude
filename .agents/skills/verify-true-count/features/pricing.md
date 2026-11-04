@@ -9,7 +9,7 @@
 - Plan cards are a radio group; the chosen plan drives "Your order": name, total, hypothetical trial timeline and "Due today" example. Every timeline step identifies its hypothetical nature and states that no trial, reminder, purchase or subscription occurs. Example dates use today after mount.
 - Plus plan cards call the trial an example ("example 7-day trial"); no copy offers an "N-day free trial"
 - "Pay (unavailable)" and "Free trial (unavailable)" ("Pay with card (unavailable)" for Lifetime) say what they do before they are pressed, then show an in-place notice: "Purchases aren't available in this build"; Free shows "Keep playing free" instead
-- With a backend (ADR-0007), the same page sells: "Pay", "Start free trial with card" ("Pay with card" for Lifetime), sign-in first, then Stripe Checkout (web) or the store (apps), with a real trial timeline. A plan the Account already has shows "Manage your plan"
+- With a backend (ADR-0007), the same page sells: "Pay", "Start free trial with card" ("Pay with card" for Lifetime), sign-in first, then Stripe Checkout (web) or the store (apps), with a real trial timeline. An Account that has had a web subscription gets no second trial, so it sees the price due today. A plan the Account already has shows "Manage your plan"
 - `?plan=plus|lifetime&billing=monthly|yearly` chooses the plan after mount (back from sign-in or a canceled Checkout)
 - FAQ accordion (buttons with `aria-expanded`)
 - The "You're paying for training tools, not chips" box

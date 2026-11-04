@@ -59,7 +59,10 @@ export function doubleBillingWarning(p: ResolvedPlan): string | null {
     : `You're subscribed to Plus on ${others} as well. Cancel one so you aren't charged twice.`;
 }
 
-export function billingErrorMessage(code: BillingErrorCode | undefined): string {
+export function billingErrorMessage(
+  code: BillingErrorCode | undefined,
+  fallback = "Something went wrong starting checkout. Nothing was charged; please try again.",
+): string {
   switch (code) {
     case "signed-out":
       return "Sign in first, so the purchase belongs to your account on every device.";
@@ -70,6 +73,6 @@ export function billingErrorMessage(code: BillingErrorCode | undefined): string 
     case "not-configured":
       return "Purchases aren't set up on this server yet. Nothing was charged.";
     default:
-      return "Something went wrong starting checkout. Nothing was charged; please try again.";
+      return fallback;
   }
 }

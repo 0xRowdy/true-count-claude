@@ -96,7 +96,7 @@ const PLANS = [
     amount: "$5.99",
     per: CAN_SELL ? "per month, or $49 a year" : "preview per month, or $49 a year",
     desc: CAN_SELL
-      ? "Advanced trainers (counting, craps systems, every video poker pay table), full progress history, private tables."
+      ? "No ads and unlimited training sessions. A first subscription starts with 7 days free."
       : "Future plan preview. All current trainers, history and local strategy builders are free.",
     featured: true,
   },
@@ -299,7 +299,7 @@ export function LandingScreen() {
             </View>
             <View style={styles.trust}>
               <Trust icon={Ban} label="No chips to buy" />
-              <Trust icon={EyeOff} label="No ads" />
+              {CAN_SELL ? null : <Trust icon={EyeOff} label="No ads" />}
               <Trust icon={Smartphone} label="Web, iOS & Android" />
             </View>
           </View>
@@ -499,7 +499,7 @@ export function LandingScreen() {
               style={[ui(18, 400, { lineHeight: 26 }), styles.center, { color: colors.inkMuted }]}
             >
               {CAN_SELL
-                ? "No chips to buy, no ads, no real-money wagering, now or later."
+                ? "No chips to buy and no real-money wagering, now or later."
                 : "Pricing preview only. Purchases and trials are unavailable in this build."}
             </Text>
           </View>

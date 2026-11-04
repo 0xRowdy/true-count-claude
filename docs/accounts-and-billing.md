@@ -54,7 +54,6 @@ Apple Developer → Certificates, Identifiers & Profiles:
 4. Set:
    ```sh
    npx convex env set APPLE_SERVICE_ID=com.truecount.web
-   npx convex env set APPLE_BUNDLE_ID=com.truecount.app
    npx convex env set "APPLE_CLIENT_SECRET=$(node scripts/apple-client-secret.mjs \
      --team <TEAM_ID> --key-id <KEY_ID> --client-id com.truecount.web --key AuthKey_<KEY_ID>.p8)"
    ```
@@ -72,6 +71,10 @@ store build: in Expo Go the token is issued to Expo Go's bundle id and is refuse
    - **Tableside Plus**: two recurring prices, $5.99 / month and $49 / year. No trial on the
      price: Checkout adds the 7-day trial to a player's first subscription only.
    - **Tableside Lifetime**: one-time price $199.99.
+     **Managed Payments** (Stripe as merchant of record, handling tax, fraud and disputes, for an
+     extra 3.5%) is on by default on new accounts. While it's on, every product needs a tax code or
+     Checkout refuses the session, so set one on both products or turn it off in Settings →
+     Managed Payments. Each mode has its own products, so production needs this too.
 2. Settings → Billing → **Customer portal**: allow canceling, switching between the monthly
    and yearly price, and updating payment methods. Leave quantity changes off: Plus is for one
    player. "Manage billing" on the account page opens it.
@@ -108,9 +111,14 @@ then the Plan. Apple Pay and Google Pay appear in Checkout on their own where av
    `EXPO_PUBLIC_REVENUECAT_IOS_KEY` and `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` (EAS environment
    variables for builds; `.env.local` for local runs).
 
-Purchases need a development build: `eas build --profile development`. Expo Go runs RevenueCat's preview mode, with no real
+Purchases need a development or store build (`eas build --profile development`). Expo Go runs RevenueCat's preview mode, with no real
 purchases. In the apps, a signed-out player is sent to sign in before buying, so every purchase
 belongs to an Account; "Restore purchases" is on Pricing and the account page.
+
+Before the apps sell: Pricing shows fixed US dollar prices from `src/ui/pricing/pricing.ts` where
+it should read the store's localized price from the RevenueCat offering, and its two buttons
+("Pay", "Start free trial with card") both open the store sheet, so native needs one store-worded
+button.
 
 Store rules this follows: the apps sell through the store (Apple 3.1.1 and 3.1.3(b): web
 purchases count in the app only if the same items are sold in-app). They do not link to web
@@ -132,8 +140,8 @@ Apple asks of apps with Sign in with Apple.
 1. `npx convex deploy` creates/updates the production deployment
    (`dazzling-meadowlark-730`). Set every variable above on it, with production values:
    `SITE_URL` is the public web origin, Stripe live keys and live webhook, a second Google
-   redirect URI and Apple return URL for the production `.convex.site` host, and RevenueCat's
-   webhook pointed at it.
+   redirect URI for the production `.convex.site` host, that host added to the Apple Services
+   ID's domains with its return URL, and RevenueCat's webhook pointed at it.
 2. Build the web app and the EAS builds with that deployment's `EXPO_PUBLIC_CONVEX_URL` and
    `EXPO_PUBLIC_CONVEX_SITE_URL`. A build without them has no Accounts, by design (CI), and its
    Landing and Pricing stay a labelled preview. So does an app build with no RevenueCat key.

@@ -59,12 +59,17 @@ export const FREE: ResolvedPlan = {
   alsoRenewing: [],
 };
 
+/**
+ * How long past the period end a failed renewal keeps access. The store's retries end first and
+ * its webhook ends the row; this is the backstop if that webhook never lands.
+ */
+export const PAST_DUE_GRACE_MS = 30 * 86_400_000;
+
 /** Whether an Entitlement grants access at `now`. */
 export function isLive(e: Entitlement, now: number): boolean {
   if (e.status === "ended") return false;
-  // A failed renewal keeps access while the store retries; it ends with an `ended` status.
-  if (e.status === "past_due") return true;
-  return e.expiresAt === null || e.expiresAt > now;
+  const grace = e.status === "past_due" ? PAST_DUE_GRACE_MS : 0;
+  return e.expiresAt === null || e.expiresAt + grace > now;
 }
 
 const STATUS_RANK: Readonly<Record<EntitlementStatus, number>> = {

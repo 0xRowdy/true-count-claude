@@ -62,7 +62,8 @@ export const useAccount: () => AccountState = ACCOUNTS_AVAILABLE
   : () => UNAVAILABLE;
 
 export async function signOut(): Promise<void> {
-  await authClient.signOut();
+  const { error } = await authClient.signOut();
+  if (error) throw new Error(error.message ?? "We couldn't sign you out. Please try again.");
   await refreshSession();
 }
 

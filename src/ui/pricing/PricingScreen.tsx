@@ -24,7 +24,7 @@ import {
   RotateCcw,
   ShieldCheck,
 } from "@/ui/ds/icons";
-import { order, planView, yearlySaving, type Billing, type PlanId } from "./pricing";
+import { order, planView, yearlySaving, type Billing, type Offer, type PlanId } from "./pricing";
 
 const WIN_REAL_MONEY = {
   q: "Can I win real money here?",
@@ -35,20 +35,15 @@ const WIN_REAL_MONEY = {
 const COPY = CAN_SELL
   ? {
       title: "Every game is free. Plus goes deeper.",
-      lead: "No chips to buy, no ads and no real-money wagering, on any plan. Your plan follows your account across web, iPhone and Android.",
+      lead: "No chips to buy and no real-money wagering, on any plan. Your plan follows your account across web, iPhone and Android.",
       plusTag: "Best for trip prep",
-      plus: [
-        "Advanced trainers: counting, craps systems, every video poker pay table",
-        "Full progress history and decision breakdowns",
-        "Private tables for you and friends",
-        "Unlimited strategy drafts and test runs",
-      ],
+      plus: ["No ads", "Unlimited training sessions"],
       lifetime: ["Pay once and keep it on every device", "Includes future games as they launch"],
       faq: [
         WIN_REAL_MONEY,
         {
           q: "Do I need Plus to get ready for a trip?",
-          a: "No. Every game, every supported rule set and the coach on basic strategy are free. Free is enough to walk up to the table knowing the move; Plus adds deeper trainers and your full history.",
+          a: "No. Every game, every supported rule set and the coach on basic strategy are free. Free is enough to walk up to the table knowing the move; Plus removes ads and lets you train without limits.",
         },
         {
           q: "What happens to my strategies if I cancel?",
@@ -143,7 +138,8 @@ export function PricingScreen() {
   }, [params.plan, params.billing]);
 
   const wide = width === null || width >= WIDE;
-  const o = order(plan, billing, today, CAN_SELL);
+  const offer: Offer = !CAN_SELL ? "preview" : purchase.trialUsed ? "paid" : "trial";
+  const o = order(plan, billing, today, offer);
   const current = purchase.current;
   // Already this plan, or Lifetime (which covers everything): manage it, don't buy it again.
   const owned = current === "lifetime" || (current === "plus" && plan !== "lifetime");
@@ -208,7 +204,7 @@ export function PricingScreen() {
           <View style={styles.planList} accessibilityRole="radiogroup" accessibilityLabel="Plan">
             {PLANS.map((p) => {
               const on = plan === p.id;
-              const view = planView(p.id, billing, CAN_SELL);
+              const view = planView(p.id, billing, offer);
               return (
                 <Pressable
                   key={p.id}
@@ -348,7 +344,9 @@ export function PricingScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={COPY.pay}
                 aria-busy={purchase.busy}
-                onPress={purchase.busy ? undefined : pay}
+                aria-disabled={purchase.busy}
+                disabled={purchase.busy}
+                onPress={pay}
                 style={({ pressed }) => [styles.wallet, pressed && { opacity: 0.85 }]}
               >
                 <Apple size={18} color={marketing.walletInk} strokeWidth={2} />
@@ -358,7 +356,8 @@ export function PricingScreen() {
                 size="lg"
                 icon={CreditCard}
                 label={o.trial ? COPY.startTrial : COPY.payWithCard}
-                onPress={purchase.busy ? undefined : pay}
+                disabled={purchase.busy}
+                onPress={pay}
                 fullWidth
                 style={{ height: 52 }}
               />

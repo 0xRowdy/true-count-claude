@@ -2,12 +2,14 @@
  * Pricing: the plans, the billing toggle and the order summary. Pure (no React, no clock): the
  * trial timeline takes today's date from the caller, read after mount.
  *
- * Nothing here processes a payment. `selling` says whether this build can take one (ADR-0007):
- * one that can't shows the same prices as a labelled preview that offers no trial or purchase.
+ * Nothing here processes a payment. The `Offer` says what the player can actually do (ADR-0007):
+ * a build that can't sell shows the same prices as a labelled preview that offers no trial or
+ * purchase, and an Account that has had a web subscription gets no second trial.
  */
 
 export type Billing = "monthly" | "yearly";
 export type PlanId = "free" | "plus" | "lifetime";
+export type Offer = "preview" | "trial" | "paid";
 
 export const PRICES = {
   plusMonthly: 5.99,
@@ -40,8 +42,12 @@ export interface PlanView {
 }
 
 /** The price and sub line of each plan card under the chosen billing. */
-export function planView(plan: PlanId, billing: Billing, selling: boolean): PlanView {
-  const trial = selling ? `${TRIAL_DAYS}-day free trial` : `example ${TRIAL_DAYS}-day trial`;
+export function planView(plan: PlanId, billing: Billing, offer: Offer): PlanView {
+  const trial = {
+    preview: ` · example ${TRIAL_DAYS}-day trial`,
+    trial: ` · ${TRIAL_DAYS}-day free trial`,
+    paid: "",
+  }[offer];
   switch (plan) {
     case "free":
       return { price: "$0", sub: "Your current plan" };
@@ -49,11 +55,11 @@ export function planView(plan: PlanId, billing: Billing, selling: boolean): Plan
       return billing === "yearly"
         ? {
             price: `${dollars(PRICES.plusYearly)} / year`,
-            sub: `${dollarsCents(Math.floor((PRICES.plusYearly / 12) * 100) / 100)} a month, billed yearly · ${trial}`,
+            sub: `${dollarsCents(Math.floor((PRICES.plusYearly / 12) * 100) / 100)} a month, billed yearly${trial}`,
           }
         : {
             price: `${dollars(PRICES.plusMonthly)} / month`,
-            sub: `Billed monthly · ${trial}`,
+            sub: `Billed monthly${trial}`,
           };
     case "lifetime":
       return {
@@ -90,15 +96,11 @@ function dayLabel(today: string | null, offset: number): string {
 }
 
 /** "Your order" for a plan and billing, with the trial timeline counted from `today`. */
-export function order(
-  plan: PlanId,
-  billing: Billing,
-  today: string | null,
-  selling: boolean,
-): Order {
-  const detail = selling
-    ? "Web, iOS and Android, one account"
-    : "Example price only. Training stays free in this build.";
+export function order(plan: PlanId, billing: Billing, today: string | null, offer: Offer): Order {
+  const detail =
+    offer === "preview"
+      ? "Example price only. Training stays free in this build."
+      : "Web, iOS and Android, one account";
   if (plan === "free") {
     return {
       name: "Tableside Free",
@@ -119,9 +121,10 @@ export function order(
       timeline: [
         {
           when: "Today",
-          text: selling
-            ? `One payment of ${dollars(PRICES.lifetime)}. No renewals.`
-            : `Example: one payment of ${dollars(PRICES.lifetime)} with no renewals. Purchases are unavailable.`,
+          text:
+            offer === "preview"
+              ? `Example: one payment of ${dollars(PRICES.lifetime)} with no renewals. Purchases are unavailable.`
+              : `One payment of ${dollars(PRICES.lifetime)}. No renewals.`,
         },
       ],
       trial: false,
@@ -130,34 +133,48 @@ export function order(
   }
   const yearly = billing === "yearly";
   const amount = yearly ? PRICES.plusYearly : PRICES.plusMonthly;
+  const base = { name: `Tableside Plus, ${billing}`, detail, total: dollarsCents(amount) };
+  const per = yearly ? "for the year" : "a month";
+  if (offer === "paid") {
+    return {
+      ...base,
+      dueToday: dollarsCents(amount),
+      timeline: [
+        {
+          when: "Today",
+          text: `${dollars(amount)} ${per}, renewing until you cancel. Trials are for a first subscription.`,
+        },
+      ],
+      trial: false,
+      purchasable: true,
+    };
+  }
   return {
-    name: `Tableside Plus, ${billing}`,
-    detail,
-    total: dollarsCents(amount),
+    ...base,
     dueToday: dollarsCents(0),
-    timeline: selling
-      ? [
-          { when: "Today", text: "Free trial starts. Nothing charged." },
-          {
-            when: dayLabel(today, TRIAL_DAYS),
-            text: yearly
-              ? `Trial ends. ${dollars(amount)} for the year unless you cancel.`
-              : `Trial ends. ${dollars(amount)} a month unless you cancel.`,
-          },
-        ]
-      : [
-          { when: "Today", text: "Example: a seven-day trial would start. No trial starts here." },
-          {
-            when: dayLabel(today, TRIAL_DAYS - REMINDER_DAYS_BEFORE),
-            text: `Example: a reminder would arrive ${REMINDER_DAYS_BEFORE} days before. No reminders are sent.`,
-          },
-          {
-            when: dayLabel(today, TRIAL_DAYS),
-            text: yearly
-              ? `Example: ${dollars(amount)} for the year after the trial. No subscription starts here.`
-              : `Example: ${dollars(amount)} a month after the trial. No subscription starts here.`,
-          },
-        ],
+    timeline:
+      offer === "trial"
+        ? [
+            { when: "Today", text: "Free trial starts. Nothing charged." },
+            {
+              when: dayLabel(today, TRIAL_DAYS),
+              text: `Trial ends. ${dollars(amount)} ${per} unless you cancel.`,
+            },
+          ]
+        : [
+            {
+              when: "Today",
+              text: "Example: a seven-day trial would start. No trial starts here.",
+            },
+            {
+              when: dayLabel(today, TRIAL_DAYS - REMINDER_DAYS_BEFORE),
+              text: `Example: a reminder would arrive ${REMINDER_DAYS_BEFORE} days before. No reminders are sent.`,
+            },
+            {
+              when: dayLabel(today, TRIAL_DAYS),
+              text: `Example: ${dollars(amount)} ${per} after the trial. No subscription starts here.`,
+            },
+          ],
     trial: true,
     purchasable: true,
   };

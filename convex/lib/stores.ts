@@ -34,13 +34,15 @@ export function fromStripeSubscription(sub: Stripe.Subscription): StoreEntitleme
   const item = sub.items.data[0];
   const status = stripeStatus(sub.status);
   const interval = item?.price.recurring?.interval;
+  // The period end lives on the item since API 2025-03-31; while trialing it is the trial end.
+  const periodEnd = item ? item.current_period_end * 1000 : 0;
   return {
     source: "stripe",
     externalId: sub.id,
     plan: "plus",
     status,
-    // The period end lives on the item since API 2025-03-31; while trialing it is the trial end.
-    expiresAt: item ? item.current_period_end * 1000 : 0,
+    // A cancellation scheduled inside the period ends access sooner than the period does.
+    expiresAt: sub.cancel_at === null ? periodEnd : Math.min(periodEnd, sub.cancel_at * 1000),
     willRenew: status !== "ended" && !sub.cancel_at_period_end && sub.cancel_at === null,
     interval: interval === "month" ? "month" : interval === "year" ? "year" : null,
   };
@@ -64,6 +66,7 @@ interface RcSubscription {
 interface RcPurchase {
   store?: string;
   purchase_date?: string;
+  refunded_at?: string | null;
 }
 
 export interface RcSubscriber {
@@ -126,8 +129,8 @@ export function fromRevenueCat(subscriber: RcSubscriber): StoreEntitlement[] {
     });
   }
   for (const [product, purchases] of Object.entries(subscriber.non_subscriptions ?? {})) {
-    const last = purchases[purchases.length - 1];
-    const source = rcSource(last?.store);
+    const paid = purchases.filter((p) => !p.refunded_at);
+    const source = rcSource(paid[paid.length - 1]?.store);
     if (!source) continue;
     out.push({
       source,

@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { components } from "./_generated/api";
 import { query } from "./_generated/server";
 import { authComponent } from "./auth";
 import { resolvePlan } from "./lib/plan";
@@ -18,6 +19,8 @@ export const me = query({
       email: v.string(),
       image: v.union(v.string(), v.null()),
       plan: resolvedPlan,
+      /** Has had a web subscription: the free trial is for a first one only. */
+      trialUsed: v.boolean(),
     }),
   ),
   handler: async (ctx) => {
@@ -31,12 +34,16 @@ export const me = query({
     // client through the stores' webhooks (Stripe's subscription.deleted, RevenueCat's
     // EXPIRATION), which rewrite the rows.
     const plan = resolvePlan(rows, Date.now());
+    const pastSubs = await ctx.runQuery(components.stripe.public.listSubscriptionsByUserId, {
+      userId: user._id,
+    });
     return {
       id: user._id,
       name: user.name,
       email: user.email,
       image: user.image ?? null,
       plan,
+      trialUsed: pastSubs.length > 0,
     };
   },
 });

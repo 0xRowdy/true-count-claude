@@ -37,6 +37,8 @@ export function usePurchase() {
   const [busy, setBusy] = useState(false);
 
   const current: PlanId = account.status === "signed-in" ? account.account.plan.plan : "free";
+  // Signed out it isn't known yet: sign-in comes back to this page before anything is charged.
+  const trialUsed = account.status === "signed-in" && account.account.trialUsed;
 
   const buy = async (plan: "plus" | "lifetime", billing: Billing) => {
     setNotice(null);
@@ -54,11 +56,13 @@ export function usePurchase() {
       }
       const outcome = await buyInStore(account.account.id, plan, billing);
       if (outcome === "purchased") {
-        await syncStorePurchases();
+        await syncAfterStore(PURCHASE_NOT_SYNCED);
         router.push("/account?checkout=success");
       }
     } catch (e) {
-      setNotice({ title: "Nothing was charged", body: failure(e) });
+      setNotice(
+        e instanceof SyncFailed ? e.notice : { title: "Nothing was charged", body: failure(e) },
+      );
     }
     setBusy(false);
   };
@@ -71,16 +75,45 @@ export function usePurchase() {
           setNotice(null);
           try {
             await restoreStorePurchases(account.account.id);
-            await syncStorePurchases();
+            await syncAfterStore(RESTORE_NOT_SYNCED);
             setNotice({ title: "Purchases restored", body: "Your plan is up to date." });
           } catch (e) {
-            setNotice({ title: "Nothing was restored", body: failure(e) });
+            setNotice(
+              e instanceof SyncFailed
+                ? e.notice
+                : { title: "Nothing was restored", body: failure(e) },
+            );
           }
           setBusy(false);
         }
       : null;
 
-  return { current, buy, restore, busy, notice, clearNotice: () => setNotice(null) };
+  return { current, trialUsed, buy, restore, busy, notice, clearNotice: () => setNotice(null) };
+}
+
+const PURCHASE_NOT_SYNCED: PurchaseNotice = {
+  title: "Your purchase went through",
+  body: "We couldn't update your plan yet. It should appear shortly; if it doesn't, use Restore purchases. You won't be charged again.",
+};
+
+const RESTORE_NOT_SYNCED: PurchaseNotice = {
+  title: "Your purchases were found",
+  body: "We couldn't update your plan yet. It should appear shortly; if it doesn't, try Restore purchases again.",
+};
+
+/** The store has already taken the payment by now, so this failure says something different. */
+class SyncFailed extends Error {
+  constructor(readonly notice: PurchaseNotice) {
+    super(notice.title);
+  }
+}
+
+async function syncAfterStore(notice: PurchaseNotice): Promise<void> {
+  try {
+    await syncStorePurchases();
+  } catch {
+    throw new SyncFailed(notice);
+  }
 }
 
 /**

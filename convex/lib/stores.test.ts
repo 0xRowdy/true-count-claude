@@ -51,6 +51,13 @@ describe("Stripe", () => {
     expect(fromStripeSubscription(stripeSub({ cancel_at: NOW / 1000 + 5 })).willRenew).toBe(false);
   });
 
+  it("ends at a cancellation scheduled inside the period", () => {
+    const cancelAt = Math.floor((NOW + 5 * DAY) / 1000);
+    expect(fromStripeSubscription(stripeSub({ cancel_at: cancelAt })).expiresAt).toBe(
+      cancelAt * 1000,
+    );
+  });
+
   it("is Free once the first payment never landed", () => {
     const e = fromStripeSubscription(stripeSub({ status: "incomplete" }));
     expect(resolvePlan([e], NOW).plan).toBe("free");
@@ -118,6 +125,15 @@ describe("RevenueCat", () => {
       source: "play_store",
       expiresAt: null,
     });
+  });
+
+  it("drops a refunded one-time purchase, keeping any that wasn't refunded", () => {
+    const refunded = { store: "app_store", refunded_at: iso(NOW) };
+    expect(fromRevenueCat({ non_subscriptions: { lifetime: [refunded] } })).toEqual([]);
+    const rebought = fromRevenueCat({
+      non_subscriptions: { lifetime: [{ store: "app_store" }, refunded] },
+    });
+    expect(rebought.map((e) => e.plan)).toEqual(["lifetime"]);
   });
 
   it("skips web purchases it reports, which Stripe already told us about", () => {

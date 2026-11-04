@@ -15,8 +15,7 @@ import authConfig from "./auth.config";
  * - BETTER_AUTH_SECRET: signs sessions.
  * - GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET: a Google "Web application" OAuth client.
  * - APPLE_SERVICE_ID, APPLE_CLIENT_SECRET: the Services ID and its client-secret JWT, for the
- *   web and Android flow. APPLE_BUNDLE_ID: the iOS app, whose native sign-in sends an identity
- *   token addressed to it.
+ *   web and Android flow.
  * - TRUSTED_ORIGINS (optional): extra comma-separated origins, e.g. `exp://` for Expo Go.
  *
  * A provider without its credentials is left out, so a deployment mid-setup still serves the
@@ -63,7 +62,7 @@ function socialProviders(): BetterAuthOptions["socialProviders"] {
             // Only the redirect flow (web, Android) needs it; native iOS sends an identity token.
             clientSecret: env.APPLE_CLIENT_SECRET ?? "",
             // Native identity tokens are addressed to the app, not to the Services ID.
-            ...(env.APPLE_BUNDLE_ID ? { appBundleIdentifier: env.APPLE_BUNDLE_ID } : {}),
+            appBundleIdentifier: "com.truecount.app", // ios.bundleIdentifier in app.json
           },
         }
       : {}),

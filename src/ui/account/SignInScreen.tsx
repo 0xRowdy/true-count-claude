@@ -4,13 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { AppShell, Button, colors, display, Notice, ui } from "@/ui/ds";
 import { useAccount } from "./account";
 import { SignInOptions } from "./SignInOptions";
-
-/** Only in-app paths: `?next=` never sends anyone off-site. */
-export function safeNext(next: unknown): string {
-  return typeof next === "string" && next.startsWith("/") && !next.startsWith("//")
-    ? next
-    : "/account";
-}
+import { safeNext } from "./safeNext";
 
 /**
  * Sign in (ADR-0007). Reached from the landing page, the account page, and from Pricing before

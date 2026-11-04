@@ -28,7 +28,8 @@ export async function signInWith(provider: Provider, returnTo: string): Promise<
   const { error } = await authClient.signIn.social({
     provider,
     callbackURL: `${origin}${returnTo}`,
-    errorCallbackURL: `${origin}/sign-in`,
+    // Keeps where the player was headed, so a retry after a failure still gets there.
+    errorCallbackURL: `${origin}/sign-in?next=${encodeURIComponent(returnTo)}`,
   });
   if (error) throw new Error(error.message ?? error.code ?? "Sign-in failed");
 }

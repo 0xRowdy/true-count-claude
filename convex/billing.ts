@@ -81,11 +81,7 @@ export const startCheckout = action({
       email: me.email,
       name: me.name,
     });
-    // The free trial is for a first web subscription only.
-    const pastSubs = await ctx.runQuery(components.stripe.public.listSubscriptionsByUserId, {
-      userId: me.id,
-    });
-    const trial = plan === "plus" && pastSubs.length === 0;
+    const trial = plan === "plus" && !me.trialUsed;
     const session = await stripeComponent.createCheckoutSession(ctx, {
       priceId: priceId!,
       customerId,
@@ -211,6 +207,11 @@ async function lifetimePaid(ctx: AnyActionCtx, session: Stripe.Checkout.Session)
       : session.payment_intent?.id;
   if (session.metadata?.plan !== "lifetime" || session.payment_status !== "paid") return;
   if (!userId || !paymentIntent) return;
+  // Re-read: with a delayed payment method, the refund's webhook can land before this one.
+  const { latest_charge: charge } = await stripe().paymentIntents.retrieve(paymentIntent, {
+    expand: ["latest_charge"],
+  });
+  if (typeof charge === "object" && charge?.refunded) return;
   await ctx.runMutation(internal.billing.applyStripe, {
     userId,
     entitlement: {
@@ -225,7 +226,10 @@ async function lifetimePaid(ctx: AnyActionCtx, session: Stripe.Checkout.Session)
   });
   const subs = await ctx.runQuery(components.stripe.public.listSubscriptionsByUserId, { userId });
   for (const sub of subs) {
-    if ((sub.status === "active" || sub.status === "trialing") && !sub.cancelAtPeriodEnd) {
+    if (sub.status === "past_due") {
+      // Canceling stops Stripe collecting the failed invoice; a period-end cancel would not.
+      await stripe().subscriptions.cancel(sub.stripeSubscriptionId);
+    } else if ((sub.status === "active" || sub.status === "trialing") && !sub.cancelAtPeriodEnd) {
       await stripe().subscriptions.update(sub.stripeSubscriptionId, { cancel_at_period_end: true });
     }
   }
@@ -276,10 +280,12 @@ export async function syncRevenueCat(ctx: AnyActionCtx, userId: string): Promise
     { headers: { Authorization: `Bearer ${key}` } },
   );
   if (!res.ok) throw new Error(`RevenueCat GET /subscribers answered ${res.status}`);
-  const body = (await res.json()) as { subscriber?: RcSubscriber };
+  const { subscriber } = (await res.json()) as { subscriber?: RcSubscriber };
+  // Replacing with nothing would take away every store purchase: fail, so the webhook retries.
+  if (!subscriber) throw new Error("RevenueCat GET /subscribers answered without a subscriber");
   await ctx.runMutation(internal.billing.replaceStoreEntitlements, {
     userId,
-    entitlements: fromRevenueCat(body.subscriber ?? {}),
+    entitlements: fromRevenueCat(subscriber),
   });
 }
 

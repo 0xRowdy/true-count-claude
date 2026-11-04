@@ -18,7 +18,9 @@ export function SignInOptions({
 }) {
   const [busy, setBusy] = useState<Provider | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const shown = error ?? initialError;
+  // The URL's error can't be cleared from here, so closing its notice is remembered instead.
+  const [urlErrorClosed, setUrlErrorClosed] = useState(false);
+  const shown = error ?? (urlErrorClosed ? null : initialError);
 
   const start = async (provider: Provider) => {
     setBusy(provider);
@@ -36,13 +38,26 @@ export function SignInOptions({
 
   return (
     <View style={styles.options}>
-      <ProviderButton provider="apple" busy={busy === "apple"} onPress={() => start("apple")} />
-      <ProviderButton provider="google" busy={busy === "google"} onPress={() => start("google")} />
+      <ProviderButton
+        provider="apple"
+        busy={busy === "apple"}
+        disabled={busy === "google"}
+        onPress={() => start("apple")}
+      />
+      <ProviderButton
+        provider="google"
+        busy={busy === "google"}
+        disabled={busy === "apple"}
+        onPress={() => start("google")}
+      />
       {shown ? (
         <Notice
           title="That sign-in didn't go through"
           body={`${shown}. Nothing changed; try again, or use the other option.`}
-          onClose={() => setError(null)}
+          onClose={() => {
+            setError(null);
+            setUrlErrorClosed(true);
+          }}
         />
       ) : null}
       <Text style={[ui(12, 400, { lineHeight: 18 }), styles.fine]}>

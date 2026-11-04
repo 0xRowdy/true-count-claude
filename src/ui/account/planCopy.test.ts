@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { FREE, type ResolvedPlan } from "../../../convex/lib/plan";
-import { BILLED_BY, doubleBillingWarning, planStatus, shortDate } from "./planCopy";
+import {
+  BILLED_BY,
+  billingErrorMessage,
+  doubleBillingWarning,
+  planStatus,
+  shortDate,
+} from "./planCopy";
 
 // Local noon, so the calendar day is the same in every time zone the suite runs in.
 const NOV_25 = new Date(2026, 10, 25, 12).getTime();
@@ -48,5 +54,17 @@ describe("planCopy", () => {
     expect(
       doubleBillingWarning({ ...plus(), plan: "lifetime", alsoRenewing: ["play_store"] }),
     ).toMatch(/Lifetime, but a Plus subscription on Google Play/);
+  });
+});
+
+describe("billingErrorMessage", () => {
+  it("names checkout by default, and whatever the caller was doing otherwise", () => {
+    expect(billingErrorMessage(undefined)).toMatch(/checkout/);
+    expect(billingErrorMessage(undefined, "We couldn't open billing.")).toBe(
+      "We couldn't open billing.",
+    );
+    expect(billingErrorMessage("already-lifetime", "We couldn't open billing.")).toMatch(
+      /Lifetime/,
+    );
   });
 });

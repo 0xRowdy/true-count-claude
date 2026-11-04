@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FREE, type Entitlement, isLive, resolvePlan } from "./plan";
+import { FREE, type Entitlement, isLive, resolvePlan, PAST_DUE_GRACE_MS } from "./plan";
 
 const NOW = Date.UTC(2026, 9, 25);
 const DAY = 86_400_000;
@@ -48,6 +48,11 @@ describe("resolvePlan", () => {
   it("keeps Plus while a failed renewal is retried, past the period end", () => {
     const failing = plus({ status: "past_due", expiresAt: NOW - DAY });
     expect(resolvePlan([failing], NOW)).toMatchObject({ plan: "plus", status: "past_due" });
+  });
+
+  it("ends a failed renewal after the grace period, even if no webhook ever says so", () => {
+    const failing = plus({ status: "past_due", expiresAt: NOW - PAST_DUE_GRACE_MS });
+    expect(resolvePlan([failing], NOW)).toMatchObject({ plan: "free" });
   });
 
   it("prefers Lifetime over any subscription, wherever each was bought", () => {

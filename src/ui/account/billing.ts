@@ -34,10 +34,10 @@ export async function syncStorePurchases() {
 }
 
 /** What to tell the player when a billing call fails. */
-export function billingFailure(e: unknown): string {
+export function billingFailure(e: unknown, fallback?: string): string {
   const code =
     e instanceof ConvexError
       ? (e.data as { code?: BillingErrorCode } | undefined)?.code
       : undefined;
-  return billingErrorMessage(code);
+  return billingErrorMessage(code, fallback);
 }
