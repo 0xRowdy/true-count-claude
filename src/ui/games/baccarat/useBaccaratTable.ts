@@ -7,6 +7,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Platform } from "react-native";
 import { DEFAULT_BACCARAT_RULES, type BaccaratRules, type BetKind } from "@/games/baccarat";
 import { bankroll as gameBankroll } from "@/state/progressSelectors";
 import { PRACTICE_BANKROLL_START } from "@/state/progress";
@@ -128,9 +129,9 @@ export function useBaccaratTable(seedParam: string | undefined) {
       const net = abandonedNet(current);
       if (net !== null) recordOnce(current.coup, net);
     };
-    if (typeof window !== "undefined") window.addEventListener("pagehide", settleAbandoned);
+    if (Platform.OS === "web") window.addEventListener("pagehide", settleAbandoned);
     return () => {
-      if (typeof window !== "undefined") window.removeEventListener("pagehide", settleAbandoned);
+      if (Platform.OS === "web") window.removeEventListener("pagehide", settleAbandoned);
       settleAbandoned();
       if (sessionRef.current) endProgressSession(sessionRef.current);
     };

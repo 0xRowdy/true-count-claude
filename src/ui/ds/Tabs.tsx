@@ -1,6 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import type { SegmentOption } from "./SegmentedControl";
-import { colors, ui } from "./tokens";
+import { slopTo } from "./tap";
+import { colors, textScale, ui } from "./tokens";
 
 /**
  * Content-width tabs in a bordered card, the chosen one on muted (the design's Progress game
@@ -33,7 +34,8 @@ export function Tabs<T extends string>({
               accessibilityLabel={o.label}
               aria-selected={on}
               onPress={() => onChange?.(o.value)}
-              hitSlop={4}
+              // Tabs inside a 4pt-padded track; the slop brings each to the platform minimum.
+              hitSlop={slopTo(TAB_H)}
               style={[styles.tab, on && styles.on]}
             >
               <Text
@@ -41,6 +43,7 @@ export function Tabs<T extends string>({
                   ui(14, on ? 600 : 500),
                   { color: on ? colors.foreground : colors.mutedForeground },
                 ]}
+                maxFontSizeMultiplier={textScale.control}
               >
                 {o.label}
               </Text>
@@ -51,6 +54,8 @@ export function Tabs<T extends string>({
     </ScrollView>
   );
 }
+
+const TAB_H = 36;
 
 const styles = StyleSheet.create({
   scroller: { flexGrow: 0 },
@@ -64,6 +69,12 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.card,
   },
-  tab: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8 },
+  tab: {
+    minHeight: TAB_H,
+    justifyContent: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+  },
   on: { backgroundColor: colors.muted },
 });

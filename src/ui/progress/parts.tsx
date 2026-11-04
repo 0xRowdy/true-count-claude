@@ -4,8 +4,17 @@
  */
 
 import { Link } from "expo-router";
-import { useId, useState, type ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { useId, useRef, useState, type ReactNode } from "react";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  type ScrollViewInstance,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import type { GameId } from "@/state/profile";
 import { colors, display, icons, radius, surfaces, ui, type LucideIcon } from "@/ui/ds";
@@ -127,7 +136,7 @@ export function LevelRing({
         <Text style={[display(48, 500), { color: colors.foreground, lineHeight: 56 }]}>
           {level}
         </Text>
-        <Text style={[ui(10, 700, { letterSpacing: 1.5 }), { color: colors.mutedForeground }]}>
+        <Text style={[ui(11, 700, { letterSpacing: 1.5 }), { color: colors.mutedForeground }]}>
           LEVEL
         </Text>
       </View>
@@ -141,13 +150,21 @@ export function WeeklyBars({
 }: {
   weeks: ReadonlyArray<{ label: string; rate: number | null; total: number }>;
 }) {
+  const scroll = useRef<ScrollViewInstance>(null);
   const rates = weeks.map((w) => w.rate).filter((r): r is number => r !== null);
   // Scale like the design: the bars start from a floor below the lowest week.
   const floor = rates.length ? Math.max(0, Math.min(...rates) - 0.08) : 0;
   const span = 1 - floor || 1;
   const maxBar = 133;
   return (
-    <View style={styles.bars} accessibilityLabel="Weekly accuracy" role="list">
+    <ScrollView
+      ref={scroll}
+      horizontal
+      contentContainerStyle={styles.bars}
+      onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: false })}
+      accessibilityLabel="Weekly accuracy"
+      role="list"
+    >
       {weeks.map((w, i) => {
         const last = i === weeks.length - 1;
         const h = w.rate === null ? 0 : Math.max(6, ((w.rate - floor) / span) * maxBar);
@@ -162,18 +179,18 @@ export function WeeklyBars({
           >
             <Text
               style={[
-                last ? ui(11, 700) : ui(10),
+                last ? ui(11, 700) : ui(11),
                 { color: last ? colors.primary : colors.mutedForeground },
               ]}
             >
               {value}
             </Text>
             <View style={[styles.bar, { height: h, opacity }]} />
-            <Text style={[ui(10), { color: colors.mutedForeground }]}>{w.label}</Text>
+            <Text style={[ui(11), { color: colors.mutedForeground }]}>{w.label}</Text>
           </View>
         );
       })}
-    </View>
+    </ScrollView>
   );
 }
 
@@ -304,8 +321,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingTop: 2,
   },
-  bars: { flexDirection: "row", alignItems: "flex-end", gap: 10, height: 200 },
-  barCol: { flex: 1, alignItems: "center", justifyContent: "flex-end", gap: 6, height: "100%" },
+  bars: { flexGrow: 1, flexDirection: "row", alignItems: "flex-end", gap: 10, height: 200 },
+  barCol: {
+    flex: 1,
+    minWidth: 36,
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 6,
+    height: "100%",
+  },
   bar: {
     alignSelf: "stretch",
     borderTopLeftRadius: 4,

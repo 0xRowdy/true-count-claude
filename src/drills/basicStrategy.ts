@@ -47,7 +47,7 @@ import {
   currentRunningCount,
   dealerUpcard,
   dealtCards,
-  isCutCardReached,
+  needsShuffleBeforeRound,
   startRound,
   unseenComposition,
 } from "@/engine";
@@ -294,7 +294,7 @@ export function dealNextHand(drill: BasicStrategyDrill): BasicStrategyDrill {
   let shoeIndex = state.shoeIndex;
   let shuffles = state.shuffles;
 
-  if (isCutCardReached(shoe)) {
+  if (needsShuffleBeforeRound(shoe, state.config.rules)) {
     shoeIndex += 1;
     shuffles += 1;
     shoe = createShoe(state.config.rules, shoeSeed(state.seed, shoeIndex));

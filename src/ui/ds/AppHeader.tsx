@@ -13,6 +13,7 @@ import {
   Users,
   type LucideIcon,
 } from "./icons";
+import { MIN_TAP } from "./tap";
 import { colors, radius, surfaces, ui } from "./tokens";
 
 export type NavKey = "lobby" | "trainer" | "strategies" | "live" | "progress";
@@ -130,7 +131,8 @@ export function AppHeader({
             <Bell size={20} color={colors.mutedForeground} strokeWidth={2} />
           </Pressable>
         )}
-        {accountHref ? (
+        {/* At phone width the five 44pt destinations need the room more than the portrait does. */}
+        {compact ? null : accountHref ? (
           <Link href={accountHref} asChild>
             <Pressable accessibilityRole="link" accessibilityLabel="Account" style={styles.account}>
               <Avatar name="You" source={portraits.player} size={34} />
@@ -166,10 +168,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: radius.md,
-    minHeight: 36,
+    minHeight: MIN_TAP,
   },
-  navItemIcon: { paddingHorizontal: 10, minWidth: 40, justifyContent: "center" },
-  navItemTight: { paddingHorizontal: 8, minWidth: 36 },
+  navItemIcon: { paddingHorizontal: 10, minWidth: MIN_TAP, justifyContent: "center" },
+  navItemTight: { paddingHorizontal: 0, minWidth: MIN_TAP },
   navItemOn: { backgroundColor: colors.muted },
   right: { flexDirection: "row", alignItems: "center", gap: 16 },
   // The 34pt avatar inside a 44pt tap target.

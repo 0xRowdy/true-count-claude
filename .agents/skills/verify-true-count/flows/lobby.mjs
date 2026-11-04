@@ -117,6 +117,12 @@ export default async ({ page, url, shot, log, check }) => {
   await page.waitForTimeout(400);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
   check(overflow <= 0, `no horizontal page scroll at 390 wide (overflow ${overflow}px)`);
+  const blackjackCard = await visible(
+    page.getByRole("link", { name: /^Blackjack: Level/ }),
+  ).boundingBox();
+  const pokerCard = await visible(page.getByRole("link", { name: /^Video Poker: / })).boundingBox();
+  check(blackjackCard.width >= 160, "phone game cards retain readable width");
+  check(pokerCard.y >= blackjackCard.y + blackjackCard.height, "phone game cards wrap into rows");
   await shot("lobby-sample-390");
 
   check(errors.length === 0, `no console errors${errors.length ? `: ${errors.join(" | ")}` : ""}`);

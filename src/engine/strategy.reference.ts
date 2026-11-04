@@ -2,9 +2,9 @@
  * Published Basic Strategy reference tables — test fixture data, not engine code.
  *
  * Invariant 4 (CONTEXT.md) says CI asserts the whole chart against reference tables for
- * every Rule Set permutation. These are those tables: transcribed by hand from published
- * sources, independently of `strategy.ts`, so that `strategy.test.ts` compares the
- * generated chart against something the generator did not produce.
+ * every Rule Set permutation. These four tables were transcribed by hand from published
+ * sources, independently of `strategy.ts`. The full 288-family fixtures and a second
+ * calculator cross-check live in `fixtures/` and `strategy.families.test.ts`.
  *
  * ## Sources
  *

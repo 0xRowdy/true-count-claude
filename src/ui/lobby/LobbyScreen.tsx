@@ -10,7 +10,7 @@
  * the prerendered page is the neutral loading state.
  */
 
-import { StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import { useId, useState } from "react";
 import { GAMES, GAME_NAMES, type GameId, daysUntilTrip } from "@/state/profile";
@@ -25,6 +25,7 @@ import {
   weekTicks,
 } from "@/state/progressSelectors";
 import { useProfile } from "@/ui/profile/profileStore";
+import { ACCOUNTS_AVAILABLE } from "@/ui/account/backend";
 import {
   AppShell,
   Badge,
@@ -54,6 +55,7 @@ import {
   Shuffle,
   Timer,
   Trophy,
+  UserRound,
 } from "@/ui/ds/icons";
 import { GAME_ICON, GameIcon, LinkBox, SampleBanner, TextLink } from "@/ui/progress/parts";
 import { useChipBalance, useProgressView } from "@/ui/progress/progressStore";
@@ -101,6 +103,13 @@ export function LobbyScreen({ demo }: { demo: boolean }) {
                   <Flame size={16} color={colors.chip1k} strokeWidth={2} />
                   <Text style={[ui(13, 500), styles.fg]}>{streakText(streak)}</Text>
                 </View>
+              ) : null}
+              {/* The App Header's avatar leads here on wider web; native and phones have no such bar. */}
+              {ACCOUNTS_AVAILABLE && (Platform.OS !== "web" || narrow) ? (
+                <LinkBox href="/account" label="Account" style={styles.accountLink}>
+                  <UserRound size={16} color={colors.mutedForeground} strokeWidth={2} />
+                  <Text style={[ui(13, 500), styles.fg]}>Account</Text>
+                </LinkBox>
               ) : null}
             </View>
 
@@ -279,23 +288,25 @@ function UpNextHero({
   const Icon = GAME_ICON[next.game];
   return (
     <View style={[styles.hero, narrow && styles.heroNarrow]}>
-      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Defs>
-          <RadialGradient
-            id={id}
-            cx="0.85"
-            cy="0.5"
-            rx="0.6"
-            ry="1"
-            gradientUnits="objectBoundingBox"
-          >
-            <Stop offset="0" stopColor={colors.felt} />
-            <Stop offset="0.55" stopColor={colors.feltDeep} />
-            <Stop offset="1" stopColor={colors.card} />
-          </RadialGradient>
-        </Defs>
-        <Rect x={0} y={0} width="100%" height="100%" fill={`url(#${id})`} />
-      </Svg>
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Svg width="100%" height="100%">
+          <Defs>
+            <RadialGradient
+              id={id}
+              cx="0.85"
+              cy="0.5"
+              rx="0.6"
+              ry="1"
+              gradientUnits="objectBoundingBox"
+            >
+              <Stop offset="0" stopColor={colors.felt} />
+              <Stop offset="0.55" stopColor={colors.feltDeep} />
+              <Stop offset="1" stopColor={colors.card} />
+            </RadialGradient>
+          </Defs>
+          <Rect x={0} y={0} width="100%" height="100%" fill={`url(#${id})`} />
+        </Svg>
+      </View>
       <View style={[styles.heroCopy, narrow && styles.heroCopyNarrow]}>
         <Text style={[ui(11, 700, { letterSpacing: 1.5 }), { color: colors.primary }]}>
           {next.eyebrow}
@@ -303,7 +314,7 @@ function UpNextHero({
         <Text style={[display(30, 500, { lineHeight: 34.5 }), { color: colors.feltText }]}>
           {next.title}
         </Text>
-        <Text style={[ui(15, 400, { lineHeight: 22.5 }), { color: surfaces.feltTextMuted }]}>
+        <Text style={[ui(15, 400, { lineHeight: 22.5 }), { color: surfaces.feltPrint }]}>
           {next.why}
         </Text>
         <View style={styles.heroActions}>
@@ -323,7 +334,7 @@ function UpNextHero({
               label="Load sample data (demo, not saved)"
               style={styles.demoLink}
             >
-              <Text style={[ui(13, 500), { color: surfaces.feltTextMuted }]}>
+              <Text style={[ui(13, 500), { color: surfaces.feltPrint }]}>
                 Load sample data · demo, not saved
               </Text>
             </LinkBox>
@@ -351,9 +362,7 @@ function UpNextHero({
                 </View>
               </View>
               <View style={styles.dealer}>
-                <Text
-                  style={[ui(10, 700, { letterSpacing: 1.5 }), { color: surfaces.feltTextMuted }]}
-                >
+                <Text style={[ui(11, 700, { letterSpacing: 1.5 }), { color: surfaces.feltPrint }]}>
                   DEALER
                 </Text>
                 <PlayingCard rank={next.hand.dealer[0]} suit={next.hand.dealer[1]} />
@@ -565,6 +574,15 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   greetText: { gap: 6, flexShrink: 1 },
+  accountLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    minHeight: 44,
+    paddingHorizontal: 14,
+    borderRadius: radius.pill,
+    backgroundColor: colors.muted,
+  },
   streak: {
     flexDirection: "row",
     alignItems: "center",
@@ -653,7 +671,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.card,
   },
-  gameCardWrap: { flexBasis: 160, flexGrow: 1 },
+  gameCardWrap: { minWidth: 160 },
   gameText: { gap: 2 },
   gameBar: { height: 6, borderRadius: 3, backgroundColor: colors.muted, overflow: "hidden" },
   gameBarFill: { height: 6, borderRadius: 3, backgroundColor: colors.primary },

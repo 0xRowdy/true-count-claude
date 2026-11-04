@@ -1,0 +1,97 @@
+appId: com.truecount.app
+name: Drill, session backup, and persistence
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: Play free
+    timeout: 30000
+- takeScreenshot: native-launch
+- openLink: truecount://drills/true-count
+- runFlow:
+    when:
+      platform: iOS
+      visible: "^Open$"
+    commands:
+      - tapOn: "^Open$"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "Question 1"
+    direction: DOWN
+    timeout: 30000
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "^2$"
+    direction: DOWN
+    timeout: 30000
+- tapOn:
+    text: "^2$"
+- assertVisible: "Entered 2"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "Answer:.*"
+    direction: DOWN
+- tapOn: "Answer:.*"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "Next question"
+    direction: DOWN
+- assertVisible: "Next question"
+- takeScreenshot: native-drill-feedback
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "End session"
+    direction: UP
+    timeout: 30000
+- tapOn: "End session"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "Statistics"
+    direction: UP
+- tapOn: "Statistics"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "1 session recorded"
+    direction: DOWN
+- scrollUntilVisible:
+    element:
+      text: "Create backup"
+    direction: DOWN
+    timeout: 30000
+- tapOn: "Create backup"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "Backup ready. Sessions included: 1."
+    direction: DOWN
+    timeout: 15000
+- assertVisible: "Backup ready. Sessions included: 1."
+- takeScreenshot: native-session-backup
+- stopApp
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: Play free
+    timeout: 30000
+- openLink: truecount://session
+- runFlow:
+    when:
+      platform: iOS
+      visible: "^Open$"
+    commands:
+      - tapOn: "^Open$"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "1 session recorded"
+    direction: DOWN
+    timeout: 30000
+- assertVisible: "1 session recorded"
+- takeScreenshot: native-persisted-session

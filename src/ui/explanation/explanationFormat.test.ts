@@ -37,6 +37,7 @@ import {
   chartWindow,
   closeness,
   countView,
+  dealerOddsView,
   decisionVerdict,
   distanceSentence,
   evGapTier,
@@ -59,6 +60,13 @@ import {
 function card(rank: Rank, suit: Card["suit"] = "s"): Card {
   return { rank, suit };
 }
+
+it("shows blackjack odds before an early-surrender peek but not after an ordinary peek", () => {
+  const spot = situation({ player: ["10", "6"], upcard: "A" });
+  expect(dealerOddsView(explainDecision(spot))?.blackjack).toBeNull();
+  const before = explainDecision({ ...spot, rules: { ...spot.rules, surrender: "early" } });
+  expect(dealerOddsView(before)?.blackjack).toMatch(/^30\.7%$/);
+});
 
 interface Spec {
   readonly player: readonly Rank[];

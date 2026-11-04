@@ -20,13 +20,13 @@ export interface RuleSet {
   readonly doubleAfterSplit: boolean;
   readonly doubleRule: DoubleRule;
   readonly surrender: SurrenderRule;
-  /** Maximum hands a player may split to, including the original. */
+  /** Maximum hands a player may split to, including the original. Supported range: 1–4. */
   readonly maxSplitHands: number;
   /** Whether split aces may be re-split. */
   readonly resplitAces: boolean;
   /** Whether split aces receive only one card each. */
   readonly oneCardToSplitAces: boolean;
-  /** Dealer checks for blackjack on a ten or ace upcard before players act. */
+  /** True: check for blackjack before play. False: European no hole card, all wagers lose to blackjack. */
   readonly dealerPeek: boolean;
   /** Fraction of the shoe dealt before the cut card, 0–1. */
   readonly penetration: number;
@@ -60,14 +60,20 @@ export function validateRules(rules: RuleSet): string[] {
   if (!Number.isInteger(rules.decks) || rules.decks < 1 || rules.decks > 8) {
     problems.push("decks must be an integer from 1 to 8");
   }
-  if (rules.penetration <= 0 || rules.penetration > 1) {
+  if (!Number.isFinite(rules.penetration) || rules.penetration <= 0 || rules.penetration > 1) {
     problems.push("penetration must be greater than 0 and at most 1");
   }
-  if (!Number.isInteger(rules.maxSplitHands) || rules.maxSplitHands < 1) {
-    problems.push("maxSplitHands must be a positive integer");
+  if (
+    !Number.isInteger(rules.maxSplitHands) ||
+    rules.maxSplitHands < 1 ||
+    rules.maxSplitHands > 4
+  ) {
+    problems.push("maxSplitHands must be an integer from 1 to 4");
   }
-  if (rules.minBet <= 0) problems.push("minBet must be positive");
-  if (rules.maxBet < rules.minBet) problems.push("maxBet must be at least minBet");
+  if (!Number.isFinite(rules.minBet) || rules.minBet <= 0)
+    problems.push("minBet must be positive and finite");
+  if (!Number.isFinite(rules.maxBet) || rules.maxBet < rules.minBet)
+    problems.push("maxBet must be finite and at least minBet");
   return problems;
 }
 

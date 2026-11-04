@@ -133,7 +133,10 @@ export function DecisionExplanationPanel({
 
       {verdict ? <VerdictBox view={decisionVerdict(explanation, verdict)} /> : null}
 
-      <Section title="Every legal action" subtitle="Expected result per bet, for this exact shoe">
+      <Section
+        title="Every legal action"
+        subtitle="Estimated result per bet, using the unseen cards"
+      >
         {rows.length > 0 ? (
           <>
             {close ? (
@@ -146,12 +149,18 @@ export function DecisionExplanationPanel({
               <Text style={styles.note}>
                 Dealer showing {upcardLabel(upcardOf(explanation.hand.dealerUpcard))}: busts{" "}
                 {dealer.bust}
+                {dealer.blackjack ? ` · blackjack ${dealer.blackjack}` : ""}
                 {" · "}
                 {dealer.totals.map((entry) => `${entry.total}: ${entry.text}`).join(" · ")}
               </Text>
             ) : null}
             <Text style={styles.note}>
               +1.000 wins a whole bet, -1.000 loses it. Doubling risks two bets, so it can reach ±2.
+            </Text>
+            <Text style={styles.note}>
+              These are estimates. Dealer odds stay fixed while player draws are explored; split
+              continuations approximate card depletion and assume enough chips for later doubles and
+              resplits. Close EV rankings can differ from the published chart.
             </Text>
           </>
         ) : (
@@ -432,7 +441,7 @@ const styles = StyleSheet.create({
   },
   seat: { gap: 4, flexShrink: 1 },
   seatLabel: {
-    ...ui(10, 700, { letterSpacing: 1.2, textTransform: "uppercase" }),
+    ...ui(11, 700, { letterSpacing: 1.2, textTransform: "uppercase" }),
     color: colors.feltText,
   },
   versus: { ...ui(13, 600), color: colors.feltText, paddingBottom: 22 },

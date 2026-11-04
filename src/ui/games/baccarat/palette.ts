@@ -28,6 +28,4 @@ export const baccaratPalette = {
   winTagInk: "#06140D",
   lossTag: colors.mistake,
   stakeTag: "#0B2A20E6",
-  /** Behind the rules sheet. */
-  scrim: "#000000AA",
 } as const;

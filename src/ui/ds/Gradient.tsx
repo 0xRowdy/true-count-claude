@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 
 /**
@@ -23,21 +23,24 @@ export function Gradient({
   const dx = Math.cos(a) / 2;
   const dy = Math.sin(a) / 2;
   return (
-    <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
-      <Defs>
-        <LinearGradient
-          id={id}
-          x1={0.5 - dx}
-          y1={0.5 - dy}
-          x2={0.5 + dx}
-          y2={0.5 + dy}
-          gradientUnits="objectBoundingBox"
-        >
-          <Stop offset={0} stopColor={from} />
-          <Stop offset={1} stopColor={to} />
-        </LinearGradient>
-      </Defs>
-      <Rect x={0} y={0} width="100%" height="100%" rx={radius} ry={radius} fill={`url(#${id})`} />
-    </Svg>
+    // Measure native SVG percentages in an unpadded box so the fill reaches every edge.
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Svg width="100%" height="100%">
+        <Defs>
+          <LinearGradient
+            id={id}
+            x1={0.5 - dx}
+            y1={0.5 - dy}
+            x2={0.5 + dx}
+            y2={0.5 + dy}
+            gradientUnits="objectBoundingBox"
+          >
+            <Stop offset={0} stopColor={from} />
+            <Stop offset={1} stopColor={to} />
+          </LinearGradient>
+        </Defs>
+        <Rect x={0} y={0} width="100%" height="100%" rx={radius} ry={radius} fill={`url(#${id})`} />
+      </Svg>
+    </View>
   );
 }

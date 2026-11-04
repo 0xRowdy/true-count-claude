@@ -8,7 +8,14 @@
  */
 
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  type ScrollViewInstance,
+} from "react-native";
 import { router } from "expo-router";
 import Info from "lucide-react-native/icons/info";
 import RotateCw from "lucide-react-native/icons/rotate-cw";
@@ -29,6 +36,7 @@ import {
   colors,
   radius,
   surfaces,
+  type,
   ui,
   type ChipValue,
 } from "@/ui/ds";
@@ -142,7 +150,7 @@ export function RouletteScreen({ seed }: { seed?: string }) {
   }, [state.phase, state.history.length, state.settlement]);
 
   // Bring the winning number into view when the ball lands.
-  const scroller = useRef<ScrollView>(null);
+  const scroller = useRef<ScrollViewInstance>(null);
   const [viewH, setViewH] = useState(0);
   useEffect(() => {
     if (state.phase !== "result" || !state.settlement) return;
@@ -192,9 +200,7 @@ export function RouletteScreen({ seed }: { seed?: string }) {
         />
 
         <View style={styles.history} accessibilityLabel="Last spins" role="list">
-          <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
-            LAST
-          </Text>
+          <Text style={[type.overline, { color: colors.mutedForeground }]}>LAST</Text>
           {recent.length === 0 ? (
             <Text style={[ui(12), { color: colors.mutedForeground }]}>No spins yet</Text>
           ) : (

@@ -11,7 +11,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Stack, useRouter } from "expo-router";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { betCents, formatMoney as formatCents, getPayTable, holdMask } from "@/games/video-poker";
 import { PRACTICE_BANKROLL_START } from "@/state/progress";
 import { bankroll as bankrollOf } from "@/state/progressSelectors";
@@ -25,6 +25,7 @@ import {
   colors,
   icons,
   radius,
+  type,
   ui,
 } from "@/ui/ds";
 import { useProfile } from "@/ui/profile/profileStore";
@@ -99,12 +100,7 @@ const COLUMN = 390;
 const REVEAL_MS = { normal: 110, fast: 0 } as const;
 type Speed = keyof typeof REVEAL_MS;
 
-function readSeedParam(): number | null {
-  if (typeof window === "undefined") return null;
-  return parseSeed(new URLSearchParams(window.location.search).get("seed"));
-}
-
-export function VideoPokerScreen() {
+export function VideoPokerScreen({ seed: seedParam }: { seed?: string }) {
   const router = useRouter();
   const { profile } = useProfile();
   const coach = profile.coach;
@@ -116,7 +112,7 @@ export function VideoPokerScreen() {
 
   // The seed is drawn after mount (hydration); `?seed=` makes a session reproducible.
   useEffect(() => {
-    const seed = readSeedParam() ?? Math.floor(Math.random() * 0x100000000) >>> 0;
+    const seed = parseSeed(seedParam) ?? Math.floor(Math.random() * 0x100000000) >>> 0;
     setState((s) => (s.seed === null ? withSeed(s, seed) : s));
   }, []);
 
@@ -133,9 +129,9 @@ export function VideoPokerScreen() {
       recordHand({ game: "video-poker", net });
     };
     const onPageHide = () => settleAbandoned();
-    if (typeof window !== "undefined") window.addEventListener("pagehide", onPageHide);
+    if (Platform.OS === "web") window.addEventListener("pagehide", onPageHide);
     return () => {
-      if (typeof window !== "undefined") window.removeEventListener("pagehide", onPageHide);
+      if (Platform.OS === "web") window.removeEventListener("pagehide", onPageHide);
       settleAbandoned();
       if (sessionRef.current) endProgressSession(sessionRef.current);
     };
@@ -448,16 +444,12 @@ export function VideoPokerScreen() {
         </View>
       </ScrollView>
       {rulesOpen ? (
-        <View style={styles.sheetLayer}>
-          <View style={styles.sheetColumn}>
-            <RulesSheet
-              current={state.settings.payTableId}
-              canSwitch={canChangeSettings(state)}
-              onSelect={(id) => setState((s) => setPayTable(s, id))}
-              onClose={() => setRulesOpen(false)}
-            />
-          </View>
-        </View>
+        <RulesSheet
+          current={state.settings.payTableId}
+          canSwitch={canChangeSettings(state)}
+          onSelect={(id) => setState((s) => setPayTable(s, id))}
+          onClose={() => setRulesOpen(false)}
+        />
       ) : null}
     </View>
   );
@@ -496,9 +488,7 @@ function BetControls({
   const table = getPayTable(state.settings.payTableId);
   return (
     <View style={styles.bet}>
-      <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
-        COINS
-      </Text>
+      <Text style={[type.overline, { color: colors.mutedForeground }]}>COINS</Text>
       <SegmentedControl
         accessibilityLabel="Coins"
         options={COIN_OPTIONS.map((c) => ({
@@ -508,9 +498,7 @@ function BetControls({
         value={String(state.settings.coins)}
         onChange={(v) => onCoins(Number(v))}
       />
-      <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
-        COIN VALUE
-      </Text>
+      <Text style={[type.overline, { color: colors.mutedForeground }]}>COIN VALUE</Text>
       <SegmentedControl
         accessibilityLabel="Coin value"
         options={DENOMINATION_OPTIONS.map((d) => ({
@@ -567,14 +555,4 @@ const styles = StyleSheet.create({
   speed: { width: 110, height: 52, paddingHorizontal: 12 },
   lockNote: { color: colors.mutedForeground, marginTop: 8, textAlign: "center" },
   main: { flex: 1 },
-  sheetLayer: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    alignItems: "center",
-    zIndex: 10,
-  },
-  sheetColumn: { flex: 1, width: "100%", maxWidth: COLUMN },
 });

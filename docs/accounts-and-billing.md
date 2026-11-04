@@ -108,8 +108,7 @@ then the Plan. Apple Pay and Google Pay appear in Checkout on their own where av
    `EXPO_PUBLIC_REVENUECAT_IOS_KEY` and `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` (EAS environment
    variables for builds; `.env.local` for local runs).
 
-Purchases need a development build: `npx expo install expo-dev-client`, then
-`eas build --profile development`. Expo Go runs RevenueCat's preview mode, with no real
+Purchases need a development build: `eas build --profile development`. Expo Go runs RevenueCat's preview mode, with no real
 purchases. In the apps, a signed-out player is sent to sign in before buying, so every purchase
 belongs to an Account; "Restore purchases" is on Pricing and the account page.
 
@@ -136,7 +135,8 @@ Apple asks of apps with Sign in with Apple.
    redirect URI and Apple return URL for the production `.convex.site` host, and RevenueCat's
    webhook pointed at it.
 2. Build the web app and the EAS builds with that deployment's `EXPO_PUBLIC_CONVEX_URL` and
-   `EXPO_PUBLIC_CONVEX_SITE_URL`. A build without them has no Accounts, by design (CI).
+   `EXPO_PUBLIC_CONVEX_SITE_URL`. A build without them has no Accounts, by design (CI), and its
+   Landing and Pricing stay a labelled preview. So does an app build with no RevenueCat key.
 
 ## Local development
 

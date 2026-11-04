@@ -223,7 +223,7 @@ export function RuleFields({
       <Panel title="The shoe and the limits">
         <Field
           label="Penetration"
-          why="How much of the shoe is dealt before the shuffle. It does not move the house edge or a single chart cell — it decides how much of your count is worth anything. Deep penetration is the counter's single biggest ask."
+          why="The target fraction dealt before shuffling. The trainer may shuffle earlier to leave enough cards for every legal split and draw in the next round. A round always finishes with the shoe it started."
         >
           <Choice
             options={PENETRATION_OPTIONS}

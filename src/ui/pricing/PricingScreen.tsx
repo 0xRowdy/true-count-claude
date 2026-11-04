@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { localIsoDate } from "@/state/profile";
-import { usePurchase } from "@/ui/account/usePurchase";
+import { CAN_SELL, usePurchase } from "@/ui/account/usePurchase";
 import {
   AppShell,
   Badge,
@@ -26,47 +26,90 @@ import {
 } from "@/ui/ds/icons";
 import { order, planView, yearlySaving, type Billing, type PlanId } from "./pricing";
 
+const WIN_REAL_MONEY = {
+  q: "Can I win real money here?",
+  a: "No. Tableside has no real-money wagering, and practice results don't carry over to a casino. The house edge is real; we just help you play each hand correctly.",
+};
+
+/** The page's words, by whether this build can take a payment (`CAN_SELL`, ADR-0007). */
+const COPY = CAN_SELL
+  ? {
+      title: "Every game is free. Plus goes deeper.",
+      lead: "No chips to buy, no ads and no real-money wagering, on any plan. Your plan follows your account across web, iPhone and Android.",
+      plusTag: "Best for trip prep",
+      plus: [
+        "Advanced trainers: counting, craps systems, every video poker pay table",
+        "Full progress history and decision breakdowns",
+        "Private tables for you and friends",
+        "Unlimited strategy drafts and test runs",
+      ],
+      lifetime: ["Pay once and keep it on every device", "Includes future games as they launch"],
+      faq: [
+        WIN_REAL_MONEY,
+        {
+          q: "Do I need Plus to get ready for a trip?",
+          a: "No. Every game, every supported rule set and the coach on basic strategy are free. Free is enough to walk up to the table knowing the move; Plus adds deeper trainers and your full history.",
+        },
+        {
+          q: "What happens to my strategies if I cancel?",
+          a: "They stay yours. Strategies you wrote or forked stay on your device and keep working with the coach on house basic strategy.",
+        },
+      ],
+      orderTitle: "YOUR ORDER",
+      pay: "Pay",
+      startTrial: "Start free trial with card",
+      payWithCard: "Pay with card",
+      orderNote:
+        "Cancel any time from Account → Plan, in two taps. Bought on iPhone or Android? Manage it in your app store. Purchases follow your account to every device.",
+      reassurance:
+        "You're paying for training tools, not chips. Nothing here can be wagered, cashed out or used to win real money.",
+    }
+  : {
+      title: "Every game and drill is free in this MVP.",
+      lead: "Pricing preview. Purchases and trials are unavailable. All games, drills, session history, and strategy builders are free to use.",
+      plusTag: "Preview only",
+      plus: [
+        "Future plan preview; no paid features in this build",
+        "All current trainers, history, and strategy drafts stay free",
+      ],
+      lifetime: [
+        "Example one-time price; not offered yet",
+        "No purchase or account required to train",
+      ],
+      faq: [
+        WIN_REAL_MONEY,
+        {
+          q: "Do I need Plus to get ready for a trip?",
+          a: "No. Every game, every supported rule set, all drills, and your full session history are free in this MVP. There is no separate purchase for deeper training.",
+        },
+        {
+          q: "What happens to my strategies if I cancel?",
+          a: "There is no subscription to cancel in this build. Strategies you write or fork stay on your device and keep working for free.",
+        },
+      ],
+      orderTitle: "ORDER PREVIEW",
+      pay: "Pay (unavailable)",
+      startTrial: "Free trial (unavailable)",
+      payWithCard: "Pay with card (unavailable)",
+      orderNote:
+        "This is an example order, not an active subscription. No payment method is collected, no trial starts, and nothing is charged.",
+      reassurance:
+        "Practice uses virtual chips only. Nothing here can be wagered, cashed out or used to win real money.",
+    };
+
 const PLANS: ReadonlyArray<{ id: PlanId; name: string; features: readonly string[] }> = [
   {
     id: "free",
     name: "Free",
     features: [
-      "All 5 games with every casino rule set",
-      "Coach on house basic strategy for each game",
-      "Play and follow community strategies",
-      "Live tables, chat and leaderboards",
+      "All 5 games with every supported rule set",
+      "Every drill, counting system, and coaching explanation",
+      "Full local session history and backup/restore",
+      "Strategy builders, example strategies, and simulated tables",
     ],
   },
-  {
-    id: "plus",
-    name: "Tableside Plus",
-    features: [
-      "Advanced trainers: counting, craps systems, every video poker pay table",
-      "Full progress history and decision breakdowns",
-      "Private tables for you and friends",
-      "Unlimited strategy drafts and test runs",
-    ],
-  },
-  {
-    id: "lifetime",
-    name: "Lifetime",
-    features: ["Pay once and keep it on every device", "Includes future games as they launch"],
-  },
-];
-
-const FAQ: ReadonlyArray<{ q: string; a: string }> = [
-  {
-    q: "Can I win real money here?",
-    a: "No. Tableside has no real-money wagering, and practice results don't carry over to a casino. The house edge is real; we just help you play each hand correctly.",
-  },
-  {
-    q: "Do I need Plus to get ready for a trip?",
-    a: "No. Every game, every casino rule set and the coach on basic strategy are free. Free is enough to walk up to the table knowing the move; Plus adds deeper trainers and your full history.",
-  },
-  {
-    q: "What happens to my strategies if I cancel?",
-    a: "They stay yours. Strategies you wrote or forked stay on your device and keep working with the coach on house basic strategy.",
-  },
+  { id: "plus", name: "Tableside Plus", features: COPY.plus },
+  { id: "lifetime", name: "Lifetime", features: COPY.lifetime },
 ];
 
 const WIDE = 1100;
@@ -77,9 +120,11 @@ const WIDE = 1100;
  * counted from today, after mount), and the FAQ opens and closes.
  *
  * "Pay" and the card button buy through `usePurchase` (ADR-0007): sign in first, then Stripe
- * Checkout on the web or the App Store / Google Play in the apps. A build that can't sell shows
- * an in-place notice and charges nothing. `?plan=&billing=` (back from sign-in or a canceled
- * Checkout) picks the plan again, after mount.
+ * Checkout on the web or the App Store / Google Play in the apps. `?plan=&billing=` (back from
+ * sign-in or a canceled Checkout) picks the plan again, after mount.
+ *
+ * A build that can't sell (`CAN_SELL`) is a labelled preview: both checkout buttons say they are
+ * unavailable, show an in-place notice, and no payment is processed.
  */
 export function PricingScreen() {
   const router = useRouter();
@@ -98,7 +143,7 @@ export function PricingScreen() {
   }, [params.plan, params.billing]);
 
   const wide = width === null || width >= WIDE;
-  const o = order(plan, billing, today);
+  const o = order(plan, billing, today, CAN_SELL);
   const current = purchase.current;
   // Already this plan, or Lifetime (which covers everything): manage it, don't buy it again.
   const owned = current === "lifetime" || (current === "plus" && plan !== "lifetime");
@@ -123,11 +168,12 @@ export function PricingScreen() {
               aria-level={1}
               style={[display(wide ? 40 : 32, 500, { lineHeight: wide ? 48 : 38 }), styles.fg]}
             >
-              Every game is free. Plus goes deeper.
+              {COPY.title}
             </Text>
+            <Text style={[ui(17, 400, { lineHeight: 25 }), styles.muted]}>{COPY.lead}</Text>
             <Text style={[ui(17, 400, { lineHeight: 25 }), styles.muted]}>
-              No chips to buy, no ads and no real-money wagering, on any plan. Your progress follows
-              you across web, iPhone and Android.
+              Progress stays on this device. Session backup and restore can move your Play and Drill
+              history between devices; there is no automatic sync.
             </Text>
           </View>
 
@@ -162,7 +208,7 @@ export function PricingScreen() {
           <View style={styles.planList} accessibilityRole="radiogroup" accessibilityLabel="Plan">
             {PLANS.map((p) => {
               const on = plan === p.id;
-              const view = planView(p.id, billing);
+              const view = planView(p.id, billing, CAN_SELL);
               return (
                 <Pressable
                   key={p.id}
@@ -181,7 +227,7 @@ export function PricingScreen() {
                         {p.id === current ? (
                           <Badge icon={Check} tone="correct" label="Current plan" />
                         ) : p.id === "plus" && current === "free" ? (
-                          <Tag label="Best for trip prep" />
+                          <Tag label={COPY.plusTag} />
                         ) : null}
                       </View>
                       <Text style={[ui(13), styles.muted]}>
@@ -220,7 +266,7 @@ export function PricingScreen() {
             <Text accessibilityRole="header" aria-level={2} style={[ui(20, 600), styles.fg]}>
               Questions
             </Text>
-            {FAQ.map((item, i) => {
+            {COPY.faq.map((item, i) => {
               const expanded = open === i;
               const Chevron = expanded ? ChevronUp : ChevronDown;
               return (
@@ -254,7 +300,7 @@ export function PricingScreen() {
           role="region"
           accessibilityLabel="Your order"
         >
-          <Text style={[ui(11, 700, { letterSpacing: 1.5 }), styles.muted]}>YOUR ORDER</Text>
+          <Text style={[ui(11, 700, { letterSpacing: 1.5 }), styles.muted]}>{COPY.orderTitle}</Text>
           <View style={styles.item}>
             <View style={styles.itemText}>
               <Text style={[ui(17, 600), styles.fg]}>{o.name}</Text>
@@ -300,18 +346,18 @@ export function PricingScreen() {
             <View style={styles.pay}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Pay"
+                accessibilityLabel={COPY.pay}
                 aria-busy={purchase.busy}
                 onPress={purchase.busy ? undefined : pay}
                 style={({ pressed }) => [styles.wallet, pressed && { opacity: 0.85 }]}
               >
                 <Apple size={18} color={marketing.walletInk} strokeWidth={2} />
-                <Text style={[ui(17, 600), { color: marketing.walletInk }]}>Pay</Text>
+                <Text style={[ui(17, 600), { color: marketing.walletInk }]}>{COPY.pay}</Text>
               </Pressable>
               <Button
                 size="lg"
                 icon={CreditCard}
-                label={o.trial ? "Start free trial with card" : "Pay with card"}
+                label={o.trial ? COPY.startTrial : COPY.payWithCard}
                 onPress={purchase.busy ? undefined : pay}
                 fullWidth
                 style={{ height: 52 }}
@@ -342,15 +388,11 @@ export function PricingScreen() {
               onClose={purchase.clearNotice}
             />
           ) : null}
-          <Text style={[ui(12, 400, { lineHeight: 18 }), styles.muted]}>
-            Cancel any time from Account → Plan, in two taps. Bought on iPhone or Android? Manage it
-            in your app store. Purchases follow your account to every device.
-          </Text>
+          <Text style={[ui(12, 400, { lineHeight: 18 }), styles.muted]}>{COPY.orderNote}</Text>
           <View style={styles.responsible}>
             <ShieldCheck size={18} color={colors.correct} strokeWidth={2} />
             <Text style={[ui(12, 400, { lineHeight: 12 * 1.45 }), styles.fg, styles.flex]}>
-              You&apos;re paying for training tools, not chips. Nothing here can be wagered, cashed
-              out or used to win real money.
+              {COPY.reassurance}
             </Text>
           </View>
         </View>

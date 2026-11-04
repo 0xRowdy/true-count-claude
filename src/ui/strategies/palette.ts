@@ -57,7 +57,6 @@ export const builder = {
   feltFrom: literal.feltHighlight,
   feltTo: colors.feltDeep,
   feltLabel: literal.feltLabel,
-  feltCaption: surfaces.feltTextFaint,
   feltCellEdge: literal.feltCellEdge,
   chipEdge: surfaces.chipEdgeSpot,
   chipShadow: literal.chipShadow,

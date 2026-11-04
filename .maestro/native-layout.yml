@@ -1,0 +1,27 @@
+appId: com.truecount.app
+name: Readable trainer headers on a phone
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: Play free
+    timeout: 30000
+- evalScript: ${output.routes = ["session", "drills", "drills/basic-strategy", "drills/counting", "drills/true-count", "drills/deviation", "rules", "shoe-integrity"]}
+- evalScript: ${output.titles = ["Statistics", "Drills", "Basic Strategy", "Counting", "True Count", "Deviations", "Your table", "Shoe Integrity"]}
+- evalScript: ${output.page = 0}
+- repeat:
+    times: 8
+    commands:
+      - openLink: truecount://${output.routes[output.page]}
+      - runFlow:
+          when:
+            platform: iOS
+            visible: "^Open$"
+          commands:
+            - tapOn: "^Open$"
+      - assertVisible: ${output.titles[output.page]}
+      - takeScreenshot: native-layout-${output.page}
+      # A squeezed header pushes these controls below the first viewport.
+      # Do not scroll: the previous smoke test scrolled past the broken text.
+      - assertVisible: "Report a bug"
+      - evalScript: ${output.page = output.page + 1}

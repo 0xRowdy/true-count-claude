@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 import { chipColors, chipLabel, chipSpotPaths, formatMoney, type ChipValue } from "./format";
-import { colors, shadow, surfaces, ui } from "./tokens";
+import { colors, shadow, surfaces, textScale, ui } from "./tokens";
 
 /**
  * The design's Chip (R2Oc4o): a 52pt practice chip with six edge spots, an inlay ring and the
@@ -40,7 +40,12 @@ export function Chip({
         />
       </Svg>
       <View style={[StyleSheet.absoluteFill, styles.center]}>
-        <Text style={[ui(Math.round(16 * k), 800), { color: ink }]} numberOfLines={1}>
+        {/* Printed on the chip: it stays inside the inlay at any text size (the label is read aloud). */}
+        <Text
+          style={[ui(Math.round(16 * k), 800), { color: ink }]}
+          numberOfLines={1}
+          maxFontSizeMultiplier={textScale.fixed}
+        >
           {label}
         </Text>
       </View>

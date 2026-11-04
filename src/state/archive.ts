@@ -84,7 +84,10 @@ export function parseArchive(
   }
   const candidate = parsed as Partial<SessionArchive>;
   if (candidate.format !== ARCHIVE_FORMAT) {
-    return { ok: false, reason: `Not a True Count archive (format: ${String(candidate.format)}).` };
+    return {
+      ok: false,
+      reason: `Not a Tableside session backup (format: ${String(candidate.format)}).`,
+    };
   }
   if (typeof candidate.schemaVersion !== "number") {
     return { ok: false, reason: "Archive carries no schemaVersion." };

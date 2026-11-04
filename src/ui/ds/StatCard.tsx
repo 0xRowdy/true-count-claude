@@ -42,7 +42,7 @@ export function StatCard({
       {delta ? (
         <View style={styles.delta}>
           <DeltaIcon size={14} color={fg} strokeWidth={2} />
-          <Text style={[ui(12, 500), { color: fg }]}>{delta}</Text>
+          <Text style={[ui(12, 500), styles.deltaText, { color: fg }]}>{delta}</Text>
         </View>
       ) : null}
     </View>
@@ -60,4 +60,5 @@ const styles = StyleSheet.create({
   },
   fill: { flex: 1 },
   delta: { flexDirection: "row", alignItems: "center", gap: 4 },
+  deltaText: { flexShrink: 1 },
 });

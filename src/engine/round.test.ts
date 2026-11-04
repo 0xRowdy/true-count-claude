@@ -9,6 +9,7 @@ import {
   applyAction,
   currentLegalActions,
   dealerUpcard,
+  earlySurrenderPending,
   isRoundOver,
   replayRound,
   startRound,
@@ -49,6 +50,14 @@ const ranksOf = (state: RoundState, handIndex: number): Rank[] =>
   (state.playerHands[handIndex]?.cards ?? []).map((card) => card.rank);
 
 describe("the deal", () => {
+  it("rejects invalid rules and non-finite chips before dealing", () => {
+    const shoe = stack("10", "6", "8", "10");
+    expect(() => open(shoe, { maxSplitHands: 1000 })).toThrow(/maxSplitHands/);
+    expect(() => open(shoe, {}, NaN)).toThrow(/finite/);
+    expect(() => open(shoe, {}, 10, Infinity)).toThrow(/finite/);
+    expect(shoe.dealtCount).toBe(0);
+  });
+
   it("deals two to the player and two to the dealer, one of them down", () => {
     const state = open(stack("K", "9", "7", "5", "K"));
 
@@ -523,30 +532,39 @@ describe("splitting", () => {
 });
 
 describe("no-peek settlement", () => {
-  it("returns everything staked beyond the opening bet when a double meets a natural", () => {
-    // European no-peek: the player doubles into an unseen natural and loses one bet, not two.
-    const shoe = stack("6", "A", "5", "K", "9");
+  it("leaves the dealer's second card undealt until the player finishes", () => {
+    const state = open(stack("5", "10", "6", "9", "A"), { dealerPeek: false });
+    expect(state.shoe.dealtCount).toBe(3);
+    expect(state.dealerHand.cards).toHaveLength(1);
+    const settled = applyAction(state, double);
+    expect(ranksOf(settled, 0)).toEqual(["5", "6", "9"]);
+    expect(settled.dealerHand.cards.map((card) => card.rank)).toEqual(["10", "A"]);
+    expect(settled.settlement?.net).toBe(-20);
+  });
+
+  it("loses both wagers when a double meets a natural", () => {
+    const shoe = stack("6", "A", "5", "9", "K");
     const state = play(open(shoe, { dealerPeek: false }), declineInsurance, double);
 
     const outcome = state.settlement?.outcomes[0];
     expect(outcome?.wagered).toBe(20);
-    expect(outcome?.returned).toBe(10);
-    expect(state.settlement?.net).toBe(-10);
-    expect(state.bankroll).toBe(990);
+    expect(outcome?.returned).toBe(0);
+    expect(state.settlement?.net).toBe(-20);
+    expect(state.bankroll).toBe(980);
   });
 
-  it("returns the extra split wagers when a split meets a natural", () => {
+  it("loses every split wager when the dealer reveals a natural", () => {
     const state = play(
-      open(stack("8", "A", "8", "K", "3", "4"), { dealerPeek: false }),
+      open(stack("8", "A", "8", "3", "4", "K"), { dealerPeek: false }),
       declineInsurance,
       splitAction,
       stand,
       stand,
     );
 
-    expect(state.settlement?.outcomes.map((o) => o.returned)).toEqual([0, 10]);
-    expect(state.settlement?.net).toBe(-10);
-    expect(state.bankroll).toBe(990);
+    expect(state.settlement?.outcomes.map((o) => o.returned)).toEqual([0, 0]);
+    expect(state.settlement?.net).toBe(-20);
+    expect(state.bankroll).toBe(980);
   });
 
   it("keeps half the bet on early surrender against a natural", () => {
@@ -569,6 +587,49 @@ describe("no-peek settlement", () => {
 
     expect(state.settlement?.outcomes[0]?.returned).toBe(0);
     expect(state.settlement?.net).toBe(-10);
+  });
+});
+
+describe("early surrender before a peek", () => {
+  it.each(["A", "10"] as const)("offers surrender before a natural behind %s settles", (up) => {
+    let state = open(stack("10", up, "6", up === "A" ? "K" : "A"), { surrender: "early" });
+    if (state.phase === "insurance") state = applyAction(state, declineInsurance);
+    expect(state.phase).toBe("player");
+    expect(earlySurrenderPending(state)).toBe(true);
+    expect(currentLegalActions(state)).toContain("surrender");
+    const settled = applyAction(state, surrender);
+    expect(settled.bankroll).toBe(995);
+    expect(settled.shoe.dealtCount).toBe(4);
+  });
+
+  it.each([hit, stand, double, splitAction])("peeks before executing $type", (action) => {
+    const state = open(stack("8", "10", "8", "A"), { surrender: "early" });
+    const settled = applyAction(state, action);
+    expect(settled.phase).toBe("settled");
+    expect(settled.bankroll).toBe(990);
+    expect(settled.playerHands).toHaveLength(1);
+    expect(settled.shoe.dealtCount).toBe(4);
+  });
+
+  it("executes the chosen action when the peek rules out blackjack", () => {
+    const state = open(stack("5", "10", "6", "7", "10"), { surrender: "early" });
+    const settled = applyAction(state, double);
+    expect(settled.bankroll).toBe(1020);
+    expect(settled.shoe.dealtCount).toBe(5);
+    expect(earlySurrenderPending(settled)).toBe(false);
+  });
+
+  it("replays the insurance and early surrender decisions", () => {
+    const options = {
+      rules: { ...DEFAULT_RULES, surrender: "early" as const },
+      shoe: stack("10", "A", "6", "K"),
+      bet: 10,
+      bankroll: 1000,
+    };
+    const actions = [takeInsurance, surrender];
+    const settled = play(startRound(options), ...actions);
+    expect(settled.bankroll).toBe(1005);
+    expect(replayRound(options, settled.actionLog)).toEqual(settled);
   });
 });
 

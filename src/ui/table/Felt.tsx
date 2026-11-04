@@ -6,12 +6,12 @@
  */
 
 import { useId, type ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import type { Card } from "@/engine/cards";
-import { CardBack, Chip, PlayingCard, type CardSize, type LucideIcon } from "@/ui/ds";
+import { CardBack, Chip, FeltText, PlayingCard, type CardSize, type LucideIcon } from "@/ui/ds";
 import { formatMoney, type ChipValue } from "@/ui/ds/format";
-import { colors, display, surfaces, ui } from "@/ui/ds/tokens";
+import { colors, display, surfaces, type, ui } from "@/ui/ds/tokens";
 import { felt } from "./feltTokens";
 import type { TotalTone } from "./tableView";
 
@@ -31,15 +31,17 @@ export function FeltSurface({
   const id = `felt${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   return (
     <View style={[styles.felt, { minHeight: height }]}>
-      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Defs>
-          <RadialGradient id={id} cx="0.5" cy="0.45" rx="0.75" ry="0.6" fx="0.5" fy="0.45">
-            <Stop offset={0} stopColor={felt.centre} />
-            <Stop offset={1} stopColor={colors.feltDeep} />
-          </RadialGradient>
-        </Defs>
-        <Rect x={0} y={0} width="100%" height="100%" fill={`url(#${id})`} />
-      </Svg>
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Svg width="100%" height="100%">
+          <Defs>
+            <RadialGradient id={id} cx="0.5" cy="0.45" rx="0.75" ry="0.6" fx="0.5" fy="0.45">
+              <Stop offset={0} stopColor={felt.centre} />
+              <Stop offset={1} stopColor={colors.feltDeep} />
+            </RadialGradient>
+          </Defs>
+          <Rect x={0} y={0} width="100%" height="100%" fill={`url(#${id})`} />
+        </Svg>
+      </View>
       {children}
     </View>
   );
@@ -75,7 +77,7 @@ export function ShoeButton({ onPress }: { onPress: () => void }) {
       hitSlop={4}
       style={({ pressed }) => [styles.shoe, pressed && styles.pressed]}
     >
-      <Text style={[ui(8, 700, { letterSpacing: 1 }), { color: felt.label }]}>SHOE</Text>
+      <FeltText style={type.overline}>SHOE</FeltText>
     </Pressable>
   );
 }
@@ -84,28 +86,14 @@ export function ShoeButton({ onPress }: { onPress: () => void }) {
 export function FeltRules({ pays, dealer }: { pays: string; dealer: string }) {
   return (
     <View style={styles.rules}>
-      <Text
-        style={[
-          display(18, 400, { letterSpacing: 2.5 }),
-          styles.center,
-          { color: colors.feltLine },
-        ]}
-      >
-        {pays}
-      </Text>
-      <Text style={[ui(10, 400, { letterSpacing: 2 }), styles.center, { color: felt.ruleText }]}>
-        {dealer}
-      </Text>
+      <FeltText style={[display(18, 400, { letterSpacing: 2.5 }), styles.center]}>{pays}</FeltText>
+      <FeltText style={[ui(11, 400, { letterSpacing: 2 }), styles.center]}>{dealer}</FeltText>
     </View>
   );
 }
 
 export function DealerLabel() {
-  return (
-    <Text style={[ui(11, 700, { letterSpacing: 2 }), styles.center, { color: felt.label }]}>
-      DEALER
-    </Text>
-  );
+  return <FeltText style={[ui(11, 700, { letterSpacing: 2 }), styles.center]}>DEALER</FeltText>;
 }
 
 // ---------------------------------------------------------------------------
@@ -176,7 +164,7 @@ export function HandBox({
       {holeCard ? <CardBack size={size} /> : null}
       {faces}
       {cards.length === 0 && !holeCard && placeholder ? (
-        <Text style={[ui(11), { color: felt.hint }]}>{placeholder}</Text>
+        <FeltText style={ui(12)}>{placeholder}</FeltText>
       ) : null}
     </View>
   );
@@ -226,7 +214,7 @@ export function FeltPill({
       ]}
     >
       {Icon ? <Icon size={12} color={ink} strokeWidth={2.25} /> : null}
-      <Text style={[ui(size, 700), { color: ink }]}>{text}</Text>
+      <FeltText style={[ui(size, 700), { color: ink }]}>{text}</FeltText>
     </View>
   );
 }

@@ -6,7 +6,17 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import type { Card } from "@/engine/cards";
-import { PlayingCard, colors, display, icons, radius, surfaces, ui } from "@/ui/ds";
+import {
+  PlayingCard,
+  colors,
+  display,
+  icons,
+  radius,
+  surfaces,
+  textScale,
+  type,
+  ui,
+} from "@/ui/ds";
 import type { DealtCardView, HistoryEntry, MathRow, PayLine } from "./model";
 import { historyLabel } from "./model";
 import { machine } from "./theme";
@@ -78,7 +88,12 @@ export function HandRow({
           {slot.keep ? (
             <View style={styles.keepTag} accessibilityLabel="Coach says keep">
               <icons.Lightbulb size={10} color={machine.lit} strokeWidth={2.5} />
-              <Text style={[ui(9, 800, { letterSpacing: 0.5 }), { color: machine.lit }]}>KEEP</Text>
+              <Text
+                style={[ui(9, 800, { letterSpacing: 0.5 }), { color: machine.lit }]}
+                maxFontSizeMultiplier={textScale.fixed}
+              >
+                KEEP
+              </Text>
             </View>
           ) : (
             <View style={styles.keepSpace} />
@@ -165,7 +180,7 @@ export function NotePointer() {
 export function MathTable({ rows }: { rows: MathRow[] }) {
   return (
     <View style={styles.math} accessibilityLabel="Holds ranked by expected return">
-      <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: colors.inkMuted }]}>
+      <Text style={[type.overline, { color: colors.inkMuted }]}>
         EVERY WAY TO HOLD, RANKED · AVERAGE BACK ON YOUR BET
       </Text>
       {rows.map((r) => (
@@ -231,9 +246,7 @@ export function DecisionLine({
   const Icon = correct ? icons.Check : icons.RotateCcw;
   return (
     <View style={styles.decisions}>
-      <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
-        DECISIONS THIS HAND
-      </Text>
+      <Text style={[type.overline, { color: colors.mutedForeground }]}>DECISIONS THIS HAND</Text>
       <View style={styles.decisionRow}>
         <View
           style={[
@@ -256,7 +269,7 @@ export function DecisionLine({
 export function DealtHand({ cards }: { cards: DealtCardView[] }) {
   return (
     <View style={styles.dealt} accessibilityLabel="The dealt hand">
-      <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
+      <Text style={[type.overline, { color: colors.mutedForeground }]}>
         DEALT · YOUR HOLD VS THE BEST HOLD
       </Text>
       <View style={styles.dealtRow}>
@@ -267,11 +280,15 @@ export function DealtHand({ cards }: { cards: DealtCardView[] }) {
             </View>
             <Text
               style={[ui(9, 800, { letterSpacing: 0.5 }), { color: colors.foreground }]}
+              maxFontSizeMultiplier={textScale.fixed}
               accessibilityLabel={`${c.yours ? "you held" : "you let go"}${c.best ? ", best hold keeps" : ""}`}
             >
               {c.yours ? "YOU HELD" : " "}
             </Text>
-            <Text style={[ui(9, 800, { letterSpacing: 0.5 }), { color: colors.coachAccent }]}>
+            <Text
+              style={[ui(9, 800, { letterSpacing: 0.5 }), { color: surfaces.infoInk }]}
+              maxFontSizeMultiplier={textScale.fixed}
+            >
               {c.best ? "KEEP" : " "}
             </Text>
           </View>
@@ -285,9 +302,7 @@ export function HistoryStrip({ history }: { history: readonly HistoryEntry[] }) 
   if (history.length === 0) return null;
   return (
     <View style={styles.history} accessibilityLabel="Last hands" role="list">
-      <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.mutedForeground }]}>
-        LAST
-      </Text>
+      <Text style={[type.overline, { color: colors.mutedForeground }]}>LAST</Text>
       {history.map((h, i) => {
         const won = h.netCents > 0;
         return (

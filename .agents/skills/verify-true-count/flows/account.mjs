@@ -102,6 +102,15 @@ export default async ({ page, url, shot, check, log }) => {
       "/account",
     "header avatar → /account",
   );
+  // Phone width drops the avatar for the nav's tap targets; the Lobby carries the way in instead.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(url("/lobby"), { waitUntil: "networkidle" });
+  check(
+    (await visible(page.getByRole("link", { name: "Account" })).getAttribute("href")) ===
+      "/account",
+    "phone width: Lobby → /account",
+  );
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto(url("/account"), { waitUntil: "networkidle" });
   await visible(page.getByRole("button", { name: "Continue with Apple" })).waitFor();
   check(true, "signed-out account page offers sign-in");

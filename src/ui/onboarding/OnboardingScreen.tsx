@@ -1,6 +1,7 @@
 import { Link, Stack, useRouter } from "expo-router";
+import { TripDatePicker } from "./TripDatePicker";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import {
   COACH_LEVELS,
   GAME_NAMES,
@@ -112,6 +113,7 @@ const STOP_ICONS: Record<StopIcon, LucideIcon> = {
   target: Target,
 };
 
+const NATIVE = Platform.OS !== "web";
 const TRIP_PRESETS = [
   { label: "In 2 weeks", days: 14 },
   { label: "In a month", days: 30 },
@@ -234,7 +236,12 @@ export function OnboardingScreen() {
         </Pressable>
       </View>
 
-      <ScrollView style={styles.root} contentContainerStyle={styles.scroll}>
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+      >
         <View
           style={[
             styles.body,
@@ -358,18 +365,28 @@ export function OnboardingScreen() {
                       onPress={() => setTripText("")}
                     />
                   </View>
-                  <TextInput
-                    value={trip}
-                    onChangeText={setTripText}
-                    placeholder="Or type a date: YYYY-MM-DD"
-                    placeholderTextColor={colors.mutedForeground}
-                    accessibilityLabel="Trip date"
-                    aria-labelledby="trip-label"
-                    aria-invalid={!tripValid}
-                    autoCorrect={false}
-                    maxLength={10}
-                    style={[styles.input, !tripValid && styles.inputError]}
-                  />
+                  {NATIVE ? (
+                    today ? (
+                      <TripDatePicker
+                        value={profile.tripDate}
+                        today={today}
+                        onChange={setTripText}
+                      />
+                    ) : null
+                  ) : (
+                    <TextInput
+                      value={trip}
+                      onChangeText={setTripText}
+                      placeholder="Or type a date: YYYY-MM-DD"
+                      placeholderTextColor={colors.mutedForeground}
+                      accessibilityLabel="Trip date"
+                      aria-labelledby="trip-label"
+                      aria-invalid={!tripValid}
+                      autoCorrect={false}
+                      maxLength={10}
+                      style={[styles.input, !tripValid && styles.inputError]}
+                    />
+                  )}
                   {!tripValid && trip.length === 10 ? (
                     <Text role="alert" style={[ui(13), { color: colors.mistake }]}>
                       That isn&apos;t a calendar date. Use YYYY-MM-DD, like 2026-11-14.
@@ -400,7 +417,7 @@ export function OnboardingScreen() {
                     style={styles.input}
                   />
                   <Text style={[ui(13), { color: colors.mutedForeground }]}>
-                    Stays on this device. There is no account.
+                    Stays on this device. No account needed.
                   </Text>
                 </View>
               </View>
@@ -425,15 +442,13 @@ export function OnboardingScreen() {
                 center={{ x: 0.3, y: 0 }}
                 size={{ width: 2, height: 2.4 }}
               />
-              <Text
-                style={[ui(11, 700, { letterSpacing: 1.5 }), { color: surfaces.feltTextMuted }]}
-              >
+              <Text style={[ui(11, 700, { letterSpacing: 1.5 }), { color: surfaces.feltPrint }]}>
                 {owner}
               </Text>
               <Text style={[display(28, 500), { color: colors.feltText }]}>
                 {GOAL_TITLE[profile.goal]}
               </Text>
-              <Text style={[ui(13), { color: surfaces.feltTextMuted }]}>Updates as you answer</Text>
+              <Text style={[ui(13), { color: surfaces.feltPrint }]}>Updates as you answer</Text>
             </View>
             <View style={styles.plan}>
               {stops.map((s, i) => {

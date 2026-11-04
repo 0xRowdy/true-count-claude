@@ -1,0 +1,73 @@
+appId: com.truecount.app
+name: Native onboarding and navigation
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: Play free
+    timeout: 30000
+- openLink: truecount://onboarding
+- runFlow:
+    when:
+      platform: iOS
+      visible: "^Open$"
+    commands:
+      - tapOn: "^Open$"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "I've played a few times"
+    direction: DOWN
+- tapOn: "I've played a few times"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: Continue
+    direction: DOWN
+- tapOn: Continue
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: Master strategy
+    direction: DOWN
+- tapOn: Master strategy
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: Continue
+    direction: DOWN
+- tapOn: Continue
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: Your first name
+    direction: DOWN
+- tapOn: Your first name
+- inputText: Native Tester
+- hideKeyboard
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: Finish
+    direction: DOWN
+- takeScreenshot: native-onboarding-profile
+- tapOn: Finish
+- extendedWaitUntil:
+    visible: "Good (morning|afternoon|evening).*"
+    timeout: 15000
+- takeScreenshot: native-onboarding-lobby
+- stopApp
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible: Play free
+    timeout: 30000
+- openLink: truecount://lobby
+- runFlow:
+    when:
+      platform: iOS
+      visible: "^Open$"
+    commands:
+      - tapOn: "^Open$"
+- assertVisible: "Good (morning|afternoon|evening), Native Tester.*"
+- takeScreenshot: native-onboarding-persisted

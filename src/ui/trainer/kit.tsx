@@ -1,13 +1,13 @@
 /**
  * The Tableside vocabulary for the trainer screens — the drills, Rules, Shoe Integrity and
- * Statistics — built from `src/ui/ds` (it replaces the old `theme.ts`/`primitives.tsx` there).
+ * Statistics — and the Play table's panel, built from `src/ui/ds`.
  *
  * The screens have no frames of their own in the design, so this applies the language of its
  * desktop pages (Lobby ZDK1x, Progress LvXnf, Strategy Builder RYP9O): a Fraunces page title,
  * `--card` panels on `--background`, muted overline group titles, table header rows on
  * `--muted`, Stat Cards for scores, felt for cards on the table.
  *
- * Two promises carry over from the old primitives, because they are invariants, not taste:
+ * Two promises hold here because they are invariants, not taste:
  *
  * - `ActionButton` has no `disabled` prop. Invariant 7 forbids disabling a legal action —
  *   render exactly the legal actions and nothing else.
@@ -87,7 +87,7 @@ export const text = StyleSheet.create({
   info: { ...ui(13, 400, { lineHeight: 19 }), color: surfaces.infoInk, flexShrink: 1 },
   warn: { ...ui(13, 400, { lineHeight: 19 }), color: colors.primary, flexShrink: 1 },
   bad: { ...ui(13, 400, { lineHeight: 19 }), color: colors.mistake, flexShrink: 1 },
-  /** Muted uppercase group title, the design's "HARD TOTALS" (10/700, tracked). */
+  /** Muted uppercase group title, the design's "HARD TOTALS" (11/700, tracked). */
   overline: {
     ...ui(11, 700, { letterSpacing: 1.2, textTransform: "uppercase" }),
     color: colors.mutedForeground,
@@ -128,9 +128,11 @@ export function PageHeader({
   actions?: ReactNode;
   children?: ReactNode;
 }) {
+  const [wide, onLayout] = useWide(720);
+
   return (
-    <View style={styles.head}>
-      <View style={styles.headText}>
+    <View onLayout={onLayout} style={[styles.head, wide && styles.headWide]}>
+      <View style={[styles.headText, wide && styles.headTextWide]}>
         {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
         <Text accessibilityRole="header" aria-level={1} style={styles.title}>
           {title}
@@ -392,13 +394,16 @@ export const inputStyle: TextStyle = {
 const styles = StyleSheet.create({
   page: { gap: 24 },
   head: {
+    gap: 16,
+  },
+  headWide: {
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "flex-end",
     justifyContent: "space-between",
-    gap: 16,
   },
-  headText: { flexGrow: 1, flexShrink: 1, flexBasis: 320, gap: 10 },
+  headText: { gap: 10 },
+  headTextWide: { flexGrow: 1, flexShrink: 1, flexBasis: 320 },
   eyebrow: {
     ...ui(12, 600, { letterSpacing: 2, textTransform: "uppercase" }),
     color: colors.primary,

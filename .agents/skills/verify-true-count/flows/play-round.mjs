@@ -96,7 +96,7 @@ export default async ({ page, url, shot, log, check }) => {
         "the decision opens its Explanation",
       );
       await shot("why");
-      await visible(page.getByRole("button", { name: "Close", exact: true })).click();
+      await visible(page.getByRole("button", { name: "Close table panel" })).click();
     }
 
     await collect.click();

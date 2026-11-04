@@ -4,6 +4,7 @@
  */
 
 export * from "./tokens";
+export { MIN_TAP, slopTo } from "./tap";
 export * from "./format";
 export * as icons from "./icons";
 export type { LucideIcon } from "./icons";
@@ -20,6 +21,7 @@ export { Chip } from "./Chip";
 export { ChipRack } from "./ChipRack";
 export { CoachNote, type CoachAction, type CoachVariant } from "./CoachNote";
 export { Die, type DieValue } from "./Die";
+export { FeltText } from "./FeltText";
 export { Gradient } from "./Gradient";
 export { ListRow, type ListRowTone } from "./ListRow";
 export { Panel } from "./Panel";
@@ -29,6 +31,7 @@ export { PlayingCard } from "./PlayingCard";
 export { ProgressBar } from "./ProgressBar";
 export { SegmentedControl, type SegmentOption } from "./SegmentedControl";
 export { SelectableCard } from "./SelectableCard";
+export { Sheet } from "./Sheet";
 export { StatCard, type DeltaTone } from "./StatCard";
 export { StrategyCard, type StrategyCardProps } from "./StrategyCard";
 export { TableTopBar } from "./TableTopBar";

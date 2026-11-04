@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     backgroundColor: colors.secondary,
   },
-  markText: { ...ui(10, 700, { letterSpacing: 0.8 }), color: colors.mutedForeground },
+  markText: { ...ui(11, 700, { letterSpacing: 0.8 }), color: colors.mutedForeground },
   youMark: { backgroundColor: colors.paper },
   youMarkText: { color: colors.ink },
   ev: { ...ui(15, 600), ...NUM, color: colors.foreground },

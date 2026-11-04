@@ -23,3 +23,7 @@ Lobby → Video Poker card, or `/games/video-poker`. `?seed=<n>` replays the dea
 - At normal speed the cards turn over one by one after "Dealt: …" appears: wait for a card `img` before pressing HOLD.
 - Text like "KEEP" also matches "Keep my hold" unless `exact: true`.
 - The bankroll shows the stake taken while a hand is in play.
+
+## Recovery proof
+
+`flows/recovery-report.mjs` sets this game's saved bankroll ledger to zero while preserving its history, taps the reset once, verifies $2,000 and unchanged hand/decision logs, reloads to prove persistence, and starts another real round. It leaves the previous game before changing storage so its page-exit settlement cannot overwrite the test setup.

@@ -1,5 +1,13 @@
 import { useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  type ScrollViewInstance,
+} from "react-native";
 import { type LeaderboardMode, type LiveTableState, QUICK_REPLIES } from "@/games/craps";
 import { colors, display, radius, surfaces, ui } from "@/ui/ds/tokens";
 import { Bell, BellOff, Flag, Send } from "@/ui/ds/icons";
@@ -107,7 +115,7 @@ export function TableChat({
   fixedHeight?: number;
 }) {
   const [draft, setDraft] = useState("");
-  const scroller = useRef<ScrollView>(null);
+  const scroller = useRef<ScrollViewInstance>(null);
   const items = chatItems(state, muted);
   const send = () => {
     if (!draft.trim()) return;

@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
-  feltNote: { ...ui(14), color: surfaces.feltTextMuted, textAlign: "center" },
+  feltNote: { ...ui(14), color: surfaces.feltPrint, textAlign: "center" },
   feltStrong: { ...ui(14, 700), color: colors.feltText, fontVariant: ["tabular-nums"] },
   label: { marginTop: 8 },
 });

@@ -39,7 +39,9 @@ second paywall on training depth (invariant 1).
 required: Apple guideline 4.8 asks for Sign in with Apple wherever Google sign-in is offered).
 No screen requires an Account; practice, progress and settings stay local exactly as ADR-0003
 describes. A build without a backend (CI, any build without `EXPO_PUBLIC_CONVEX_URL`) shows
-"Accounts aren't available in this build" and behaves as before.
+"Accounts aren't available in this build" and behaves as before. Landing and Pricing sell only
+in a build that can take a payment; any other build keeps the labelled preview that offers no
+trial or purchase, so a build never promises what it can't do.
 
 **Convex is the backend**, with two components:
 

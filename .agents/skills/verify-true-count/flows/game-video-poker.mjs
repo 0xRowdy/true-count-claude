@@ -165,7 +165,7 @@ export default async ({ page, url, shot, log, check }) => {
   check(await visible(page.getByText(/house edge 0\.46%/)).isVisible(), "house edge shown");
   await shot("rules");
   await visible(page.getByRole("radio", { name: "Full Pay Deuces Wild" })).click();
-  await visible(page.getByRole("button", { name: "Close rules" })).click();
+  await visible(page.getByRole("button", { name: "Close rules and pay tables" })).click();
   check(
     await visible(page.getByText("Full Pay Deuces Wild · 5 coins × $1")).isVisible(),
     "switched to Deuces Wild",

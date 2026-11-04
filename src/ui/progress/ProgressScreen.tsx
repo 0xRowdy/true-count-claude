@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, View, type Role } from "react-native";
+import { Pressable, StyleSheet, Text, View, type Role, type ViewInstance } from "react-native";
 import { GAMES, GAME_NAMES } from "@/state/profile";
 import {
   type Mastery,
@@ -132,7 +132,7 @@ const MENU_ITEM_RADIO = "menuitemradio" as Role;
 
 function RangePicker({ value, onChange }: { value: RangeId; onChange: (r: RangeId) => void }) {
   const [open, setOpen] = useState(false);
-  const wrap = useRef<View>(null);
+  const wrap = useRef<ViewInstance>(null);
   const label = RANGES.find((r) => r.id === value)!.label;
 
   // Web: Escape or a press outside the picker closes the menu.
@@ -820,7 +820,7 @@ const styles = StyleSheet.create({
   },
   stats: { flexDirection: "row", gap: 16 },
   wrap: { flexWrap: "wrap" },
-  halfCard: { flexBasis: "45%", flexGrow: 1 },
+  halfCard: { minWidth: "45%" },
   grid: { flexDirection: "row", gap: 16, alignItems: "flex-start" },
   stack: { flexDirection: "column", alignItems: "stretch" },
   left: { flex: 1, gap: 16, minWidth: 0, alignSelf: "stretch" },

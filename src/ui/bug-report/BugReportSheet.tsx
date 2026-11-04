@@ -15,21 +15,11 @@
  */
 
 import { useMemo, useState } from "react";
-import {
-  Linking,
-  Modal,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import X from "lucide-react-native/icons/x";
+import { Linking, Platform, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import Copy from "lucide-react-native/icons/copy";
 import { ActionButton, SecondaryButton, inputStyle, text } from "@/ui/trainer/kit";
 import { type ExportOutcome, copyText, exportReportFile } from "@/ui/shoe-integrity/share";
-import { colors, display, radius, ui, Panel } from "@/ui/ds";
+import { colors, radius, ui, Sheet } from "@/ui/ds";
 import {
   type BugReport,
   KNOWN_ISSUES_URL,
@@ -90,97 +80,70 @@ export function BugReportSheet({ report, onClose }: { report: BugReport; onClose
   };
 
   return (
-    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-        >
-          <Panel style={styles.sheet}>
-            <View style={styles.header}>
-              <Text style={styles.title}>Report a bug</Text>
-              <SecondaryButton label="Close" icon={X} onPress={onClose} />
-            </View>
+    <Sheet
+      visible
+      onClose={onClose}
+      title="Report a bug"
+      closeLabel="Close the bug report"
+      scrimLabel="Dismiss the bug report"
+      maxWidth={720}
+      gap={16}
+    >
+      <Text style={styles.prose}>
+        This captures the exact game you were looking at — the Shoe&apos;s seed, the cards dealt so
+        far, the round&apos;s actions, the Rule Set and the Counting System — so we can replay it
+        card for card instead of guessing.
+      </Text>
 
-            <Text style={styles.prose}>
-              This captures the exact game you were looking at — the Shoe&apos;s seed, the cards
-              dealt so far, the round&apos;s actions, the Rule Set and the Counting System — so we
-              can replay it card for card instead of guessing.
-            </Text>
+      <SecondaryButton label="See the known issues first →" onPress={onKnownIssues} />
 
-            <SecondaryButton label="See the known issues first →" onPress={onKnownIssues} />
+      <Text style={styles.label}>What went wrong? (optional)</Text>
+      <TextInput
+        value={note}
+        onChangeText={setNote}
+        placeholder="e.g. Split was not offered on a pair of 8s"
+        placeholderTextColor={colors.mutedForeground}
+        multiline
+        style={styles.input}
+        accessibilityLabel="What went wrong"
+      />
 
-            <Text style={styles.label}>What went wrong? (optional)</Text>
-            <TextInput
-              value={note}
-              onChangeText={setNote}
-              placeholder="e.g. Split was not offered on a pair of 8s"
-              placeholderTextColor={colors.mutedForeground}
-              multiline
-              style={styles.input}
-              accessibilityLabel="What went wrong"
-            />
-
-            <View style={styles.row}>
-              <ActionButton label="Copy report" icon={Copy} tone="good" onPress={onCopy} />
-              <SecondaryButton label={web ? "Download report" : "Share report"} onPress={onShare} />
-              <SecondaryButton label="Open a GitHub issue" onPress={onOpenIssue} />
-            </View>
-
-            {outcome ? (
-              <Text
-                style={[styles.outcome, { color: outcome.ok ? colors.correct : colors.primary }]}
-              >
-                {outcome.message}
-              </Text>
-            ) : null}
-
-            <Text style={styles.note}>
-              Copy and {web ? "download" : "share"} work offline and need no account. The GitHub
-              issue needs a network and a GitHub account.
-            </Text>
-
-            <Text style={styles.label}>Exactly what will be shared</Text>
-            <Text style={styles.note}>
-              Game state only: no name, no account, no device identifier, no location. Beyond the
-              game, just the app version and platform, and your note if you write one. The Session
-              id is made from the moment that Session started. Nothing leaves this device until you
-              copy or share it.
-            </Text>
-            <ScrollView style={styles.preview} nestedScrollEnabled>
-              <Text style={styles.previewText} selectable>
-                {text}
-              </Text>
-            </ScrollView>
-            <Text style={styles.meta}>
-              {fileName} · {text.split("\n").length} lines
-            </Text>
-          </Panel>
-        </ScrollView>
+      <View style={styles.row}>
+        <ActionButton label="Copy report" icon={Copy} tone="good" onPress={onCopy} />
+        <SecondaryButton label={web ? "Download report" : "Share report"} onPress={onShare} />
+        <SecondaryButton label="Open a GitHub issue" onPress={onOpenIssue} />
       </View>
-    </Modal>
+
+      {outcome ? (
+        <Text style={[styles.outcome, { color: outcome.ok ? colors.correct : colors.primary }]}>
+          {outcome.message}
+        </Text>
+      ) : null}
+
+      <Text style={styles.note}>
+        Copy and {web ? "download" : "share"} work offline and need no account. The GitHub issue
+        needs a network and a GitHub account.
+      </Text>
+
+      <Text style={styles.label}>Exactly what will be shared</Text>
+      <Text style={styles.note}>
+        Game state only: no name, no account, no device identifier, no location. Beyond the game,
+        just the app version and platform, and your note if you write one. The Session id is made
+        from the moment that Session started. Nothing leaves this device until you copy or share it.
+      </Text>
+      <ScrollView style={styles.preview} nestedScrollEnabled>
+        <Text style={styles.previewText} selectable>
+          {text}
+        </Text>
+      </ScrollView>
+      <Text style={styles.meta}>
+        {fileName} · {text.split("\n").length} lines
+      </Text>
+    </Sheet>
   );
 }
 
 const styles = StyleSheet.create({
-  // The scrim: the page background at 80%.
-  backdrop: { flex: 1, backgroundColor: `${colors.background}CC` },
-  scroll: { flex: 1 },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    padding: 16,
-  },
-  sheet: { width: "100%", maxWidth: 720, alignSelf: "center" },
-  header: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 8,
-  },
-  title: { ...display(28, 500), color: colors.foreground },
   prose: text.bodyMuted,
   label: { ...text.overline, marginTop: 6 },
   note: text.note,

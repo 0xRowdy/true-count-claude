@@ -16,7 +16,16 @@ import {
   formatDollars,
   oddsLabel,
 } from "@/games/craps";
-import { Button, SegmentedControl, colors, display, ui, StatCard } from "@/ui/ds";
+import {
+  Button,
+  SegmentedControl,
+  colors,
+  display,
+  surfaces,
+  textScale,
+  ui,
+  StatCard,
+} from "@/ui/ds";
 import type { CrapsDraft } from "@/state/strategies";
 import {
   type HitKind,
@@ -357,15 +366,25 @@ function PlanFelt({ plan, preview }: { plan: BetPlan; preview: PreviewChoice }) 
                 >
                   {word ?? n}
                 </Text>
-                <Text style={[ui(10), { color: builder.feltCaption }]}>{PAYS[n]}</Text>
+                <Text style={[ui(11), { color: surfaces.feltPrint }]}>{PAYS[n]}</Text>
                 {isPoint ? (
                   <View style={s.puck}>
-                    <Text style={[ui(9, 800), { color: builder.puckInk }]}>ON</Text>
+                    <Text
+                      style={[ui(9, 800), { color: builder.puckInk }]}
+                      maxFontSizeMultiplier={textScale.fixed}
+                    >
+                      ON
+                    </Text>
                   </View>
                 ) : null}
                 {bet?.pressed ? (
                   <View style={s.pressed}>
-                    <Text style={[ui(8, 800), { color: colors.primaryForeground }]}>PRESSED</Text>
+                    <Text
+                      style={[ui(8, 800), { color: colors.primaryForeground }]}
+                      maxFontSizeMultiplier={textScale.fixed}
+                    >
+                      PRESSED
+                    </Text>
                   </View>
                 ) : null}
                 {bet ? <FeltChip amount={bet.amount} style={s.placeChip} /> : null}
@@ -395,7 +414,12 @@ function PlanFelt({ plan, preview }: { plan: BetPlan; preview: PreviewChoice }) 
             {felt.dontPass && !felt.passFlat ? <FeltChip amount={felt.dontPass} /> : null}
             {felt.oddsLabel ? (
               <View style={s.oddsLabel}>
-                <Text style={[ui(9, 800), { color: colors.feltText }]}>{felt.oddsLabel}</Text>
+                <Text
+                  style={[ui(9, 800), { color: colors.feltText }]}
+                  maxFontSizeMultiplier={textScale.fixed}
+                >
+                  {felt.oddsLabel}
+                </Text>
               </View>
             ) : null}
           </View>

@@ -67,11 +67,30 @@ describe("validateRules", () => {
 
   it("rejects a max bet below the min", () => {
     expect(validateRules(rules({ minBet: 100, maxBet: 50 }))).toContain(
-      "maxBet must be at least minBet",
+      "maxBet must be finite and at least minBet",
     );
   });
 
   it("reports every problem at once rather than the first", () => {
     expect(validateRules(rules({ decks: 0, minBet: -5, maxBet: -10 }))).toHaveLength(3);
+  });
+
+  it("rejects split limits outside the supported table choices", () => {
+    for (const maxSplitHands of [0, 5, 1000, Infinity, NaN]) {
+      expect(validateRules(rules({ maxSplitHands }))).toContain(
+        "maxSplitHands must be an integer from 1 to 4",
+      );
+    }
+    for (const maxSplitHands of [1, 2, 3, 4]) {
+      expect(validateRules(rules({ maxSplitHands }))).toEqual([]);
+    }
+  });
+
+  it("rejects non-finite penetration and betting limits", () => {
+    for (const value of [NaN, Infinity, -Infinity]) {
+      for (const field of ["penetration", "minBet", "maxBet"] as const) {
+        expect(validateRules(rules({ [field]: value })).length).toBeGreaterThan(0);
+      }
+    }
   });
 });

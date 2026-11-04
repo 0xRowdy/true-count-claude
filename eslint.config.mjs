@@ -203,6 +203,7 @@ export default tseslint.config(
       "assets/**",
       // Written by `npx convex dev`; committed so CI typechecks without a deployment.
       "convex/_generated/**",
+      ".verify/**",
 
       // Parallel agents run in git worktrees here. Their trees are separate
       // checkouts, and linting them fails CI on code that is not ours.
@@ -280,7 +281,7 @@ export default tseslint.config(
   // Agent skill harnesses (e.g. verify-true-count's server, Playwright driver and flows)
   // run in Node on the dev machine, never in the app.
   {
-    files: [".agents/**/*.{js,mjs}"],
+    files: [".agents/**/*.{js,mjs}", "scripts/*.mjs"],
     languageOptions: { globals: { ...globals.node } },
   },
 

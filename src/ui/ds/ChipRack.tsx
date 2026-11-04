@@ -1,6 +1,7 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Chip } from "./Chip";
 import { CHIP_VALUES, formatMoney, type ChipValue } from "./format";
+import { FeltText } from "./FeltText";
 import { Gradient } from "./Gradient";
 import { surfaces, ui } from "./tokens";
 
@@ -41,7 +42,7 @@ export function ChipRack({
           />
         ))}
       </View>
-      <Text style={[ui(11), styles.caption]}>{text}</Text>
+      <FeltText style={[ui(12), styles.caption]}>{text}</FeltText>
     </View>
   );
 }
@@ -62,5 +63,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  caption: { color: surfaces.feltTextFaint, textAlign: "center" },
+  caption: { textAlign: "center" },
 });

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Platform } from "react-native";
 import type { Billing, PlanId } from "@/ui/pricing/pricing";
 import { useAccount } from "./account";
+import { ACCOUNTS_AVAILABLE } from "./backend";
 import { billingFailure, startWebCheckout, syncStorePurchases } from "./billing";
 import { buyInStore, restoreStorePurchases, STORE_AVAILABLE } from "./storePurchases";
 
@@ -11,6 +12,13 @@ export interface PurchaseNotice {
   readonly title: string;
   readonly body: string;
 }
+
+/**
+ * Whether this build can take a payment: a backend, and on native a store key too. Fixed at
+ * build time, so the prerendered page and the client agree. Without it, Pricing and Landing
+ * show the labelled preview.
+ */
+export const CAN_SELL = ACCOUNTS_AVAILABLE && (Platform.OS === "web" || STORE_AVAILABLE);
 
 export const PURCHASES_UNAVAILABLE: PurchaseNotice = {
   title: "Purchases aren't available in this build",
@@ -29,11 +37,10 @@ export function usePurchase() {
   const [busy, setBusy] = useState(false);
 
   const current: PlanId = account.status === "signed-in" ? account.account.plan.plan : "free";
-  const canSell = Platform.OS === "web" || STORE_AVAILABLE;
 
   const buy = async (plan: "plus" | "lifetime", billing: Billing) => {
     setNotice(null);
-    if (account.status === "unavailable" || !canSell) return setNotice(PURCHASES_UNAVAILABLE);
+    if (account.status === "unavailable" || !CAN_SELL) return setNotice(PURCHASES_UNAVAILABLE);
     if (account.status === "loading") return;
     if (account.status === "signed-out") {
       const back = `/pricing?plan=${plan}&billing=${billing}`;

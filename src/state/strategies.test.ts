@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_RULES } from "../engine";
+import { EUROPEAN_RULES } from "../games/roulette";
 import { createMemoryStore } from "./store";
 import {
   type BlackjackDraft,
@@ -25,6 +26,55 @@ const draft = (id: string, extra: Partial<BlackjackDraft> = {}): BlackjackDraft 
 });
 
 describe("parsing", () => {
+  it("preserves custom roulette rules through storage and repairs malformed options", () => {
+    const layout = {
+      rules: EUROPEAN_RULES,
+      bets: [{ spotId: "red", amount: 10 }],
+      progression: "custom",
+      customProgression: { afterLoss: "double", afterWin: "subtract", units: 3 },
+      session: { maxSpins: 50 },
+    };
+    const roulette = {
+      id: "r",
+      game: "roulette",
+      title: "My rule",
+      notes: {},
+      savedAt: null,
+      forkedFrom: null,
+      layout,
+      original: layout,
+    };
+    const stored = parseDrafts(JSON.stringify({ drafts: [roulette] }))?.[0];
+    expect(stored).toMatchObject({ layout, original: layout });
+    const malformed = normalizeDraft({
+      ...roulette,
+      layout: {
+        ...layout,
+        customProgression: { afterLoss: "script", afterWin: "hold", units: Infinity },
+      },
+    });
+    expect(malformed).toMatchObject({
+      layout: { customProgression: { afterLoss: "add", afterWin: "hold", units: 1 } },
+    });
+    const extreme = JSON.stringify({
+      drafts: [
+        {
+          ...roulette,
+          layout: {
+            ...layout,
+            session: { maxSpins: "OVERFLOW", stopWhenUp: -1, stopWhenDown: "OVERFLOW" },
+          },
+        },
+      ],
+    }).replaceAll('"OVERFLOW"', "1e309");
+    expect(parseDrafts(extreme)?.[0]).toMatchObject({ layout: { session: { maxSpins: 60 } } });
+    const capped = normalizeDraft({
+      ...roulette,
+      layout: { ...layout, session: { maxSpins: 1_000_000 } },
+    });
+    expect(capped).toMatchObject({ layout: { session: { maxSpins: 1000 } } });
+  });
+
   it("drops unusable drafts and fields, keeps the rest", () => {
     const raw = JSON.stringify({
       drafts: [

@@ -40,18 +40,20 @@
  * difference of modelling. Appendix 2A/2B then pins down the finite-deck dealer play-out,
  * the peek conditioning and the no-peek blackjack probability at six decks.
  *
- * ## The one place this approximates
+ * ## Approximation limits
  *
- * The dealer's probabilities are worked out once, from the composition sitting in front
- * of the player when the decision is made. Cards the player then draws are removed from
- * the player's own draw pool — that part is exact, and it is where nearly all of the
- * composition sensitivity lives — but they are not removed a second time from the
- * dealer's. `dealerComposition: "after-each-draw"` turns that off and re-enumerates the
- * dealer at every node; measured across a six-deck shoe it moves an EV by at most 0.0022,
- * never changes which action wins, and costs ten to a hundred and fifty times the time —
- * 360ms for a pair of aces against an ace, against 2.9ms. That is why it is not the
- * default. `ev.test.ts` measures both the gap and the cost, so the size of the
- * approximation is a fact in CI rather than a claim in a comment.
+ * By default, dealer probabilities are pinned at the decision's composition while
+ * player draws deplete their own pool. `dealerComposition: "after-each-draw"`
+ * recalculates dealer probabilities after each player draw, at substantially higher
+ * cost. Neither mode fully conditions player draws on a reserved, non-blackjack hole
+ * card after a peek. Splitting approximates depletion between sibling hands and
+ * future wagers assume sufficient bankroll. The public context limits actions at the
+ * current decision, not every later decision in the recursive continuation.
+ *
+ * Tests compare published infinite-deck EVs, finite-deck dealer odds, and the measured
+ * difference between these two dealer models on sampled six-deck hands. Those samples
+ * do not establish an error bound for arbitrary depleted shoes. These EVs are estimates
+ * of composition-sensitive value; the published chart supplies the training verdict.
  *
  * Pure and synchronous: no React, no I/O, no clock, no `Math.random()` (ADR-0002).
  */
@@ -73,7 +75,7 @@ import { type RankComposition, type Shoe, remainingComposition } from "./shoe";
  * would be an explanation of a decision that did not exist.
  *
  * Values are net profit: 0 breaks even, -1 loses the opening bet outright. Doubling
- * stakes two units so it ranges over [-2, +2]; every other action ranges over [-1, +1].
+ * stakes two units so it ranges over [-2, +2]; splitting can win or lose multiple bets across the resulting hands.
  */
 export type ActionEvs = Readonly<Partial<Record<Action, number>>>;
 
@@ -110,12 +112,12 @@ export interface DealerOutcomes {
 
 /**
  * How the dealer's probabilities respond to cards the player draws *after* this decision.
- * See "The one place this approximates" at the top of this file.
+ * See "Approximation limits" at the top of this file.
  *
  * - `"at-decision"` — worked out once, from the composition in front of the player. The
  *   default, and the one that is fast enough for a hint while the cards are still on
  *   screen (invariant 3).
- * - `"after-each-draw"` — re-enumerated after every card the player takes. Exact, slow.
+ * - `"after-each-draw"` — re-enumerated after every card the player takes; other approximations remain.
  */
 export type DealerCompositionModel = "at-decision" | "after-each-draw";
 
@@ -424,11 +426,9 @@ function createSolver(
       p21 += chance * sub.p21;
       bust += chance * sub.bust;
     }
-    if (natural >= 1) {
-      throw new Error("Every unseen card would give the dealer a natural; that shoe cannot exist.");
-    }
-
-    const scale = 1 / (1 - natural);
+    // A depleted no-hole-card shoe can consist entirely of natural-making cards.
+    // Its non-natural branch has zero probability, so keep its six totals at zero.
+    const scale = natural < 1 ? 1 / (1 - natural) : 0;
     const vector: DealerVector = {
       p17: p17 * scale,
       p18: p18 * scale,
@@ -446,7 +446,9 @@ function createSolver(
   // --- the player --------------------------------------------------------------------
 
   function standEv(total: number): number {
-    return standAgainst(dealerVector(), total);
+    const dealer = dealerVector();
+    const natural = peeks ? 0 : dealer.natural;
+    return (1 - natural) * standAgainst(dealer, total) - natural;
   }
 
   /**
@@ -532,7 +534,7 @@ function createSolver(
    * Appendix 1, whose infinite deck makes the walk exact, every cell the published chart
    * actually splits agrees to better than 0.0005.
    */
-  function splitEv(pairSlot: number): number {
+  function splitEv(pairSlot: number, handCount: number): number {
     const splittingAces = pairSlot === ACE_SLOT;
     const frozen = splittingAces && rules.oneCardToSplitAces;
     const pairCard: Total = splittingAces
@@ -558,9 +560,9 @@ function createSolver(
       give(slot);
     }
 
-    // Split aces resplit only where the table says so, and a frozen split ace never gets
-    // the chance — it is already holding the only card it will ever get.
-    const mayResplit = !splittingAces || (rules.resplitAces && !frozen);
+    // A second ace may be resplit even when each split ace receives only one card.
+    // These are independent rules, as in `legalActions`.
+    const mayResplit = !splittingAces || rules.resplitAces;
     const walked = new Map<string, number>();
 
     /** `pending` slots still to draw, with `hands` hands already on the table. */
@@ -587,7 +589,7 @@ function createSolver(
       return ev;
     }
 
-    return walk(2, 2);
+    return walk(2, handCount + 1);
   }
 
   // Pin the dealer's odds to the composition the decision is actually being made at, now,
@@ -616,6 +618,9 @@ export function dealerOutcomes(
 ): DealerOutcomes {
   const solver = createSolver(composition, upcard, rules, "at-decision");
   const vector = solver.dealerVector();
+  if (solver.peeks && vector.natural === 1) {
+    throw new Error("Cannot condition certain dealer blackjack on a completed negative peek.");
+  }
   // The solver normalises over the no-natural world; a caller wants probabilities that
   // sum to one across every way the hand can end, naturals included.
   const blackjack = solver.peeks ? 0 : vector.natural;
@@ -672,12 +677,27 @@ export function actionEvs(
   const value = evaluate(hand.cards);
   const start: Total = { total: value.total, soft: value.soft };
 
-  // In a no-peek game the dealer can still turn over a natural. The player loses only the
-  // opening bet when that happens — `round.ts` settles original bets only, so the second
-  // half of a double and every hand beyond the first come back — which is a flat -1 laid
-  // across every action alike. Early surrender is the exception the rule exists for: it
-  // is taken *before* the dealer ever looks.
-  const natural = solver.peeks ? 0 : solver.dealerVector().natural;
+  // Early surrender precedes the peek. Other choices authorize the peek and execute
+  // only when it finds no natural, so that branch loses just the opening bet.
+  // No-peek losses are already included by the solver for every split/double stake.
+  const earlyPeek = rules.surrender === "early" && solver.peeks && legal.includes("surrender");
+  const dealerNatural = solver.dealerVector().natural;
+  if (dealerNatural === 1) {
+    if (solver.peeks && !earlyPeek) {
+      throw new Error("Cannot condition certain dealer blackjack on a completed negative peek.");
+    }
+    return Object.fromEntries(
+      legal.map((action) => [
+        action,
+        action === "surrender" && rules.surrender === "early"
+          ? -0.5
+          : !earlyPeek && (action === "double" || action === "split")
+            ? -2
+            : -1,
+      ]),
+    );
+  }
+  const natural = earlyPeek ? dealerNatural : 0;
   const blend = (ev: number) => (1 - natural) * ev + natural * -1;
 
   const evs: Partial<Record<Action, number>> = {};
@@ -693,10 +713,13 @@ export function actionEvs(
         evs.double = blend(solver.doubleEv(start));
         break;
       case "split":
-        evs.split = blend(solver.splitEv(pairSlotOf(hand)));
+        evs.split = blend(solver.splitEv(pairSlotOf(hand), context.handCount ?? 1));
         break;
       case "surrender":
-        evs.surrender = rules.surrender === "early" ? -0.5 : blend(-0.5);
+        evs.surrender =
+          rules.surrender === "early" || solver.peeks
+            ? -0.5
+            : -0.5 - 0.5 * solver.dealerVector().natural;
         break;
     }
   }

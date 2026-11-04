@@ -13,6 +13,8 @@
  */
 
 import type { CountingSystemChange, Decision, Session } from "./types";
+import { DEFAULT_RULES, validateRules } from "@/engine/rules";
+import { RANKS, SUITS } from "@/engine/cards";
 
 /** The version this build writes. Bump on every change to the persisted shape. */
 export const CURRENT_SCHEMA_VERSION = 4;
@@ -300,26 +302,197 @@ function asRecord(value: unknown): PersistedRecord | null {
 }
 
 /**
- * A structural check, not a deep validation. It exists to keep a mangled record from
- * crashing a screen — the arrays it guards are the ones every consumer iterates.
+ * A structural check, not a replay verdict. Check nested records before storage or imports
+ * reach history totals. Malformed JSON can have arrays while their entries are null or strings.
  */
 export function isSession(value: unknown): value is Session {
   if (typeof value !== "object" || value === null) return false;
   const s = value as Partial<Session>;
   return (
     typeof s.id === "string" &&
+    (s.drillId === null || typeof s.drillId === "string") &&
+    typeof s.countingSystem === "string" &&
     (s.mode === "play" || s.mode === "drill") &&
-    typeof s.seed === "number" &&
-    typeof s.startedAt === "number" &&
-    (s.endedAt === null || typeof s.endedAt === "number") &&
+    finite(s.seed) &&
+    finite(s.startedAt) &&
+    finite(s.startingBankroll) &&
+    finite(s.bankroll) &&
+    (s.endedAt === null || finite(s.endedAt)) &&
+    (s.endReason === null ||
+      ["user", "drill-complete", "bankroll-exhausted", "discarded"].includes(s.endReason ?? "")) &&
     typeof s.rules === "object" &&
     s.rules !== null &&
-    Array.isArray(s.shoes) &&
-    Array.isArray(s.decisions) &&
-    Array.isArray(s.countChecks) &&
-    Array.isArray(s.rounds) &&
-    Array.isArray(s.conversionChecks) &&
-    Array.isArray(s.indexPlays) &&
-    Array.isArray(s.countingSystemChanges)
+    Object.entries(DEFAULT_RULES).every(([key, value]) => {
+      const actual = s.rules![key as keyof typeof DEFAULT_RULES];
+      return typeof actual === typeof value && (typeof value !== "number" || finite(actual));
+    }) &&
+    validateRules(s.rules).length === 0 &&
+    ["stand", "hit"].includes(s.rules.dealerSoft17) &&
+    ["3:2", "6:5"].includes(s.rules.blackjackPayout) &&
+    ["any", "9-11", "10-11"].includes(s.rules.doubleRule) &&
+    ["none", "late", "early"].includes(s.rules.surrender) &&
+    recordArray(s.shoes, ["index", "seed", "decks", "cutIndex", "dealtCount"]) &&
+    s.shoes.every(
+      (shoe) =>
+        shoe.decks === s.rules!.decks &&
+        position(shoe.dealtCount, shoe.decks * 52) &&
+        position(shoe.cutIndex, shoe.decks * 52),
+    ) &&
+    scoredLog(s.decisions) &&
+    s.decisions.every(
+      (entry) =>
+        numberFields(entry, ["roundIndex", "shoeIndex", "shoeDealtCount"]) &&
+        position(entry.shoeIndex, s.shoes!.length - 1) &&
+        position(entry.shoeDealtCount, s.rules!.decks * 52) &&
+        numberFields(entry.hand, ["handIndex", "total", "bet"]) &&
+        position(entry.hand.handIndex, s.rules!.maxSplitHands - 1) &&
+        position(entry.hand.handIndex, s.decisions!.length) &&
+        cards(entry.hand.playerCards) &&
+        card(entry.hand.dealerUpcard) &&
+        typeof entry.hand.soft === "boolean" &&
+        typeof entry.hand.fromSplit === "boolean" &&
+        numberFields(entry.count, ["runningCount", "decksRemaining"]) &&
+        typeof entry.count.system === "string" &&
+        nullableNumber(entry.count.trueCount) &&
+        actions(entry) &&
+        (entry.playedInstead === undefined || action(entry.playedInstead)),
+    ) &&
+    scoredLog(s.countChecks) &&
+    s.countChecks.every((entry) =>
+      numberFields(entry, [
+        "roundIndex",
+        "shoeIndex",
+        "shoeDealtCount",
+        "statedRunningCount",
+        "actualRunningCount",
+      ]),
+    ) &&
+    recordArray(s.rounds, ["index", "at", "net", "shoeIndex", "shoeStartIndex", "shoeEndIndex"]) &&
+    s.rounds.every(
+      (round) =>
+        position(round.shoeIndex, s.shoes!.length - 1) &&
+        position(round.shoeStartIndex, s.rules!.decks * 52) &&
+        position(round.shoeEndIndex, s.rules!.decks * 52) &&
+        cards(round.dealerCards) &&
+        recordArray(round.hands, ["bet", "net", "finalTotal", "handIndex"]) &&
+        round.hands.every(
+          (hand) =>
+            typeof hand.busted === "boolean" &&
+            ["win", "blackjack", "push", "loss", "surrender"].includes(hand.outcome),
+        ),
+    ) &&
+    scoredLog(s.conversionChecks) &&
+    s.conversionChecks.every(
+      (entry) =>
+        numberFields(entry, [
+          "decks",
+          "runningCount",
+          "cardsRemaining",
+          "decksRemaining",
+          "statedTrueCount",
+          "actualTrueCount",
+          "runSeed",
+          "questionIndex",
+        ]) &&
+        typeof entry.system === "string" &&
+        rounding(entry.rounding),
+    ) &&
+    scoredLog(s.indexPlays) &&
+    s.indexPlays.every(
+      (entry) =>
+        numberFields(entry, [
+          "indexNumber",
+          "runningCount",
+          "cardsRemaining",
+          "trueCount",
+          "runSeed",
+          "questionIndex",
+        ]) &&
+        typeof entry.entryId === "string" &&
+        typeof entry.entryLabel === "string" &&
+        typeof entry.system === "string" &&
+        (entry.kind === "hand" || entry.kind === "insurance") &&
+        cards(entry.placedCards) &&
+        card(entry.dealerUpcard) &&
+        rounding(entry.rounding) &&
+        typeof entry.firing === "boolean" &&
+        actions(entry) &&
+        nullableNumber(entry.cutShoeSeed) &&
+        nullableNumber(entry.cutPosition),
+    ) &&
+    recordArray(s.countingSystemChanges, ["index", "at", "roundIndex"]) &&
+    s.countingSystemChanges.every(
+      (change) =>
+        typeof change.from === "string" &&
+        typeof change.to === "string" &&
+        nullableNumber(change.shoeIndex) &&
+        nullableNumber(change.shoeDealtCount) &&
+        nullableNumber(change.inferredFromDecision),
+    )
+  );
+}
+
+function object(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function finite(value: unknown): boolean {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function nullableNumber(value: unknown): boolean {
+  return value === null || finite(value);
+}
+
+function position(value: number, maximum: number): boolean {
+  return Number.isInteger(value) && value >= 0 && value <= maximum;
+}
+
+function numberFields(value: unknown, keys: readonly string[]): value is Record<string, unknown> {
+  return object(value) && keys.every((key) => finite(value[key]));
+}
+
+function card(value: unknown): boolean {
+  return (
+    object(value) &&
+    RANKS.some((rank) => rank === value.rank) &&
+    SUITS.some((suit) => suit === value.suit)
+  );
+}
+
+function cards(value: unknown): boolean {
+  return Array.isArray(value) && value.every(card);
+}
+
+function rounding(value: unknown): boolean {
+  return typeof value === "string" && ["truncate", "floor", "round", "exact"].includes(value);
+}
+
+function action(value: unknown): boolean {
+  return (
+    typeof value === "string" &&
+    ["hit", "stand", "double", "split", "surrender", "insurance", "decline-insurance"].includes(
+      value,
+    )
+  );
+}
+
+function actions(entry: Record<string, unknown>): boolean {
+  return (
+    action(entry.actionTaken) && action(entry.correctAction) && action(entry.basicStrategyAction)
+  );
+}
+
+function recordArray(
+  value: unknown,
+  numbers: readonly string[],
+): value is Record<string, unknown>[] {
+  return Array.isArray(value) && value.every((entry) => numberFields(entry, numbers));
+}
+
+function scoredLog(value: unknown): value is Record<string, unknown>[] {
+  return (
+    recordArray(value, ["index", "at"]) &&
+    value.every((entry) => entry.verdict === "correct" || entry.verdict === "incorrect")
   );
 }

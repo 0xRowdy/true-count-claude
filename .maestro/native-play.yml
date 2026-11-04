@@ -1,0 +1,64 @@
+appId: com.truecount.app
+name: Native Play hand
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: Play free
+    timeout: 30000
+- openLink: truecount://play
+- runFlow:
+    when:
+      platform: iOS
+      visible: "^Open$"
+    commands:
+      - tapOn: "^Open$"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: Deal
+    direction: DOWN
+- tapOn: Clear
+- tapOn: '\$5 chip'
+- tapOn: "Bet spot.*"
+- tapOn: "Bet spot.*"
+- takeScreenshot: native-play-bet
+- tapOn: Deal
+- runFlow:
+    when:
+      visible: No insurance
+    commands:
+      - tapOn: No insurance
+- repeat:
+    times: 4
+    commands:
+      - runFlow:
+          when:
+            visible: Stand
+          commands:
+            - tapOn: Stand
+      - runFlow:
+          when:
+            visible: Keep my stand
+          commands:
+            - tapOn: Keep my stand
+      - runFlow:
+          when:
+            visible: Keep my choice
+          commands:
+            - tapOn: Keep my choice
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: '^(Collect \$.*|Continue)$'
+    direction: DOWN
+- assertVisible: '^(Collect \$.*|Continue)$'
+- takeScreenshot: native-play-result
+- tapOn: '^(Collect \$.*|Continue)$'
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: Next hand
+    direction: DOWN
+- assertVisible: Next hand
+- takeScreenshot: native-play-payout

@@ -1,0 +1,49 @@
+appId: com.truecount.app
+name: Readable game and progress cards on a phone
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: Play free
+    timeout: 30000
+- openLink: truecount://lobby
+- runFlow:
+    when:
+      platform: iOS
+      visible: "^Open$"
+    commands:
+      - tapOn: "^Open$"
+- scrollUntilVisible:
+    element:
+      text: "^Video Poker:.*"
+    direction: DOWN
+    centerElement: true
+- takeScreenshot: native-layout-game-cards
+# On a phone, five game cards must not be squeezed into one row.
+- assertVisible:
+    text: "^Video Poker:.*"
+    below:
+      text: "^Blackjack:.*"
+- openLink: truecount://progress
+- runFlow:
+    when:
+      platform: iOS
+      visible: "^Open$"
+    commands:
+      - tapOn: "^Open$"
+- scrollUntilVisible:
+    element:
+      text: "^Practice win rate:.*"
+    direction: DOWN
+    centerElement: true
+- takeScreenshot: native-layout-stat-cards
+- assertVisible:
+    text: "^Practice win rate:.*"
+    below:
+      text: "^Decision accuracy:.*"
+- scrollUntilVisible:
+    element:
+      text: "Weekly accuracy"
+    direction: DOWN
+    centerElement: true
+- takeScreenshot: native-layout-week-labels

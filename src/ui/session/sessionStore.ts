@@ -19,10 +19,13 @@ import {
   type SessionRepository,
   type SessionSummary,
   createSessionRepository,
+  createArchive,
   endSession,
   isActive,
+  serializeArchive,
 } from "@/state";
 import { createAsyncStorageStore } from "@/state/asyncStorage";
+import { flushDrillSessionWrites } from "@/ui/drills/drillSessionStore";
 
 export type SessionStatus = "idle" | "loading" | "ready" | "failed";
 
@@ -136,6 +139,29 @@ export function listSessionSummaries(): Promise<readonly SessionSummary[]> {
 /** Every Session, for the lifetime aggregate. Unreadable records are reported, not hidden. */
 export function loadAllSessions(): ReturnType<SessionRepository["loadAll"]> {
   return repository.loadAll();
+}
+
+/** Snapshot all readable history after both recorders have finished saving. */
+export async function createSessionBackup() {
+  await Promise.all([writes, flushDrillSessionWrites()]);
+  if (state.error) throw new Error(state.error);
+  const { sessions, unreadable } = await repository.loadAll();
+  return {
+    contents: serializeArchive(createArchive(sessions, Date.now())),
+    count: sessions.length,
+    unreadable,
+  };
+}
+
+/** Merge only. Imported history never replaces the Play Session in hand. */
+export function restoreSessionBackup(raw: string): ReturnType<SessionRepository["importArchive"]> {
+  const importing = writes.then(async () => {
+    await flushDrillSessionWrites();
+    return repository.importArchive(raw);
+  });
+  // Keep later Play writes behind this import without swallowing its caller's error.
+  writes = importing.catch(() => {});
+  return importing;
 }
 
 function enqueue(work: () => Promise<void>): void {

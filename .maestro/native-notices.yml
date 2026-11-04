@@ -1,0 +1,52 @@
+appId: com.truecount.app
+name: Footer notices appear after tapping and pricing stays hypothetical
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: Play free
+    timeout: 30000
+- evalScript: ${output.labels = ["Privacy", "Terms", "Accessibility"]}
+- evalScript: ${output.messages = ["Your progress, settings and strategies stay.*", "Tableside is for practice only.*", "Web controls support keyboard navigation.*"]}
+- evalScript: ${output.notice = 0}
+- repeat:
+    times: 3
+    commands:
+      # Scroll only to the footer control, never to the resulting notice.
+      - scrollUntilVisible:
+          element:
+            text: ${output.labels[output.notice]}
+          direction: DOWN
+          speed: 80
+          timeout: 90000
+      - tapOn: ${output.labels[output.notice]}
+      # The app must bring the complete notice into view without another test scroll.
+      - assertVisible: ${output.messages[output.notice]}
+      - assertVisible: Dismiss
+      - takeScreenshot: native-footer-notice-${output.notice}
+      - tapOn: Dismiss
+      - evalScript: ${output.notice = output.notice + 1}
+- openLink: truecount://pricing
+- runFlow:
+    when:
+      platform: iOS
+      visible: "^Open$"
+    commands:
+      - tapOn: "^Open$"
+- scrollUntilVisible:
+    element:
+      text: "Example: a seven-day trial would start. No trial starts here."
+    direction: DOWN
+    timeout: 30000
+- assertVisible: "Example: a seven-day trial would start. No trial starts here."
+- scrollUntilVisible:
+    element:
+      text: "Example: a reminder would arrive 2 days before. No reminders are sent."
+    direction: DOWN
+- assertVisible: "Example: a reminder would arrive 2 days before. No reminders are sent."
+- scrollUntilVisible:
+    element:
+      text: "Example: .* for the year after the trial. No subscription starts here."
+    direction: DOWN
+- assertVisible: "Example: .* for the year after the trial. No subscription starts here."
+- takeScreenshot: native-pricing-hypothetical

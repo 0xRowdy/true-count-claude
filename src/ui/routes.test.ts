@@ -20,13 +20,19 @@ function walk(dir: string): string[] {
   });
 }
 
-/** `app/drills/index.tsx` → `/drills`; layouts and `+` files are not routes. */
+/**
+ * `app/(tabs)/(trainer)/drills/index.tsx` → `/drills`: route groups (`(tabs)`) are not part of
+ * the URL, and layouts and `+` files are not routes.
+ */
 function appRoutes(): Set<string> {
   const routes = new Set<string>();
   for (const file of walk(join(ROOT, "app"))) {
     const rel = relative(join(ROOT, "app"), file).split(sep).join("/");
     if (!/\.tsx?$/.test(rel)) continue;
-    const parts = rel.replace(/\.tsx?$/, "").split("/");
+    const parts = rel
+      .replace(/\.tsx?$/, "")
+      .split("/")
+      .filter((p) => !/^\(.+\)$/.test(p));
     if (parts.some((p) => p.startsWith("_") || p.startsWith("+"))) continue;
     if (parts[parts.length - 1] === "index") parts.pop();
     routes.add(`/${parts.join("/")}`);

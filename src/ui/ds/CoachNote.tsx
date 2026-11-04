@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, Text, View, type ImageSourcePropType } from "react-native";
 import { Avatar, portraits } from "./Avatar";
 import { CircleCheck, Lightbulb, RotateCcw, type LucideIcon } from "./icons";
-import { colors, radius, shadow, ui } from "./tokens";
+import { slopTo } from "./tap";
+import { colors, radius, shadow, surfaces, type, ui } from "./tokens";
 
 export type CoachVariant = "hint" | "mistake" | "good";
 
@@ -11,7 +12,7 @@ const VARIANT: Record<
 > = {
   hint: {
     accent: colors.coachAccent,
-    ink: colors.coachAccent,
+    ink: surfaces.hintInk,
     icon: Lightbulb,
     kind: "Hint · Basic strategy",
   },
@@ -71,9 +72,7 @@ export function CoachNote({
         <Avatar name={dealer} source={avatar} size={32} />
         <View style={styles.who}>
           <Text style={[ui(13, 600), { color: colors.ink }]}>{dealer}</Text>
-          <Text style={[ui(10, 700, { letterSpacing: 1 }), { color: v.ink }]}>
-            {(kind ?? v.kind).toUpperCase()}
-          </Text>
+          <Text style={[type.overline, { color: v.ink }]}>{(kind ?? v.kind).toUpperCase()}</Text>
         </View>
         <Icon size={18} color={v.ink} strokeWidth={2} />
       </View>
@@ -97,7 +96,7 @@ function NoteButton({ action, solid = false }: { action: CoachAction; solid?: bo
       accessibilityRole="button"
       accessibilityLabel={action.accessibilityLabel ?? action.label}
       onPress={action.onPress}
-      hitSlop={2}
+      hitSlop={slopTo(BUTTON_H)}
       style={({ pressed }) => [
         styles.button,
         solid ? styles.solid : styles.outline,
@@ -112,6 +111,8 @@ function NoteButton({ action, solid = false }: { action: CoachAction; solid?: bo
     </Pressable>
   );
 }
+
+const BUTTON_H = 40;
 
 const styles = StyleSheet.create({
   note: {
@@ -131,7 +132,7 @@ const styles = StyleSheet.create({
   // rather than pushing the other button onto a second row.
   actions: { flexDirection: "row", gap: 8 },
   button: {
-    minHeight: 40,
+    minHeight: BUTTON_H,
     flexShrink: 1,
     paddingVertical: 6,
     paddingHorizontal: 14,

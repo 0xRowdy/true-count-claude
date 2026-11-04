@@ -95,4 +95,20 @@ describe("editing", () => {
   it("simulates 50 spins reproducibly", () => {
     expect(testLayout(draft.layout, 5)).toEqual(testLayout(draft.layout, 5));
   });
+
+  it("compares edits to a custom rule even when the progression kind stays the same", () => {
+    const before = { ...draft.layout, progression: "custom" as const };
+    const after = {
+      ...before,
+      customProgression: { afterLoss: "add" as const, afterWin: "hold" as const, units: 3 },
+    };
+    expect(layoutChanges(after, before)).toEqual([
+      {
+        key: "progression",
+        title: "After each spin",
+        from: "Custom: after a loss, add 1 base unit; after a win, reset to base",
+        to: "Custom: after a loss, add 3 base units; after a win, keep the stake",
+      },
+    ]);
+  });
 });

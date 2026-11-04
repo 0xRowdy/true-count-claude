@@ -22,8 +22,9 @@ import {
   decisionVerdict,
   insuranceVerdict,
 } from "@/ui/explanation/explanationFormat";
-import { Panel, SecondaryButton, SegmentedControl } from "@/ui/primitives";
-import { colors, spacing, type } from "@/ui/theme";
+import { Panel } from "@/ui/ds";
+import { colors, ui } from "@/ui/ds/tokens";
+import { Choice, SecondaryButton } from "@/ui/trainer/kit";
 import type { TableDecision } from "./tableExplanation";
 
 function verdictOf(decision: TableDecision): VerdictView {
@@ -67,7 +68,8 @@ export function DecisionFeedback({
 
   const picker =
     decisions.length > 1 ? (
-      <SegmentedControl
+      <Choice
+        accessibilityLabel="Decisions this hand"
         options={decisions.map((entry, position) => ({
           value: String(position),
           label: `${position + 1} · ${ACTION_NAME[entry.actionTaken]} ${
@@ -82,7 +84,7 @@ export function DecisionFeedback({
   if (!expanded) {
     const view = verdictOf(decision);
     return (
-      <Panel>
+      <Panel padding={16} gap={8}>
         {picker}
         <Text style={[styles.headline, { color: TONE_COLOR[view.tone] }]}>{view.headline}</Text>
         {view.detail ? <Text style={styles.detail}>{view.detail}</Text> : null}
@@ -111,8 +113,8 @@ export function DecisionFeedback({
 }
 
 const styles = StyleSheet.create({
-  headline: { ...type.body, fontSize: 16, fontWeight: "700" },
-  detail: { ...type.caption, color: colors.textMuted, lineHeight: 19 },
-  accessory: { gap: spacing.sm },
+  headline: { ...ui(16, 700, { lineHeight: 22 }), color: colors.foreground },
+  detail: { ...ui(13, 400, { lineHeight: 19 }), color: colors.mutedForeground },
+  accessory: { gap: 8 },
   toggle: { alignSelf: "flex-start" },
 });

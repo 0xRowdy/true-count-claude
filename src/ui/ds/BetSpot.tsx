@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { FeltText } from "./FeltText";
 import { colors, surfaces, ui } from "./tokens";
 
 /**
@@ -28,8 +29,10 @@ export function BetSpot({
 }) {
   const body = (
     <>
-      <Text style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.feltText }]}>{label}</Text>
-      {pays ? <Text style={[ui(10), { color: surfaces.feltTextMuted }]}>{pays}</Text> : null}
+      <FeltText style={[ui(11, 700, { letterSpacing: 1 }), { color: colors.feltText }]}>
+        {label}
+      </FeltText>
+      {pays ? <FeltText style={ui(11)}>{pays}</FeltText> : null}
       {children}
     </>
   );

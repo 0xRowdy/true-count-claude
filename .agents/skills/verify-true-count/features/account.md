@@ -24,7 +24,7 @@ the App Shell). Optional: nothing else in the app needs an Account (invariant 8)
 
 ## How to get to it (user POV)
 
-Landing → Sign in; the avatar in the App Header; Pricing → Pay while signed out.
+Landing → Sign in; the avatar in the App Header (wider than phone width); the Account link on the Lobby (native and phone width, where the header has no avatar); Pricing → Pay while signed out.
 
 ## Driving it with Playwright
 

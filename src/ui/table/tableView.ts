@@ -278,15 +278,23 @@ export function outcomeSummary(round: RoundState): OutcomeSummary {
         break;
       case "lose":
         parts.push(dealerClause(round));
-        parts.push(`${dealer} beats your ${player}.`);
+        parts.push(
+          isBlackjack(round.dealerHand)
+            ? "Only a player blackjack can push a dealer blackjack."
+            : `${dealer} beats your ${player}.`,
+        );
         break;
       case "push":
         parts.push(`${player} each — your bet comes back.`);
         paid = "bet returned";
         break;
       case "surrender":
-        parts.push("You surrendered: half the bet comes back.");
-        paid = "half returned";
+        parts.push(
+          single.returned > 0
+            ? "You surrendered: half the bet comes back."
+            : "Dealer blackjack takes the full bet despite late surrender.",
+        );
+        paid = single.returned > 0 ? "half returned" : "bet lost";
         break;
     }
   } else {

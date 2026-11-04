@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   },
   ticks: { height: 14 },
   tick: {
-    ...ui(10, 500),
+    ...ui(11, 500),
     ...NUM,
     position: "absolute",
     width: 24,

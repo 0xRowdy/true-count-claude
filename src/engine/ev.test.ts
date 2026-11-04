@@ -804,7 +804,7 @@ describe("Appendix 1 — splitting", () => {
 // ---------------------------------------------------------------------------
 
 /**
- * Where an exact, per-composition EV correctly disagrees with a total-dependent chart.
+ * Where a composition-sensitive EV estimate disagrees with a total-dependent chart.
  *
  * A published Basic Strategy chart is indexed by a *total*. This module is indexed by the
  * actual cards, and in a short shoe the two are not the same question: a 12 made of 10,2
@@ -1219,7 +1219,7 @@ describe("rule sensitivity", () => {
     expect(actionEvs(sixteen, ace, early, composition).surrender).toBe(-0.5);
   });
 
-  it("no peek costs every action the same flat amount", () => {
+  it("no peek exposes hit and stand to the opening wager", () => {
     const sixteen = hand(["10", "6"]);
     const ace = card("A", "d");
     const peeking: RuleSet = { ...DEFAULT_RULES, dealerPeek: true, surrender: "none" };
@@ -1233,6 +1233,87 @@ describe("rule sensitivity", () => {
     const natural = 95 / 309;
     expect(before.stand).toBeCloseTo((1 - natural) * (after.stand as number) - natural, 12);
     expect(before.hit).toBeCloseTo((1 - natural) * (after.hit as number) - natural, 12);
+  });
+
+  it("no peek exposes both units of a double and frozen ace split", () => {
+    const eleven = hand(["5", "6"]);
+    const aces = hand(["A", "A"]);
+    const ten = card("10", "d");
+    const rules = { ...DEFAULT_RULES, surrender: "none" as const };
+    for (const [player, action] of [
+      [eleven, "double"],
+      [aces, "split"],
+    ] as const) {
+      const composition = neutral(rules, [...player.cards, ten]);
+      const natural = composition.A / 309;
+      const peeked = actionEvs(player, ten, rules, composition)[action] as number;
+      const blind = actionEvs(player, ten, { ...rules, dealerPeek: false }, composition)[action];
+      expect(blind).toBeCloseTo((1 - natural) * peeked - 2 * natural, 12);
+    }
+  });
+
+  it("includes dealer blackjack before early surrender, protecting unplaced extra wagers", () => {
+    const eleven = hand(["5", "6"]);
+    const ten = card("10", "d");
+    const rules = { ...DEFAULT_RULES, surrender: "early" as const };
+    const composition = neutral(rules, [...eleven.cards, ten]);
+    const natural = composition.A / 309;
+    const before = actionEvs(eleven, ten, rules, composition);
+    const after = actionEvs(eleven, ten, { ...rules, surrender: "none" }, composition);
+    expect(before.surrender).toBe(-0.5);
+    expect(before.double).toBeCloseTo((1 - natural) * (after.double as number) - natural, 12);
+  });
+
+  it("handles a depleted no-hole-card shoe that guarantees dealer blackjack", () => {
+    const composition = {
+      A: 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 0,
+      "6": 0,
+      "7": 0,
+      "8": 0,
+      "9": 0,
+      "10": 20,
+      J: 0,
+      Q: 0,
+      K: 0,
+    };
+    const ace = card("A");
+    const rules = { ...DEFAULT_RULES, dealerPeek: false };
+    expect(dealerOutcomes(ace, rules, composition)).toEqual({
+      totals: { 17: 0, 18: 0, 19: 0, 20: 0, 21: 0 },
+      bust: 0,
+      blackjack: 1,
+    });
+    expect(actionEvs(hand(["8", "8"]), ace, rules, composition)).toEqual({
+      stand: -1,
+      hit: -1,
+      double: -2,
+      split: -2,
+      surrender: -1,
+    });
+    expect(
+      actionEvs(hand(["8", "8"]), ace, { ...rules, surrender: "early" }, composition).surrender,
+    ).toBe(-0.5);
+    expect(
+      actionEvs(
+        hand(["8", "8"]),
+        ace,
+        { ...rules, dealerPeek: true, surrender: "early" },
+        composition,
+      ),
+    ).toEqual({
+      stand: -1,
+      hit: -1,
+      double: -1,
+      split: -1,
+      surrender: -0.5,
+    });
+    expect(() => dealerOutcomes(ace, DEFAULT_RULES, composition)).toThrow(
+      "completed negative peek",
+    );
   });
 
   it("H17 is worse for the player than S17 on a made 18", () => {
@@ -1277,6 +1358,27 @@ describe("rule sensitivity", () => {
     expect(actionEvs(aces, six, free, composition).split as number).toBeGreaterThan(
       actionEvs(aces, six, frozen, composition).split as number,
     );
+  });
+
+  it("values resplitting aces even when each ace receives only one card", () => {
+    const aces = hand(["A", "A"]);
+    const six = card("6", "d");
+    const rules = { ...DEFAULT_RULES, resplitAces: true, oneCardToSplitAces: true };
+    const composition = neutral(rules, [...aces.cards, six]);
+    expect(actionEvs(aces, six, rules, composition).split).toBeGreaterThan(
+      actionEvs(aces, six, { ...rules, resplitAces: false }, composition).split as number,
+    );
+  });
+
+  it("counts existing hands toward the resplit limit", () => {
+    const aces = hand(["A", "A"], true);
+    const six = card("6", "d");
+    const rules = { ...DEFAULT_RULES, resplitAces: true };
+    const composition = neutral(rules, [...aces.cards, six]);
+    const atLimit = actionEvs(aces, six, rules, composition, { handCount: 3 });
+    const onlyTwo = actionEvs(aces, six, { ...rules, maxSplitHands: 2 }, composition);
+    expect(atLimit.split).toBe(onlyTwo.split);
+    expect(actionEvs(aces, six, rules, composition).split).toBeGreaterThan(atLimit.split as number);
   });
 
   it("a restricted double rule leaves soft hands and low totals with no double at all", () => {

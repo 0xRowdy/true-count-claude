@@ -638,7 +638,8 @@ export function loupeOptions(state: TableState, pocket: Pocket): LoupeOption[] {
 // ---------------------------------------------------------------------------------------------
 // Felt geometry (the number grid, in its own coordinates)
 
-export const CELL_H = 36;
+/** A number cell's height: the 44pt tap minimum, as every pocket is a bet you tap. */
+export const CELL_H = 44;
 export const GAP = 2;
 /** Height of the number grid: zero row, 12 streets, the column bets. */
 export const GRID_H = CELL_H * 14 + GAP * 13;

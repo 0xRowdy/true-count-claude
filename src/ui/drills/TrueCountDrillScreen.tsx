@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
   decks: {
     ...display(32, 400),
     fontVariant: ["tabular-nums"],
-    color: surfaces.feltTextMuted,
+    color: surfaces.feltPrint,
     paddingTop: 14,
   },
   reference: { gap: 2 },

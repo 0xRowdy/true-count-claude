@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
   roundName: { ...ui(14, 500), color: colors.foreground, flexShrink: 1 },
   roundValue: { flexDirection: "row", alignItems: "center", gap: 8 },
   flag: {
-    ...ui(10, 700, { letterSpacing: 1 }),
+    ...ui(11, 700, { letterSpacing: 1 }),
     color: colors.correct,
   },
   flagYou: { color: colors.primary },

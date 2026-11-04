@@ -16,6 +16,7 @@ import {
   BET_TYPE_NAMES,
   PROGRESSION_DESCRIPTIONS,
   PROGRESSION_NAMES,
+  DEFAULT_CUSTOM_PROGRESSION,
   analyzeBets,
   averageResultCaption,
   betsTouching,
@@ -38,7 +39,7 @@ import {
   uncoveredNote,
   validateBets,
 } from "@/games/roulette";
-import type { RouletteLayoutPlan } from "@/state/strategies";
+import { type RouletteLayoutPlan, MAX_ROULETTE_DRAFT_SPINS } from "@/state/strategies";
 
 /** Inside bets whose felt label does not say what kind of bet it is. */
 const NAMED_INSIDE: ReadonlySet<string> = new Set<InsideBetType>([
@@ -339,7 +340,7 @@ export function checkLayout(layout: RouletteLayoutPlan): BetCheck {
 
 export function progressionOptions(layout: RouletteLayoutPlan) {
   const total = formatDollars(totalStake(layout.bets));
-  return (["flat", "martingale", "dalembert"] as ProgressionKind[]).map((id) => ({
+  return (["flat", "martingale", "dalembert", "custom"] as ProgressionKind[]).map((id) => ({
     id,
     label: PROGRESSION_NAMES[id] === "Flat bet" ? "Flat bet" : PROGRESSION_NAMES[id],
     detail: id === "flat" ? `Same ${total} every spin` : PROGRESSION_DESCRIPTIONS[id],
@@ -347,7 +348,23 @@ export function progressionOptions(layout: RouletteLayoutPlan) {
 }
 
 export function progressionWarning(layout: RouletteLayoutPlan): string {
+  if (layout.progression === "custom")
+    return "Your rule scales the whole layout. Break-even spins keep the same stake; bets never fall below the base layout and each spot is capped at the table maximum. A progression cannot remove the house edge.";
   return explainMartingaleRisk(Math.max(1, totalStake(layout.bets)));
+}
+
+export function progressionDescription(layout: RouletteLayoutPlan): string {
+  if (layout.progression !== "custom") return PROGRESSION_NAMES[layout.progression];
+  const custom = layout.customProgression ?? DEFAULT_CUSTOM_PROGRESSION;
+  const units = `${custom.units} base unit${custom.units === 1 ? "" : "s"}`;
+  const labels = {
+    reset: "reset to base",
+    hold: "keep the stake",
+    double: "double the stake",
+    add: `add ${units}`,
+    subtract: `remove ${units}`,
+  };
+  return `Custom: after a loss, ${labels[custom.afterLoss]}; after a win, ${labels[custom.afterWin]}`;
 }
 
 export type SessionField = "stopWhenUp" | "stopWhenDown" | "maxSpins";
@@ -376,7 +393,13 @@ export function stepSession(
 ): RouletteLayoutPlan {
   const s = layout.session;
   if (field === "maxSpins")
-    return { ...layout, session: { ...s, maxSpins: Math.max(10, s.maxSpins + dir * 10) } };
+    return {
+      ...layout,
+      session: {
+        ...s,
+        maxSpins: Math.min(MAX_ROULETTE_DRAFT_SPINS, Math.max(10, s.maxSpins + dir * 10)),
+      },
+    };
   const next = Math.max(0, (s[field] ?? 0) + dir * 50);
   const session = { ...s };
   if (next === 0) delete session[field];
@@ -470,12 +493,12 @@ export function layoutChanges(
       }
     }
   }
-  if (layout.progression !== original.progression) {
+  if (progressionDescription(layout) !== progressionDescription(original)) {
     out.push({
       key: "progression",
       title: "After each spin",
-      from: PROGRESSION_NAMES[original.progression],
-      to: PROGRESSION_NAMES[layout.progression],
+      from: progressionDescription(original),
+      to: progressionDescription(layout),
     });
   }
   const before = sessionCards(original);

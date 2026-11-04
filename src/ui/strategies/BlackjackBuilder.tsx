@@ -370,7 +370,7 @@ function Swatch({ glyph }: { glyph: keyof typeof CELL }) {
   const c = CELL[glyph];
   return (
     <View style={[s.swatch, { backgroundColor: c.bg }]}>
-      <Text style={[ui(10, 800), { color: c.fg }]}>{glyph === "R" ? "R" : glyph}</Text>
+      <Text style={[ui(11, 800), { color: c.fg }]}>{glyph === "R" ? "R" : glyph}</Text>
     </View>
   );
 }
@@ -394,11 +394,11 @@ function ChartTable({
   const selKey = cellKey(selected);
   return (
     <View style={[s.table, tall && s.tableTall]} accessibilityLabel={title}>
-      <Text style={[ui(10, 700, { letterSpacing: 1.2 }), { color: colors.mutedForeground }]}>
+      <Text style={[ui(11, 700, { letterSpacing: 1.2 }), { color: colors.mutedForeground }]}>
         {title.toUpperCase()}
       </Text>
       <View style={s.tr}>
-        <Text style={[ui(10, 600), s.corner, { color: colors.mutedForeground }]}>
+        <Text style={[ui(11, 600), s.corner, { color: colors.mutedForeground }]}>
           You ↓ Dealer →
         </Text>
         {DEALER_UPCARDS.map((u) => (

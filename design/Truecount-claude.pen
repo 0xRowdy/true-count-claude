@@ -1444,7 +1444,8 @@
                   "fill": "$--foreground",
                   "content": "Body 16 / Inter — minimum body size for 50+ readers",
                   "fontFamily": "$--font-ui",
-                  "fontSize": 16
+                  "fontSize": 16,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -11692,7 +11693,7 @@
                   "ref": "zqstp",
                   "name": "Card 4d",
                   "rotation": -90,
-                  "y": 11.999999999999996,
+                  "y": 12,
                   "descendants": {
                     "H25l8L": {
                       "content": "4",
@@ -22043,7 +22044,8 @@
                                   "fill": "$--foreground",
                                   "content": "Today",
                                   "fontFamily": "$--font-ui",
-                                  "fontSize": 14
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -22060,7 +22062,8 @@
                                   "fill": "$--foreground",
                                   "content": "Blackjack",
                                   "fontFamily": "$--font-ui",
-                                  "fontSize": 14
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -22077,7 +22080,8 @@
                                   "fill": "$--foreground",
                                   "content": "Basic Strategy · 6D S17",
                                   "fontFamily": "$--font-ui",
-                                  "fontSize": 14
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -22095,7 +22099,8 @@
                                   "fill": "$--foreground",
                                   "content": "42",
                                   "fontFamily": "$--font-ui",
-                                  "fontSize": 14
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -22132,7 +22137,8 @@
                                   "fill": "$--correct",
                                   "content": "+$150",
                                   "fontFamily": "$--font-ui",
-                                  "fontSize": 14
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -22165,7 +22171,8 @@
                                   "fill": "$--foreground",
                                   "content": "Today",
                                   "fontFamily": "$--font-ui",
-                                  "fontSize": 14
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -22182,7 +22189,8 @@
                                   "fill": "$--foreground",
                                   "content": "Craps",
                                   "fontFamily": "$--font-ui",
-                                  "fontSize": 14
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -22199,7 +22207,8 @@
                                   "fill": "$--foreground",
                                   "content": "Iron Cross, explained",
                                   "fontFamily": "$--font-ui",
-                                  "fontSize": 14
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -22217,7 +22226,8 @@
                                   "fill": "$--foreground",
                                   "content": "18",
                                   "fontFamily": "$--font-ui",
-                                  "fontSize": 14
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -22254,7 +22264,8 @@
                                   "fill": "$--correct",
                                   "content": "+$46",
                                   "fontFamily": "$--font-ui",
-                                  "fontSize": 14
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -22287,7 +22298,8 @@
                                   "fill": "$--foreground",
                                   "content": "Oct 9",
                                   "fontFamily": "$--font-ui",
-                                  "fontSize": 14
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -22304,7 +22316,8 @@
                                   "fill": "$--foreground",
                                   "content": "Video Poker",
                                   "fontFamily": "$--font-ui",
-                                  "fontSize": 14
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -22321,7 +22334,8 @@
                                   "fill": "$--foreground",
                                   "content": "9/6 JoB optimal holds",
                                   "fontFamily": "$--font-ui",
-                                  "fontSize": 14
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -22339,7 +22353,8 @@
                                   "fill": "$--foreground",
                                   "content": "60",
                                   "fontFamily": "$--font-ui",
-                                  "fontSize": 14
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -22376,7 +22391,8 @@
                                   "fill": "$--mistake",
                                   "content": "−$35",
                                   "fontFamily": "$--font-ui",
-                                  "fontSize": 14
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -22409,7 +22425,8 @@
                                   "fill": "$--foreground",
                                   "content": "Oct 8",
                                   "fontFamily": "$--font-ui",
-                                  "fontSize": 14
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -22426,7 +22443,8 @@
                                   "fill": "$--foreground",
                                   "content": "Blackjack",
                                   "fontFamily": "$--font-ui",
-                                  "fontSize": 14
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -22443,7 +22461,8 @@
                                   "fill": "$--foreground",
                                   "content": "Basic Strategy · 6D S17",
                                   "fontFamily": "$--font-ui",
-                                  "fontSize": 14
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -22461,7 +22480,8 @@
                                   "fill": "$--foreground",
                                   "content": "55",
                                   "fontFamily": "$--font-ui",
-                                  "fontSize": 14
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -22498,7 +22518,8 @@
                                   "fill": "$--mistake",
                                   "content": "−$75",
                                   "fontFamily": "$--font-ui",
-                                  "fontSize": 14
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
