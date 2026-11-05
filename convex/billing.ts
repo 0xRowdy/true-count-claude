@@ -4,7 +4,7 @@ import { ConvexError, v } from "convex/values";
 import Stripe from "stripe";
 import { TRIAL_DAYS } from "../src/ui/pricing/pricing";
 import { api, components, internal } from "./_generated/api";
-import { action, internalAction, internalMutation } from "./_generated/server";
+import { action, internalAction, internalMutation, type MutationCtx } from "./_generated/server";
 import { authComponent } from "./auth";
 import { type RcSubscriber, fromRevenueCat, fromStripeSubscription } from "./lib/stores";
 import { entitlementFields } from "./schema";
@@ -134,11 +134,20 @@ export const openBillingPortal = action({
 
 const entitlement = v.object(entitlementFields);
 
+/**
+ * Checked in the same transaction as each write: a deleted Account's purchases still send
+ * webhooks (deletion itself cancels the web subscription), and none may write its rows back.
+ */
+async function accountExists(ctx: MutationCtx, userId: string): Promise<boolean> {
+  return (await authComponent.getAnyUserById(ctx, userId)) !== null;
+}
+
 /** Upserts one Stripe purchase (a subscription, or a Lifetime payment) by its Stripe id. */
 export const applyStripe = internalMutation({
   args: { userId: v.string(), entitlement },
   returns: v.null(),
   handler: async (ctx, { userId, entitlement }) => {
+    if (!(await accountExists(ctx, userId))) return null;
     const existing = await ctx.db
       .query("entitlements")
       .withIndex("by_external", (q) =>
@@ -173,6 +182,7 @@ export const replaceStoreEntitlements = internalMutation({
   args: { userId: v.string(), entitlements: v.array(entitlement) },
   returns: v.null(),
   handler: async (ctx, { userId, entitlements }) => {
+    if (!(await accountExists(ctx, userId))) return null;
     const rows = await ctx.db
       .query("entitlements")
       .withIndex("by_user", (q) => q.eq("userId", userId))

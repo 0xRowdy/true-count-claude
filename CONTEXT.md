@@ -98,7 +98,9 @@ convex/            # Backend (ADR-0007): Accounts, Entitlements, Stripe and Reve
 
 The backend is optional by construction: a build without `EXPO_PUBLIC_CONVEX_URL` has no
 Accounts and is the trainer exactly as before. Nothing in `src/engine`, `src/drills` or
-`src/state` knows the backend exists; only `src/ui/account` and the pricing screen do.
+`src/state` knows the backend exists. In `src/ui`, `src/ui/account` and the pricing screen use
+it; the landing page, the Lobby and the App Header only read whether it is there, to show the
+selling copy or the way to `/account`.
 
 `src/engine` is the deep module at the core. It is pure, synchronous, and fully unit-tested,
 which is what makes invariants 4 and 5 enforceable in CI. Nothing in `engine` may import from

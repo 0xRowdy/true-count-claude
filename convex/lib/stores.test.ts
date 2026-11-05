@@ -58,6 +58,17 @@ describe("Stripe", () => {
     );
   });
 
+  it("runs a failed renewal's grace from the renewal date, not the new period's end", () => {
+    // Stripe moves the period on when it tries to renew, so the failed one is the current one.
+    const sub = stripeSub({ status: "past_due" }, "month");
+    sub.items.data[0]!.current_period_start = (NOW - 2 * DAY) / 1000;
+    sub.items.data[0]!.current_period_end = (NOW + 28 * DAY) / 1000;
+    const e = fromStripeSubscription(sub);
+    expect(e.expiresAt).toBe(NOW - 2 * DAY);
+    expect(resolvePlan([e], NOW + 20 * DAY)).toMatchObject({ plan: "plus", status: "past_due" });
+    expect(resolvePlan([e], NOW + 29 * DAY).plan).toBe("free");
+  });
+
   it("is Free once the first payment never landed", () => {
     const e = fromStripeSubscription(stripeSub({ status: "incomplete" }));
     expect(resolvePlan([e], NOW).plan).toBe("free");

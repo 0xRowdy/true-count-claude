@@ -34,15 +34,19 @@ export function fromStripeSubscription(sub: Stripe.Subscription): StoreEntitleme
   const item = sub.items.data[0];
   const status = stripeStatus(sub.status);
   const interval = item?.price.recurring?.interval;
-  // The period end lives on the item since API 2025-03-31; while trialing it is the trial end.
-  const periodEnd = item ? item.current_period_end * 1000 : 0;
+  // The period lives on the item since API 2025-03-31; while trialing its end is the trial end.
+  // Past due, Stripe has already moved the period on to the one it failed to charge for, so
+  // the paid-for access ended at that period's start: the grace in `isLive` runs from there.
+  const paidUntil = item
+    ? (status === "past_due" ? item.current_period_start : item.current_period_end) * 1000
+    : 0;
   return {
     source: "stripe",
     externalId: sub.id,
     plan: "plus",
     status,
     // A cancellation scheduled inside the period ends access sooner than the period does.
-    expiresAt: sub.cancel_at === null ? periodEnd : Math.min(periodEnd, sub.cancel_at * 1000),
+    expiresAt: sub.cancel_at === null ? paidUntil : Math.min(paidUntil, sub.cancel_at * 1000),
     willRenew: status !== "ended" && !sub.cancel_at_period_end && sub.cancel_at === null,
     interval: interval === "month" ? "month" : interval === "year" ? "year" : null,
   };

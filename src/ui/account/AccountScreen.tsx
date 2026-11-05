@@ -5,7 +5,14 @@ import { AppShell, Avatar, Button, colors, display, Notice, Panel, ui } from "@/
 import { CreditCard, Crown, LogOut, RotateCcw } from "@/ui/ds/icons";
 import { type Account, deleteAccount, signOut, useAccount } from "./account";
 import { billingFailure, billingPortalUrl } from "./billing";
-import { BILLED_BY, doubleBillingWarning, PLAN_NAMES, planStatus } from "./planCopy";
+import {
+  BILLED_BY,
+  doubleBillingWarning,
+  PLAN_NAMES,
+  planStatus,
+  storesToCancelFirst,
+  webSubscriptionRenewing,
+} from "./planCopy";
 import { SignInOptions } from "./SignInOptions";
 import { usePurchase } from "./usePurchase";
 
@@ -205,9 +212,7 @@ function DeletePanel({ account }: { account: Account }) {
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<"reauthenticate" | string | null>(null);
-  const storeBilled =
-    account.plan.willRenew &&
-    (account.plan.source === "app_store" || account.plan.source === "play_store");
+  const storesBilling = storesToCancelFirst(account.plan);
 
   const remove = async () => {
     setBusy(true);
@@ -224,16 +229,14 @@ function DeletePanel({ account }: { account: Account }) {
 
   return (
     <Panel title="Delete account" style={styles.panel}>
-      <Text style={[ui(14, 400, { lineHeight: 20 }), styles.muted]}>
+      <Text style={[ui(16, 400, { lineHeight: 24 }), styles.muted]}>
         Deletes your account and your plan from Tableside for good. Practice saved on this device
         stays here.
-        {account.plan.source === "stripe" && account.plan.willRenew
-          ? " Your web subscription is canceled with it."
-          : ""}
+        {webSubscriptionRenewing(account.plan) ? " Your web subscription is canceled with it." : ""}
       </Text>
-      {storeBilled ? (
+      {storesBilling ? (
         <Notice
-          title={`Cancel your subscription in ${account.plan.source === "app_store" ? "the App Store" : "Google Play"} first`}
+          title={`Cancel your subscription in ${storesBilling} first`}
           body="Deleting your account doesn't stop the store from billing you. Cancel it there, then come back to delete."
         />
       ) : null}

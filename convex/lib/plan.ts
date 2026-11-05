@@ -60,8 +60,9 @@ export const FREE: ResolvedPlan = {
 };
 
 /**
- * How long past the period end a failed renewal keeps access. The store's retries end first and
- * its webhook ends the row; this is the backstop if that webhook never lands.
+ * How long past the paid-for period a failed renewal keeps access (a `past_due` row's
+ * `expiresAt` is when that period ended). The store's retries end first and its webhook ends
+ * the row; this is the backstop if that webhook never lands.
  */
 export const PAST_DUE_GRACE_MS = 30 * 86_400_000;
 

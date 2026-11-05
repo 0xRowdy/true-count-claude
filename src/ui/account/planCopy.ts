@@ -59,6 +59,25 @@ export function doubleBillingWarning(p: ResolvedPlan): string | null {
     : `You're subscribed to Plus on ${others} as well. Cancel one so you aren't charged twice.`;
 }
 
+/** Every source still billing: the plan shown, if it renews, and any others renewing Plus. */
+function renewing(p: ResolvedPlan): Source[] {
+  return [...(p.willRenew && p.source ? [p.source] : []), ...p.alsoRenewing];
+}
+
+/**
+ * The stores whose subscriptions deleting the Account won't stop ("the App Store and Google
+ * Play"), so the player cancels them first; null when there are none.
+ */
+export function storesToCancelFirst(p: ResolvedPlan): string | null {
+  const stores = renewing(p).filter((s) => s === "app_store" || s === "play_store");
+  return stores.length === 0 ? null : [...new Set(stores)].map((s) => STORE_NAMES[s]).join(" and ");
+}
+
+/** A web subscription is renewing, which deleting the Account cancels. */
+export function webSubscriptionRenewing(p: ResolvedPlan): boolean {
+  return renewing(p).includes("stripe");
+}
+
 export function billingErrorMessage(
   code: BillingErrorCode | undefined,
   fallback = "Something went wrong starting checkout. Nothing was charged; please try again.",

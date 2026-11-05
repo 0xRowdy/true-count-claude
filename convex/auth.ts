@@ -35,6 +35,17 @@ export const authComponent = createClient<DataModel>(components.betterAuth, {
           .withIndex("by_user", (q) => q.eq("userId", user._id))
           .collect();
         for (const row of rows) await ctx.db.delete(row._id);
+        // The Stripe component's copy of the customer holds the email and name: clear them, as
+        // Stripe's own customer.deleted webhook would. Its subscription, payment and invoice
+        // rows hold only ids, statuses and amounts.
+        const customer = await ctx.runQuery(components.stripe.public.getCustomerByUserId, {
+          userId: user._id,
+        });
+        if (customer) {
+          await ctx.runMutation(components.stripe.private.handleCustomerDeleted, {
+            stripeCustomerId: customer.stripeCustomerId,
+          });
+        }
         // A web subscription must not outlive its Account and keep billing nobody.
         await ctx.scheduler.runAfter(0, internal.billing.cancelStripeForDeletedUser, {
           userId: user._id,

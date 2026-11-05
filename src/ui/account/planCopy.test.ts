@@ -6,6 +6,8 @@ import {
   doubleBillingWarning,
   planStatus,
   shortDate,
+  storesToCancelFirst,
+  webSubscriptionRenewing,
 } from "./planCopy";
 
 // Local noon, so the calendar day is the same in every time zone the suite runs in.
@@ -54,6 +56,28 @@ describe("planCopy", () => {
     expect(
       doubleBillingWarning({ ...plus(), plan: "lifetime", alsoRenewing: ["play_store"] }),
     ).toMatch(/Lifetime, but a Plus subscription on Google Play/);
+  });
+});
+
+describe("before deleting an Account", () => {
+  it("names every store still billing, not just the plan shown", () => {
+    expect(storesToCancelFirst(plus())).toBeNull();
+    expect(storesToCancelFirst(plus({ source: "app_store" }))).toBe("the App Store");
+    expect(storesToCancelFirst(plus({ source: "app_store", willRenew: false }))).toBeNull();
+    const lifetime: ResolvedPlan = {
+      ...plus({ alsoRenewing: ["app_store", "play_store"] }),
+      plan: "lifetime",
+      willRenew: false,
+    };
+    expect(storesToCancelFirst(lifetime)).toBe("the App Store and Google Play");
+  });
+
+  it("knows a web subscription is renewing even when another plan is shown", () => {
+    expect(webSubscriptionRenewing(plus())).toBe(true);
+    expect(webSubscriptionRenewing(plus({ willRenew: false }))).toBe(false);
+    expect(webSubscriptionRenewing(plus({ source: "app_store", alsoRenewing: ["stripe"] }))).toBe(
+      true,
+    );
   });
 });
 
