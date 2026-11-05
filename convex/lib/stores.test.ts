@@ -152,6 +152,7 @@ describe("RevenueCat", () => {
       },
     });
     expect(e?.source).toBe("promotional");
+    expect(e?.willRenew).toBe(false);
   });
 });
 
@@ -171,5 +172,9 @@ describe("rcEventUserIds", () => {
       "user_a",
       "user_b",
     ]);
+  });
+
+  it("ignores a dashboard test event, whose customer is made up", () => {
+    expect(rcEventUserIds({ type: "TEST", app_user_id: "not-an-account-id" })).toEqual([]);
   });
 });

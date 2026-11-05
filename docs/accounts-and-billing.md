@@ -22,6 +22,8 @@ Everything below is per deployment. The dev deployment is `determined-kookabura-
 - `BETTER_AUTH_SECRET` (random) and `SITE_URL=http://localhost:8081` (`pnpm web`).
 - Stripe lives in the **TrueCountCoach sandbox** (`acct_1UY6osBd4pt3HDch`), not its parent
   account of nearly the same name.
+- RevenueCat project with the `plus` entitlement, the webhook, `REVENUECAT_SECRET_KEY` and
+  `REVENUECAT_WEBHOOK_AUTH`. No store apps or products yet, and no SDK keys in the app.
 - Functions and both components deployed. Until the providers below are configured, sign-in
   answers "Provider not found" and checkout answers "Purchases aren't set up on this server
   yet", both in place, with nothing charged.
@@ -71,10 +73,10 @@ store build: in Expo Go the token is issued to Expo Go's bundle id and is refuse
    - **Tableside Plus**: two recurring prices, $5.99 / month and $49 / year. No trial on the
      price: Checkout adds the 7-day trial to a player's first subscription only.
    - **Tableside Lifetime**: one-time price $199.99.
-     **Managed Payments** (Stripe as merchant of record, handling tax, fraud and disputes, for an
-     extra 3.5%) is on by default on new accounts. While it's on, every product needs a tax code or
-     Checkout refuses the session, so set one on both products or turn it off in Settings →
-     Managed Payments. Each mode has its own products, so production needs this too.
+     **Managed Payments** stays on: Stripe is the merchant of record, handling tax, fraud and
+     disputes, for an extra 3.5%. Checkout refuses a session until every product has an eligible
+     tax code, so set `txcd_10103000` (SaaS, personal use) on both products (done on dev). Each
+     mode has its own products, so production needs this too.
 2. Settings → Billing → **Customer portal**: allow canceling, switching between the monthly
    and yearly price, and updating payment methods. Leave quantity changes off: Plus is for one
    player. "Manage billing" on the account page opens it.
@@ -111,14 +113,37 @@ then the Plan. Apple Pay and Google Pay appear in Checkout on their own where av
    `EXPO_PUBLIC_REVENUECAT_IOS_KEY` and `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` (EAS environment
    variables for builds; `.env.local` for local runs).
 
-Purchases need a development or store build (`eas build --profile development`). Expo Go runs RevenueCat's preview mode, with no real
-purchases. In the apps, a signed-out player is sent to sign in before buying, so every purchase
-belongs to an Account; "Restore purchases" is on Pricing and the account page.
+5. Set up the stores' server notifications ([RevenueCat's guide](https://www.revenuecat.com/docs/platform-resources/server-notifications)).
+   Without them a store refund may not appear until the player reopens the app, and an
+   expiration can reach the webhook about an hour late.
+6. Leave Restore Behavior on its default, "Transfer to new App User ID", which RevenueCat
+   recommends when everyone signs in before buying. The webhook updates both Accounts.
 
-Before the apps sell: Pricing shows fixed US dollar prices from `src/ui/pricing/pricing.ts` where
-it should read the store's localized price from the RevenueCat offering, and its two buttons
-("Pay", "Start free trial with card") both open the store sheet, so native needs one store-worded
-button.
+Try the backend with no store or build: grant a player's id `plus` with
+`POST /v1/subscribers/<id>/entitlements/plus/promotional`. RevenueCat's webhook arrived within
+10 seconds on dev, and `account.me` reports Plus until you call `revoke_promotionals`.
+
+Purchases need a development or store build (`eas build --profile development`, simulator only
+on iOS). Expo Go runs RevenueCat's preview mode, with no real purchases. The Test Store API key is
+for debug builds only: the SDK crashes on purpose if it finds one in a release build, TestFlight
+included, so keep it out of the `preview` and `production` EAS environments. In the apps, a
+signed-out player is sent to sign in before buying, so every purchase belongs to an Account;
+"Restore purchases" is on Pricing and the account page.
+
+Before the apps sell:
+
+- Pricing shows fixed US dollar prices from `src/ui/pricing/pricing.ts` where it should read the
+  store's localized price from the RevenueCat offering, and its two buttons ("Pay", "Start free
+  trial with card") both open the store sheet, so native needs one store-worded button.
+- `account.me`'s `trialUsed` only knows about Stripe, but the store decides who gets a trial. The
+  apps can promise a trial the store won't give, and a store trial can be followed by a web one.
+- The SDK starts at the first purchase or restore (`storePurchases.native.ts`). RevenueCat says to
+  configure it early, at launch.
+- Apple requires Terms of Use and privacy policy links in the app for subscriptions. It has neither.
+- Testing with the Test Store needs a mapping: `rcSource` in `convex/lib/stores.ts` skips any store
+  it doesn't know, so a Test Store purchase wouldn't change the Plan.
+- Create the store products only after the tiers are settled: App Store product ids can't be
+  reused, and Apple requires a subscription to give ongoing value, which Plus doesn't do yet.
 
 Store rules this follows: the apps sell through the store (Apple 3.1.1 and 3.1.3(b): web
 purchases count in the app only if the same items are sold in-app). They do not link to web

@@ -35,7 +35,7 @@ http.route({
     }
     const body = (await request.json()) as { event?: Parameters<typeof rcEventUserIds>[0] };
     for (const userId of rcEventUserIds(body.event ?? {})) {
-      // Dashboard test events and deleted Accounts name no user of ours.
+      // A deleted Account is no user of ours any more.
       if (!(await authComponent.getAnyUserById(ctx, userId))) continue;
       await syncRevenueCat(ctx, userId);
     }
