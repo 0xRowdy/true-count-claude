@@ -128,5 +128,21 @@ export default async ({ page, url, shot, check }) => {
   await q.click();
   check((await q.getAttribute("aria-expanded")) === "false", "FAQ 2 closes");
 
+  // Terms of Use and Privacy Policy, which Apple requires where a subscription is sold.
+  for (const [name, heading, line] of [
+    ["Terms of Use", "Terms of Use", /renews automatically at the end of each period/],
+    ["Privacy Policy", "Privacy Policy", /We never see or store your card details/],
+  ]) {
+    const link = visible(order.getByRole("link", { name }));
+    const box = await link.boundingBox();
+    check(box && box.height >= 44, `"${name}" tap target ≥44 (${box?.height})`);
+    await link.click();
+    await visible(page.getByRole("heading", { name: heading, level: 1 })).waitFor();
+    check(await visible(page.getByText(line)).isVisible(), `${name} page opens from the order`);
+    await shot(name.toLowerCase().replace(/ /g, "-"));
+    await page.goBack();
+    await order.waitFor();
+  }
+
   check(errors.length === 0, `no console errors${errors.length ? `: ${errors.join(" | ")}` : ""}`);
 };

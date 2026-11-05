@@ -19,7 +19,7 @@ type AnyActionCtx = Pick<GenericActionCtx<GenericDataModel>, "runQuery" | "runMu
  *
  * Deployment env (docs/accounts-and-billing.md): STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET,
  * STRIPE_PRICE_PLUS_MONTHLY, STRIPE_PRICE_PLUS_YEARLY, STRIPE_PRICE_LIFETIME, SITE_URL;
- * REVENUECAT_SECRET_KEY, REVENUECAT_WEBHOOK_AUTH.
+ * REVENUECAT_SECRET_KEY, REVENUECAT_WEBHOOK_AUTH; REVENUECAT_ALLOW_TEST_STORE=true on dev only.
  *
  * Errors the app shows are `ConvexError`s carrying a `BillingErrorCode`.
  */
@@ -285,7 +285,9 @@ export async function syncRevenueCat(ctx: AnyActionCtx, userId: string): Promise
   if (!subscriber) throw new Error("RevenueCat GET /subscribers answered without a subscriber");
   await ctx.runMutation(internal.billing.replaceStoreEntitlements, {
     userId,
-    entitlements: fromRevenueCat(subscriber),
+    entitlements: fromRevenueCat(subscriber, {
+      testStore: process.env.REVENUECAT_ALLOW_TEST_STORE === "true",
+    }),
   });
 }
 

@@ -5,6 +5,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { api } from "../../../convex/_generated/api";
 import { authClient, refreshSession } from "./authClient";
 import { ACCOUNTS_AVAILABLE, convex } from "./backend";
+import { identifyStoreUser } from "./storePurchases";
 
 /**
  * The signed-in Account, for screens (ADR-0007). Optional by design (invariant 8): no screen
@@ -35,9 +36,29 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   if (!convex) return <>{children}</>;
   return (
     <ConvexBetterAuthProvider client={convex} authClient={providerAuthClient}>
+      <StoreIdentity />
       {children}
     </ConvexBetterAuthProvider>
   );
+}
+
+/**
+ * Starts RevenueCat as the signed-in Account once sign-in has settled, at launch rather than
+ * at the first purchase, so a purchase interrupted last time is finished now. Apps only.
+ */
+function StoreIdentity() {
+  const userId = storeUserId(useAccount());
+  useEffect(() => {
+    // A failure here is retried by the next purchase, restore or Pricing visit.
+    if (userId !== undefined) identifyStoreUser(userId).catch(() => {});
+  }, [userId]);
+  return null;
+}
+
+/** Who the store should buy for: the Account's id, null signed out, undefined while unknown. */
+export function storeUserId(account: AccountState): string | null | undefined {
+  if (account.status === "signed-in") return account.account.id;
+  return account.status === "signed-out" ? null : undefined;
 }
 
 /**

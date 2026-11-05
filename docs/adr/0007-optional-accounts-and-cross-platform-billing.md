@@ -100,7 +100,9 @@ and RevenueCat Billing can't use Stripe Managed Payments or sell to customers in
 - The web bundle grows about 11% (the Convex client and the Better Auth client). A Metro
   alias (`metro.config.js`) keeps Better Auth's server cookie module, with zod and jose,
   out of it; without it the growth was 35%.
-- Two trials are possible, one on the web and one in a store. Accepted for now.
+- Two trials are possible only in one order: a web trial, then a store trial, because a store
+  can't be told who has trialled elsewhere. A store subscription rules out a web trial.
+  Accepted.
 - Web sales make us the seller of record for sales tax and VAT: Stripe, unlike the stores, is
   not a merchant of record. Not yet decided between Stripe Tax (we register and file) and
   Stripe Managed Payments (Stripe is the merchant of record, +3.5%; it excludes betting and

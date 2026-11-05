@@ -86,4 +86,21 @@ describe("pricing", () => {
       ]);
     });
   });
+
+  it("shows an app store's own prices in the player's currency", () => {
+    const pounds = {
+      currency: "GBP",
+      locale: "en-GB",
+      plusMonthly: 5.49,
+      plusYearly: 44,
+      lifetime: 179.99,
+    };
+    expect(planView("plus", "yearly", "trial", pounds)).toEqual({
+      price: "£44 / year",
+      sub: "£3.66 a month, billed yearly · 7-day free trial",
+    });
+    expect(yearlySaving(pounds)).toBe(33);
+    expect(order("plus", "yearly", null, "trial", pounds).dueToday).toBe("£0.00");
+    expect(order("lifetime", "yearly", null, "paid", pounds).total).toBe("£179.99");
+  });
 });

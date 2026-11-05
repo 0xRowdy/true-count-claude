@@ -1,12 +1,23 @@
 import { ConvexError } from "convex/values";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Platform } from "react-native";
-import type { Billing, PlanId } from "@/ui/pricing/pricing";
-import { useAccount } from "./account";
+import {
+  PRICES,
+  type Billing,
+  type Offer,
+  type PlanId,
+  type StoreOffer,
+} from "@/ui/pricing/pricing";
+import { storeUserId, useAccount } from "./account";
 import { ACCOUNTS_AVAILABLE } from "./backend";
 import { billingFailure, startWebCheckout, syncStorePurchases } from "./billing";
-import { buyInStore, restoreStorePurchases, STORE_AVAILABLE } from "./storePurchases";
+import {
+  buyInStore,
+  loadStoreOffer,
+  restoreStorePurchases,
+  STORE_AVAILABLE,
+} from "./storePurchases";
 
 export interface PurchaseNotice {
   readonly title: string;
@@ -39,6 +50,36 @@ export function usePurchase() {
   const current: PlanId = account.status === "signed-in" ? account.account.plan.plan : "free";
   // Signed out it isn't known yet: sign-in comes back to this page before anything is charged.
   const trialUsed = account.status === "signed-in" && account.account.trialUsed;
+
+  // In the apps the store sets the price, the currency and who gets a trial.
+  const [store, setStore] = useState<StoreOffer | null>(null);
+  const storeUser = storeUserId(account);
+  useEffect(() => {
+    if (!STORE_AVAILABLE || storeUser === undefined) return;
+    let live = true;
+    loadStoreOffer(storeUser).then(
+      (o) => live && setStore(o),
+      () => {},
+    );
+    return () => {
+      live = false;
+    };
+  }, [storeUser]);
+  const prices = store?.prices ?? PRICES;
+  /**
+   * The web's trial is for an Account's first Plus. A store's is the store's call, and until
+   * it answers nobody is promised one.
+   */
+  const offer = (billing: Billing): Offer =>
+    !CAN_SELL
+      ? "preview"
+      : Platform.OS === "web"
+        ? trialUsed
+          ? "paid"
+          : "trial"
+        : store?.trial[billing]
+          ? "trial"
+          : "paid";
 
   const buy = async (plan: "plus" | "lifetime", billing: Billing) => {
     setNotice(null);
@@ -88,7 +129,16 @@ export function usePurchase() {
         }
       : null;
 
-  return { current, trialUsed, buy, restore, busy, notice, clearNotice: () => setNotice(null) };
+  return {
+    current,
+    prices,
+    offer,
+    buy,
+    restore,
+    busy,
+    notice,
+    clearNotice: () => setNotice(null),
+  };
 }
 
 const PURCHASE_NOT_SYNCED: PurchaseNotice = {

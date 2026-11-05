@@ -1,6 +1,6 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { localIsoDate } from "@/state/profile";
 import { CAN_SELL, usePurchase } from "@/ui/account/usePurchase";
 import {
@@ -24,7 +24,10 @@ import {
   RotateCcw,
   ShieldCheck,
 } from "@/ui/ds/icons";
-import { order, planView, yearlySaving, type Billing, type Offer, type PlanId } from "./pricing";
+import { order, planView, yearlySaving, type Billing, type PlanId } from "./pricing";
+
+/** In the apps the App Store or Google Play sheet takes the payment (ADR-0007). */
+const STORE_SHEET = Platform.OS !== "web" && CAN_SELL;
 
 const WIN_REAL_MONEY = {
   q: "Can I win real money here?",
@@ -109,13 +112,19 @@ const PLANS: ReadonlyArray<{ id: PlanId; name: string; features: readonly string
 
 const WIDE = 1100;
 
+const LEGAL = [
+  ["Terms of Use", "/terms"],
+  ["Privacy Policy", "/privacy"],
+] as const;
+
 /**
  * Pricing & purchase (design frame VcZwn), inside the app shell with no active nav item.
  * Monthly/Yearly changes the prices, choosing a plan updates "Your order" (its trial dates
  * counted from today, after mount), and the FAQ opens and closes.
  *
  * "Pay" and the card button buy through `usePurchase` (ADR-0007): sign in first, then Stripe
- * Checkout on the web or the App Store / Google Play in the apps. `?plan=&billing=` (back from
+ * Checkout on the web. The apps have one button for the store's sheet, and show the store's
+ * prices, currency and trial. `?plan=&billing=` (back from
  * sign-in or a canceled Checkout) picks the plan again, after mount.
  *
  * A build that can't sell (`CAN_SELL`) is a labelled preview: both checkout buttons say they are
@@ -138,8 +147,10 @@ export function PricingScreen() {
   }, [params.plan, params.billing]);
 
   const wide = width === null || width >= WIDE;
-  const offer: Offer = !CAN_SELL ? "preview" : purchase.trialUsed ? "paid" : "trial";
-  const o = order(plan, billing, today, offer);
+  const offer = purchase.offer(billing);
+  const prices = purchase.prices;
+  const saving = yearlySaving(prices);
+  const o = order(plan, billing, today, offer, prices);
   const current = purchase.current;
   // Already this plan, or Lifetime (which covers everything): manage it, don't buy it again.
   const owned = current === "lifetime" || (current === "plus" && plan !== "lifetime");
@@ -181,7 +192,7 @@ export function PricingScreen() {
                   key={b}
                   accessibilityRole="radio"
                   accessibilityLabel={b === "monthly" ? "Monthly" : "Yearly"}
-                  accessibilityHint={b === "yearly" ? `Save ${yearlySaving()}%` : undefined}
+                  accessibilityHint={b === "yearly" ? `Save ${saving}%` : undefined}
                   aria-checked={on}
                   onPress={() => setBilling(b)}
                   style={[styles.toggleItem, on && styles.toggleOn]}
@@ -192,7 +203,7 @@ export function PricingScreen() {
                   {b === "yearly" ? (
                     <View style={styles.save}>
                       <Text style={[ui(11, 700), { color: colors.primaryForeground }]}>
-                        Save {yearlySaving()}%
+                        Save {saving}%
                       </Text>
                     </View>
                   ) : null}
@@ -204,7 +215,7 @@ export function PricingScreen() {
           <View style={styles.planList} accessibilityRole="radiogroup" accessibilityLabel="Plan">
             {PLANS.map((p) => {
               const on = plan === p.id;
-              const view = planView(p.id, billing, offer);
+              const view = planView(p.id, billing, offer, prices);
               return (
                 <Pressable
                   key={p.id}
@@ -340,27 +351,47 @@ export function PricingScreen() {
             />
           ) : o.purchasable ? (
             <View style={styles.pay}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={COPY.pay}
-                aria-busy={purchase.busy}
-                aria-disabled={purchase.busy}
-                disabled={purchase.busy}
-                onPress={pay}
-                style={({ pressed }) => [styles.wallet, pressed && { opacity: 0.85 }]}
-              >
-                <Apple size={18} color={marketing.walletInk} strokeWidth={2} />
-                <Text style={[ui(17, 600), { color: marketing.walletInk }]}>{COPY.pay}</Text>
-              </Pressable>
-              <Button
-                size="lg"
-                icon={CreditCard}
-                label={o.trial ? COPY.startTrial : COPY.payWithCard}
-                disabled={purchase.busy}
-                onPress={pay}
-                fullWidth
-                style={{ height: 52 }}
-              />
+              {STORE_SHEET ? (
+                // The store's own sheet takes the payment (Apple Pay, Play's methods): one button.
+                <Button
+                  size="lg"
+                  label={
+                    o.trial
+                      ? "Start free trial"
+                      : plan === "lifetime"
+                        ? "Buy Lifetime"
+                        : "Subscribe"
+                  }
+                  disabled={purchase.busy}
+                  onPress={pay}
+                  fullWidth
+                  style={{ height: 52 }}
+                />
+              ) : (
+                <>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={COPY.pay}
+                    aria-busy={purchase.busy}
+                    aria-disabled={purchase.busy}
+                    disabled={purchase.busy}
+                    onPress={pay}
+                    style={({ pressed }) => [styles.wallet, pressed && { opacity: 0.85 }]}
+                  >
+                    <Apple size={18} color={marketing.walletInk} strokeWidth={2} />
+                    <Text style={[ui(17, 600), { color: marketing.walletInk }]}>{COPY.pay}</Text>
+                  </Pressable>
+                  <Button
+                    size="lg"
+                    icon={CreditCard}
+                    label={o.trial ? COPY.startTrial : COPY.payWithCard}
+                    disabled={purchase.busy}
+                    onPress={pay}
+                    fullWidth
+                    style={{ height: 52 }}
+                  />
+                </>
+              )}
               {purchase.restore ? (
                 <Button
                   label="Restore purchases"
@@ -388,6 +419,22 @@ export function PricingScreen() {
             />
           ) : null}
           <Text style={[ui(12, 400, { lineHeight: 18 }), styles.muted]}>{COPY.orderNote}</Text>
+          {/* Apple requires both on a subscription's purchase screen (3.1.2). */}
+          <View style={styles.legal}>
+            {LEGAL.map(([label, href]) => (
+              <Link key={href} href={href} asChild>
+                <Pressable
+                  accessibilityRole="link"
+                  accessibilityLabel={label}
+                  style={styles.legalTap}
+                >
+                  <Text style={[ui(12, 600), styles.fg, { textDecorationLine: "underline" }]}>
+                    {label}
+                  </Text>
+                </Pressable>
+              </Link>
+            ))}
+          </View>
           <View style={styles.responsible}>
             <ShieldCheck size={18} color={colors.correct} strokeWidth={2} />
             <Text style={[ui(12, 400, { lineHeight: 12 * 1.45 }), styles.fg, styles.flex]}>
@@ -508,6 +555,8 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
   },
   pay: { gap: 10 },
+  legal: { flexDirection: "row", flexWrap: "wrap", columnGap: 20, marginTop: -10 },
+  legalTap: { minHeight: 44, justifyContent: "center" },
   wallet: {
     height: 52,
     flexDirection: "row",

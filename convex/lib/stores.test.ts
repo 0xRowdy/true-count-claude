@@ -153,6 +153,19 @@ describe("RevenueCat", () => {
     });
     expect(e?.source).toBe("promotional");
   });
+
+  it("counts Test Store purchases only where the deployment allows them", () => {
+    const subscriber = {
+      subscriptions: { monthly: { store: "test_store", expires_date: iso(NOW + DAY) } },
+      non_subscriptions: { lifetime: [{ store: "TEST_STORE" }] },
+    };
+    expect(fromRevenueCat(subscriber)).toEqual([]);
+    const allowed = fromRevenueCat(subscriber, { testStore: true });
+    expect(allowed.map((e) => [e.source, e.plan])).toEqual([
+      ["test_store", "plus"],
+      ["test_store", "lifetime"],
+    ]);
+  });
 });
 
 describe("rcEventUserIds", () => {

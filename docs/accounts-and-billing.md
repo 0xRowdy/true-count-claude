@@ -100,25 +100,65 @@ then the Plan. Apple Pay and Google Pay appear in Checkout on their own where av
 1. **App Store Connect**: auto-renewable subscriptions Plus monthly and Plus yearly in one
    group, each with a 7-day free-trial introductory offer, and a non-consumable Lifetime.
    **Play Console**: the same as subscriptions (with a free-trial offer) and a one-time product.
+   The app reads prices, currency and trial eligibility from the store, but says "7-day" itself:
+   keep the trials at 7 days.
 2. **RevenueCat** project with an App Store app and a Play Store app (store credentials as
    RevenueCat's guides describe). Entitlement **`plus`** with all three products attached.
    Default offering with packages **`$rc_monthly`**, **`$rc_annual`**, **`$rc_lifetime`**: the
-   app buys from the current offering by those slots.
+   app buys from the current offering by those slots. Leave Project settings → General →
+   Restore behavior on the default, **Transfer to new App User ID**: every buyer is signed in,
+   and the webhook re-reads both Accounts on a `TRANSFER`.
 3. Integrations → Webhooks: URL `<site>/revenuecat/webhook`, Authorization header value a long
    random string. Set the same string as `REVENUECAT_WEBHOOK_AUTH`.
 4. API keys: a **secret v1** key as `REVENUECAT_SECRET_KEY` (the backend re-reads each
    subscriber with it). The public **Apple** and **Google** SDK keys go to the app as
    `EXPO_PUBLIC_REVENUECAT_IOS_KEY` and `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` (EAS environment
    variables for builds; `.env.local` for local runs).
+5. **Server notifications**, so a refund or expiry reaches the Plan promptly. Without them a
+   store refund may show only once the player reopens the app, and `EXPIRATION` can arrive about
+   an hour late.
+   - Apple: RevenueCat → the iOS app → Apple Server to Server notification settings →
+     **Apply in App Store Connect** (sets the Production and Sandbox URLs, version 2). Or copy
+     its URL into App Store Connect → App Information → App Store Server Notifications, both
+     fields.
+   - Google: enable Cloud Pub/Sub in the service account's Google Cloud project; RevenueCat →
+     the Play app → **Connect to Google** and copy the topic; Play Console → Monetize with Play →
+     Monetization setup → Topic name, notifications for "Subscriptions, voided purchases, and all
+     one-time products"; **Send test notification** until RevenueCat shows "Last received". If it
+     fails, give `google-play-developer-notifications@system.gserviceaccount.com` Pub/Sub
+     Publisher on the topic. New service credentials can take ~36 hours to work.
+6. **Legal links**: Pricing links Terms of Use (`/terms`) and the Privacy Policy (`/privacy`),
+   which Apple requires for subscriptions. Put `<web origin>/privacy` in App Store Connect → App
+   Privacy and in Play Console → App content; leave App Store Connect's license on Apple's
+   standard EULA, which `/terms` links.
 
-Purchases need a development or store build (`eas build --profile development`). Expo Go runs RevenueCat's preview mode, with no real
-purchases. In the apps, a signed-out player is sent to sign in before buying, so every purchase
-belongs to an Account; "Restore purchases" is on Pricing and the account page.
+Purchases need a development or store build (`eas build --profile development`). Expo Go runs
+RevenueCat's preview mode, with no real purchases. In the apps, a signed-out player is sent to
+sign in before buying, so every purchase belongs to an Account; "Restore purchases" is on
+Pricing and the account page. RevenueCat is configured at launch, once sign-in settles (as the
+Account, or anonymously when signed out, which never buys), so a purchase a crash interrupted is
+finished then.
 
-Before the apps sell: Pricing shows fixed US dollar prices from `src/ui/pricing/pricing.ts` where
-it should read the store's localized price from the RevenueCat offering, and its two buttons
-("Pay", "Start free trial with card") both open the store sheet, so native needs one store-worded
-button.
+What Pricing shows in the apps: the store's prices in the player's currency, one button for the
+store's sheet, and a free trial only where the store says this player gets one (on iOS an
+"unknown" answer shows no trial). On the web, an Account that has had Plus from any store gets
+no second trial; a store can still give a web subscriber one, which is the store's call.
+
+### Trying it before any store products exist
+
+1. **Promotional grant** (no build): RevenueCat → Customers → the player's Account id →
+   Grant entitlement `plus`. The webhook syncs the Account, and the Plan reads "A gift from
+   Tableside".
+2. **Test Store** (development build): RevenueCat → Apps → Test Store, add the three products
+   and the offering, and set its key as `EXPO_PUBLIC_REVENUECAT_IOS_KEY` /
+   `_ANDROID_KEY` in `.env.local` and the EAS **development** environment only. The SDK crashes
+   on purpose if it finds a Test Store key in a release build, TestFlight and Play testing
+   tracks included, so preview and production builds take the real store keys. The backend
+   counts Test Store purchases only where `REVENUECAT_ALLOW_TEST_STORE=true`: set it on the dev
+   deployment, never production (anyone with a debug build could otherwise give themselves
+   Plus).
+3. **Sandbox** (after the store products exist): real StoreKit and Play sandbox purchases. The
+   iOS `development` profile builds for the simulator only, so this needs a device profile.
 
 Store rules this follows: the apps sell through the store (Apple 3.1.1 and 3.1.3(b): web
 purchases count in the app only if the same items are sold in-app). They do not link to web

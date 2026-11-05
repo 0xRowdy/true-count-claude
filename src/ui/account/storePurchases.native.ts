@@ -1,6 +1,10 @@
 import { Platform } from "react-native";
-import Purchases, { PURCHASES_ERROR_CODE } from "react-native-purchases";
-import type { Billing } from "@/ui/pricing/pricing";
+import Purchases, {
+  INTRO_ELIGIBILITY_STATUS,
+  PURCHASES_ERROR_CODE,
+  type PurchasesStoreProduct,
+} from "react-native-purchases";
+import type { Billing, StoreOffer } from "@/ui/pricing/pricing";
 
 /**
  * App Store and Google Play purchases through RevenueCat (ADR-0007). RevenueCat's app user id
@@ -18,29 +22,83 @@ export const STORE_AVAILABLE = Boolean(API_KEY);
 
 export type StoreOutcome = "purchased" | "cancelled";
 
-let configuredFor: string | null = null;
+let configured = false;
+/** The app user id RevenueCat has confirmed (null: anonymous). */
+let current: string | null = null;
+/** Identity changes run one at a time, so a purchase never starts mid-switch. */
+let queue: Promise<void> = Promise.resolve();
 
-async function asUser(userId: string): Promise<void> {
-  if (configuredFor === userId) return;
-  if (configuredFor === null) Purchases.configure({ apiKey: API_KEY!, appUserID: userId });
-  else await Purchases.logIn(userId);
-  configuredFor = userId;
+/**
+ * Who RevenueCat buys for. The first call configures the SDK, which also finishes any purchase
+ * a crash or a lost connection interrupted. Signed out (`null`) keeps the last id: nothing is
+ * bought signed out, and a later sign-in switches with `logIn`. A failed switch is retried by
+ * the next call.
+ */
+function asUser(userId: string | null): Promise<void> {
+  queue = queue
+    .catch(() => {})
+    .then(async () => {
+      if (!configured) {
+        Purchases.configure({ apiKey: API_KEY!, appUserID: userId });
+        configured = true;
+        current = userId;
+      } else if (userId !== null && userId !== current) {
+        await Purchases.logIn(userId);
+        current = userId;
+      }
+    });
+  return queue;
 }
 
-/** The current RevenueCat offering's packages: `$rc_monthly`, `$rc_annual`, `$rc_lifetime`. */
+/** Called at launch, once sign-in has settled (RevenueCat asks to configure early). */
+export async function identifyStoreUser(userId: string | null): Promise<void> {
+  if (STORE_AVAILABLE) await asUser(userId);
+}
+
+/** The current offering's packages: `$rc_monthly`, `$rc_annual`, `$rc_lifetime`. */
+async function packages() {
+  const offering = (await Purchases.getOfferings()).current;
+  return { monthly: offering?.monthly, yearly: offering?.annual, lifetime: offering?.lifetime };
+}
+
+/** Null until the store has all three products. */
+export async function loadStoreOffer(userId: string | null): Promise<StoreOffer | null> {
+  await asUser(userId);
+  const { monthly, yearly, lifetime } = await packages();
+  if (!monthly || !yearly || !lifetime) return null;
+  const m = monthly.product;
+  const y = yearly.product;
+  // iOS: StoreKit knows who has had an introductory offer. UNKNOWN reads as no trial, as
+  // RevenueCat advises, so nobody is promised one and charged. Play lists only offers the
+  // player can take.
+  const eligible =
+    Platform.OS === "ios"
+      ? await Purchases.checkTrialOrIntroductoryPriceEligibility([m.identifier, y.identifier])
+      : {};
+  const freeTrial = (p: PurchasesStoreProduct) =>
+    Platform.OS === "ios"
+      ? p.introPrice?.price === 0 &&
+        eligible[p.identifier]?.status ===
+          INTRO_ELIGIBILITY_STATUS.INTRO_ELIGIBILITY_STATUS_ELIGIBLE
+      : p.defaultOption?.freePhase != null;
+  return {
+    prices: {
+      currency: m.currencyCode,
+      plusMonthly: m.price,
+      plusYearly: y.price,
+      lifetime: lifetime.product.price,
+    },
+    trial: { monthly: freeTrial(m), yearly: freeTrial(y) },
+  };
+}
+
 export async function buyInStore(
   userId: string,
   plan: "plus" | "lifetime",
   billing: Billing,
 ): Promise<StoreOutcome> {
   await asUser(userId);
-  const offering = (await Purchases.getOfferings()).current;
-  const pkg =
-    plan === "lifetime"
-      ? offering?.lifetime
-      : billing === "yearly"
-        ? offering?.annual
-        : offering?.monthly;
+  const pkg = (await packages())[plan === "lifetime" ? "lifetime" : billing];
   if (!pkg) throw new Error("This plan isn't set up in the store yet");
   try {
     await Purchases.purchasePackage(pkg);

@@ -31,6 +31,8 @@ const PAGES: Readonly<Record<string, string>> = {
   "/pricing": "Pricing",
   "/sign-in": "Sign in",
   "/account": "Account",
+  "/terms": "Terms of Use",
+  "/privacy": "Privacy Policy",
   "/rules": "Your table",
   "/shoe-integrity": "Shoe integrity",
   "/session": "Statistics",

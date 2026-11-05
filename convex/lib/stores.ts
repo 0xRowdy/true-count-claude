@@ -77,10 +77,12 @@ export interface RcSubscriber {
 /**
  * Stores RevenueCat reports that we sell through it. Web purchases come from Stripe directly,
  * so a Stripe or RevenueCat Billing record seen here is skipped rather than counted twice.
- * Promotional grants (comped from the RevenueCat dashboard) count.
+ * Promotional grants (comped from the RevenueCat dashboard) count. Test Store purchases count
+ * only where `testStore` is on (a dev deployment): its key lives in debug builds, which anyone
+ * holding one could use to buy Plus for free.
  */
-function rcSource(store: string | undefined): Source | null {
-  switch (store) {
+function rcSource(store: string | undefined, testStore: boolean): Source | null {
+  switch (store?.toLowerCase()) {
     case "app_store":
     case "mac_app_store":
       return "app_store";
@@ -88,6 +90,8 @@ function rcSource(store: string | undefined): Source | null {
       return "play_store";
     case "promotional":
       return "promotional";
+    case "test_store":
+      return testStore ? "test_store" : null;
     default:
       return null;
   }
@@ -106,10 +110,13 @@ function ms(iso: string | null | undefined): number | null {
  * RevenueCat keeps expired subscriptions in the response, so access is always bounded by the
  * expiry (or the store's grace period): a billing problem never becomes open-ended access.
  */
-export function fromRevenueCat(subscriber: RcSubscriber): StoreEntitlement[] {
+export function fromRevenueCat(
+  subscriber: RcSubscriber,
+  { testStore = false }: { testStore?: boolean } = {},
+): StoreEntitlement[] {
   const out: StoreEntitlement[] = [];
   for (const [product, sub] of Object.entries(subscriber.subscriptions ?? {})) {
-    const source = rcSource(sub.store);
+    const source = rcSource(sub.store, testStore);
     const expiresAt = ms(sub.grace_period_expires_date) ?? ms(sub.expires_date);
     if (!source || expiresAt === null) continue;
     const status: EntitlementStatus = sub.refunded_at
@@ -130,7 +137,7 @@ export function fromRevenueCat(subscriber: RcSubscriber): StoreEntitlement[] {
   }
   for (const [product, purchases] of Object.entries(subscriber.non_subscriptions ?? {})) {
     const paid = purchases.filter((p) => !p.refunded_at);
-    const source = rcSource(paid[paid.length - 1]?.store);
+    const source = rcSource(paid[paid.length - 1]?.store, testStore);
     if (!source) continue;
     out.push({
       source,
