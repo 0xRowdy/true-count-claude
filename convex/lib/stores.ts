@@ -130,8 +130,12 @@ export function fromRevenueCat(
       plan: "plus",
       status,
       expiresAt,
+      // A promotional grant simply ends: RevenueCat reports nothing that says it won't renew.
       willRenew:
-        status !== "ended" && !sub.unsubscribe_detected_at && !sub.billing_issues_detected_at,
+        source !== "promotional" &&
+        status !== "ended" &&
+        !sub.unsubscribe_detected_at &&
+        !sub.billing_issues_detected_at,
       interval: null,
     });
   }
@@ -154,16 +158,19 @@ export function fromRevenueCat(
 
 /**
  * The app user ids a RevenueCat webhook is about: the purchaser, plus both sides of a
- * TRANSFER (a store receipt moving from one account to another).
+ * TRANSFER (a store receipt moving from one account to another). A dashboard test event names
+ * a made-up customer, which isn't even a valid id to look up, so it is about nobody.
  * https://www.revenuecat.com/docs/integrations/webhooks/event-types-and-fields
  */
 export function rcEventUserIds(event: {
+  type?: string;
   app_user_id?: string;
   original_app_user_id?: string;
   aliases?: string[];
   transferred_from?: string[];
   transferred_to?: string[];
 }): string[] {
+  if (event.type === "TEST") return [];
   // `$RCAnonymousID:` is a device that never signed in: never one of our users.
   const ids = [
     event.app_user_id,

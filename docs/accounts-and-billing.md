@@ -22,6 +22,8 @@ Everything below is per deployment. The dev deployment is `determined-kookabura-
 - `BETTER_AUTH_SECRET` (random) and `SITE_URL=http://localhost:8081` (`pnpm web`).
 - Stripe lives in the **TrueCountCoach sandbox** (`acct_1UY6osBd4pt3HDch`), not its parent
   account of nearly the same name.
+- RevenueCat project with the `plus` entitlement, the webhook, `REVENUECAT_SECRET_KEY` and
+  `REVENUECAT_WEBHOOK_AUTH`. No store apps or products yet, and no SDK keys in the app.
 - Functions and both components deployed. Until the providers below are configured, sign-in
   answers "Provider not found" and checkout answers "Purchases aren't set up on this server
   yet", both in place, with nothing charged.
@@ -71,10 +73,10 @@ store build: in Expo Go the token is issued to Expo Go's bundle id and is refuse
    - **Tableside Plus**: two recurring prices, $5.99 / month and $49 / year. No trial on the
      price: Checkout adds the 7-day trial to a player's first subscription only.
    - **Tableside Lifetime**: one-time price $199.99.
-     **Managed Payments** (Stripe as merchant of record, handling tax, fraud and disputes, for an
-     extra 3.5%) is on by default on new accounts. While it's on, every product needs a tax code or
-     Checkout refuses the session, so set one on both products or turn it off in Settings →
-     Managed Payments. Each mode has its own products, so production needs this too.
+     **Managed Payments** stays on: Stripe is the merchant of record, handling tax, fraud and
+     disputes, for an extra 3.5%. Checkout refuses a session until every product has an eligible
+     tax code, so set `txcd_10103000` (SaaS, personal use) on both products (done on dev). Each
+     mode has its own products, so production needs this too.
 2. Settings → Billing → **Customer portal**: allow canceling, switching between the monthly
    and yearly price, and updating payment methods. Leave quantity changes off: Plus is for one
    player. "Manage billing" on the account page opens it.
@@ -146,9 +148,10 @@ no second trial; a store can still give a web subscriber one, which is the store
 
 ### Trying it before any store products exist
 
-1. **Promotional grant** (no build): RevenueCat → Customers → the player's Account id →
-   Grant entitlement `plus`. The webhook syncs the Account, and the Plan reads "A gift from
-   Tableside".
+1. **Promotional grant** (no build): grant a player's Account id `plus` with
+   `POST /v1/subscribers/<id>/entitlements/plus/promotional` (or RevenueCat → Customers → Grant
+   entitlement). RevenueCat's webhook arrived within 10 seconds on dev, and `account.me` reports
+   Plus, "A gift from Tableside", until you call `revoke_promotionals`.
 2. **Test Store** (development build): RevenueCat → Apps → Test Store, add the three products
    and the offering, and set its key as `EXPO_PUBLIC_REVENUECAT_IOS_KEY` /
    `_ANDROID_KEY` in `.env.local` and the EAS **development** environment only. The SDK crashes
@@ -159,6 +162,9 @@ no second trial; a store can still give a web subscriber one, which is the store
    Plus).
 3. **Sandbox** (after the store products exist): real StoreKit and Play sandbox purchases. The
    iOS `development` profile builds for the simulator only, so this needs a device profile.
+
+Create the store products only after the tiers are settled: App Store product ids can't be
+reused, and Apple requires a subscription to give ongoing value, which Plus doesn't do yet.
 
 Store rules this follows: the apps sell through the store (Apple 3.1.1 and 3.1.3(b): web
 purchases count in the app only if the same items are sold in-app). They do not link to web
