@@ -1,4 +1,6 @@
 import { Link, Stack, useRouter } from "expo-router";
+import { ACCOUNTS_AVAILABLE } from "@/ui/account/backend";
+import { CAN_SELL } from "@/ui/account/usePurchase";
 import { useRef, useState, type ReactNode } from "react";
 import {
   Image,
@@ -92,21 +94,24 @@ const PLANS = [
   {
     name: "Tableside Plus",
     amount: "$5.99",
-    per: "preview per month, or $49 a year",
-    desc: "Future plan preview. All current trainers, history and local strategy builders are free.",
+    per: CAN_SELL ? "per month, or $49 a year" : "preview per month, or $49 a year",
+    desc: CAN_SELL
+      ? "No ads and unlimited training sessions. A first subscription starts with 7 days free."
+      : "Future plan preview. All current trainers, history and local strategy builders are free.",
     featured: true,
   },
   {
     name: "Lifetime",
-    amount: "$119",
-    per: "example one-time price",
-    desc: "Future plan preview. Purchases and trials are unavailable in this build.",
+    amount: "$199.99",
+    per: CAN_SELL ? "one payment, yours for good" : "example one-time price",
+    desc: CAN_SELL
+      ? "Everything in Plus with no subscription. Good if you just want to own it."
+      : "Future plan preview. Purchases and trials are unavailable in this build.",
   },
 ] as const;
 
 const FOOTER_NOTICES = {
-  Privacy:
-    "Your progress, settings and strategies stay in this browser or device. Clearing its storage deletes them. Session backups leave the app only when you choose to download or share them.",
+  Privacy: `Your progress, settings and strategies stay in this browser or device. Clearing its storage deletes them. Session backups leave the app only when you choose to download or share them.${ACCOUNTS_AVAILABLE ? " An optional account keeps your name, email and plan on our servers so your plan follows you. Google or Apple signs you in; Stripe, Apple or Google takes payment." : ""}`,
   Terms:
     "Tableside is for practice only. All balances are virtual and have no cash value. There is no real-money gambling. Training and expected-value estimates do not guarantee casino results.",
   Accessibility:
@@ -179,15 +184,28 @@ export function LandingScreen() {
               </>
             )}
           </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Sign in"
-            aria-expanded={signInOpen}
-            onPress={() => setSignInOpen((open) => !open)}
-            style={styles.navTap}
-          >
-            <Text style={[ui(15, 500), { color: colors.foreground }]}>Sign in</Text>
-          </Pressable>
+          {ACCOUNTS_AVAILABLE ? (
+            <Link href="/sign-in" asChild>
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel="Sign in"
+                style={styles.navTap}
+              >
+                <Text style={[ui(15, 500), { color: colors.foreground }]}>Sign in</Text>
+              </Pressable>
+            </Link>
+          ) : (
+            // No backend in this build: an honest notice in place of a sign-in that goes nowhere.
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Sign in"
+              aria-expanded={signInOpen}
+              onPress={() => setSignInOpen((open) => !open)}
+              style={styles.navTap}
+            >
+              <Text style={[ui(15, 500), { color: colors.foreground }]}>Sign in</Text>
+            </Pressable>
+          )}
           <Link href={playHref} asChild>
             <Pressable
               accessibilityRole="link"
@@ -281,7 +299,7 @@ export function LandingScreen() {
             </View>
             <View style={styles.trust}>
               <Trust icon={Ban} label="No chips to buy" />
-              <Trust icon={EyeOff} label="No ads" />
+              {CAN_SELL ? null : <Trust icon={EyeOff} label="No ads" />}
               <Trust icon={Smartphone} label="Web, iOS & Android" />
             </View>
           </View>
@@ -473,12 +491,16 @@ export function LandingScreen() {
                 styles.center,
               ]}
             >
-              Every current training tool is free.
+              {CAN_SELL
+                ? "Free to play. Pay only to go deeper."
+                : "Every current training tool is free."}
             </Text>
             <Text
               style={[ui(18, 400, { lineHeight: 26 }), styles.center, { color: colors.inkMuted }]}
             >
-              Pricing preview only. Purchases and trials are unavailable in this build.
+              {CAN_SELL
+                ? "No chips to buy and no real-money wagering, now or later."
+                : "Pricing preview only. Purchases and trials are unavailable in this build."}
             </Text>
           </View>
           <View style={[wide || layout === "mid" ? styles.planRow : styles.column, { gap: 16 }]}>
@@ -489,7 +511,13 @@ export function LandingScreen() {
                 <View key={plan.name} style={[styles.plan, featured && styles.planFeatured]}>
                   <View style={styles.planTop}>
                     <Text style={[ui(16, 600), { color: fg }]}>{plan.name}</Text>
-                    {plan.name !== "Free" ? <Tag label="Plan preview" /> : null}
+                    {CAN_SELL ? (
+                      featured ? (
+                        <Tag label="7-day free trial" />
+                      ) : null
+                    ) : plan.name !== "Free" ? (
+                      <Tag label="Plan preview" />
+                    ) : null}
                   </View>
                   <View style={styles.planPrice}>
                     <Text style={[display(44, 500, { lineHeight: 44 }), { color: fg }]}>

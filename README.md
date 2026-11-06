@@ -44,8 +44,10 @@ and replay checks.
 
 Training and history stay on the device. The production web build caches all routes after
 one completed online visit, then supports offline navigation and reloads. Native builds
-bundle the app directly. No account or ads. Community content and multiplayer are labelled
-examples/simulations; pricing is a preview and no payment is processed.
+bundle the app directly. No account needed and no ads; an optional account (Google or Apple)
+carries a paid plan across web, iPhone and Android (ADR-0007). A build with no backend has no
+accounts: its pricing is a preview and no payment is processed. Community content and
+multiplayer are labelled examples/simulations.
 
 ## Numbers
 
@@ -76,7 +78,11 @@ src/drills/   The four drills: question generation, scoring, Explanations. UI-fr
 src/ui/       React Native components, shared across all three platforms.
 src/state/    Session and persistence.
 app/          Expo Router routes.
+convex/       Optional backend: accounts, plans, Stripe and RevenueCat webhooks.
 ```
+
+Accounts and billing need a Convex deployment and provider credentials:
+`docs/accounts-and-billing.md`. Without them the app builds and runs exactly as before.
 
 ## Read before contributing
 

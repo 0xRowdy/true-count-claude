@@ -4,6 +4,7 @@ import { Platform, View } from "react-native";
 import Head from "expo-router/head";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { AccountProvider } from "@/ui/account/account";
 import { colors as ds } from "@/ui/ds/tokens";
 import { BACK_BAR } from "@/ui/navigation/TabStack";
 import { loadProfile } from "@/ui/profile/profileStore";
@@ -52,13 +53,16 @@ export default function RootLayout() {
       <SafeAreaProvider style={{ backgroundColor: ds.background }}>
         {NATIVE ? null : <PageTitle />}
         <StatusBar style="light" />
-        {/*
-         * The bottom inset is left to each screen: the native tab bar draws its own, and the
-         * full-screen routes pad for it below (`contentStyle`).
-         */}
-        <SafeAreaView style={{ flex: 1 }} edges={NATIVE ? ["top", "right", "left"] : []}>
-          <RootStack />
-        </SafeAreaView>
+        {/* Optional Accounts (ADR-0007): a pass-through in a build with no backend. */}
+        <AccountProvider>
+          {/*
+           * The bottom inset is left to each screen: the native tab bar draws its own, and the
+           * full-screen routes pad for it below (`contentStyle`).
+           */}
+          <SafeAreaView style={{ flex: 1 }} edges={NATIVE ? ["top", "right", "left"] : []}>
+            <RootStack />
+          </SafeAreaView>
+        </AccountProvider>
       </SafeAreaProvider>
     </ThemeProvider>
   );
@@ -92,12 +96,28 @@ function RootStack() {
       <Stack.Screen name="index" options={{ title: "Tableside" }} />
       <Stack.Screen name="onboarding" options={{ title: "Get started · Tableside" }} />
       {/*
-       * Pricing and the design sheet are reached from inside the app on native: they get the
-       * platform's back bar there. The web keeps its own top bar.
+       * Pricing, the account pages and the design sheet are reached from inside the app on
+       * native: they get the platform's back bar there. The web keeps its own top bar.
        */}
       <Stack.Screen
         name="pricing"
         options={{ title: "Pricing · Tableside", headerShown: NATIVE }}
+      />
+      <Stack.Screen
+        name="sign-in"
+        options={{ title: "Sign in · Tableside", headerShown: NATIVE }}
+      />
+      <Stack.Screen
+        name="account"
+        options={{ title: "Account · Tableside", headerShown: NATIVE }}
+      />
+      <Stack.Screen
+        name="terms"
+        options={{ title: "Terms of Use · Tableside", headerShown: NATIVE }}
+      />
+      <Stack.Screen
+        name="privacy"
+        options={{ title: "Privacy Policy · Tableside", headerShown: NATIVE }}
       />
       <Stack.Screen name="play" options={{ title: "Blackjack" }} />
       {/* The sheet is not an AppShell page (it mirrors frame bi8Au). */}

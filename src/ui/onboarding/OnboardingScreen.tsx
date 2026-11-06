@@ -417,7 +417,7 @@ export function OnboardingScreen() {
                     style={styles.input}
                   />
                   <Text style={[ui(13), { color: colors.mutedForeground }]}>
-                    Stays on this device. There is no account.
+                    Stays on this device. No account needed.
                   </Text>
                 </View>
               </View>

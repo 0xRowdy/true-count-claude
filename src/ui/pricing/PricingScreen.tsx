@@ -1,7 +1,8 @@
-import { useRouter } from "expo-router";
+import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { localIsoDate } from "@/state/profile";
+import { CAN_SELL, usePurchase } from "@/ui/account/usePurchase";
 import {
   AppShell,
   Badge,
@@ -14,8 +15,85 @@ import {
   Tag,
   ui,
 } from "@/ui/ds";
-import { Apple, Check, ChevronDown, ChevronUp, CreditCard, ShieldCheck } from "@/ui/ds/icons";
+import {
+  Apple,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  CreditCard,
+  RotateCcw,
+  ShieldCheck,
+} from "@/ui/ds/icons";
 import { order, planView, yearlySaving, type Billing, type PlanId } from "./pricing";
+
+/** In the apps the App Store or Google Play sheet takes the payment (ADR-0007). */
+const STORE_SHEET = Platform.OS !== "web" && CAN_SELL;
+
+const WIN_REAL_MONEY = {
+  q: "Can I win real money here?",
+  a: "No. Tableside has no real-money wagering, and practice results don't carry over to a casino. The house edge is real; we just help you play each hand correctly.",
+};
+
+/** The page's words, by whether this build can take a payment (`CAN_SELL`, ADR-0007). */
+const COPY = CAN_SELL
+  ? {
+      title: "Every game is free. Plus goes deeper.",
+      lead: "No chips to buy and no real-money wagering, on any plan. Your plan follows your account across web, iPhone and Android.",
+      plusTag: "Best for trip prep",
+      plus: ["No ads", "Unlimited training sessions"],
+      lifetime: ["Pay once and keep it on every device", "Includes future games as they launch"],
+      faq: [
+        WIN_REAL_MONEY,
+        {
+          q: "Do I need Plus to get ready for a trip?",
+          a: "No. Every game, every supported rule set and the coach on basic strategy are free. Free is enough to walk up to the table knowing the move; Plus removes ads and lets you train without limits.",
+        },
+        {
+          q: "What happens to my strategies if I cancel?",
+          a: "They stay yours. Strategies you wrote or forked stay on your device and keep working with the coach on house basic strategy.",
+        },
+      ],
+      orderTitle: "YOUR ORDER",
+      pay: "Pay",
+      startTrial: "Start free trial with card",
+      payWithCard: "Pay with card",
+      orderNote:
+        "Cancel any time from Account → Plan, in two taps. Bought on iPhone or Android? Manage it in your app store. Purchases follow your account to every device.",
+      reassurance:
+        "You're paying for training tools, not chips. Nothing here can be wagered, cashed out or used to win real money.",
+    }
+  : {
+      title: "Every game and drill is free in this MVP.",
+      lead: "Pricing preview. Purchases and trials are unavailable. All games, drills, session history, and strategy builders are free to use.",
+      plusTag: "Preview only",
+      plus: [
+        "Future plan preview; no paid features in this build",
+        "All current trainers, history, and strategy drafts stay free",
+      ],
+      lifetime: [
+        "Example one-time price; not offered yet",
+        "No purchase or account required to train",
+      ],
+      faq: [
+        WIN_REAL_MONEY,
+        {
+          q: "Do I need Plus to get ready for a trip?",
+          a: "No. Every game, every supported rule set, all drills, and your full session history are free in this MVP. There is no separate purchase for deeper training.",
+        },
+        {
+          q: "What happens to my strategies if I cancel?",
+          a: "There is no subscription to cancel in this build. Strategies you write or fork stay on your device and keep working for free.",
+        },
+      ],
+      orderTitle: "ORDER PREVIEW",
+      pay: "Pay (unavailable)",
+      startTrial: "Free trial (unavailable)",
+      payWithCard: "Pay with card (unavailable)",
+      orderNote:
+        "This is an example order, not an active subscription. No payment method is collected, no trial starts, and nothing is charged.",
+      reassurance:
+        "Practice uses virtual chips only. Nothing here can be wagered, cashed out or used to win real money.",
+    };
 
 const PLANS: ReadonlyArray<{ id: PlanId; name: string; features: readonly string[] }> = [
   {
@@ -28,65 +106,60 @@ const PLANS: ReadonlyArray<{ id: PlanId; name: string; features: readonly string
       "Strategy builders, example strategies, and simulated tables",
     ],
   },
-  {
-    id: "plus",
-    name: "Tableside Plus",
-    features: [
-      "Future plan preview; no paid features in this build",
-      "All current trainers, history, and strategy drafts stay free",
-    ],
-  },
-  {
-    id: "lifetime",
-    name: "Lifetime",
-    features: [
-      "Example one-time price; not offered yet",
-      "No purchase or account required to train",
-    ],
-  },
-];
-
-const FAQ: ReadonlyArray<{ q: string; a: string }> = [
-  {
-    q: "Can I win real money here?",
-    a: "No. Tableside has no real-money wagering, and practice results don't carry over to a casino. The house edge is real; we just help you play each hand correctly.",
-  },
-  {
-    q: "Do I need Plus to get ready for a trip?",
-    a: "No. Every game, every supported rule set, all drills, and your full session history are free in this MVP. There is no separate purchase for deeper training.",
-  },
-  {
-    q: "What happens to my strategies if I cancel?",
-    a: "There is no subscription to cancel in this build. Strategies you write or fork stay on your device and keep working for free.",
-  },
+  { id: "plus", name: "Tableside Plus", features: COPY.plus },
+  { id: "lifetime", name: "Lifetime", features: COPY.lifetime },
 ];
 
 const WIDE = 1100;
+
+const LEGAL = [
+  ["Terms of Use", "/terms"],
+  ["Privacy Policy", "/privacy"],
+] as const;
 
 /**
  * Pricing & purchase (design frame VcZwn), inside the app shell with no active nav item.
  * Monthly/Yearly changes the prices, choosing a plan updates "Your order" (its trial dates
  * counted from today, after mount), and the FAQ opens and closes.
  *
- * No payment is ever processed: both checkout buttons say they are unavailable and show an
- * in-place notice that purchases are not available in this build.
+ * "Pay" and the card button buy through `usePurchase` (ADR-0007): sign in first, then Stripe
+ * Checkout on the web. The apps have one button for the store's sheet, and show the store's
+ * prices, currency and trial. `?plan=&billing=` (back from
+ * sign-in or a canceled Checkout) picks the plan again, after mount.
+ *
+ * A build that can't sell (`CAN_SELL`) is a labelled preview: both checkout buttons say they are
+ * unavailable, show an in-place notice, and no payment is processed.
  */
 export function PricingScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ plan?: string; billing?: string }>();
   const [billing, setBilling] = useState<Billing>("yearly");
   const [plan, setPlan] = useState<PlanId>("plus");
   const [open, setOpen] = useState<number | null>(0);
-  const [notice, setNotice] = useState(false);
   const [width, setWidth] = useState<number | null>(null);
+  const purchase = usePurchase();
   // The timeline's dates are a clock read: after mount only (hydration).
   const [today, setToday] = useState<string | null>(null);
   useEffect(() => setToday(localIsoDate(new Date())), []);
+  useEffect(() => {
+    if (params.plan === "plus" || params.plan === "lifetime") setPlan(params.plan);
+    if (params.billing === "monthly" || params.billing === "yearly") setBilling(params.billing);
+  }, [params.plan, params.billing]);
 
   const wide = width === null || width >= WIDE;
-  const o = order(plan, billing, today);
+  const offer = purchase.offer(billing);
+  const prices = purchase.prices;
+  const saving = yearlySaving(prices);
+  const o = order(plan, billing, today, offer, prices);
+  const current = purchase.current;
+  // Already this plan, or Lifetime (which covers everything): manage it, don't buy it again.
+  const owned = current === "lifetime" || (current === "plus" && plan !== "lifetime");
   const choose = (id: PlanId) => {
     setPlan(id);
-    setNotice(false);
+    purchase.clearNotice();
+  };
+  const pay = () => {
+    if (plan !== "free") void purchase.buy(plan, billing);
   };
 
   return (
@@ -102,12 +175,9 @@ export function PricingScreen() {
               aria-level={1}
               style={[display(wide ? 40 : 32, 500, { lineHeight: wide ? 48 : 38 }), styles.fg]}
             >
-              Every game and drill is free in this MVP.
+              {COPY.title}
             </Text>
-            <Text style={[ui(17, 400, { lineHeight: 25 }), styles.muted]}>
-              Pricing preview. Purchases and trials are unavailable. All games, drills, session
-              history, and strategy builders are free to use.
-            </Text>
+            <Text style={[ui(17, 400, { lineHeight: 25 }), styles.muted]}>{COPY.lead}</Text>
             <Text style={[ui(17, 400, { lineHeight: 25 }), styles.muted]}>
               Progress stays on this device. Session backup and restore can move your Play and Drill
               history between devices; there is no automatic sync.
@@ -122,7 +192,7 @@ export function PricingScreen() {
                   key={b}
                   accessibilityRole="radio"
                   accessibilityLabel={b === "monthly" ? "Monthly" : "Yearly"}
-                  accessibilityHint={b === "yearly" ? `Save ${yearlySaving()}%` : undefined}
+                  accessibilityHint={b === "yearly" ? `Save ${saving}%` : undefined}
                   aria-checked={on}
                   onPress={() => setBilling(b)}
                   style={[styles.toggleItem, on && styles.toggleOn]}
@@ -133,7 +203,7 @@ export function PricingScreen() {
                   {b === "yearly" ? (
                     <View style={styles.save}>
                       <Text style={[ui(11, 700), { color: colors.primaryForeground }]}>
-                        Save {yearlySaving()}%
+                        Save {saving}%
                       </Text>
                     </View>
                   ) : null}
@@ -145,7 +215,7 @@ export function PricingScreen() {
           <View style={styles.planList} accessibilityRole="radiogroup" accessibilityLabel="Plan">
             {PLANS.map((p) => {
               const on = plan === p.id;
-              const view = planView(p.id, billing);
+              const view = planView(p.id, billing, offer, prices);
               return (
                 <Pressable
                   key={p.id}
@@ -161,13 +231,17 @@ export function PricingScreen() {
                     <View style={styles.planText}>
                       <View style={styles.nameRow}>
                         <Text style={[ui(19, 600), styles.fg]}>{p.name}</Text>
-                        {p.id === "free" ? (
+                        {p.id === current ? (
                           <Badge icon={Check} tone="correct" label="Current plan" />
-                        ) : p.id === "plus" ? (
-                          <Tag label="Preview only" />
+                        ) : p.id === "plus" && current === "free" ? (
+                          <Tag label={COPY.plusTag} />
                         ) : null}
                       </View>
-                      <Text style={[ui(13), styles.muted]}>{view.sub}</Text>
+                      <Text style={[ui(13), styles.muted]}>
+                        {p.id === "free" && current !== "free"
+                          ? "Every game and the coach, free for good"
+                          : view.sub}
+                      </Text>
                     </View>
                     {wide ? <Text style={[display(28, 500), styles.fg]}>{view.price}</Text> : null}
                   </View>
@@ -199,7 +273,7 @@ export function PricingScreen() {
             <Text accessibilityRole="header" aria-level={2} style={[ui(20, 600), styles.fg]}>
               Questions
             </Text>
-            {FAQ.map((item, i) => {
+            {COPY.faq.map((item, i) => {
               const expanded = open === i;
               const Chevron = expanded ? ChevronUp : ChevronDown;
               return (
@@ -233,7 +307,7 @@ export function PricingScreen() {
           role="region"
           accessibilityLabel="Your order"
         >
-          <Text style={[ui(11, 700, { letterSpacing: 1.5 }), styles.muted]}>ORDER PREVIEW</Text>
+          <Text style={[ui(11, 700, { letterSpacing: 1.5 }), styles.muted]}>{COPY.orderTitle}</Text>
           <View style={styles.item}>
             <View style={styles.itemText}>
               <Text style={[ui(17, 600), styles.fg]}>{o.name}</Text>
@@ -267,51 +341,104 @@ export function PricingScreen() {
             <Text style={[ui(15, 600), styles.fg]}>Due today</Text>
             <Text style={[display(24, 500), styles.fg]}>{o.dueToday}</Text>
           </View>
-          {o.purchasable ? (
+          {o.purchasable && owned ? (
+            <Button
+              size="lg"
+              label="Manage your plan"
+              onPress={() => router.push("/account")}
+              fullWidth
+              style={{ height: 52 }}
+            />
+          ) : o.purchasable ? (
             <View style={styles.pay}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Pay (unavailable)"
-                onPress={() => setNotice(true)}
-                style={({ pressed }) => [styles.wallet, pressed && { opacity: 0.85 }]}
-              >
-                <Apple size={18} color={marketing.walletInk} strokeWidth={2} />
-                <Text style={[ui(17, 600), { color: marketing.walletInk }]}>Pay (unavailable)</Text>
-              </Pressable>
-              <Button
-                size="lg"
-                icon={CreditCard}
-                label={o.trial ? "Free trial (unavailable)" : "Pay with card (unavailable)"}
-                onPress={() => setNotice(true)}
-                fullWidth
-                style={{ height: 52 }}
-              />
+              {STORE_SHEET ? (
+                // The store's own sheet takes the payment (Apple Pay, Play's methods): one button.
+                <Button
+                  size="lg"
+                  label={
+                    o.trial
+                      ? "Start free trial"
+                      : plan === "lifetime"
+                        ? "Buy Lifetime"
+                        : "Subscribe"
+                  }
+                  disabled={purchase.busy}
+                  onPress={pay}
+                  fullWidth
+                  style={{ height: 52 }}
+                />
+              ) : (
+                <>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={COPY.pay}
+                    aria-busy={purchase.busy}
+                    aria-disabled={purchase.busy}
+                    disabled={purchase.busy}
+                    onPress={pay}
+                    style={({ pressed }) => [styles.wallet, pressed && { opacity: 0.85 }]}
+                  >
+                    <Apple size={18} color={marketing.walletInk} strokeWidth={2} />
+                    <Text style={[ui(17, 600), { color: marketing.walletInk }]}>{COPY.pay}</Text>
+                  </Pressable>
+                  <Button
+                    size="lg"
+                    icon={CreditCard}
+                    label={o.trial ? COPY.startTrial : COPY.payWithCard}
+                    disabled={purchase.busy}
+                    onPress={pay}
+                    fullWidth
+                    style={{ height: 52 }}
+                  />
+                </>
+              )}
+              {purchase.restore ? (
+                <Button
+                  label="Restore purchases"
+                  icon={RotateCcw}
+                  variant="ghost"
+                  onPress={purchase.restore}
+                  fullWidth
+                />
+              ) : null}
             </View>
           ) : (
             <Button
               size="lg"
-              label="Keep playing free"
-              onPress={() => router.push("/lobby")}
+              label={current === "free" ? "Keep playing free" : "Manage your plan"}
+              onPress={() => router.push(current === "free" ? "/lobby" : "/account")}
               fullWidth
               style={{ height: 52 }}
             />
           )}
-          {notice ? (
+          {purchase.notice ? (
             <Notice
-              title="Purchases aren't available in this build"
-              body="Nothing was charged and no card details were asked for. Every game and the coach are free to use right now."
-              onClose={() => setNotice(false)}
+              title={purchase.notice.title}
+              body={purchase.notice.body}
+              onClose={purchase.clearNotice}
             />
           ) : null}
-          <Text style={[ui(12, 400, { lineHeight: 18 }), styles.muted]}>
-            This is an example order, not an active subscription. No payment method is collected, no
-            trial starts, and nothing is charged.
-          </Text>
+          <Text style={[ui(12, 400, { lineHeight: 18 }), styles.muted]}>{COPY.orderNote}</Text>
+          {/* Apple requires both on a subscription's purchase screen (3.1.2). */}
+          <View style={styles.legal}>
+            {LEGAL.map(([label, href]) => (
+              <Link key={href} href={href} asChild>
+                <Pressable
+                  accessibilityRole="link"
+                  accessibilityLabel={label}
+                  style={styles.legalTap}
+                >
+                  <Text style={[ui(12, 600), styles.fg, { textDecorationLine: "underline" }]}>
+                    {label}
+                  </Text>
+                </Pressable>
+              </Link>
+            ))}
+          </View>
           <View style={styles.responsible}>
             <ShieldCheck size={18} color={colors.correct} strokeWidth={2} />
             <Text style={[ui(12, 400, { lineHeight: 12 * 1.45 }), styles.fg, styles.flex]}>
-              Practice uses virtual chips only. Nothing here can be wagered, cashed out or used to
-              win real money.
+              {COPY.reassurance}
             </Text>
           </View>
         </View>
@@ -428,6 +555,8 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
   },
   pay: { gap: 10 },
+  legal: { flexDirection: "row", flexWrap: "wrap", columnGap: 20, marginTop: -10 },
+  legalTap: { minHeight: 44, justifyContent: "center" },
   wallet: {
     height: 52,
     flexDirection: "row",

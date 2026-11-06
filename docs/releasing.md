@@ -65,7 +65,8 @@ video poker and craps, including a reproducible seeded video poker deal.
 their controls. `.maestro/native-card-layout.yml` checks wrapping on the Lobby
 and Progress pages and captures the weekly chart. `.maestro/native-notices.yml`
 requires footer notices to appear immediately after tapping and verifies that
-pricing timelines describe hypothetical examples. These seven flows include
+pricing timelines describe hypothetical examples, as they do in any build with no backend
+(`eas.json` sets none; ADR-0007). These seven flows include
 visual regressions that the previous behavior-only smoke test missed.
 `.eas/workflows/native-smoke.yml` builds an iOS artifact and runs all seven flows
 on a macOS worker with Apple's simulator, so the
