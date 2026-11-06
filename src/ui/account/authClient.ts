@@ -33,3 +33,8 @@ export async function signInWith(provider: Provider, returnTo: string): Promise<
   });
   if (error) throw new Error(error.message ?? error.code ?? "Sign-in failed");
 }
+
+/** iOS only (`authClient.native.ts`): the web's Apple sign-in token is revoked by the backend. */
+export async function appleAuthorizationCode(): Promise<string | null> {
+  throw new Error("Only the iOS app asks Apple for a code");
+}

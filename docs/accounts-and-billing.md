@@ -59,16 +59,17 @@ Apple Developer → Certificates, Identifiers & Profiles:
    `<site>/api/auth/callback/apple`. (Apple refuses localhost; the Convex host works.)
 3. **Key** with Sign in with Apple enabled: download `AuthKey_<KEY_ID>.p8` once, keep it out of
    the repo (`*.p8` is git-ignored), and note the Key ID and your Team ID.
-4. Set:
+4. Set (the `NAME=value` form: the CLI reads a value starting with `-----` as an option):
    ```sh
    npx convex env set APPLE_SERVICE_ID=com.truecount.web
-   npx convex env set "APPLE_CLIENT_SECRET=$(node scripts/apple-client-secret.mjs \
-     --team <TEAM_ID> --key-id <KEY_ID> --client-id com.truecount.web --key AuthKey_<KEY_ID>.p8)"
+   npx convex env set APPLE_TEAM_ID=<TEAM_ID>
+   npx convex env set APPLE_KEY_ID=<KEY_ID>
+   npx convex env set "APPLE_PRIVATE_KEY=$(cat AuthKey_<KEY_ID>.p8)"
    ```
 
-**The client secret expires after at most six months.** The script prints the date. When it
-lapses, Apple sign-in on the web and Android fails (native iOS keeps working: it sends an
-identity token instead). Put the renewal in a calendar.
+The backend signs the client secrets Apple asks for with this key (`convex/apple.ts`), one for
+the Services ID (web and Android sign-in) and one for the bundle id (revoking an iOS sign-in),
+so nothing expires. Revoking a key in the Apple Developer portal stops both; set the new one.
 
 iOS uses the system Apple sheet (`expo-apple-authentication`), which needs a development or
 store build: in Expo Go the token is issued to Expo Go's bundle id and is refused.
@@ -151,7 +152,8 @@ finished then.
 What Pricing shows in the apps: the store's prices in the player's currency, one button for the
 store's sheet, and a free trial only where the store says this player gets one (on iOS an
 "unknown" answer shows no trial). On the web, an Account that has had Plus from any store gets
-no second trial; a store can still give a web subscriber one, which is the store's call.
+no second trial; a store can still give a web subscriber one, which is the store's call. Nor
+does a new Account whose email had a Stripe subscription before, on an Account since deleted.
 
 ### Trying it before any store products exist
 
@@ -185,9 +187,21 @@ Entitlements in one transaction, and cancels any web subscription immediately. A
 subscription keeps billing until the player cancels it in the store; the page tells them so
 first. Better Auth asks for a sign-in from the last 24 hours before deleting.
 
-Not yet done: revoking the player's Apple tokens through Apple's REST API on deletion, which
-Apple asks of apps with Sign in with Apple. It waits on design (#62): native iOS sign-in keeps
-no Apple token to revoke yet.
+Deleting also revokes the player's Sign in with Apple through Apple's REST API, as Apple asks
+(#62):
+
+- **iOS**: native sign-in keeps no Apple token, so the app shows Apple's sheet once more before
+  deleting, and the backend swaps its fresh code for a token and revokes it. Closing the sheet
+  keeps the Account.
+- **Web and Android**: Better Auth stored the sign-in's token (encrypted with
+  `BETTER_AUTH_SECRET`); deleting the sign-in link revokes it, as does unlinking Apple.
+- An Account that signed in with Apple only on an iPhone and is deleted on the web has no token
+  to revoke there. The page tells the player where to remove it in Settings.
+
+These, and the Stripe cancel, run under the action retrier: 6 tries over about 13 hours. If
+every try fails, the log reads "GAVE UP after every retry" and says what to do by hand. Check
+after deletion: Settings → your name → Sign-In & Security → Sign in with Apple no longer lists
+Tableside.
 
 ## Production
 
