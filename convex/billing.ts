@@ -173,8 +173,8 @@ export const applyStripe = internalMutation({
 });
 
 /**
- * A refunded Lifetime payment stops granting Lifetime. Stamped now, so a Lifetime grant that
- * read the payment before the refund can't write it back.
+ * A refunded Lifetime payment, or one whose chargeback was lost, stops granting Lifetime.
+ * Stamped now, so a Lifetime grant that read the payment before then can't write it back.
  */
 export const endStripePayment = internalMutation({
   args: { paymentIntentId: v.string() },
@@ -235,6 +235,11 @@ function liveSubscriptions(customerId: string) {
   return stripe().subscriptions.list({ customer: customerId, status: "all", limit: 100 });
 }
 
+async function chargebackLost(paymentIntent: string): Promise<boolean> {
+  const { data } = await stripe().disputes.list({ payment_intent: paymentIntent });
+  return data.some((d) => d.status === "lost");
+}
+
 /** A paid Lifetime Checkout: grant it, and stop any Plus subscription still renewing on the web. */
 async function lifetimePaid(ctx: AnyActionCtx, session: Stripe.Checkout.Session) {
   const userId = session.metadata?.userId;
@@ -250,6 +255,9 @@ async function lifetimePaid(ctx: AnyActionCtx, session: Stripe.Checkout.Session)
     expand: ["latest_charge"],
   });
   if (typeof charge === "object" && charge?.refunded) return;
+  if (typeof charge === "object" && charge?.disputed && (await chargebackLost(paymentIntent))) {
+    return;
+  }
   await ctx.runMutation(internal.billing.applyStripe, {
     userId,
     entitlement: {
@@ -290,6 +298,20 @@ export const stripeEvents: StripeEventHandlers = {
     const paymentIntent =
       typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
     if (charge.refunded && paymentIntent) {
+      await ctx.runMutation(internal.billing.endStripePayment, { paymentIntentId: paymentIntent });
+    }
+  },
+  // A lost chargeback is a refund the player took through their bank. With Managed Payments,
+  // Stripe answers disputes and may accept one (closing it lost), but they are still this
+  // account's disputes and send these events. An open dispute keeps access: a won one would
+  // otherwise need restoring.
+  "charge.dispute.closed": async (ctx, e) => {
+    const dispute = e.data.object;
+    const paymentIntent =
+      typeof dispute.payment_intent === "string"
+        ? dispute.payment_intent
+        : dispute.payment_intent?.id;
+    if (dispute.status === "lost" && paymentIntent) {
       await ctx.runMutation(internal.billing.endStripePayment, { paymentIntentId: paymentIntent });
     }
   },

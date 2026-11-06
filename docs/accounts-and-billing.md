@@ -90,11 +90,12 @@ store build: in Expo Go the token is issued to Expo Go's bundle id and is refuse
    (or `stripe webhook_endpoints create`): endpoint `<site>/stripe/webhook`, API version
    `2026-08-26.dahlia` (the one the `stripe` package pins), with these events:
    `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
-   `charge.refunded`, `customer.created`, `customer.updated`, `customer.deleted`,
-   `customer.subscription.created`, `customer.subscription.updated`,
+   `charge.refunded`, `charge.dispute.closed`, `customer.created`, `customer.updated`,
+   `customer.deleted`, `customer.subscription.created`, `customer.subscription.updated`,
    `customer.subscription.deleted`, `invoice.created`, `invoice.finalized`, `invoice.updated`,
    `invoice.paid`, `invoice.payment_failed`, `payment_intent.succeeded`,
-   `payment_intent.payment_failed`.
+   `payment_intent.payment_failed`. A refund or a lost chargeback (Stripe answers disputes
+   under Managed Payments, but they still reach this endpoint) ends a Lifetime purchase.
 4. Set `STRIPE_SECRET_KEY` (`sk_test_…`), `STRIPE_WEBHOOK_SECRET` (`whsec_…`, shown only when
    the endpoint is created),
    `STRIPE_PRICE_PLUS_MONTHLY`, `STRIPE_PRICE_PLUS_YEARLY`, `STRIPE_PRICE_LIFETIME` (`price_…`).
