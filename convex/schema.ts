@@ -52,6 +52,11 @@ export default defineSchema({
     /** The Better Auth user id (`identity.subject`), also RevenueCat's app user id. */
     userId: v.string(),
     ...entitlementFields,
+    /**
+     * Stripe rows: when the Stripe state the row holds was fetched (epoch ms). A write from an
+     * earlier fetch is skipped (`isLatestRead`). Unset on rows written before it existed.
+     */
+    syncedAt: v.optional(v.number()),
   })
     .index("by_user", ["userId"])
     .index("by_external", ["source", "externalId"]),

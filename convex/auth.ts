@@ -45,11 +45,14 @@ export const authComponent = createClient<DataModel>(components.betterAuth, {
           await ctx.runMutation(components.stripe.private.handleCustomerDeleted, {
             stripeCustomerId: customer.stripeCustomerId,
           });
+          // A web subscription must not outlive its Account and keep billing nobody. Checkout
+          // always runs on this customer (`getOrCreateCustomer`), so no customer, no
+          // subscription.
+          await ctx.scheduler.runAfter(0, internal.billing.cancelStripeForDeletedUser, {
+            userId: user._id,
+            stripeCustomerId: customer.stripeCustomerId,
+          });
         }
-        // A web subscription must not outlive its Account and keep billing nobody.
-        await ctx.scheduler.runAfter(0, internal.billing.cancelStripeForDeletedUser, {
-          userId: user._id,
-        });
       },
     },
   },
