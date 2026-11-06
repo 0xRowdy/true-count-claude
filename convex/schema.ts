@@ -60,4 +60,10 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_external", ["source", "externalId"]),
+  /**
+   * Accounts whose email already had a Stripe subscription on an earlier Account, since deleted:
+   * they get no second web trial (ADR-0007). Stripe keeps a deleted Account's customer, email
+   * included; this app keeps nothing of it. Checked once, when the Account is created.
+   */
+  earlierPlus: defineTable({ userId: v.string() }).index("by_user", ["userId"]),
 });

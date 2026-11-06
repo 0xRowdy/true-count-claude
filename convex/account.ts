@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { components } from "./_generated/api";
 import { query } from "./_generated/server";
 import { authComponent } from "./auth";
-import { resolvePlan } from "./lib/plan";
+import { hasHadPlus, resolvePlan } from "./lib/plan";
 import { resolvedPlan } from "./schema";
 
 /**
@@ -20,8 +20,9 @@ export const me = query({
       image: v.union(v.string(), v.null()),
       plan: resolvedPlan,
       /**
-       * Has had Plus from any store: the web's free trial is for a first subscription only.
-       * The stores decide their own trials (the app asks them; see `storePurchases`).
+       * Has had Plus from any store, or on an earlier Account with this email: the web's free
+       * trial is for a first subscription only. The stores decide their own trials (the app
+       * asks them; see `storePurchases`).
        */
       trialUsed: v.boolean(),
     }),
@@ -40,15 +41,22 @@ export const me = query({
     const pastSubs = await ctx.runQuery(components.stripe.public.listSubscriptionsByUserId, {
       userId: user._id,
     });
+    const earlier = await ctx.db
+      .query("earlierPlus")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .first();
     return {
       id: user._id,
       name: user.name,
       email: user.email,
       image: user.image ?? null,
       plan,
-      // RevenueCat keeps ended store subscriptions, so their rows stay too. A gift isn't a trial.
-      trialUsed:
-        pastSubs.length > 0 || rows.some((r) => r.plan === "plus" && r.source !== "promotional"),
+      // RevenueCat keeps ended store subscriptions, so their rows stay too.
+      trialUsed: hasHadPlus({
+        stripeSubscriptions: pastSubs.length,
+        entitlements: rows,
+        earlierAccount: earlier !== null,
+      }),
     };
   },
 });

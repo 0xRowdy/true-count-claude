@@ -151,7 +151,8 @@ finished then.
 What Pricing shows in the apps: the store's prices in the player's currency, one button for the
 store's sheet, and a free trial only where the store says this player gets one (on iOS an
 "unknown" answer shows no trial). On the web, an Account that has had Plus from any store gets
-no second trial; a store can still give a web subscriber one, which is the store's call.
+no second trial; a store can still give a web subscriber one, which is the store's call. Nor
+does a new Account whose email had a Stripe subscription before, on an Account since deleted.
 
 ### Trying it before any store products exist
 

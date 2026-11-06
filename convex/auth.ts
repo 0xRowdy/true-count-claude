@@ -28,13 +28,22 @@ export const authComponent = createClient<DataModel>(components.betterAuth, {
   authFunctions,
   triggers: {
     user: {
+      // A new Account with an email that subscribed on the web before gets no second trial.
+      onCreate: async (ctx, user) => {
+        await ctx.scheduler.runAfter(0, internal.billing.checkEarlierPlus, {
+          userId: user._id,
+          email: user.email,
+        });
+      },
       // Same transaction as the delete (account deletion, App Store guideline 5.1.1(v)).
       onDelete: async (ctx, user) => {
-        const rows = await ctx.db
-          .query("entitlements")
-          .withIndex("by_user", (q) => q.eq("userId", user._id))
-          .collect();
-        for (const row of rows) await ctx.db.delete(row._id);
+        for (const table of ["entitlements", "earlierPlus"] as const) {
+          const rows = await ctx.db
+            .query(table)
+            .withIndex("by_user", (q) => q.eq("userId", user._id))
+            .collect();
+          for (const row of rows) await ctx.db.delete(row._id);
+        }
         // The Stripe component's copy of the customer holds the email and name: clear them, as
         // Stripe's own customer.deleted webhook would. Its subscription, payment and invoice
         // rows hold only ids, statuses and amounts.

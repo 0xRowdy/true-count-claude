@@ -2,7 +2,7 @@
 
 **Status:** Accepted · 2026-10-25 · Supersedes the "no backend" part of ADR-0003 · Context
 on store rules corrected and tax added 2026-10-27 · Stripe write order, chargebacks and the
-deletion retry added 2026-11-05
+deletion retry added 2026-11-05 · Trials after deletion added 2026-11-06
 
 ## Context
 
@@ -109,6 +109,12 @@ and RevenueCat Billing can't use Stripe Managed Payments or sell to customers in
 - Two trials are possible only in one order: a web trial, then a store trial, because a store
   can't be told who has trialled elsewhere. A store subscription rules out a web trial.
   Accepted.
+- Deleting an Account and signing in again with the same Google, Apple or email address gives
+  no second web trial. Deletion cancels the Stripe customer's subscriptions but leaves the
+  customer, and a new Account looks up its email there when it is created and again at
+  Checkout. Nothing of the deleted Account is kept on our side. A different address is a
+  different player: we don't try to match people across addresses, and a trial from the App
+  Store or Google Play on the deleted Account isn't found (the stores apply their own rules).
 - Web sales make us the seller of record for sales tax and VAT: Stripe, unlike the stores, is
   not a merchant of record. Not yet decided between Stripe Tax (we register and file) and
   Stripe Managed Payments (Stripe is the merchant of record, +3.5%; it excludes betting and

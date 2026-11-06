@@ -87,7 +87,8 @@ export const startCheckout = action({
       email: me.email,
       name: me.name,
     });
-    const trial = plan === "plus" && !me.trialUsed;
+    // Checked live too: the Account's mark from an earlier one may not be written yet.
+    const trial = plan === "plus" && !me.trialUsed && !(await earlierPlus(ctx, me.id, me.email));
     const session = await stripeComponent.createCheckoutSession(ctx, {
       priceId: priceId!,
       customerId,
@@ -112,6 +113,50 @@ export const startCheckout = action({
     });
     if (!session.url) throw new Error("Stripe returned a Checkout session without a URL");
     return { url: session.url };
+  },
+});
+
+/**
+ * Whether Stripe has a subscription under this email, on any customer. Deleting an Account
+ * cancels its subscriptions but leaves Stripe's customer, so a new Account signing in with the
+ * same Google, Apple or email address is found here and gets no second web trial (ADR-0007).
+ * Found, it is marked on the Account (`earlierPlus`), so Pricing stops offering the trial.
+ */
+async function earlierPlus(ctx: AnyActionCtx, userId: string, email: string): Promise<boolean> {
+  for await (const customer of stripe().customers.list({ email, limit: 100 })) {
+    for await (const sub of liveSubscriptions(customer.id)) {
+      // An expired incomplete one never started: no trial, no payment.
+      if (sub.status !== "incomplete_expired") {
+        await ctx.runMutation(internal.billing.markEarlierPlus, { userId });
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/** Run when an Account is created (`onCreate` in auth.ts). */
+export const checkEarlierPlus = internalAction({
+  args: { userId: v.string(), email: v.string() },
+  returns: v.null(),
+  handler: async (ctx, { userId, email }) => {
+    // Checkout checks again, so a failure here costs nothing but a trial shown then withdrawn.
+    if (process.env.STRIPE_SECRET_KEY) await earlierPlus(ctx, userId, email);
+    return null;
+  },
+});
+
+export const markEarlierPlus = internalMutation({
+  args: { userId: v.string() },
+  returns: v.null(),
+  handler: async (ctx, { userId }) => {
+    if (!(await accountExists(ctx, userId))) return null;
+    const marked = await ctx.db
+      .query("earlierPlus")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .first();
+    if (!marked) await ctx.db.insert("earlierPlus", { userId });
+    return null;
   },
 });
 

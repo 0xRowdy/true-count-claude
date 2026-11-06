@@ -110,3 +110,20 @@ export function resolvePlan(entitlements: readonly Entitlement[], now: number): 
     alsoRenewing: [...new Set(alsoRenewing)],
   };
 }
+
+/**
+ * Whether the Account has had Plus, which ends its web free trial (ADR-0007): a Stripe
+ * subscription of its own, a store Plus (a gift isn't a trial, and Lifetime isn't Plus), or a
+ * Stripe subscription on an earlier, deleted Account with the same email (`earlierAccount`).
+ */
+export function hasHadPlus(p: {
+  stripeSubscriptions: number;
+  entitlements: readonly Pick<Entitlement, "plan" | "source">[];
+  earlierAccount: boolean;
+}): boolean {
+  return (
+    p.earlierAccount ||
+    p.stripeSubscriptions > 0 ||
+    p.entitlements.some((e) => e.plan === "plus" && e.source !== "promotional")
+  );
+}
