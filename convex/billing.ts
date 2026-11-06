@@ -12,7 +12,6 @@ import {
   fromStripeSubscription,
   isLatestRead,
 } from "./lib/stores";
-import { retryDelay } from "./lib/retry";
 import { entitlementFields } from "./schema";
 
 /** What the helpers below need: our own actions' ctx and the Stripe webhook handlers' both fit. */
@@ -384,42 +383,20 @@ export const stripeEvents: StripeEventHandlers = {
 };
 
 /**
- * After account deletion: end every web subscription now, so nobody is billed for nothing.
- * Nobody is left to notice a failure, so it retries with backoff (`retryDelay`), and logs an
- * error naming the customer if Stripe still refuses.
+ * After account deletion: end every web subscription now, so nobody is billed for nothing. Run
+ * under the retrier (`runCleanup`); canceling again is harmless.
  */
 export const cancelStripeForDeletedUser = internalAction({
-  args: {
-    userId: v.string(),
-    stripeCustomerIds: v.array(v.string()),
-    attempt: v.optional(v.number()),
-  },
+  args: { stripeCustomerIds: v.array(v.string()) },
   returns: v.null(),
-  handler: async (ctx, { userId, stripeCustomerIds, attempt = 0 }) => {
+  handler: async (_ctx, { stripeCustomerIds }) => {
     if (!process.env.STRIPE_SECRET_KEY) return null;
-    try {
-      for (const customer of stripeCustomerIds) {
-        for await (const sub of liveSubscriptions(customer)) {
-          if (sub.status !== "canceled" && sub.status !== "incomplete_expired") {
-            await stripe().subscriptions.cancel(sub.id);
-          }
+    for (const customer of stripeCustomerIds) {
+      for await (const sub of liveSubscriptions(customer)) {
+        if (sub.status !== "canceled" && sub.status !== "incomplete_expired") {
+          await stripe().subscriptions.cancel(sub.id);
         }
       }
-    } catch (e) {
-      const delay = retryDelay(attempt);
-      if (delay === null) {
-        console.error(
-          `GAVE UP canceling Stripe subscriptions for deleted Account ${userId} (customers ${stripeCustomerIds.join(", ")}) after ${attempt + 1} tries; cancel them in the Stripe Dashboard`,
-          e,
-        );
-        throw e;
-      }
-      console.warn(`Canceling Stripe for deleted Account ${userId} failed; retrying`, e);
-      await ctx.scheduler.runAfter(delay, internal.billing.cancelStripeForDeletedUser, {
-        userId,
-        stripeCustomerIds,
-        attempt: attempt + 1,
-      });
     }
     return null;
   },

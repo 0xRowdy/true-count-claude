@@ -66,4 +66,6 @@ export default defineSchema({
    * included; this app keeps nothing of it. Checked once, when the Account is created.
    */
   earlierPlus: defineTable({ userId: v.string() }).index("by_user", ["userId"]),
+  /** What to do by hand if a retried cleanup after deletion never succeeds (`cleanup.ts`). */
+  cleanups: defineTable({ runId: v.string(), byHand: v.string() }).index("by_run", ["runId"]),
 });

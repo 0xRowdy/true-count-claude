@@ -89,7 +89,8 @@ and RevenueCat Billing can't use Stripe Managed Payments or sell to customers in
 - Plan logic is pure and tested in plain Node, like the engine.
 - Account deletion removes every Entitlement in the same transaction as the user (a Better
   Auth trigger), and cancels every web subscription Stripe lists for the Account's customers,
-  retrying with backoff for about 15 hours.
+  retrying with backoff for about 13 hours (the action retrier, so a crashed try is retried
+  too) and logging what to do by hand if every try fails.
 
 **Bad / accepted risks**
 

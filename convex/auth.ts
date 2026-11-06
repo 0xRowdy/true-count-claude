@@ -5,6 +5,7 @@ import { betterAuth, type BetterAuthOptions } from "better-auth/minimal";
 import { components, internal } from "./_generated/api";
 import type { DataModel } from "./_generated/dataModel";
 import authConfig from "./auth.config";
+import { runCleanup } from "./cleanup";
 
 /**
  * Accounts (ADR-0007): optional, and only ever Google or Apple. Nothing in the trainer needs
@@ -69,10 +70,12 @@ export const authComponent = createClient<DataModel>(components.betterAuth, {
           ]),
         ];
         if (stripeCustomerIds.length > 0) {
-          await ctx.scheduler.runAfter(0, internal.billing.cancelStripeForDeletedUser, {
-            userId: user._id,
-            stripeCustomerIds,
-          });
+          await runCleanup(
+            ctx,
+            internal.billing.cancelStripeForDeletedUser,
+            { stripeCustomerIds },
+            `cancel the Stripe subscriptions of deleted Account ${user._id} (customers ${stripeCustomerIds.join(", ")}) in the Stripe Dashboard`,
+          );
         }
       },
     },
