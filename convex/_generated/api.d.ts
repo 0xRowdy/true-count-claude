@@ -13,6 +13,7 @@ import type * as auth from "../auth.js";
 import type * as billing from "../billing.js";
 import type * as http from "../http.js";
 import type * as lib_plan from "../lib/plan.js";
+import type * as lib_retry from "../lib/retry.js";
 import type * as lib_stores from "../lib/stores.js";
 
 import type {
@@ -27,6 +28,7 @@ declare const fullApi: ApiFromModules<{
   billing: typeof billing;
   http: typeof http;
   "lib/plan": typeof lib_plan;
+  "lib/retry": typeof lib_retry;
   "lib/stores": typeof lib_stores;
 }>;
 

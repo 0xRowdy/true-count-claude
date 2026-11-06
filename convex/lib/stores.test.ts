@@ -1,7 +1,13 @@
 import type Stripe from "stripe";
 import { describe, expect, it } from "vitest";
 import { resolvePlan } from "./plan";
-import { fromRevenueCat, fromStripeSubscription, rcEventUserIds, stripeStatus } from "./stores";
+import {
+  fromRevenueCat,
+  fromStripeSubscription,
+  isLatestRead,
+  rcEventUserIds,
+  stripeStatus,
+} from "./stores";
 
 const NOW = Date.UTC(2026, 9, 25);
 const DAY = 86_400_000;
@@ -72,6 +78,27 @@ describe("Stripe", () => {
   it("is Free once the first payment never landed", () => {
     const e = fromStripeSubscription(stripeSub({ status: "incomplete" }));
     expect(resolvePlan([e], NOW).plan).toBe("free");
+  });
+});
+
+describe("Stripe writes", () => {
+  // Each handler fetches from Stripe, then commits. Two close together can commit in either
+  // order; the row must end up holding the later fetch.
+  const commit = (
+    row: { syncedAt?: number; status: string },
+    w: { syncedAt: number; status: string },
+  ) => (isLatestRead(row.syncedAt, w.syncedAt) ? w : row);
+
+  it("keeps the later fetch when two commit in reverse order", () => {
+    const trialing = { syncedAt: NOW, status: "trialing" };
+    const canceled = { syncedAt: NOW + 50, status: "ended" };
+    expect([canceled, trialing].reduce(commit, { status: "none" })).toEqual(canceled);
+    expect([trialing, canceled].reduce(commit, { status: "none" })).toEqual(canceled);
+  });
+
+  it("writes over a row from before the stamp existed, and repeats the same fetch", () => {
+    expect(isLatestRead(undefined, NOW)).toBe(true);
+    expect(isLatestRead(NOW, NOW)).toBe(true);
   });
 });
 

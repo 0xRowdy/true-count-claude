@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Platform } from "react-native";
 import {
+  offerFor,
   PRICES,
   type Billing,
   type Offer,
@@ -66,15 +67,13 @@ export function usePurchase() {
     };
   }, [storeUser]);
   const prices = store?.prices ?? PRICES;
-  /**
-   * The web's trial is for an Account's first Plus. A store's is the store's call, and until
-   * it answers nobody is promised one.
-   */
-  const offer = (billing: Billing): Offer => {
-    if (!CAN_SELL) return "preview";
-    const trial = Platform.OS === "web" ? !trialUsed : store?.trial[billing];
-    return trial ? "trial" : "paid";
-  };
+  const offer = (billing: Billing): Offer =>
+    offerFor({
+      canSell: CAN_SELL,
+      seller: Platform.OS === "web" ? "web" : "store",
+      trialUsed,
+      storeOffersTrial: store?.trial[billing],
+    });
 
   const buy = async (plan: "plus" | "lifetime", billing: Billing) => {
     setNotice(null);

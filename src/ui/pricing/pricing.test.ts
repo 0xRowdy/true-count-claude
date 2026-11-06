@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { order, planView, yearlySaving } from "./pricing";
+import { offerFor, order, planView, storeTrial, yearlySaving } from "./pricing";
 
 describe("pricing", () => {
   it("shows the design's yearly prices and saving", () => {
@@ -102,5 +102,49 @@ describe("pricing", () => {
     expect(yearlySaving(pounds)).toBe(33);
     expect(order("plus", "yearly", null, "trial", pounds).dueToday).toBe("£0.00");
     expect(order("lifetime", "yearly", null, "paid", pounds).total).toBe("£179.99");
+  });
+});
+
+describe("who gets a trial", () => {
+  it("offers nothing real in a build that can't sell", () => {
+    expect(
+      offerFor({ canSell: false, seller: "web", trialUsed: false, storeOffersTrial: undefined }),
+    ).toBe("preview");
+    expect(
+      offerFor({ canSell: false, seller: "store", trialUsed: false, storeOffersTrial: true }),
+    ).toBe("preview");
+  });
+
+  it("on the web, gives an Account its first Plus with a trial", () => {
+    expect(
+      offerFor({ canSell: true, seller: "web", trialUsed: false, storeOffersTrial: undefined }),
+    ).toBe("trial");
+    expect(
+      offerFor({ canSell: true, seller: "web", trialUsed: true, storeOffersTrial: undefined }),
+    ).toBe("paid");
+  });
+
+  it("in the apps, follows the store and ignores the web's trial history", () => {
+    expect(
+      offerFor({ canSell: true, seller: "store", trialUsed: true, storeOffersTrial: true }),
+    ).toBe("trial");
+    expect(
+      offerFor({ canSell: true, seller: "store", trialUsed: false, storeOffersTrial: false }),
+    ).toBe("paid");
+  });
+
+  it("in the apps, promises no trial until the store has answered", () => {
+    expect(
+      offerFor({ canSell: true, seller: "store", trialUsed: false, storeOffersTrial: undefined }),
+    ).toBe("paid");
+  });
+
+  it("takes the store's free intro offer only when the player is eligible for it", () => {
+    expect(storeTrial({ freeIntro: true, eligibility: "eligible" })).toBe(true);
+    expect(storeTrial({ freeIntro: true, eligibility: "ineligible" })).toBe(false);
+    // StoreKit couldn't tell: nobody is promised a trial and then charged.
+    expect(storeTrial({ freeIntro: true, eligibility: "unknown" })).toBe(false);
+    // A paid introductory price is not a free trial.
+    expect(storeTrial({ freeIntro: false, eligibility: "eligible" })).toBe(false);
   });
 });

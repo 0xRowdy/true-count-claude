@@ -25,10 +25,11 @@ Everything below is per deployment. The dev deployment is `determined-kookabura-
 - RevenueCat project **True Count** (`projf603c934`; not the separate "Tableside" project)
   with the `plus` entitlement, the webhook ("Convex dev"), `REVENUECAT_SECRET_KEY` and
   `REVENUECAT_WEBHOOK_AUTH`. Its only app is the **Test Store**, with `tableside_plus_monthly`
-  ($5.99), `tableside_plus_yearly` ($49), both with a 7-day trial for customers who never
-  subscribed, and `tableside_lifetime` ($199.99), in the default offering's `$rc*monthly`,
-`$rc_annual` and `$rc_lifetime`. Its SDK key is in `.env.local`as both`EXPO_PUBLIC_REVENUECAT*\*\_KEY`; `REVENUECAT_ALLOW_TEST_STORE=true` is set. No App Store or
-  Play apps yet.
+  (\$5.99), `tableside_plus_yearly` (\$49), both with a 7-day trial for customers who never
+  subscribed, and `tableside_lifetime` (\$199.99), in the default offering's `$rc_monthly`,
+  `$rc_annual` and `$rc_lifetime`. Its SDK key is in `.env.local` as both
+  `EXPO_PUBLIC_REVENUECAT_IOS_KEY` and `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY`;
+  `REVENUECAT_ALLOW_TEST_STORE=true` is set. No App Store or Play apps yet.
 - Functions and both components deployed. Until the providers below are configured, sign-in
   answers "Provider not found" and checkout answers "Purchases aren't set up on this server
   yet", both in place, with nothing charged.
@@ -89,11 +90,12 @@ store build: in Expo Go the token is issued to Expo Go's bundle id and is refuse
    (or `stripe webhook_endpoints create`): endpoint `<site>/stripe/webhook`, API version
    `2026-08-26.dahlia` (the one the `stripe` package pins), with these events:
    `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
-   `charge.refunded`, `customer.created`, `customer.updated`, `customer.deleted`,
-   `customer.subscription.created`, `customer.subscription.updated`,
+   `charge.refunded`, `charge.dispute.closed`, `customer.created`, `customer.updated`,
+   `customer.deleted`, `customer.subscription.created`, `customer.subscription.updated`,
    `customer.subscription.deleted`, `invoice.created`, `invoice.finalized`, `invoice.updated`,
    `invoice.paid`, `invoice.payment_failed`, `payment_intent.succeeded`,
-   `payment_intent.payment_failed`.
+   `payment_intent.payment_failed`. A refund or a lost chargeback (Stripe answers disputes
+   under Managed Payments, but they still reach this endpoint) ends a Lifetime purchase.
 4. Set `STRIPE_SECRET_KEY` (`sk_test_…`), `STRIPE_WEBHOOK_SECRET` (`whsec_…`, shown only when
    the endpoint is created),
    `STRIPE_PRICE_PLUS_MONTHLY`, `STRIPE_PRICE_PLUS_YEARLY`, `STRIPE_PRICE_LIFETIME` (`price_…`).
@@ -184,7 +186,8 @@ subscription keeps billing until the player cancels it in the store; the page te
 first. Better Auth asks for a sign-in from the last 24 hours before deleting.
 
 Not yet done: revoking the player's Apple tokens through Apple's REST API on deletion, which
-Apple asks of apps with Sign in with Apple.
+Apple asks of apps with Sign in with Apple. It waits on design (#62): native iOS sign-in keeps
+no Apple token to revoke yet.
 
 ## Production
 

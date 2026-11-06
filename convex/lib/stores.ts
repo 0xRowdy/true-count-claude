@@ -52,6 +52,15 @@ export function fromStripeSubscription(sub: Stripe.Subscription): StoreEntitleme
   };
 }
 
+/**
+ * Whether a Stripe read fetched at `fetchedAt` (epoch ms) may overwrite a row holding the read
+ * fetched at `stored`. Each handler fetches, then commits, so two close together can commit in
+ * the wrong order; the earlier fetch must not win. The same stamp is the same read, retried.
+ */
+export function isLatestRead(stored: number | undefined, fetchedAt: number): boolean {
+  return stored === undefined || fetchedAt >= stored;
+}
+
 // ---------------------------------------------------------------------------------------------
 // RevenueCat (App Store, Google Play). GET /v1/subscribers/{app_user_id}.
 // https://www.revenuecat.com/docs/api-v1/customer-info-model
