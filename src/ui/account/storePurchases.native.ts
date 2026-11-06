@@ -4,7 +4,12 @@ import Purchases, {
   PURCHASES_ERROR_CODE,
   type PurchasesStoreProduct,
 } from "react-native-purchases";
-import type { Billing, StoreOffer } from "@/ui/pricing/pricing";
+import {
+  storeTrial,
+  type Billing,
+  type IntroEligibility,
+  type StoreOffer,
+} from "@/ui/pricing/pricing";
 
 /**
  * App Store and Google Play purchases through RevenueCat (ADR-0007). RevenueCat's app user id
@@ -61,6 +66,17 @@ async function packages() {
   return { monthly: offering?.monthly, yearly: offering?.annual, lifetime: offering?.lifetime };
 }
 
+function iosEligibility(status: INTRO_ELIGIBILITY_STATUS | undefined): IntroEligibility {
+  if (status === INTRO_ELIGIBILITY_STATUS.INTRO_ELIGIBILITY_STATUS_ELIGIBLE) return "eligible";
+  if (
+    status === INTRO_ELIGIBILITY_STATUS.INTRO_ELIGIBILITY_STATUS_INELIGIBLE ||
+    status === INTRO_ELIGIBILITY_STATUS.INTRO_ELIGIBILITY_STATUS_NO_INTRO_OFFER_EXISTS
+  ) {
+    return "ineligible";
+  }
+  return "unknown";
+}
+
 /** Null until the store has all three products. */
 export async function loadStoreOffer(userId: string | null): Promise<StoreOffer | null> {
   await asUser(userId);
@@ -68,19 +84,19 @@ export async function loadStoreOffer(userId: string | null): Promise<StoreOffer 
   if (!monthly || !yearly || !lifetime) return null;
   const m = monthly.product;
   const y = yearly.product;
-  // iOS: StoreKit knows who has had an introductory offer. UNKNOWN reads as no trial, as
-  // RevenueCat advises, so nobody is promised one and charged. Play lists only offers the
-  // player can take.
+  // iOS: StoreKit knows who has had an introductory offer. Play lists only offers the player
+  // can take, so a free phase there is one they're eligible for.
   const eligible =
     Platform.OS === "ios"
       ? await Purchases.checkTrialOrIntroductoryPriceEligibility([m.identifier, y.identifier])
       : {};
   const freeTrial = (p: PurchasesStoreProduct) =>
     Platform.OS === "ios"
-      ? p.introPrice?.price === 0 &&
-        eligible[p.identifier]?.status ===
-          INTRO_ELIGIBILITY_STATUS.INTRO_ELIGIBILITY_STATUS_ELIGIBLE
-      : p.defaultOption?.freePhase != null;
+      ? storeTrial({
+          freeIntro: p.introPrice?.price === 0,
+          eligibility: iosEligibility(eligible[p.identifier]?.status),
+        })
+      : storeTrial({ freeIntro: p.defaultOption?.freePhase != null, eligibility: "eligible" });
   return {
     prices: {
       currency: m.currencyCode,

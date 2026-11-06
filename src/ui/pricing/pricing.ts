@@ -37,6 +37,33 @@ export interface StoreOffer {
   readonly trial: Readonly<Record<Billing, boolean>>;
 }
 
+/**
+ * What Pricing offers this player (ADR-0007). On the web, an Account's first Plus starts with a
+ * trial. In the apps the store decides, and until it answers (`storeTrial` undefined) nobody is
+ * promised one.
+ */
+export function offerFor(o: {
+  canSell: boolean;
+  web: boolean;
+  trialUsed: boolean;
+  storeTrial: boolean | undefined;
+}): Offer {
+  if (!o.canSell) return "preview";
+  return (o.web ? !o.trialUsed : o.storeTrial) ? "trial" : "paid";
+}
+
+/** What a store says about one player and one subscription's introductory offer. */
+export type IntroEligibility = "eligible" | "ineligible" | "unknown";
+
+/**
+ * Whether the store starts this player's subscription with a free trial: a free introductory
+ * offer they are eligible for. "Unknown" is no trial, as RevenueCat advises, so nobody is
+ * promised a trial and then charged.
+ */
+export function storeTrial(p: { freeIntro: boolean; eligibility: IntroEligibility }): boolean {
+  return p.freeIntro && p.eligibility === "eligible";
+}
+
 // ponytail: the stores' trial length is assumed to match (the setup guide asks for 7 days);
 // read it from the product's intro offer if they ever differ.
 export const TRIAL_DAYS = 7;
