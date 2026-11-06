@@ -2,7 +2,7 @@
 
 **Status:** Accepted · 2026-10-25 · Supersedes the "no backend" part of ADR-0003 · Context
 on store rules corrected and tax added 2026-10-27 · Stripe write order, chargebacks and the
-deletion retry added 2026-11-05 · Trials after deletion added 2026-11-06
+deletion retry added 2026-11-05 · Trials after deletion and Apple revocation added 2026-11-06
 
 ## Context
 
@@ -90,13 +90,15 @@ and RevenueCat Billing can't use Stripe Managed Payments or sell to customers in
 - Account deletion removes every Entitlement in the same transaction as the user (a Better
   Auth trigger), and cancels every web subscription Stripe lists for the Account's customers,
   retrying with backoff for about 13 hours (the action retrier, so a crashed try is retried
-  too) and logging what to do by hand if every try fails.
+  too) and logging what to do by hand if every try fails. It revokes the Account's Sign in
+  with Apple the same way: native iOS sign-in keeps no Apple token, so the app asks Apple's
+  sheet for a fresh code before deleting, at the cost of one more tap.
 
 **Bad / accepted risks**
 
 - There is now something to operate: a Convex deployment, Stripe and RevenueCat webhooks,
-  OAuth clients, and an Apple client secret that expires every six months
-  (`docs/accounts-and-billing.md`).
+  OAuth clients, and a Sign in with Apple key from which the backend signs Apple's client
+  secrets (`docs/accounts-and-billing.md`).
 - Better Auth is pinned to 1.6 by the Convex component. On React Native, 1.6 can leave
   `useSession` stale after sign-in (better-auth#10545); `refreshSession` works around it.
 - A player offline with an expired session appears signed out. Nothing gates on the Plan yet;

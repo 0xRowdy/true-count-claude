@@ -4,6 +4,7 @@ import { convex, crossDomain } from "@convex-dev/better-auth/plugins";
 import { betterAuth, type BetterAuthOptions } from "better-auth/minimal";
 import { components, internal } from "./_generated/api";
 import type { DataModel } from "./_generated/dataModel";
+import { APP_BUNDLE_ID, clientSecret, revokeLater } from "./apple";
 import authConfig from "./auth.config";
 import { runCleanup } from "./cleanup";
 
@@ -15,8 +16,9 @@ import { runCleanup } from "./cleanup";
  * - SITE_URL: the web app's origin, where web sign-in returns.
  * - BETTER_AUTH_SECRET: signs sessions.
  * - GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET: a Google "Web application" OAuth client.
- * - APPLE_SERVICE_ID, APPLE_CLIENT_SECRET: the Services ID and its client-secret JWT, for the
- *   web and Android flow.
+ * - APPLE_SERVICE_ID: the Services ID, for the web and Android flow. APPLE_TEAM_ID,
+ *   APPLE_KEY_ID, APPLE_PRIVATE_KEY: the Sign in with Apple key, which signs the client
+ *   secrets (`apple.ts`).
  * - TRUSTED_ORIGINS (optional): extra comma-separated origins, e.g. `exp://` for Expo Go.
  *
  * A provider without its credentials is left out, so a deployment mid-setup still serves the
@@ -28,6 +30,22 @@ const authFunctions: AuthFunctions = internal.auth;
 export const authComponent = createClient<DataModel>(components.betterAuth, {
   authFunctions,
   triggers: {
+    // Deleting the Account (or unlinking Apple) deletes this row. A web or Android Apple
+    // sign-in stored its token here: revoke it (#62). Native iOS stores none; the app revokes
+    // that sign-in itself (`apple.revokeFromDevice`).
+    account: {
+      onDelete: async (ctx, account) => {
+        const token = account.refreshToken ?? account.accessToken;
+        const clientId = process.env.APPLE_SERVICE_ID;
+        if (account.providerId !== "apple" || !token || !clientId) return;
+        await revokeLater(ctx, {
+          clientId,
+          token,
+          tokenType: account.refreshToken ? "refresh_token" : "access_token",
+          whose: `Account ${account.userId}'s web or Android sign-in`,
+        });
+      },
+    },
     user: {
       // A new Account with an email that subscribed on the web before gets no second trial.
       onCreate: async (ctx, user) => {
@@ -98,9 +116,9 @@ function socialProviders(): BetterAuthOptions["socialProviders"] {
           apple: {
             clientId: env.APPLE_SERVICE_ID,
             // Only the redirect flow (web, Android) needs it; native iOS sends an identity token.
-            clientSecret: env.APPLE_CLIENT_SECRET ?? "",
+            clientSecret: clientSecret(env.APPLE_SERVICE_ID) ?? "",
             // Native identity tokens are addressed to the app, not to the Services ID.
-            appBundleIdentifier: "com.truecount.app", // ios.bundleIdentifier in app.json
+            appBundleIdentifier: APP_BUNDLE_ID,
           },
         }
       : {}),
@@ -123,6 +141,8 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
       // The same verified email from Google and from Apple is one Account. (An Apple
       // "Hide My Email" relay address matches nothing, so that sign-in is its own Account.)
       accountLinking: { enabled: true, trustedProviders: ["google", "apple"] },
+      // Sign-in tokens are stored encrypted with BETTER_AUTH_SECRET (`apple.revoke` reads them).
+      encryptOAuthTokens: true,
     },
     user: { deleteUser: { enabled: true } },
     // Practice is often a week or two apart: stay signed in for 60 days of absence.

@@ -3,7 +3,8 @@ import { useConvexAuth, useQuery } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { useEffect, useState, type ReactNode } from "react";
 import { api } from "../../../convex/_generated/api";
-import { authClient, refreshSession } from "./authClient";
+import { Platform } from "react-native";
+import { appleAuthorizationCode, authClient, refreshSession } from "./authClient";
 import { ACCOUNTS_AVAILABLE, convex } from "./backend";
 import { identifyStoreUser } from "./storePurchases";
 
@@ -88,18 +89,44 @@ export async function signOut(): Promise<void> {
   await refreshSession();
 }
 
+/** Whether the signed-in Account has an Apple sign-in linked. */
+export async function signsInWithApple(): Promise<boolean> {
+  const { data } = await authClient.listAccounts();
+  return data?.some((a) => a.providerId === "apple") ?? false;
+}
+
 /**
  * Deletes the Account and everything the backend holds for it (App Store guideline 5.1.1(v)).
  * A web subscription is canceled with it; a store subscription is the player's to cancel.
  * Practice history stays on this device: it was never the Account's.
  *
+ * On iOS, an Account that signs in with Apple shows Apple's sheet first, and the code it gives
+ * revokes the app's Sign in with Apple once the Account is gone (#62). Closing the sheet keeps
+ * the Account (`canceled`). If the sheet itself fails, the Account is still deleted: the player
+ * can remove the app in Settings, which is better than being unable to delete.
+ *
  * Better Auth asks for a sign-in from the last day first: `reauthenticate` means sign in again.
  */
-export async function deleteAccount(): Promise<"deleted" | "reauthenticate"> {
+export async function deleteAccount(): Promise<"deleted" | "reauthenticate" | "canceled"> {
+  let appleCode: string | null = null;
+  if (Platform.OS === "ios" && (await signsInWithApple())) {
+    try {
+      appleCode = await appleAuthorizationCode();
+      if (appleCode === null) return "canceled";
+    } catch {
+      // No code (signed out of iCloud, say): delete anyway, unrevoked.
+    }
+  }
   const { error } = await authClient.deleteUser();
   if (error) {
     if (error.code === "SESSION_EXPIRED") return "reauthenticate";
     throw new Error(error.message ?? "The account couldn't be deleted");
+  }
+  if (appleCode && convex) {
+    // The Account is gone either way; the backend logs a failure.
+    await convex
+      .action(api.apple.revokeFromDevice, { authorizationCode: appleCode })
+      .catch(() => {});
   }
   await refreshSession();
   return "deleted";

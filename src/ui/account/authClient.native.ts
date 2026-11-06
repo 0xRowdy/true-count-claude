@@ -68,3 +68,18 @@ export async function signInWith(provider: Provider, returnTo: string): Promise<
   }
   await refreshSession();
 }
+
+/**
+ * iOS: Apple's sheet once more, for a fresh authorization code. Native sign-in keeps no Apple
+ * token, so this is how the backend revokes the app's Sign in with Apple when the Account is
+ * deleted (#62). Null if the player closes the sheet.
+ */
+export async function appleAuthorizationCode(): Promise<string | null> {
+  try {
+    const credential = await AppleAuthentication.signInAsync({ requestedScopes: [] });
+    return credential.authorizationCode;
+  } catch (e) {
+    if ((e as { code?: string }).code === "ERR_REQUEST_CANCELED") return null;
+    throw e;
+  }
+}
