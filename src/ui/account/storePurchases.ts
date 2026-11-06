@@ -1,4 +1,4 @@
-import type { Billing } from "@/ui/pricing/pricing";
+import type { Billing, StoreOffer } from "@/ui/pricing/pricing";
 
 /**
  * In-app purchases through the App Store and Google Play (RevenueCat). The web sells through
@@ -8,6 +8,12 @@ import type { Billing } from "@/ui/pricing/pricing";
 export const STORE_AVAILABLE = false;
 
 export type StoreOutcome = "purchased" | "cancelled";
+
+export async function identifyStoreUser(_userId: string | null): Promise<void> {}
+
+export async function loadStoreOffer(_userId: string | null): Promise<StoreOffer | null> {
+  return null;
+}
 
 export async function buyInStore(
   _userId: string,

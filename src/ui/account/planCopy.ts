@@ -41,6 +41,7 @@ export const BILLED_BY: Readonly<Record<Source, string>> = {
   app_store: "Billed by the App Store",
   play_store: "Billed by Google Play",
   promotional: "A gift from Tableside",
+  test_store: "Billed by RevenueCat's Test Store (development only)",
 };
 
 const STORE_NAMES: Readonly<Record<Source, string>> = {
@@ -48,6 +49,7 @@ const STORE_NAMES: Readonly<Record<Source, string>> = {
   app_store: "the App Store",
   play_store: "Google Play",
   promotional: "Tableside",
+  test_store: "the Test Store",
 };
 
 /** The player is paying for Plus twice: say where, so they can cancel one. */

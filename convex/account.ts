@@ -19,7 +19,10 @@ export const me = query({
       email: v.string(),
       image: v.union(v.string(), v.null()),
       plan: resolvedPlan,
-      /** Has had a web subscription: the free trial is for a first one only. */
+      /**
+       * Has had Plus from any store: the web's free trial is for a first subscription only.
+       * The stores decide their own trials (the app asks them; see `storePurchases`).
+       */
       trialUsed: v.boolean(),
     }),
   ),
@@ -43,7 +46,9 @@ export const me = query({
       email: user.email,
       image: user.image ?? null,
       plan,
-      trialUsed: pastSubs.length > 0,
+      // RevenueCat keeps ended store subscriptions, so their rows stay too. A gift isn't a trial.
+      trialUsed:
+        pastSubs.length > 0 || rows.some((r) => r.plan === "plus" && r.source !== "promotional"),
     };
   },
 });

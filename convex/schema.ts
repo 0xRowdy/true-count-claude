@@ -6,6 +6,7 @@ export const source = v.union(
   v.literal("app_store"),
   v.literal("play_store"),
   v.literal("promotional"),
+  v.literal("test_store"),
 );
 
 /** The fields of `Entitlement` (convex/lib/plan.ts), as stored. */

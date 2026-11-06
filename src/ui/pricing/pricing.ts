@@ -4,36 +4,57 @@
  *
  * Nothing here processes a payment. The `Offer` says what the player can actually do (ADR-0007):
  * a build that can't sell shows the same prices as a labelled preview that offers no trial or
- * purchase, and an Account that has had a web subscription gets no second trial.
+ * purchase. On the web, an Account that has had Plus anywhere gets no second trial; in the
+ * apps, the store says who gets one.
  */
 
 export type Billing = "monthly" | "yearly";
 export type PlanId = "free" | "plus" | "lifetime";
 export type Offer = "preview" | "trial" | "paid";
 
-export const PRICES = {
+/** What the plans cost, and in which currency. */
+export interface Prices {
+  readonly currency: string;
+  /** Unset: the device's own. The web fixes it, so the prerendered page and the client agree. */
+  readonly locale?: string;
+  readonly plusMonthly: number;
+  readonly plusYearly: number;
+  readonly lifetime: number;
+}
+
+/** The web's prices (Stripe). The apps show the store's own, in the player's currency. */
+export const PRICES: Prices = {
+  currency: "USD",
+  locale: "en-US",
   plusMonthly: 5.99,
   plusYearly: 49,
   lifetime: 199.99,
-} as const;
+};
 
+/** What an app store charges this player, and whether it starts each Plus billing with a trial. */
+export interface StoreOffer {
+  readonly prices: Prices;
+  readonly trial: Readonly<Record<Billing, boolean>>;
+}
+
+// ponytail: the stores' trial length is assumed to match (the setup guide asks for 7 days);
+// read it from the product's intro offer if they ever differ.
 export const TRIAL_DAYS = 7;
 /** The preview places a hypothetical reminder this many days before the trial ends. */
 export const REMINDER_DAYS_BEFORE = 2;
 
-/** "$49", "$5.99", "$0" — whole dollars without cents. */
-export function dollars(amount: number): string {
-  return Number.isInteger(amount) ? `$${amount}` : `$${amount.toFixed(2)}`;
-}
-
-/** "$49.00": always with cents (order lines). */
-export function dollarsCents(amount: number): string {
-  return `$${amount.toFixed(2)}`;
+/** "$49", "$5.99", "$0": whole amounts without cents; `cents` always shows them ("$49.00"). */
+export function money(amount: number, p: Prices = PRICES, cents = false): string {
+  return new Intl.NumberFormat(p.locale, {
+    style: "currency",
+    currency: p.currency,
+    ...(!cents && Number.isInteger(amount) ? { minimumFractionDigits: 0 } : {}),
+  }).format(amount);
 }
 
 /** Yearly vs twelve months, to the nearest whole percent (design: "Save 32%"). */
-export function yearlySaving(): number {
-  return Math.round((1 - PRICES.plusYearly / (PRICES.plusMonthly * 12)) * 100);
+export function yearlySaving(p: Prices = PRICES): number {
+  return Math.round((1 - p.plusYearly / (p.plusMonthly * 12)) * 100);
 }
 
 export interface PlanView {
@@ -42,7 +63,12 @@ export interface PlanView {
 }
 
 /** The price and sub line of each plan card under the chosen billing. */
-export function planView(plan: PlanId, billing: Billing, offer: Offer): PlanView {
+export function planView(
+  plan: PlanId,
+  billing: Billing,
+  offer: Offer,
+  p: Prices = PRICES,
+): PlanView {
   const trial = {
     preview: ` · example ${TRIAL_DAYS}-day trial`,
     trial: ` · ${TRIAL_DAYS}-day free trial`,
@@ -50,20 +76,20 @@ export function planView(plan: PlanId, billing: Billing, offer: Offer): PlanView
   }[offer];
   switch (plan) {
     case "free":
-      return { price: "$0", sub: "Your current plan" };
+      return { price: money(0, p), sub: "Your current plan" };
     case "plus":
       return billing === "yearly"
         ? {
-            price: `${dollars(PRICES.plusYearly)} / year`,
-            sub: `${dollarsCents(Math.floor((PRICES.plusYearly / 12) * 100) / 100)} a month, billed yearly${trial}`,
+            price: `${money(p.plusYearly, p)} / year`,
+            sub: `${money(Math.floor((p.plusYearly / 12) * 100) / 100, p, true)} a month, billed yearly${trial}`,
           }
         : {
-            price: `${dollars(PRICES.plusMonthly)} / month`,
+            price: `${money(p.plusMonthly, p)} / month`,
             sub: `Billed monthly${trial}`,
           };
     case "lifetime":
       return {
-        price: `${dollars(PRICES.lifetime)} once`,
+        price: `${money(p.lifetime, p)} once`,
         sub: "Everything in Plus, no subscription",
       };
   }
@@ -96,7 +122,13 @@ function dayLabel(today: string | null, offset: number): string {
 }
 
 /** "Your order" for a plan and billing, with the trial timeline counted from `today`. */
-export function order(plan: PlanId, billing: Billing, today: string | null, offer: Offer): Order {
+export function order(
+  plan: PlanId,
+  billing: Billing,
+  today: string | null,
+  offer: Offer,
+  p: Prices = PRICES,
+): Order {
   const detail =
     offer === "preview"
       ? "Example price only. Training stays free in this build."
@@ -105,8 +137,8 @@ export function order(plan: PlanId, billing: Billing, today: string | null, offe
     return {
       name: "Tableside Free",
       detail: "Every game, every rule set, no card needed",
-      total: dollarsCents(0),
-      dueToday: dollarsCents(0),
+      total: money(0, p, true),
+      dueToday: money(0, p, true),
       timeline: [{ when: "Today", text: "You're already on Free. Nothing to pay, ever." }],
       trial: false,
       purchasable: false,
@@ -116,15 +148,15 @@ export function order(plan: PlanId, billing: Billing, today: string | null, offe
     return {
       name: "Tableside Lifetime",
       detail,
-      total: dollarsCents(PRICES.lifetime),
-      dueToday: dollarsCents(PRICES.lifetime),
+      total: money(p.lifetime, p, true),
+      dueToday: money(p.lifetime, p, true),
       timeline: [
         {
           when: "Today",
           text:
             offer === "preview"
-              ? `Example: one payment of ${dollars(PRICES.lifetime)} with no renewals. Purchases are unavailable.`
-              : `One payment of ${dollars(PRICES.lifetime)}. No renewals.`,
+              ? `Example: one payment of ${money(p.lifetime, p)} with no renewals. Purchases are unavailable.`
+              : `One payment of ${money(p.lifetime, p)}. No renewals.`,
         },
       ],
       trial: false,
@@ -132,17 +164,17 @@ export function order(plan: PlanId, billing: Billing, today: string | null, offe
     };
   }
   const yearly = billing === "yearly";
-  const amount = yearly ? PRICES.plusYearly : PRICES.plusMonthly;
-  const base = { name: `Tableside Plus, ${billing}`, detail, total: dollarsCents(amount) };
+  const amount = yearly ? p.plusYearly : p.plusMonthly;
+  const base = { name: `Tableside Plus, ${billing}`, detail, total: money(amount, p, true) };
   const per = yearly ? "for the year" : "a month";
   if (offer === "paid") {
     return {
       ...base,
-      dueToday: dollarsCents(amount),
+      dueToday: money(amount, p, true),
       timeline: [
         {
           when: "Today",
-          text: `${dollars(amount)} ${per}, renewing until you cancel. Trials are for a first subscription.`,
+          text: `${money(amount, p)} ${per}, renewing until you cancel. Trials are for a first subscription.`,
         },
       ],
       trial: false,
@@ -151,14 +183,14 @@ export function order(plan: PlanId, billing: Billing, today: string | null, offe
   }
   return {
     ...base,
-    dueToday: dollarsCents(0),
+    dueToday: money(0, p, true),
     timeline:
       offer === "trial"
         ? [
             { when: "Today", text: "Free trial starts. Nothing charged." },
             {
               when: dayLabel(today, TRIAL_DAYS),
-              text: `Trial ends. ${dollars(amount)} ${per} unless you cancel.`,
+              text: `Trial ends. ${money(amount, p)} ${per} unless you cancel.`,
             },
           ]
         : [
@@ -172,7 +204,7 @@ export function order(plan: PlanId, billing: Billing, today: string | null, offe
             },
             {
               when: dayLabel(today, TRIAL_DAYS),
-              text: `Example: ${dollars(amount)} ${per} after the trial. No subscription starts here.`,
+              text: `Example: ${money(amount, p)} ${per} after the trial. No subscription starts here.`,
             },
           ],
     trial: true,

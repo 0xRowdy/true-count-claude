@@ -8,7 +8,8 @@
  * Pure: no Convex, no clock. `now` comes from the caller.
  */
 
-export type Source = "stripe" | "app_store" | "play_store" | "promotional";
+/** `test_store`: RevenueCat's Test Store, for development builds only. */
+export type Source = "stripe" | "app_store" | "play_store" | "promotional" | "test_store";
 
 export type PaidPlan = "plus" | "lifetime";
 export type PlanId = "free" | PaidPlan;

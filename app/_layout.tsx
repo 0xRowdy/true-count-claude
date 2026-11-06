@@ -111,6 +111,14 @@ function RootStack() {
         name="account"
         options={{ title: "Account · Tableside", headerShown: NATIVE }}
       />
+      <Stack.Screen
+        name="terms"
+        options={{ title: "Terms of Use · Tableside", headerShown: NATIVE }}
+      />
+      <Stack.Screen
+        name="privacy"
+        options={{ title: "Privacy Policy · Tableside", headerShown: NATIVE }}
+      />
       <Stack.Screen name="play" options={{ title: "Blackjack" }} />
       {/* The sheet is not an AppShell page (it mirrors frame bi8Au). */}
       <Stack.Screen
