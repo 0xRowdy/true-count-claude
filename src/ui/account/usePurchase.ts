@@ -70,16 +70,11 @@ export function usePurchase() {
    * The web's trial is for an Account's first Plus. A store's is the store's call, and until
    * it answers nobody is promised one.
    */
-  const offer = (billing: Billing): Offer =>
-    !CAN_SELL
-      ? "preview"
-      : Platform.OS === "web"
-        ? trialUsed
-          ? "paid"
-          : "trial"
-        : store?.trial[billing]
-          ? "trial"
-          : "paid";
+  const offer = (billing: Billing): Offer => {
+    if (!CAN_SELL) return "preview";
+    const trial = Platform.OS === "web" ? !trialUsed : store?.trial[billing];
+    return trial ? "trial" : "paid";
+  };
 
   const buy = async (plan: "plus" | "lifetime", billing: Billing) => {
     setNotice(null);
