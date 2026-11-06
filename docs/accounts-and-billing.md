@@ -186,7 +186,8 @@ subscription keeps billing until the player cancels it in the store; the page te
 first. Better Auth asks for a sign-in from the last 24 hours before deleting.
 
 Not yet done: revoking the player's Apple tokens through Apple's REST API on deletion, which
-Apple asks of apps with Sign in with Apple.
+Apple asks of apps with Sign in with Apple. It waits on design (#62): native iOS sign-in keeps
+no Apple token to revoke yet.
 
 ## Production
 
