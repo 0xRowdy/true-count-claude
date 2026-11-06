@@ -22,8 +22,14 @@ Everything below is per deployment. The dev deployment is `determined-kookabura-
 - `BETTER_AUTH_SECRET` (random) and `SITE_URL=http://localhost:8081` (`pnpm web`).
 - Stripe lives in the **TrueCountCoach sandbox** (`acct_1UY6osBd4pt3HDch`), not its parent
   account of nearly the same name.
-- RevenueCat project with the `plus` entitlement, the webhook, `REVENUECAT_SECRET_KEY` and
-  `REVENUECAT_WEBHOOK_AUTH`. No store apps or products yet, and no SDK keys in the app.
+- RevenueCat project **True Count** (`projf603c934`; not the separate "Tableside" project)
+  with the `plus` entitlement, the webhook ("Convex dev"), `REVENUECAT_SECRET_KEY` and
+  `REVENUECAT_WEBHOOK_AUTH`. Its only app is the **Test Store**, with `tableside_plus_monthly`
+  ($5.99), `tableside_plus_yearly` ($49), both with a 7-day trial for customers who never
+  subscribed, and `tableside_lifetime` ($199.99), in the default offering's `$rc_monthly`,
+  `$rc_annual` and `$rc_lifetime`. Its SDK key is in `.env.local` as both
+  `EXPO_PUBLIC_REVENUECAT_*_KEY`; `REVENUECAT_ALLOW_TEST_STORE=true` is set. No App Store or
+  Play apps yet.
 - Functions and both components deployed. Until the providers below are configured, sign-in
   answers "Provider not found" and checkout answers "Purchases aren't set up on this server
   yet", both in place, with nothing charged.
@@ -152,8 +158,8 @@ no second trial; a store can still give a web subscriber one, which is the store
    `POST /v1/subscribers/<id>/entitlements/plus/promotional` (or RevenueCat → Customers → Grant
    entitlement). RevenueCat's webhook arrived within 10 seconds on dev, and `account.me` reports
    Plus, "A gift from Tableside", until you call `revoke_promotionals`.
-2. **Test Store** (development build): RevenueCat → Apps → Test Store, add the three products
-   and the offering, and set its key as `EXPO_PUBLIC_REVENUECAT_IOS_KEY` /
+2. **Test Store** (development build; set up on dev, above): RevenueCat → Apps → Test Store
+   holds the three products and the offering. Its key goes in `EXPO_PUBLIC_REVENUECAT_IOS_KEY` /
    `_ANDROID_KEY` in `.env.local` and the EAS **development** environment only. The SDK crashes
    on purpose if it finds a Test Store key in a release build, TestFlight and Play testing
    tracks included, so preview and production builds take the real store keys. The backend
