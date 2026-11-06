@@ -25,10 +25,11 @@ Everything below is per deployment. The dev deployment is `determined-kookabura-
 - RevenueCat project **True Count** (`projf603c934`; not the separate "Tableside" project)
   with the `plus` entitlement, the webhook ("Convex dev"), `REVENUECAT_SECRET_KEY` and
   `REVENUECAT_WEBHOOK_AUTH`. Its only app is the **Test Store**, with `tableside_plus_monthly`
-  ($5.99), `tableside_plus_yearly` ($49), both with a 7-day trial for customers who never
-  subscribed, and `tableside_lifetime` ($199.99), in the default offering's `$rc*monthly`,
-`$rc_annual` and `$rc_lifetime`. Its SDK key is in `.env.local`as both`EXPO_PUBLIC_REVENUECAT*\*\_KEY`; `REVENUECAT_ALLOW_TEST_STORE=true` is set. No App Store or
-  Play apps yet.
+  (\$5.99), `tableside_plus_yearly` (\$49), both with a 7-day trial for customers who never
+  subscribed, and `tableside_lifetime` (\$199.99), in the default offering's `$rc_monthly`,
+  `$rc_annual` and `$rc_lifetime`. Its SDK key is in `.env.local` as both
+  `EXPO_PUBLIC_REVENUECAT_IOS_KEY` and `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY`;
+  `REVENUECAT_ALLOW_TEST_STORE=true` is set. No App Store or Play apps yet.
 - Functions and both components deployed. Until the providers below are configured, sign-in
   answers "Provider not found" and checkout answers "Purchases aren't set up on this server
   yet", both in place, with nothing charged.
