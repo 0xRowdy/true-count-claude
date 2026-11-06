@@ -8,11 +8,12 @@ import { internalMutation, type MutationCtx } from "./_generated/server";
  * Work left over after an Account is deleted (canceling its Stripe subscriptions, revoking its
  * Apple sign-in). Nobody is left to notice a failure, so each runs under the action retrier,
  * which also retries an action that crashed or timed out rather than threw: 6 tries over about
- * 13 hours (1, 5, 25, 125 and 625 minutes apart). If the last one fails, the log says what to
- * do by hand.
+ * 13 hours (about 1, 5, 25, 125 and 625 minutes apart, ±50% jitter). If the last one fails, the
+ * log says what to do by hand.
  */
+// The retrier waits initialBackoffMs × base^(failures so far + 1): 12 s × 5 = 1 minute first.
 const retrier = new ActionRetrier(components.actionRetrier, {
-  initialBackoffMs: 60_000,
+  initialBackoffMs: 12_000,
   base: 5,
   maxFailures: 5,
 });
@@ -28,6 +29,7 @@ export async function runCleanup<F extends FunctionReference<"action", "internal
   await ctx.db.insert("cleanups", { runId, byHand });
 }
 
+/** The retrier's `onComplete`: logs a final failure with what to do by hand, then tidies up. */
 export const finished = internalMutation({
   args: onCompleteValidator,
   returns: v.null(),
@@ -50,6 +52,7 @@ export const finished = internalMutation({
   },
 });
 
+/** Deletes a finished run's record, arguments included. */
 export const forget = internalMutation({
   args: { runId: v.string() },
   returns: v.null(),

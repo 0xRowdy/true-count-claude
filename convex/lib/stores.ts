@@ -30,6 +30,15 @@ export function stripeStatus(status: Stripe.Subscription.Status): EntitlementSta
   return LIVE_STATUSES.includes(status) ? (status as EntitlementStatus) : "ended";
 }
 
+/**
+ * Whether a Stripe subscription counts as having had Plus, which ends the web trial
+ * (`hasHadPlus`): every one but an `incomplete_expired`, whose first payment never went
+ * through, so it gave neither a trial nor Plus.
+ */
+export function startedSubscription(status: Stripe.Subscription.Status | string): boolean {
+  return status !== "incomplete_expired";
+}
+
 export function fromStripeSubscription(sub: Stripe.Subscription): StoreEntitlement {
   const item = sub.items.data[0];
   const status = stripeStatus(sub.status);

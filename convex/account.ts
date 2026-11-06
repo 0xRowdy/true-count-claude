@@ -3,6 +3,7 @@ import { components } from "./_generated/api";
 import { query } from "./_generated/server";
 import { authComponent } from "./auth";
 import { hasHadPlus, resolvePlan } from "./lib/plan";
+import { startedSubscription } from "./lib/stores";
 import { resolvedPlan } from "./schema";
 
 /**
@@ -53,7 +54,7 @@ export const me = query({
       plan,
       // RevenueCat keeps ended store subscriptions, so their rows stay too.
       trialUsed: hasHadPlus({
-        stripeSubscriptions: pastSubs.length,
+        stripeSubscriptions: pastSubs.filter((s) => startedSubscription(s.status)).length,
         entitlements: rows,
         earlierAccount: earlier !== null,
       }),

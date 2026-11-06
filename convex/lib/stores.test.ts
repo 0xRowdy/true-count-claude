@@ -7,6 +7,7 @@ import {
   isLatestRead,
   rcEventUserIds,
   stripeStatus,
+  startedSubscription,
 } from "./stores";
 
 const NOW = Date.UTC(2026, 9, 25);
@@ -227,5 +228,17 @@ describe("rcEventUserIds", () => {
 
   it("ignores a dashboard test event, whose customer is made up", () => {
     expect(rcEventUserIds({ type: "TEST", app_user_id: "not-an-account-id" })).toEqual([]);
+  });
+});
+
+describe("startedSubscription (has had Plus on the web)", () => {
+  it("counts every subscription that started, ended or not", () => {
+    for (const s of ["trialing", "active", "past_due", "canceled", "unpaid", "paused"] as const) {
+      expect(startedSubscription(s)).toBe(true);
+    }
+  });
+
+  it("doesn't count one whose first payment never went through", () => {
+    expect(startedSubscription("incomplete_expired")).toBe(false);
   });
 });

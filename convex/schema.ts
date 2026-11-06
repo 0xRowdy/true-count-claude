@@ -63,7 +63,8 @@ export default defineSchema({
   /**
    * Accounts whose email already had a Stripe subscription on an earlier Account, since deleted:
    * they get no second web trial (ADR-0007). Stripe keeps a deleted Account's customer, email
-   * included; this app keeps nothing of it. Checked once, when the Account is created.
+   * included; this app keeps nothing of it. Checked when the Account is created, and again at
+   * Checkout in case that check hasn't finished or failed.
    */
   earlierPlus: defineTable({ userId: v.string() }).index("by_user", ["userId"]),
   /** What to do by hand if a retried cleanup after deletion never succeeds (`cleanup.ts`). */

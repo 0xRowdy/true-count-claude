@@ -11,6 +11,7 @@ import {
   fromRevenueCat,
   fromStripeSubscription,
   isLatestRead,
+  startedSubscription,
 } from "./lib/stores";
 import { entitlementFields } from "./schema";
 
@@ -87,7 +88,8 @@ export const startCheckout = action({
       name: me.name,
     });
     // Checked live too: the Account's mark from an earlier one may not be written yet.
-    const trial = plan === "plus" && !me.trialUsed && !(await earlierPlus(ctx, me.id, me.email));
+    const trial =
+      plan === "plus" && !me.trialUsed && !(await markIfEarlierPlus(ctx, me.id, me.email));
     const session = await stripeComponent.createCheckoutSession(ctx, {
       priceId: priceId!,
       customerId,
@@ -121,11 +123,14 @@ export const startCheckout = action({
  * same Google, Apple or email address is found here and gets no second web trial (ADR-0007).
  * Found, it is marked on the Account (`earlierPlus`), so Pricing stops offering the trial.
  */
-async function earlierPlus(ctx: AnyActionCtx, userId: string, email: string): Promise<boolean> {
+async function markIfEarlierPlus(
+  ctx: AnyActionCtx,
+  userId: string,
+  email: string,
+): Promise<boolean> {
   for await (const customer of stripe().customers.list({ email, limit: 100 })) {
     for await (const sub of liveSubscriptions(customer.id)) {
-      // An expired incomplete one never started: no trial, no payment.
-      if (sub.status !== "incomplete_expired") {
+      if (startedSubscription(sub.status)) {
         await ctx.runMutation(internal.billing.markEarlierPlus, { userId });
         return true;
       }
@@ -140,11 +145,12 @@ export const checkEarlierPlus = internalAction({
   returns: v.null(),
   handler: async (ctx, { userId, email }) => {
     // Checkout checks again, so a failure here costs nothing but a trial shown then withdrawn.
-    if (process.env.STRIPE_SECRET_KEY) await earlierPlus(ctx, userId, email);
+    if (process.env.STRIPE_SECRET_KEY) await markIfEarlierPlus(ctx, userId, email);
     return null;
   },
 });
 
+/** Marks the Account as having had Plus on an earlier one (once; not for a deleted Account). */
 export const markEarlierPlus = internalMutation({
   args: { userId: v.string() },
   returns: v.null(),

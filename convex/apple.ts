@@ -73,12 +73,22 @@ export const revokeFromDevice = action({
   args: { authorizationCode: v.string() },
   returns: v.null(),
   handler: async (ctx, { authorizationCode }) => {
-    const res = await postToApple("token", {
-      client_id: APP_BUNDLE_ID,
-      client_secret: requireSecret(APP_BUNDLE_ID),
-      code: authorizationCode,
-      grant_type: "authorization_code",
-    });
+    let res: Response;
+    try {
+      res = await postToApple("token", {
+        client_id: APP_BUNDLE_ID,
+        client_secret: requireSecret(APP_BUNDLE_ID),
+        code: authorizationCode,
+        grant_type: "authorization_code",
+      });
+    } catch (e) {
+      // A code works once and the Account is already gone: there is nothing to retry.
+      console.error(
+        "GAVE UP revoking a deleted Account's iOS Sign in with Apple: the code couldn't be exchanged. The player can remove Tableside in Settings → their name → Sign-In & Security → Sign in with Apple.",
+        e,
+      );
+      throw e;
+    }
     const { refresh_token, access_token } = (await res.json()) as {
       refresh_token?: string;
       access_token?: string;
@@ -111,6 +121,7 @@ export async function revokeLater(
   );
 }
 
+/** `revokeLater` for an action, which has no mutation ctx of its own. */
 export const startRevoke = internalMutation({
   args: { clientId: v.string(), token: v.string(), tokenType, whose: v.string() },
   returns: v.null(),
