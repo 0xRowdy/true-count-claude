@@ -45,12 +45,24 @@ export const authComponent = createClient<DataModel>(components.betterAuth, {
           await ctx.runMutation(components.stripe.private.handleCustomerDeleted, {
             stripeCustomerId: customer.stripeCustomerId,
           });
-          // A web subscription must not outlive its Account and keep billing nobody. Checkout
-          // always runs on this customer (`getOrCreateCustomer`), so no customer, no
-          // subscription.
+        }
+        // A web subscription must not outlive its Account and keep billing nobody. Checkout
+        // runs on this customer, or on one `getOrCreateCustomer` matched by email, which a
+        // subscription's metadata names. Stripe itself is listed for each (the component's
+        // subscription rows can lag).
+        const subs = await ctx.runQuery(components.stripe.public.listSubscriptionsByUserId, {
+          userId: user._id,
+        });
+        const stripeCustomerIds = [
+          ...new Set([
+            ...(customer ? [customer.stripeCustomerId] : []),
+            ...subs.map((s) => s.stripeCustomerId),
+          ]),
+        ];
+        if (stripeCustomerIds.length > 0) {
           await ctx.scheduler.runAfter(0, internal.billing.cancelStripeForDeletedUser, {
             userId: user._id,
-            stripeCustomerId: customer.stripeCustomerId,
+            stripeCustomerIds,
           });
         }
       },

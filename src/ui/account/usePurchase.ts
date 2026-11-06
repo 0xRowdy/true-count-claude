@@ -70,9 +70,9 @@ export function usePurchase() {
   const offer = (billing: Billing): Offer =>
     offerFor({
       canSell: CAN_SELL,
-      web: Platform.OS === "web",
+      seller: Platform.OS === "web" ? "web" : "store",
       trialUsed,
-      storeTrial: store?.trial[billing],
+      storeOffersTrial: store?.trial[billing],
     });
 
   const buy = async (plan: "plus" | "lifetime", billing: Billing) => {

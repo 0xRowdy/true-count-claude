@@ -39,17 +39,17 @@ export interface StoreOffer {
 
 /**
  * What Pricing offers this player (ADR-0007). On the web, an Account's first Plus starts with a
- * trial. In the apps the store decides, and until it answers (`storeTrial` undefined) nobody is
- * promised one.
+ * trial. In the apps the store decides, and until it answers (`storeOffersTrial` undefined)
+ * nobody is promised one.
  */
 export function offerFor(o: {
   canSell: boolean;
-  web: boolean;
+  seller: "web" | "store";
   trialUsed: boolean;
-  storeTrial: boolean | undefined;
+  storeOffersTrial: boolean | undefined;
 }): Offer {
   if (!o.canSell) return "preview";
-  return (o.web ? !o.trialUsed : o.storeTrial) ? "trial" : "paid";
+  return (o.seller === "web" ? !o.trialUsed : o.storeOffersTrial) ? "trial" : "paid";
 }
 
 /** What a store says about one player and one subscription's introductory offer. */

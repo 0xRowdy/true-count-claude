@@ -6,7 +6,6 @@ import {
   fromStripeSubscription,
   isLatestRead,
   rcEventUserIds,
-  retryDelay,
   stripeStatus,
 } from "./stores";
 
@@ -100,13 +99,6 @@ describe("Stripe writes", () => {
   it("writes over a row from before the stamp existed, and repeats the same fetch", () => {
     expect(isLatestRead(undefined, NOW)).toBe(true);
     expect(isLatestRead(NOW, NOW)).toBe(true);
-  });
-});
-
-describe("retryDelay", () => {
-  it("backs off over about 15 hours, then gives up", () => {
-    const delays = [0, 1, 2, 3, 4, 5].map(retryDelay);
-    expect(delays).toEqual([60_000, 300_000, 1_800_000, 7_200_000, 43_200_000, null]);
   });
 });
 

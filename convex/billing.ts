@@ -11,8 +11,8 @@ import {
   fromRevenueCat,
   fromStripeSubscription,
   isLatestRead,
-  retryDelay,
 } from "./lib/stores";
+import { retryDelay } from "./lib/retry";
 import { entitlementFields } from "./schema";
 
 /** What the helpers below need: our own actions' ctx and the Stripe webhook handlers' both fit. */
@@ -174,18 +174,29 @@ export const applyStripe = internalMutation({
 
 /**
  * A refunded Lifetime payment, or one whose chargeback was lost, stops granting Lifetime.
- * Stamped now, so a Lifetime grant that read the payment before then can't write it back.
+ * Stamped now, so a Lifetime grant that read the payment before then can't write it back. If
+ * that grant hasn't been written yet, the row is written already ended, so it is skipped.
  */
 export const endStripePayment = internalMutation({
-  args: { paymentIntentId: v.string() },
+  args: { paymentIntentId: v.string(), userId: v.string() },
   returns: v.null(),
-  handler: async (ctx, { paymentIntentId }) => {
+  handler: async (ctx, { paymentIntentId, userId }) => {
+    const ended = { status: "ended" as const, willRenew: false, syncedAt: Date.now() };
     const row = await ctx.db
       .query("entitlements")
       .withIndex("by_external", (q) => q.eq("source", "stripe").eq("externalId", paymentIntentId))
       .unique();
-    if (row) {
-      await ctx.db.patch(row._id, { status: "ended", willRenew: false, syncedAt: Date.now() });
+    if (row) await ctx.db.patch(row._id, ended);
+    else if (await accountExists(ctx, userId)) {
+      await ctx.db.insert("entitlements", {
+        userId,
+        source: "stripe",
+        externalId: paymentIntentId,
+        plan: "lifetime",
+        expiresAt: null,
+        interval: null,
+        ...ended,
+      });
     }
     return null;
   },
@@ -214,6 +225,9 @@ export const replaceStoreEntitlements = internalMutation({
 // Stripe webhooks (registered in http.ts, after the component's own signature check and sync)
 // ---------------------------------------------------------------------------------------------
 
+/** A Stripe id field, expanded or not. */
+const idOf = (x: string | { id: string } | null | undefined) => (typeof x === "string" ? x : x?.id);
+
 /** Re-reads the subscription from Stripe so late or out-of-order events still land right. */
 async function syncSubscription(ctx: AnyActionCtx, subscriptionId: string) {
   const syncedAt = Date.now();
@@ -235,6 +249,7 @@ function liveSubscriptions(customerId: string) {
   return stripe().subscriptions.list({ customer: customerId, status: "all", limit: 100 });
 }
 
+/** Whether a chargeback on this payment was lost (a won or open one keeps Lifetime). */
 async function chargebackLost(paymentIntent: string): Promise<boolean> {
   const { data } = await stripe().disputes.list({ payment_intent: paymentIntent });
   return data.some((d) => d.status === "lost");
@@ -243,10 +258,7 @@ async function chargebackLost(paymentIntent: string): Promise<boolean> {
 /** A paid Lifetime Checkout: grant it, and stop any Plus subscription still renewing on the web. */
 async function lifetimePaid(ctx: AnyActionCtx, session: Stripe.Checkout.Session) {
   const userId = session.metadata?.userId;
-  const paymentIntent =
-    typeof session.payment_intent === "string"
-      ? session.payment_intent
-      : session.payment_intent?.id;
+  const paymentIntent = idOf(session.payment_intent);
   if (session.metadata?.plan !== "lifetime" || session.payment_status !== "paid") return;
   if (!userId || !paymentIntent) return;
   // Re-read: with a delayed payment method, the refund's webhook can land before this one.
@@ -271,7 +283,7 @@ async function lifetimePaid(ctx: AnyActionCtx, session: Stripe.Checkout.Session)
     },
     syncedAt,
   });
-  const customer = typeof session.customer === "string" ? session.customer : session.customer?.id;
+  const customer = idOf(session.customer);
   if (!customer) return;
   for await (const sub of liveSubscriptions(customer)) {
     if (sub.status === "past_due") {
@@ -286,6 +298,23 @@ async function lifetimePaid(ctx: AnyActionCtx, session: Stripe.Checkout.Session)
   }
 }
 
+/**
+ * Ends the Lifetime a payment granted, for the buyer its Checkout names. A payment with no
+ * Lifetime Checkout (a Plus invoice, or not this app's) grants nothing to end.
+ */
+async function endLifetime(ctx: AnyActionCtx, paymentIntent: string) {
+  const { data } = await stripe().checkout.sessions.list({
+    payment_intent: paymentIntent,
+    limit: 1,
+  });
+  const userId = data[0]?.metadata?.userId;
+  if (data[0]?.metadata?.plan !== "lifetime" || !userId) return;
+  await ctx.runMutation(internal.billing.endStripePayment, {
+    paymentIntentId: paymentIntent,
+    userId,
+  });
+}
+
 export const stripeEvents: StripeEventHandlers = {
   "customer.subscription.created": (ctx, e) => syncSubscription(ctx, e.data.object.id),
   "customer.subscription.updated": (ctx, e) => syncSubscription(ctx, e.data.object.id),
@@ -295,25 +324,17 @@ export const stripeEvents: StripeEventHandlers = {
   "checkout.session.async_payment_succeeded": (ctx, e) => lifetimePaid(ctx, e.data.object),
   "charge.refunded": async (ctx, e) => {
     const charge = e.data.object;
-    const paymentIntent =
-      typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
-    if (charge.refunded && paymentIntent) {
-      await ctx.runMutation(internal.billing.endStripePayment, { paymentIntentId: paymentIntent });
-    }
+    const paymentIntent = idOf(charge.payment_intent);
+    if (charge.refunded && paymentIntent) await endLifetime(ctx, paymentIntent);
   },
   // A lost chargeback is a refund the player took through their bank. With Managed Payments,
   // Stripe answers disputes and may accept one (closing it lost), but they are still this
   // account's disputes and send these events. An open dispute keeps access: a won one would
   // otherwise need restoring.
   "charge.dispute.closed": async (ctx, e) => {
-    const dispute = e.data.object;
-    const paymentIntent =
-      typeof dispute.payment_intent === "string"
-        ? dispute.payment_intent
-        : dispute.payment_intent?.id;
-    if (dispute.status === "lost" && paymentIntent) {
-      await ctx.runMutation(internal.billing.endStripePayment, { paymentIntentId: paymentIntent });
-    }
+    const dispute = await stripe().disputes.retrieve(e.data.object.id);
+    const paymentIntent = idOf(dispute.payment_intent);
+    if (dispute.status === "lost" && paymentIntent) await endLifetime(ctx, paymentIntent);
   },
 };
 
@@ -323,21 +344,27 @@ export const stripeEvents: StripeEventHandlers = {
  * error naming the customer if Stripe still refuses.
  */
 export const cancelStripeForDeletedUser = internalAction({
-  args: { userId: v.string(), stripeCustomerId: v.string(), attempt: v.optional(v.number()) },
+  args: {
+    userId: v.string(),
+    stripeCustomerIds: v.array(v.string()),
+    attempt: v.optional(v.number()),
+  },
   returns: v.null(),
-  handler: async (ctx, { userId, stripeCustomerId, attempt = 0 }) => {
+  handler: async (ctx, { userId, stripeCustomerIds, attempt = 0 }) => {
     if (!process.env.STRIPE_SECRET_KEY) return null;
     try {
-      for await (const sub of liveSubscriptions(stripeCustomerId)) {
-        if (sub.status !== "canceled" && sub.status !== "incomplete_expired") {
-          await stripe().subscriptions.cancel(sub.id);
+      for (const customer of stripeCustomerIds) {
+        for await (const sub of liveSubscriptions(customer)) {
+          if (sub.status !== "canceled" && sub.status !== "incomplete_expired") {
+            await stripe().subscriptions.cancel(sub.id);
+          }
         }
       }
     } catch (e) {
       const delay = retryDelay(attempt);
       if (delay === null) {
         console.error(
-          `GAVE UP canceling Stripe subscriptions for deleted Account ${userId} (customer ${stripeCustomerId}) after ${attempt + 1} tries; cancel them in the Stripe Dashboard`,
+          `GAVE UP canceling Stripe subscriptions for deleted Account ${userId} (customers ${stripeCustomerIds.join(", ")}) after ${attempt + 1} tries; cancel them in the Stripe Dashboard`,
           e,
         );
         throw e;
@@ -345,7 +372,7 @@ export const cancelStripeForDeletedUser = internalAction({
       console.warn(`Canceling Stripe for deleted Account ${userId} failed; retrying`, e);
       await ctx.scheduler.runAfter(delay, internal.billing.cancelStripeForDeletedUser, {
         userId,
-        stripeCustomerId,
+        stripeCustomerIds,
         attempt: attempt + 1,
       });
     }

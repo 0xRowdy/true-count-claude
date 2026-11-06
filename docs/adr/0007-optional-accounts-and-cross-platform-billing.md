@@ -1,7 +1,8 @@
 # ADR-0007: Optional Accounts on Convex, one Plan across Stripe and the app stores
 
 **Status:** Accepted · 2026-10-25 · Supersedes the "no backend" part of ADR-0003 · Context
-on store rules corrected and tax added 2026-10-27
+on store rules corrected and tax added 2026-10-27 · Stripe write order, chargebacks and the
+deletion retry added 2026-11-05
 
 ## Context
 
@@ -63,7 +64,11 @@ disagree, and a purchase anywhere updates every open screen.
 
 **Each handler re-reads the store, never the webhook payload.** A Stripe event re-fetches the
 subscription; a RevenueCat event re-fetches the subscriber and replaces the Account's store
-rows. Late, duplicate and out-of-order events therefore leave the right answer behind.
+rows. A Stripe row also records when its state was fetched, and an earlier fetch never
+overwrites a later one, so two handlers that commit in the wrong order can't leave the older
+state. Late, duplicate and out-of-order events therefore leave the right answer behind. A
+refund or a lost chargeback ends Lifetime (under Managed Payments Stripe answers disputes, but
+they are still this account's and still reach the webhook).
 
 **RevenueCat only for the app stores.** Its app user id is always the Account id, so store
 purchases belong to the Account and restore anywhere. Considered and rejected: RevenueCat Web
@@ -82,8 +87,9 @@ and RevenueCat Billing can't use Stripe Managed Payments or sell to customers in
 - Training stays offline and account-free (invariants 8 and 1 hold); CI keeps testing a
   build with no backend, so nothing can quietly start requiring one.
 - Plan logic is pure and tested in plain Node, like the engine.
-- Account deletion cancels a web subscription and removes every Entitlement in the same
-  transaction as the user (a Better Auth trigger).
+- Account deletion removes every Entitlement in the same transaction as the user (a Better
+  Auth trigger), and cancels every web subscription Stripe lists for the Account's customers,
+  retrying with backoff for about 15 hours.
 
 **Bad / accepted risks**
 

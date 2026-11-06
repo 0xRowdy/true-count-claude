@@ -107,36 +107,36 @@ describe("pricing", () => {
 
 describe("who gets a trial", () => {
   it("offers nothing real in a build that can't sell", () => {
-    expect(offerFor({ canSell: false, web: true, trialUsed: false, storeTrial: undefined })).toBe(
-      "preview",
-    );
-    expect(offerFor({ canSell: false, web: false, trialUsed: false, storeTrial: true })).toBe(
-      "preview",
-    );
+    expect(
+      offerFor({ canSell: false, seller: "web", trialUsed: false, storeOffersTrial: undefined }),
+    ).toBe("preview");
+    expect(
+      offerFor({ canSell: false, seller: "store", trialUsed: false, storeOffersTrial: true }),
+    ).toBe("preview");
   });
 
   it("on the web, gives an Account its first Plus with a trial", () => {
-    expect(offerFor({ canSell: true, web: true, trialUsed: false, storeTrial: undefined })).toBe(
-      "trial",
-    );
-    expect(offerFor({ canSell: true, web: true, trialUsed: true, storeTrial: undefined })).toBe(
-      "paid",
-    );
+    expect(
+      offerFor({ canSell: true, seller: "web", trialUsed: false, storeOffersTrial: undefined }),
+    ).toBe("trial");
+    expect(
+      offerFor({ canSell: true, seller: "web", trialUsed: true, storeOffersTrial: undefined }),
+    ).toBe("paid");
   });
 
   it("in the apps, follows the store and ignores the web's trial history", () => {
-    expect(offerFor({ canSell: true, web: false, trialUsed: true, storeTrial: true })).toBe(
-      "trial",
-    );
-    expect(offerFor({ canSell: true, web: false, trialUsed: false, storeTrial: false })).toBe(
-      "paid",
-    );
+    expect(
+      offerFor({ canSell: true, seller: "store", trialUsed: true, storeOffersTrial: true }),
+    ).toBe("trial");
+    expect(
+      offerFor({ canSell: true, seller: "store", trialUsed: false, storeOffersTrial: false }),
+    ).toBe("paid");
   });
 
   it("in the apps, promises no trial until the store has answered", () => {
-    expect(offerFor({ canSell: true, web: false, trialUsed: false, storeTrial: undefined })).toBe(
-      "paid",
-    );
+    expect(
+      offerFor({ canSell: true, seller: "store", trialUsed: false, storeOffersTrial: undefined }),
+    ).toBe("paid");
   });
 
   it("takes the store's free intro offer only when the player is eligible for it", () => {
