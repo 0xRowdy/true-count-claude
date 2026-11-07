@@ -39,8 +39,18 @@ export function startedSubscription(status: Stripe.Subscription.Status | string)
   return status !== "incomplete_expired";
 }
 
-export function fromStripeSubscription(sub: Stripe.Subscription): StoreEntitlement {
-  const item = sub.items.data[0];
+/**
+ * `plusPrices`: the Plus price ids. The period and interval come from the item holding one of
+ * them, so an item added outside this app's Checkout (in the Dashboard) can't stand in for
+ * Plus. Failing that, the first item: a price retired from the settings still bills its
+ * subscribers.
+ */
+export function fromStripeSubscription(
+  sub: Stripe.Subscription,
+  plusPrices: readonly (string | undefined)[] = [],
+): StoreEntitlement {
+  const items = sub.items.data;
+  const item = items.find((i) => plusPrices.includes(i.price.id)) ?? items[0];
   const status = stripeStatus(sub.status);
   const interval = item?.price.recurring?.interval;
   // The period lives on the item since API 2025-03-31; while trialing its end is the trial end.
@@ -62,9 +72,13 @@ export function fromStripeSubscription(sub: Stripe.Subscription): StoreEntitleme
 }
 
 /**
- * Whether a Stripe read fetched at `fetchedAt` (epoch ms) may overwrite a row holding the read
+ * Whether a store read fetched at `fetchedAt` (epoch ms) may overwrite a row holding the read
  * fetched at `stored`. Each handler fetches, then commits, so two close together can commit in
  * the wrong order; the earlier fetch must not win. The same stamp is the same read, retried.
+ *
+ * Handlers stamp before they fetch. A fetch that starts after a change then outranks every
+ * read made before that change, and each change sends its own webhook, whose handler starts
+ * after it: whatever order overlapping fetches land in, the row ends on the latest state.
  */
 export function isLatestRead(stored: number | undefined, fetchedAt: number): boolean {
   return stored === undefined || fetchedAt >= stored;
@@ -131,6 +145,8 @@ function ms(iso: string | null | undefined): number | null {
  *
  * RevenueCat keeps expired subscriptions in the response, so access is always bounded by the
  * expiry (or the store's grace period): a billing problem never becomes open-ended access.
+ * During one the store is still retrying the renewal, so the row is `past_due` and still
+ * renewing: Plus shows the payment problem, and deleting the Account still says to cancel it.
  */
 export function fromRevenueCat(
   subscriber: RcSubscriber,
@@ -141,11 +157,14 @@ export function fromRevenueCat(
     const source = rcSource(sub.store, testStore);
     const expiresAt = ms(sub.grace_period_expires_date) ?? ms(sub.expires_date);
     if (!source || expiresAt === null) continue;
+    const renewing = !sub.unsubscribe_detected_at;
     const status: EntitlementStatus = sub.refunded_at
       ? "ended"
-      : sub.period_type === "trial"
-        ? "trialing"
-        : "active";
+      : sub.billing_issues_detected_at && renewing
+        ? "past_due"
+        : sub.period_type === "trial"
+          ? "trialing"
+          : "active";
     out.push({
       source,
       externalId: product,
@@ -153,11 +172,7 @@ export function fromRevenueCat(
       status,
       expiresAt,
       // A promotional grant simply ends: RevenueCat reports nothing that says it won't renew.
-      willRenew:
-        source !== "promotional" &&
-        status !== "ended" &&
-        !sub.unsubscribe_detected_at &&
-        !sub.billing_issues_detected_at,
+      willRenew: source !== "promotional" && status !== "ended" && renewing,
       interval: null,
     });
   }

@@ -67,6 +67,13 @@ export default defineSchema({
    * Checkout in case that check hasn't finished or failed.
    */
   earlierPlus: defineTable({ userId: v.string() }).index("by_user", ["userId"]),
+  /**
+   * When the RevenueCat subscriber behind an Account's store rows was fetched (epoch ms). Like
+   * a Stripe row's `syncedAt`, a replacement from an earlier fetch is skipped (`isLatestRead`).
+   */
+  storeReads: defineTable({ userId: v.string(), fetchedAt: v.number() }).index("by_user", [
+    "userId",
+  ]),
   /** What to do by hand if a retried cleanup after deletion never succeeds (`cleanup.ts`). */
   cleanups: defineTable({ runId: v.string(), byHand: v.string() }).index("by_run", ["runId"]),
 });

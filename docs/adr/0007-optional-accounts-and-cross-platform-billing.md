@@ -64,9 +64,11 @@ disagree, and a purchase anywhere updates every open screen.
 
 **Each handler re-reads the store, never the webhook payload.** A Stripe event re-fetches the
 subscription; a RevenueCat event re-fetches the subscriber and replaces the Account's store
-rows. A Stripe row also records when its state was fetched, and an earlier fetch never
-overwrites a later one, so two handlers that commit in the wrong order can't leave the older
-state. Late, duplicate and out-of-order events therefore leave the right answer behind. A
+rows. Each records when its state was fetched (a Stripe row its own, an Account's store rows
+one together), and an earlier fetch never overwrites a later one, so two handlers that commit in
+the wrong order can't leave the older state. The stamp is taken before the fetch, and every
+change sends its own webhook, so the last change's handler outranks every read made before
+it. Late, duplicate and out-of-order events therefore leave the right answer behind. A
 refund or a lost chargeback ends Lifetime (under Managed Payments Stripe answers disputes, but
 they are still this account's and still reach the webhook).
 

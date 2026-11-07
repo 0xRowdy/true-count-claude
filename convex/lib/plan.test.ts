@@ -50,6 +50,11 @@ describe("resolvePlan", () => {
     expect(resolvePlan([failing], NOW)).toMatchObject({ plan: "plus", status: "past_due" });
   });
 
+  it("leaves a failing store renewal to the store's own grace period", () => {
+    const failing = plus({ source: "app_store", status: "past_due", expiresAt: NOW - DAY });
+    expect(resolvePlan([failing], NOW)).toEqual(FREE);
+  });
+
   it("ends a failed renewal after the grace period, even if no webhook ever says so", () => {
     const failing = plus({ status: "past_due", expiresAt: NOW - PAST_DUE_GRACE_MS });
     expect(resolvePlan([failing], NOW)).toMatchObject({ plan: "free" });

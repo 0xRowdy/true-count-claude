@@ -40,6 +40,24 @@ describe("Stripe", () => {
     }
   });
 
+  it("takes the period from the Plus item, not an item added beside it", () => {
+    const sub = stripeSub();
+    const addOn = {
+      id: "si_addon",
+      price: { id: "price_addon", recurring: { interval: "month" } },
+    };
+    sub.items.data = [
+      { ...addOn, current_period_end: (NOW + 5 * DAY) / 1000 },
+      { ...sub.items.data[0]!, price: { id: "price_plus_year", recurring: { interval: "year" } } },
+    ] as unknown as Stripe.SubscriptionItem[];
+    expect(fromStripeSubscription(sub, ["price_plus_month", "price_plus_year"])).toMatchObject({
+      interval: "year",
+      expiresAt: NOW + 300 * DAY,
+    });
+    // A Plus price no longer configured still bills its subscribers: the first item stands in.
+    expect(fromStripeSubscription(sub, ["price_new"]).interval).toBe("month");
+  });
+
   it("reads the period end from the subscription item, in ms", () => {
     const e = fromStripeSubscription(stripeSub());
     expect(e).toMatchObject({
@@ -142,8 +160,30 @@ describe("RevenueCat", () => {
         },
       },
     });
-    expect(resolvePlan(entitlements, NOW)).toMatchObject({ plan: "plus", willRenew: false });
+    expect(resolvePlan(entitlements, NOW)).toMatchObject({ plan: "plus", status: "past_due" });
     expect(resolvePlan(entitlements, NOW + 4 * DAY).plan).toBe("free");
+  });
+
+  it("reports a billing issue as a payment problem the store is retrying, not a cancellation", () => {
+    const failing = (over = {}) =>
+      fromRevenueCat({
+        subscriptions: {
+          monthly: {
+            store: "app_store",
+            expires_date: iso(NOW + DAY),
+            billing_issues_detected_at: iso(NOW - DAY),
+            ...over,
+          },
+        },
+      });
+    expect(failing()[0]).toMatchObject({ status: "past_due", willRenew: true });
+    // Once the player turns renewal off, the store stops retrying.
+    expect(failing({ unsubscribe_detected_at: iso(NOW) })[0]).toMatchObject({
+      status: "active",
+      willRenew: false,
+    });
+    // No extra grace of the app's own: the store's expiry still ends it.
+    expect(resolvePlan(failing(), NOW + 2 * DAY).plan).toBe("free");
   });
 
   it("ends a refunded subscription at once", () => {

@@ -145,9 +145,11 @@ then the Plan. Apple Pay and Google Pay appear in Checkout on their own where av
 Purchases need a development or store build (`eas build --profile development`). Expo Go runs
 RevenueCat's preview mode, with no real purchases. In the apps, a signed-out player is sent to
 sign in before buying, so every purchase belongs to an Account; "Restore purchases" is on
-Pricing and the account page. RevenueCat is configured at launch, once sign-in settles (as the
-Account, or anonymously when signed out, which never buys), so a purchase a crash interrupted is
-finished then.
+Pricing and the account page. RevenueCat is configured at launch, once sign-in settles, so a
+purchase a crash interrupted is finished then. It runs as the Account, or anonymously on a
+device nobody has signed in on. Signing out does not log RevenueCat out: it keeps the last
+Account's id, so a signed-out Pricing visit loads the store's prices and trial eligibility as
+that Account (nothing is bought signed out), until the next sign-in switches it.
 
 What Pricing shows in the apps: the store's prices in the player's currency, one button for the
 store's sheet, and a free trial only where the store says this player gets one (on iOS an

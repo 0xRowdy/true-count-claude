@@ -56,7 +56,7 @@ export const authComponent = createClient<DataModel>(components.betterAuth, {
       },
       // Same transaction as the delete (account deletion, App Store guideline 5.1.1(v)).
       onDelete: async (ctx, user) => {
-        for (const table of ["entitlements", "earlierPlus"] as const) {
+        for (const table of ["entitlements", "earlierPlus", "storeReads"] as const) {
           const rows = await ctx.db
             .query(table)
             .withIndex("by_user", (q) => q.eq("userId", user._id))
@@ -75,8 +75,9 @@ export const authComponent = createClient<DataModel>(components.betterAuth, {
           });
         }
         // A web subscription must not outlive its Account and keep billing nobody. Checkout
-        // runs on this customer, or on one `getOrCreateCustomer` matched by email, which a
-        // subscription's metadata names. Stripe itself is listed for each (the component's
+        // runs only on this customer, the Account's own (`ownCustomer` in billing.ts), so it
+        // is found here even before any subscription webhook lands; a subscription row naming
+        // another customer adds that one. Stripe itself is listed for each (the component's
         // subscription rows can lag).
         const subs = await ctx.runQuery(components.stripe.public.listSubscriptionsByUserId, {
           userId: user._id,

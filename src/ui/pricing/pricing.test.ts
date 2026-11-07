@@ -133,10 +133,19 @@ describe("who gets a trial", () => {
     ).toBe("paid");
   });
 
-  it("in the apps, promises no trial until the store has answered", () => {
+  it("in the apps, offers neither a trial nor a price until the store has answered", () => {
     expect(
       offerFor({ canSell: true, seller: "store", trialUsed: false, storeOffersTrial: undefined }),
-    ).toBe("paid");
+    ).toBe("waiting");
+    expect(planView("plus", "yearly", "waiting")).toEqual({
+      price: "—",
+      sub: "Waiting for the store's price",
+    });
+    expect(order("lifetime", "yearly", null, "waiting")).toMatchObject({
+      total: "—",
+      dueToday: "—",
+      purchasable: true,
+    });
   });
 
   it("takes the store's free intro offer only when the player is eligible for it", () => {
