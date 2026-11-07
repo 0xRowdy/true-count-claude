@@ -1,8 +1,8 @@
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { localIsoDate } from "@/state/profile";
-import { CAN_SELL, usePurchase } from "@/ui/account/usePurchase";
+import { CAN_SELL, STORE_SHEET, usePurchase } from "@/ui/account/usePurchase";
 import {
   AppShell,
   Badge,
@@ -25,9 +25,6 @@ import {
   ShieldCheck,
 } from "@/ui/ds/icons";
 import { order, planView, yearlySaving, type Billing, type PlanId } from "./pricing";
-
-/** In the apps the App Store or Google Play sheet takes the payment (ADR-0007). */
-const STORE_SHEET = Platform.OS !== "web" && CAN_SELL;
 
 const WIN_REAL_MONEY = {
   q: "Can I win real money here?",

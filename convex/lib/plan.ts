@@ -16,8 +16,9 @@ export type PlanId = "free" | PaidPlan;
 
 /**
  * - `trialing` / `active`: entitled until `expiresAt`.
- * - `past_due`: a renewal failed and the store is retrying. Still entitled: a card that
- *   bounced once is not a reason to take the trainer away mid-practice.
+ * - `past_due`: a renewal failed and the store is retrying. Still entitled for a while: a card
+ *   that bounced once is not a reason to take the trainer away mid-practice. On the web that
+ *   is `PAST_DUE_GRACE_MS`; the App Store and Google Play decide their own grace period.
  * - `ended`: canceled, expired, refunded or never paid. Not entitled.
  */
 export type EntitlementStatus = "trialing" | "active" | "past_due" | "ended";
@@ -61,16 +62,17 @@ export const FREE: ResolvedPlan = {
 };
 
 /**
- * How long past the paid-for period a failed renewal keeps access (a `past_due` row's
- * `expiresAt` is when that period ended). The store's retries end first and its webhook ends
- * the row; this is the backstop if that webhook never lands.
+ * How long past the paid-for period a failed web renewal keeps access (a Stripe `past_due`
+ * row's `expiresAt` is when that period ended). Stripe's retries end first and its webhook
+ * ends the row; this is the backstop if that webhook never lands. The App Store and Google
+ * Play set their own grace period, already in the row's `expiresAt`.
  */
 export const PAST_DUE_GRACE_MS = 30 * 86_400_000;
 
 /** Whether an Entitlement grants access at `now`. */
 export function isLive(e: Entitlement, now: number): boolean {
   if (e.status === "ended") return false;
-  const grace = e.status === "past_due" ? PAST_DUE_GRACE_MS : 0;
+  const grace = e.status === "past_due" && e.source === "stripe" ? PAST_DUE_GRACE_MS : 0;
   return e.expiresAt === null || e.expiresAt + grace > now;
 }
 
@@ -109,4 +111,21 @@ export function resolvePlan(entitlements: readonly Entitlement[], now: number): 
     interval: best.interval,
     alsoRenewing: [...new Set(alsoRenewing)],
   };
+}
+
+/**
+ * Whether the Account has had Plus, which ends its web free trial (ADR-0007): a Stripe
+ * subscription of its own, a store Plus (a gift isn't a trial, and Lifetime isn't Plus), or a
+ * Stripe subscription on an earlier, deleted Account with the same email (`earlierAccount`).
+ */
+export function hasHadPlus(p: {
+  stripeSubscriptions: number;
+  entitlements: readonly Pick<Entitlement, "plan" | "source">[];
+  earlierAccount: boolean;
+}): boolean {
+  return (
+    p.earlierAccount ||
+    p.stripeSubscriptions > 0 ||
+    p.entitlements.some((e) => e.plan === "plus" && e.source !== "promotional")
+  );
 }

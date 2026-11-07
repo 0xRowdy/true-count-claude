@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Linking, Platform, StyleSheet, Text, View } from "react-native";
 import { AppShell, Avatar, Button, colors, display, Notice, Panel, ui } from "@/ui/ds";
 import { CreditCard, Crown, LogOut, RotateCcw } from "@/ui/ds/icons";
-import { type Account, deleteAccount, signOut, useAccount } from "./account";
+import { type Account, deleteAccount, signOut, signsInWithApple, useAccount } from "./account";
 import { billingFailure, billingPortalUrl } from "./billing";
 import {
   BILLED_BY,
@@ -213,6 +213,19 @@ function DeletePanel({ account }: { account: Account }) {
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<"reauthenticate" | string | null>(null);
   const storesBilling = storesToCancelFirst(account.plan);
+  // Away from iOS, an Apple sign-in made on an iPhone has no token here to revoke (#62).
+  const [appleElsewhere, setAppleElsewhere] = useState(false);
+  useEffect(() => {
+    if (Platform.OS === "ios") return;
+    let live = true;
+    signsInWithApple().then(
+      (yes) => live && setAppleElsewhere(yes),
+      () => {},
+    );
+    return () => {
+      live = false;
+    };
+  }, []);
 
   const remove = async () => {
     setBusy(true);
@@ -220,7 +233,7 @@ function DeletePanel({ account }: { account: Account }) {
     try {
       const outcome = await deleteAccount();
       if (outcome === "reauthenticate") setProblem("reauthenticate");
-      else router.replace("/lobby");
+      else if (outcome === "deleted") router.replace("/lobby");
     } catch (e) {
       setProblem(e instanceof Error ? e.message : String(e));
     }
@@ -233,6 +246,9 @@ function DeletePanel({ account }: { account: Account }) {
         Deletes your account and your plan from Tableside for good. Practice saved on this device
         stays here.
         {webSubscriptionRenewing(account.plan) ? " Your web subscription is canceled with it." : ""}
+        {appleElsewhere
+          ? " If you've signed in with Apple on an iPhone or iPad, remove Tableside there afterwards too: Settings → your name → Sign-In & Security → Sign in with Apple."
+          : ""}
       </Text>
       {storesBilling ? (
         <Notice
