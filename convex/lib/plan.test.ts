@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FREE, type Entitlement, isLive, resolvePlan, PAST_DUE_GRACE_MS } from "./plan";
+import { FREE, type Entitlement, hasHadPlus, isLive, resolvePlan, PAST_DUE_GRACE_MS } from "./plan";
 
 const NOW = Date.UTC(2026, 9, 25);
 const DAY = 86_400_000;
@@ -50,6 +50,11 @@ describe("resolvePlan", () => {
     expect(resolvePlan([failing], NOW)).toMatchObject({ plan: "plus", status: "past_due" });
   });
 
+  it("leaves a failing store renewal to the store's own grace period", () => {
+    const failing = plus({ source: "app_store", status: "past_due", expiresAt: NOW - DAY });
+    expect(resolvePlan([failing], NOW)).toEqual(FREE);
+  });
+
   it("ends a failed renewal after the grace period, even if no webhook ever says so", () => {
     const failing = plus({ status: "past_due", expiresAt: NOW - PAST_DUE_GRACE_MS });
     expect(resolvePlan([failing], NOW)).toMatchObject({ plan: "free" });
@@ -94,5 +99,27 @@ describe("resolvePlan", () => {
 describe("isLive", () => {
   it("treats the expiry instant itself as ended", () => {
     expect(isLive(plus({ expiresAt: NOW }), NOW)).toBe(false);
+  });
+});
+
+describe("hasHadPlus (no second web trial)", () => {
+  const none = { stripeSubscriptions: 0, entitlements: [], earlierAccount: false };
+
+  it("is false for a new Account with nothing bought", () => {
+    expect(hasHadPlus(none)).toBe(false);
+  });
+
+  it("is true once the Account has had a Stripe subscription, even an ended one", () => {
+    expect(hasHadPlus({ ...none, stripeSubscriptions: 1 })).toBe(true);
+  });
+
+  it("is true for a store Plus, but not for a gift or for Lifetime", () => {
+    expect(hasHadPlus({ ...none, entitlements: [plus({ source: "app_store" })] })).toBe(true);
+    expect(hasHadPlus({ ...none, entitlements: [plus({ source: "promotional" })] })).toBe(false);
+    expect(hasHadPlus({ ...none, entitlements: [lifetime()] })).toBe(false);
+  });
+
+  it("is true when an earlier, deleted Account with the same email had a Stripe subscription", () => {
+    expect(hasHadPlus({ ...none, earlierAccount: true })).toBe(true);
   });
 });

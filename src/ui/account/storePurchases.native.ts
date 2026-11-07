@@ -25,7 +25,8 @@ const API_KEY =
 
 export const STORE_AVAILABLE = Boolean(API_KEY);
 
-export type StoreOutcome = "purchased" | "cancelled";
+/** `unsure`: the store reported a problem of its own, and may or may not have charged. */
+export type StoreOutcome = "purchased" | "cancelled" | "unsure";
 
 let configured = false;
 /** The app user id RevenueCat has confirmed (null: anonymous). */
@@ -120,9 +121,10 @@ export async function buyInStore(
     await Purchases.purchasePackage(pkg);
     return "purchased";
   } catch (e) {
-    if ((e as { code?: string }).code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
-      return "cancelled";
-    }
+    const code = (e as { code?: string }).code;
+    if (code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) return "cancelled";
+    // The one failure RevenueCat says may still have charged the player.
+    if (code === PURCHASES_ERROR_CODE.STORE_PROBLEM_ERROR) return "unsure";
     throw e;
   }
 }

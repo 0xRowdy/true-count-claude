@@ -32,6 +32,9 @@ export interface PurchaseNotice {
  */
 export const CAN_SELL = ACCOUNTS_AVAILABLE && (Platform.OS === "web" || STORE_AVAILABLE);
 
+/** In the apps the App Store or Google Play sheet takes the payment (ADR-0007). */
+export const STORE_SHEET = Platform.OS !== "web" && CAN_SELL;
+
 export const PURCHASES_UNAVAILABLE: PurchaseNotice = {
   title: "Purchases aren't available in this build",
   body: "Nothing was charged and no card details were asked for. Every game and the coach are free to use right now.",
@@ -52,10 +55,14 @@ export function usePurchase() {
   // Signed out it isn't known yet: sign-in comes back to this page before anything is charged.
   const trialUsed = account.status === "signed-in" && account.account.trialUsed;
 
-  // In the apps the store sets the price, the currency and who gets a trial.
+  // In the apps the store sets the price, the currency and who gets a trial. Until it has
+  // answered for this player (or if it can't), there is nothing to sell: the web's prices
+  // would be the wrong amount, maybe in the wrong currency.
   const [store, setStore] = useState<StoreOffer | null>(null);
+  const [storeLoads, setStoreLoads] = useState(0);
   const storeUser = storeUserId(account);
   useEffect(() => {
+    setStore(null);
     if (!STORE_AVAILABLE || storeUser === undefined) return;
     let live = true;
     loadStoreOffer(storeUser).then(
@@ -65,7 +72,8 @@ export function usePurchase() {
     return () => {
       live = false;
     };
-  }, [storeUser]);
+  }, [storeUser, storeLoads]);
+  const waitingForStore = STORE_SHEET && store === null;
   const prices = store?.prices ?? PRICES;
   const offer = (billing: Billing): Offer =>
     offerFor({
@@ -79,6 +87,10 @@ export function usePurchase() {
     setNotice(null);
     if (account.status === "unavailable" || !CAN_SELL) return setNotice(PURCHASES_UNAVAILABLE);
     if (account.status === "loading") return;
+    if (waitingForStore) {
+      setStoreLoads((n) => n + 1);
+      return setNotice(STORE_NOT_READY);
+    }
     if (account.status === "signed-out") {
       const back = `/pricing?plan=${plan}&billing=${billing}`;
       return router.push(`/sign-in?next=${encodeURIComponent(back)}`);
@@ -93,6 +105,10 @@ export function usePurchase() {
       if (outcome === "purchased") {
         await syncAfterStore(PURCHASE_NOT_SYNCED);
         router.push("/account?checkout=success");
+      } else if (outcome === "unsure") {
+        // If it did charge, the plan picks the purchase up here or from the store's webhook.
+        await syncStorePurchases().catch(() => {});
+        setNotice(STORE_PROBLEM);
       }
     } catch (e) {
       setNotice(
@@ -134,6 +150,16 @@ export function usePurchase() {
     clearNotice: () => setNotice(null),
   };
 }
+
+const STORE_NOT_READY: PurchaseNotice = {
+  title: "The store hasn't answered yet",
+  body: "Its prices for you haven't loaded, so nothing was bought. Check your connection and try again in a moment.",
+};
+
+const STORE_PROBLEM: PurchaseNotice = {
+  title: "The store reported a problem",
+  body: "It may or may not have charged you. If it did, the purchase shows on your plan shortly, or use Restore purchases. Check before buying again.",
+};
 
 const PURCHASE_NOT_SYNCED: PurchaseNotice = {
   title: "Your purchase went through",

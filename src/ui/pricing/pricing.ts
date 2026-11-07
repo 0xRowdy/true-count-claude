@@ -5,12 +5,13 @@
  * Nothing here processes a payment. The `Offer` says what the player can actually do (ADR-0007):
  * a build that can't sell shows the same prices as a labelled preview that offers no trial or
  * purchase. On the web, an Account that has had Plus anywhere gets no second trial; in the
- * apps, the store says who gets one.
+ * apps, the store says who gets one, and what it costs: until it answers (`waiting`) no price
+ * is shown at all.
  */
 
 export type Billing = "monthly" | "yearly";
 export type PlanId = "free" | "plus" | "lifetime";
-export type Offer = "preview" | "trial" | "paid";
+export type Offer = "preview" | "waiting" | "trial" | "paid";
 
 /** What the plans cost, and in which currency. */
 export interface Prices {
@@ -40,7 +41,7 @@ export interface StoreOffer {
 /**
  * What Pricing offers this player (ADR-0007). On the web, an Account's first Plus starts with a
  * trial. In the apps the store decides, and until it answers (`storeOffersTrial` undefined)
- * nobody is promised one.
+ * nothing is offered: neither a trial nor the web's price.
  */
 export function offerFor(o: {
   canSell: boolean;
@@ -49,6 +50,7 @@ export function offerFor(o: {
   storeOffersTrial: boolean | undefined;
 }): Offer {
   if (!o.canSell) return "preview";
+  if (o.seller === "store" && o.storeOffersTrial === undefined) return "waiting";
   return (o.seller === "web" ? !o.trialUsed : o.storeOffersTrial) ? "trial" : "paid";
 }
 
@@ -84,6 +86,8 @@ export function yearlySaving(p: Prices = PRICES): number {
   return Math.round((1 - p.plusYearly / (p.plusMonthly * 12)) * 100);
 }
 
+const WAITING = "Waiting for the store's price";
+
 export interface PlanView {
   price: string;
   sub: string;
@@ -98,9 +102,11 @@ export function planView(
 ): PlanView {
   const trial = {
     preview: ` · example ${TRIAL_DAYS}-day trial`,
+    waiting: "",
     trial: ` · ${TRIAL_DAYS}-day free trial`,
     paid: "",
   }[offer];
+  if (offer === "waiting" && plan !== "free") return { price: "—", sub: WAITING };
   switch (plan) {
     case "free":
       return { price: money(0, p), sub: "Your current plan" };
@@ -169,6 +175,17 @@ export function order(
       timeline: [{ when: "Today", text: "You're already on Free. Nothing to pay, ever." }],
       trial: false,
       purchasable: false,
+    };
+  }
+  if (offer === "waiting") {
+    return {
+      name: plan === "lifetime" ? "Tableside Lifetime" : `Tableside Plus, ${billing}`,
+      detail,
+      total: "—",
+      dueToday: "—",
+      timeline: [{ when: "Today", text: `${WAITING} for you. Nothing is charged here.` }],
+      trial: false,
+      purchasable: true,
     };
   }
   if (plan === "lifetime") {

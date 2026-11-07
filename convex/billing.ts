@@ -4,15 +4,21 @@ import { ConvexError, v } from "convex/values";
 import Stripe from "stripe";
 import { TRIAL_DAYS } from "../src/ui/pricing/pricing";
 import { api, components, internal } from "./_generated/api";
-import { action, internalAction, internalMutation, type MutationCtx } from "./_generated/server";
+import {
+  action,
+  type ActionCtx,
+  internalAction,
+  internalMutation,
+  type MutationCtx,
+} from "./_generated/server";
 import { authComponent } from "./auth";
 import {
   type RcSubscriber,
   fromRevenueCat,
   fromStripeSubscription,
   isLatestRead,
+  startedSubscription,
 } from "./lib/stores";
-import { retryDelay } from "./lib/retry";
 import { entitlementFields } from "./schema";
 
 /** What the helpers below need: our own actions' ctx and the Stripe webhook handlers' both fit. */
@@ -82,12 +88,10 @@ export const startCheckout = action({
     if (!priceId || !process.env.STRIPE_SECRET_KEY) fail("not-configured");
     const site = siteUrl();
 
-    const { customerId } = await stripeComponent.getOrCreateCustomer(ctx, {
-      userId: me.id,
-      email: me.email,
-      name: me.name,
-    });
-    const trial = plan === "plus" && !me.trialUsed;
+    const customerId = await ownCustomer(ctx, { userId: me.id, email: me.email, name: me.name });
+    // Checked live too: the Account's mark from an earlier one may not be written yet.
+    const trial =
+      plan === "plus" && !me.trialUsed && !(await markIfEarlierPlus(ctx, me.id, me.email));
     const session = await stripeComponent.createCheckoutSession(ctx, {
       priceId: priceId!,
       customerId,
@@ -115,6 +119,77 @@ export const startCheckout = action({
   },
 });
 
+/**
+ * Whether Stripe has a subscription under this email, on any customer. Deleting an Account
+ * cancels its subscriptions but leaves Stripe's customer, so a new Account signing in with the
+ * same Google, Apple or email address is found here and gets no second web trial (ADR-0007).
+ * Found, it is marked on the Account (`earlierPlus`), so Pricing stops offering the trial.
+ */
+async function markIfEarlierPlus(
+  ctx: AnyActionCtx,
+  userId: string,
+  email: string,
+): Promise<boolean> {
+  for await (const customer of stripe().customers.list({ email, limit: 100 })) {
+    for await (const sub of liveSubscriptions(customer.id)) {
+      if (startedSubscription(sub.status)) {
+        await ctx.runMutation(internal.billing.markEarlierPlus, { userId });
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/** Run when an Account is created (`onCreate` in auth.ts). */
+export const checkEarlierPlus = internalAction({
+  args: { userId: v.string(), email: v.string() },
+  returns: v.null(),
+  handler: async (ctx, { userId, email }) => {
+    // Checkout checks again, so a failure here costs nothing but a trial shown then withdrawn.
+    if (process.env.STRIPE_SECRET_KEY) await markIfEarlierPlus(ctx, userId, email);
+    return null;
+  },
+});
+
+/** Marks the Account as having had Plus on an earlier one (once; not for a deleted Account). */
+export const markEarlierPlus = internalMutation({
+  args: { userId: v.string() },
+  returns: v.null(),
+  handler: async (ctx, { userId }) => {
+    if (!(await accountExists(ctx, userId))) return null;
+    const marked = await ctx.db
+      .query("earlierPlus")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .first();
+    if (!marked) await ctx.db.insert("earlierPlus", { userId });
+    return null;
+  },
+});
+
+/**
+ * The Account's own Stripe customer, created on first use. Not the component's
+ * `getOrCreateCustomer`, which falls back to any customer with the same email: Checkout on
+ * someone else's customer would hide the subscription from this Account's deletion, and the
+ * portal would open that customer's billing.
+ */
+async function ownCustomer(
+  ctx: ActionCtx,
+  user: { userId: string; email: string; name: string },
+): Promise<string> {
+  const found = await ctx.runQuery(components.stripe.public.getCustomerByUserId, {
+    userId: user.userId,
+  });
+  if (found) return found.stripeCustomerId;
+  const { customerId } = await stripeComponent.createCustomer(ctx, {
+    email: user.email,
+    name: user.name,
+    metadata: { userId: user.userId },
+    idempotencyKey: user.userId,
+  });
+  return customerId;
+}
+
 /** Stripe's customer portal: change card, switch monthly/yearly, cancel, invoices. */
 export const openBillingPortal = action({
   args: {},
@@ -122,7 +197,7 @@ export const openBillingPortal = action({
   handler: async (ctx) => {
     const user = (await authComponent.safeGetAuthUser(ctx)) ?? fail("signed-out");
     if (!process.env.STRIPE_SECRET_KEY) fail("not-configured");
-    const { customerId } = await stripeComponent.getOrCreateCustomer(ctx, {
+    const customerId = await ownCustomer(ctx, {
       userId: user._id,
       email: user.email,
       name: user.name,
@@ -203,14 +278,22 @@ export const endStripePayment = internalMutation({
 });
 
 /**
- * Replaces an Account's App Store, Google Play and promotional rows with RevenueCat's current
- * view. Whole-set replacement makes every sync idempotent and order-free.
+ * Replaces an Account's App Store, Google Play and promotional rows with RevenueCat's view
+ * fetched at `fetchedAt`. Whole-set replacement makes every sync idempotent; the fetch stamp
+ * keeps a webhook's sync and the app's own from committing an older view over a newer one.
  */
 export const replaceStoreEntitlements = internalMutation({
-  args: { userId: v.string(), entitlements: v.array(entitlement) },
+  args: { userId: v.string(), entitlements: v.array(entitlement), fetchedAt: v.number() },
   returns: v.null(),
-  handler: async (ctx, { userId, entitlements }) => {
+  handler: async (ctx, { userId, entitlements, fetchedAt }) => {
     if (!(await accountExists(ctx, userId))) return null;
+    const read = await ctx.db
+      .query("storeReads")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .unique();
+    if (!isLatestRead(read?.fetchedAt, fetchedAt)) return null;
+    if (read) await ctx.db.patch(read._id, { fetchedAt });
+    else await ctx.db.insert("storeReads", { userId, fetchedAt });
     const rows = await ctx.db
       .query("entitlements")
       .withIndex("by_user", (q) => q.eq("userId", userId))
@@ -236,7 +319,10 @@ async function syncSubscription(ctx: AnyActionCtx, subscriptionId: string) {
   if (!userId) return; // Not created by this app's Checkout.
   await ctx.runMutation(internal.billing.applyStripe, {
     userId,
-    entitlement: fromStripeSubscription(sub),
+    entitlement: fromStripeSubscription(sub, [
+      process.env.STRIPE_PRICE_PLUS_MONTHLY,
+      process.env.STRIPE_PRICE_PLUS_YEARLY,
+    ]),
     syncedAt,
   });
 }
@@ -286,8 +372,9 @@ async function lifetimePaid(ctx: AnyActionCtx, session: Stripe.Checkout.Session)
   const customer = idOf(session.customer);
   if (!customer) return;
   for await (const sub of liveSubscriptions(customer)) {
-    if (sub.status === "past_due") {
-      // Canceling stops Stripe collecting the failed invoice; a period-end cancel would not.
+    if (sub.status === "past_due" || sub.status === "unpaid" || sub.status === "incomplete") {
+      // Canceling stops Stripe collecting the failed invoice, which could otherwise still be
+      // paid and restart the subscription; a period-end cancel would not.
       await stripe().subscriptions.cancel(sub.id);
     } else if (
       (sub.status === "active" || sub.status === "trialing") &&
@@ -339,42 +426,20 @@ export const stripeEvents: StripeEventHandlers = {
 };
 
 /**
- * After account deletion: end every web subscription now, so nobody is billed for nothing.
- * Nobody is left to notice a failure, so it retries with backoff (`retryDelay`), and logs an
- * error naming the customer if Stripe still refuses.
+ * After account deletion: end every web subscription now, so nobody is billed for nothing. Run
+ * under the retrier (`runCleanup`); canceling again is harmless.
  */
 export const cancelStripeForDeletedUser = internalAction({
-  args: {
-    userId: v.string(),
-    stripeCustomerIds: v.array(v.string()),
-    attempt: v.optional(v.number()),
-  },
+  args: { stripeCustomerIds: v.array(v.string()) },
   returns: v.null(),
-  handler: async (ctx, { userId, stripeCustomerIds, attempt = 0 }) => {
+  handler: async (_ctx, { stripeCustomerIds }) => {
     if (!process.env.STRIPE_SECRET_KEY) return null;
-    try {
-      for (const customer of stripeCustomerIds) {
-        for await (const sub of liveSubscriptions(customer)) {
-          if (sub.status !== "canceled" && sub.status !== "incomplete_expired") {
-            await stripe().subscriptions.cancel(sub.id);
-          }
+    for (const customer of stripeCustomerIds) {
+      for await (const sub of liveSubscriptions(customer)) {
+        if (sub.status !== "canceled" && sub.status !== "incomplete_expired") {
+          await stripe().subscriptions.cancel(sub.id);
         }
       }
-    } catch (e) {
-      const delay = retryDelay(attempt);
-      if (delay === null) {
-        console.error(
-          `GAVE UP canceling Stripe subscriptions for deleted Account ${userId} (customers ${stripeCustomerIds.join(", ")}) after ${attempt + 1} tries; cancel them in the Stripe Dashboard`,
-          e,
-        );
-        throw e;
-      }
-      console.warn(`Canceling Stripe for deleted Account ${userId} failed; retrying`, e);
-      await ctx.scheduler.runAfter(delay, internal.billing.cancelStripeForDeletedUser, {
-        userId,
-        stripeCustomerIds,
-        attempt: attempt + 1,
-      });
     }
     return null;
   },
@@ -387,6 +452,8 @@ export const cancelStripeForDeletedUser = internalAction({
 /** Fetches the RevenueCat subscriber (the store's current truth) and stores it. */
 export async function syncRevenueCat(ctx: AnyActionCtx, userId: string): Promise<void> {
   const key = process.env.REVENUECAT_SECRET_KEY ?? fail("not-configured");
+  // Stamped before the request, as in `syncSubscription`.
+  const fetchedAt = Date.now();
   const res = await fetch(
     `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(userId)}`,
     { headers: { Authorization: `Bearer ${key}` } },
@@ -397,6 +464,7 @@ export async function syncRevenueCat(ctx: AnyActionCtx, userId: string): Promise
   if (!subscriber) throw new Error("RevenueCat GET /subscribers answered without a subscriber");
   await ctx.runMutation(internal.billing.replaceStoreEntitlements, {
     userId,
+    fetchedAt,
     entitlements: fromRevenueCat(subscriber, {
       testStore: process.env.REVENUECAT_ALLOW_TEST_STORE === "true",
     }),
