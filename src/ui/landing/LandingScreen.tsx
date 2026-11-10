@@ -96,7 +96,7 @@ const PLANS = [
     amount: "$5.99",
     per: CAN_SELL ? "per month, or $49 a year" : "preview per month, or $49 a year",
     desc: CAN_SELL
-      ? "No ads and unlimited training sessions. A first subscription starts with 7 days free."
+      ? "Your progress and strategies on every device, and new games as they launch. A first subscription starts with 7 days free."
       : "Future plan preview. All current trainers, history and local strategy builders are free.",
     featured: true,
   },
@@ -299,7 +299,7 @@ export function LandingScreen() {
             </View>
             <View style={styles.trust}>
               <Trust icon={Ban} label="No chips to buy" />
-              {CAN_SELL ? null : <Trust icon={EyeOff} label="No ads" />}
+              <Trust icon={EyeOff} label="No ads" />
               <Trust icon={Smartphone} label="Web, iOS & Android" />
             </View>
           </View>
@@ -492,7 +492,7 @@ export function LandingScreen() {
               ]}
             >
               {CAN_SELL
-                ? "Free to play. Pay only to go deeper."
+                ? "Free to play. Plus takes it everywhere."
                 : "Every current training tool is free."}
             </Text>
             <Text
