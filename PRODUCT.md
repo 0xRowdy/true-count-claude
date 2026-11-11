@@ -108,9 +108,10 @@ guessing, and knows what each decision or bet earns or costs.
     then. Its copy promises only what Plus delivers, never "no ads", "unlimited" or "deeper".
   - The bar is CQ Nexus, the main competitor: Free should match or beat what it gives away, and
     Plus should match or beat what Nexus Pro sells. Review in six months with real numbers.
+  - How Sync works is decided in ADR-0008: TanStack DB collections on every device, synced
+    through Convex for Plus. The rest of the Plus launch is charted in the wayfinder map "Map:
+    Plus launch spec" (#67).
 - **Undecided:**
-  - How cloud sync works (the device stays the source of truth; ADR-0003). It needs its own ADR
-    before it is built.
   - Simulated live tables for blackjack and roulette ("Opens soon").
 
 ## Brand Commitments
