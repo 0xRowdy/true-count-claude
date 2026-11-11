@@ -2,6 +2,8 @@
 
 **Status:** Accepted · 2026-09-14 · "No backend" superseded by ADR-0007 (2026-10-25): optional
 Accounts on Convex hold a paid Plan. Local-first, and no account required to train, still stand.
+The deferred cloud sync arrived as planned, an optional layer over local state: ADR-0008
+(2026-11-10).
 
 ## Context
 
