@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
   },
-  action: { flex: 1, height: 52 },
+  action: { flex: 1, minHeight: 52, alignSelf: "stretch", paddingHorizontal: 12 },
   round: { paddingTop: 12, gap: 8 },
   resultRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16 },
   ball: {

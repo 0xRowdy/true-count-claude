@@ -1,31 +1,16 @@
 appId: com.truecount.app
-name: Footer notices appear after tapping and pricing stays hypothetical
+name: Native pricing stays hypothetical
 ---
+# Marketing footer notices live on the web landing page and are checked by the landing flow.
 - launchApp:
     clearState: true
 - extendedWaitUntil:
-    visible: Play free
+    visible: "How well do you know the tables.*"
     timeout: 30000
-- evalScript: ${output.labels = ["Privacy", "Terms", "Accessibility"]}
-- evalScript: ${output.messages = ["Your progress, settings and strategies stay.*", "Tableside is for practice only.*", "Web controls support keyboard navigation.*"]}
-- evalScript: ${output.notice = 0}
-- repeat:
-    times: 3
-    commands:
-      # Scroll only to the footer control, never to the resulting notice.
-      - scrollUntilVisible:
-          element:
-            text: ${output.labels[output.notice]}
-          direction: DOWN
-          speed: 80
-          timeout: 90000
-      - tapOn: ${output.labels[output.notice]}
-      # The app must bring the complete notice into view without another test scroll.
-      - assertVisible: ${output.messages[output.notice]}
-      - assertVisible: Dismiss
-      - takeScreenshot: native-footer-notice-${output.notice}
-      - tapOn: Dismiss
-      - evalScript: ${output.notice = output.notice + 1}
+- tapOn: "Skip — just let me play"
+- extendedWaitUntil:
+    visible: "Good (morning|afternoon|evening).*"
+    timeout: 30000
 - openLink: truecount://pricing
 - runFlow:
     when:

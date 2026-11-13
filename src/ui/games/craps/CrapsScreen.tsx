@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 1, alignItems: "center" },
   column: { width: "100%", maxWidth: COLUMN, paddingBottom: 16 },
   flex: { flex: 1 },
-  action: { flex: 1, height: 52, paddingHorizontal: 12 },
+  action: { flex: 1, minHeight: 52, alignSelf: "stretch", paddingHorizontal: 12 },
   rail: {
     height: 44,
     flexDirection: "row",

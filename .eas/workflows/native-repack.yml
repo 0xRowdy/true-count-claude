@@ -48,7 +48,13 @@ jobs:
           xcrun simctl boot "$simulator_id" || true
           xcrun simctl bootstatus "$simulator_id" -b
           xcrun simctl install "$simulator_id" "${{ steps.app.outputs.artifact_path }}"
+          trap 'xcrun simctl ui "$simulator_id" content_size large' EXIT
+          xcrun simctl ui "$simulator_id" content_size large
           /tmp/maestro-cli/maestro/bin/maestro --device "$simulator_id" test .maestro --format junit --output native-evidence/results.xml --test-output-dir native-evidence
+          mkdir -p native-evidence/large-text
+          xcrun simctl ui "$simulator_id" content_size accessibility-extra-extra-extra-large
+          xcrun simctl ui "$simulator_id" content_size > native-evidence/large-text/content-size.txt
+          /tmp/maestro-cli/maestro/bin/maestro --device "$simulator_id" test .maestro/native-large-text.yml --format junit --output native-evidence/large-text/results.xml --test-output-dir native-evidence/large-text
       - uses: eas/upload_artifact
         if: ${{ always() }}
         with:

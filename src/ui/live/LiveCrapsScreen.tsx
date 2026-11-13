@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 10 },
   headActions: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 },
   headActionsNarrow: { width: "100%" },
-  headButton: { height: 40, paddingHorizontal: 18 },
+  headButton: { minHeight: 40, paddingHorizontal: 18 },
   status: {
     marginTop: 12,
     paddingVertical: 10,
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.coach,
   },
   actions: { flexDirection: "row", gap: 16, flexWrap: "wrap" },
-  bigButton: { height: 48 },
+  bigButton: { minHeight: 48 },
   social: { width: 360, gap: 16 },
   socialStacked: { width: "100%" },
 });

@@ -551,8 +551,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
   },
   actions: { flexDirection: "row", gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
-  side: { width: 130, height: 52, paddingHorizontal: 14 },
-  speed: { width: 110, height: 52, paddingHorizontal: 12 },
+  side: { width: 130, minHeight: 52, alignSelf: "stretch", paddingHorizontal: 14 },
+  speed: { minWidth: 110, minHeight: 52, alignSelf: "stretch", paddingHorizontal: 12 },
   lockNote: { color: colors.mutedForeground, marginTop: 8, textAlign: "center" },
-  main: { flex: 1 },
+  main: { flex: 1, alignSelf: "stretch" },
 });

@@ -49,7 +49,7 @@ import {
   type LucideIcon,
 } from "@/ui/ds";
 import { type ChipValue, formatMoney } from "@/ui/ds/format";
-import { colors, display, radius, surfaces, type, ui } from "@/ui/ds/tokens";
+import { colors, display, radius, surfaces, textScale, type, ui } from "@/ui/ds/tokens";
 import { ACTION_NAME } from "@/ui/explanation/explanationFormat";
 import { useProfile } from "@/ui/profile/profileStore";
 import { useConfiguredRules } from "@/ui/rules/rulesStore";
@@ -157,7 +157,7 @@ export function PlayTable() {
   const coach = profile.coach;
   const feedback = useTableFeedback();
   const router = useRouter();
-  const { width } = useWindowDimensions();
+  const { width, fontScale } = useWindowDimensions();
 
   // The hand's graded Decisions, each carrying its Explanation. Cleared at the next deal,
   // never at settlement: the cards stay up through the Result, and so does the why.
@@ -312,6 +312,8 @@ export function PlayTable() {
 
   const fr = feltRules(rules);
   const compact = width < 380;
+  // Freely scaled guidance needs the full row once it outgrows the felt's text geometry.
+  const expandedTip = fontScale > textScale.felt;
   const handCount = round?.playerHands.length ?? 0;
   const cardSize: CardSize = handCount > 2 || (handCount === 2 && compact) ? "sm" : "md";
   const history = historyChips(play.session?.rounds ?? []);
@@ -373,7 +375,9 @@ export function PlayTable() {
 
       <View style={[styles.row3, { marginTop: roomy ? 24 : 18 }]}>
         <View style={[styles.side, styles.sideLeft]}>
-          {tag ? (
+          {phase === "bet" && !expandedTip ? (
+            <BankrollTip compact={compact} />
+          ) : tag ? (
             <FeltPill
               text={tag.text}
               tone={tag.mistake ? "mistake" : "neutral"}
@@ -442,8 +446,6 @@ export function PlayTable() {
           ) : null}
         </View>
       </View>
-
-      {phase === "bet" ? <BankrollTip compact={compact} /> : null}
     </FeltSurface>
   );
 
@@ -471,6 +473,11 @@ export function PlayTable() {
           showsVerticalScrollIndicator={false}
         >
           {feltView}
+          {phase === "bet" && expandedTip ? (
+            <View style={styles.expandedTipRow}>
+              <BankrollTip compact={compact} expanded />
+            </View>
+          ) : null}
 
           {roomy ? (
             <>
@@ -643,9 +650,12 @@ export function PlayTable() {
 // --- On the felt ---------------------------------------------------------------------------
 
 /** "Keep bets near 2% of your bankroll." — the bankroll tip on the felt (CcmBm). */
-function BankrollTip({ compact }: { compact: boolean }) {
+function BankrollTip({ compact, expanded = false }: { compact: boolean; expanded?: boolean }) {
   return (
-    <View style={[styles.tip, compact && styles.tipCompact]} role="note">
+    <View
+      style={[styles.tip, compact && styles.tipCompact, expanded && styles.tipExpanded]}
+      role="note"
+    >
       <View style={styles.tipHead}>
         <icons.Lightbulb size={12} color={surfaces.hintInk} strokeWidth={2} />
         <Text style={[ui(11, 800, { letterSpacing: 1 }), { color: surfaces.hintInk }]}>TIP</Text>
@@ -1192,16 +1202,16 @@ const styles = StyleSheet.create({
   hands: { flexDirection: "row", gap: 8, flexShrink: 1, justifyContent: "center" },
   handColumn: { alignItems: "center", gap: 6 },
   tip: {
-    position: "absolute",
-    left: 16,
-    top: 250,
     width: 104,
+    maxWidth: "100%",
     gap: 4,
     padding: 10,
     borderRadius: 12,
     backgroundColor: felt.tip,
   },
-  tipCompact: { width: 92, left: 10 },
+  tipCompact: { width: 92 },
+  expandedTipRow: { paddingHorizontal: 16, paddingTop: 12 },
+  tipExpanded: { width: "100%" },
   tipHead: { flexDirection: "row", alignItems: "center", gap: 4 },
   collectHint: {
     flexDirection: "row",
@@ -1238,7 +1248,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   // Three to a row at 390: the button's own 20pt sides and 8pt gap would truncate "Next hand".
-  grow: { flex: 1, height: 52, paddingHorizontal: 4, gap: 6, alignSelf: "auto" },
+  grow: { flex: 1, minHeight: 52, paddingHorizontal: 4, gap: 6, alignSelf: "auto" },
   centerNote: { color: colors.mutedForeground, textAlign: "center", paddingBottom: 8 },
   card: {
     marginHorizontal: 16,
@@ -1255,7 +1265,7 @@ const styles = StyleSheet.create({
   coachLayer: { alignItems: "center", paddingHorizontal: 16 },
   actionBlock: { gap: 8, paddingHorizontal: 16 },
   actionGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  actionButton: { flexGrow: 1, flexBasis: "30%", height: 52, alignSelf: "auto" },
+  actionButton: { flexGrow: 1, flexBasis: "30%", minHeight: 52, alignSelf: "auto" },
   hintRow: { alignItems: "center" },
   result: { gap: 14, paddingTop: 16, paddingHorizontal: 16, paddingBottom: 14 },
   outcome: { flexDirection: "row", gap: 12, alignItems: "center" },

@@ -284,7 +284,7 @@ export function PricingScreen() {
                 label={o.trial ? "Free trial (unavailable)" : "Pay with card (unavailable)"}
                 onPress={() => setNotice(true)}
                 fullWidth
-                style={{ height: 52 }}
+                style={{ minHeight: 52 }}
               />
             </View>
           ) : (
@@ -293,7 +293,7 @@ export function PricingScreen() {
               label="Keep playing free"
               onPress={() => router.push("/lobby")}
               fullWidth
-              style={{ height: 52 }}
+              style={{ minHeight: 52 }}
             />
           )}
           {notice ? (

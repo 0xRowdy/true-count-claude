@@ -4,15 +4,9 @@ name: Native onboarding and navigation
 - launchApp:
     clearState: true
 - extendedWaitUntil:
-    visible: Play free
+    visible: "How well do you know the tables.*"
     timeout: 30000
-- openLink: truecount://onboarding
-- runFlow:
-    when:
-      platform: iOS
-      visible: "^Open$"
-    commands:
-      - tapOn: "^Open$"
+- takeScreenshot: native-onboarding-first-launch
 - scrollUntilVisible:
     centerElement: true
     element:
@@ -25,6 +19,7 @@ name: Native onboarding and navigation
       text: Continue
     direction: DOWN
 - tapOn: Continue
+- assertVisible: "What brings you to the table.*"
 - scrollUntilVisible:
     centerElement: true
     element:
@@ -37,6 +32,7 @@ name: Native onboarding and navigation
       text: Continue
     direction: DOWN
 - tapOn: Continue
+- assertVisible: "Planning a casino trip.*"
 - scrollUntilVisible:
     centerElement: true
     element:
@@ -44,6 +40,8 @@ name: Native onboarding and navigation
     direction: DOWN
 - tapOn: Your first name
 - inputText: Native Tester
+- assertVisible: Native Tester
+- takeScreenshot: native-onboarding-name
 - hideKeyboard
 - scrollUntilVisible:
     centerElement: true
@@ -53,21 +51,14 @@ name: Native onboarding and navigation
 - takeScreenshot: native-onboarding-profile
 - tapOn: Finish
 - extendedWaitUntil:
-    visible: "Good (morning|afternoon|evening).*"
+    visible: "Good (morning|afternoon|evening), Native Tester.*"
     timeout: 15000
 - takeScreenshot: native-onboarding-lobby
 - stopApp
 - launchApp:
     clearState: false
 - extendedWaitUntil:
-    visible: Play free
+    visible: "Good (morning|afternoon|evening), Native Tester.*"
     timeout: 30000
-- openLink: truecount://lobby
-- runFlow:
-    when:
-      platform: iOS
-      visible: "^Open$"
-    commands:
-      - tapOn: "^Open$"
-- assertVisible: "Good (morning|afternoon|evening), Native Tester.*"
+- assertNotVisible: "How well do you know the tables.*"
 - takeScreenshot: native-onboarding-persisted

@@ -1,7 +1,9 @@
 # MVP completion record
 
-Status: implementation and automated verification pass on web, the iOS simulator,
-and the final EAS-signed Android APK offline. Physical-device acceptance remains open.
+Status, 2026-11-13: the local-first implementation is merged in PRs #54 and #55.
+Fresh native verification is in progress for Expo SDK 58. The October SDK 57
+artifacts and results below are historical evidence, not proof of the current
+native runtime. Physical Android acceptance remains open.
 
 Scope comes from the user's MVP request, `CONTEXT.md`, accepted ADRs, the 18 frames
 in `design/Truecount-claude.pen`, and platform issue
@@ -82,7 +84,69 @@ historical research. The report includes completed Roulette, Craps, Video Poker,
 Baccarat and Pachinko rounds, Blackjack training controls, trackers and goals. Paid,
 social and untested workflows are identified explicitly.
 
-## Platform gates
+## Native follow-up, 2026-11-13
+
+Current source uses Expo 58.0.17 and React Native 0.88.0. Its first local Android
+build failed because the automatically resolved Reanimated 4.6.0 supports React
+Native only through 0.87. Direct pins to the installed Expo SDK's recommended
+Reanimated 4.7.1 and Worklets 0.13.0 corrected that failure. No other package
+versions changed. The fresh x86_64 standalone release then built successfully.
+All 3,087 unit tests, typecheck and lint pass with these dependencies.
+
+At Android system `font_scale=2.0`, native screenshots reproduced truncated Craps
+action labels and a Baccarat road legend extending beyond the screen. The fix
+allows labels and their containers to wrap and grow while retaining the design's
+existing scaling caps. The complete Baccarat commission rule now wraps too.
+The focused native flow opens the bet editor and switches between both road views.
+OCR of the rendered screenshots fails on the original labels and passes on the
+corrected labels; accessible names alone would not detect these defects.
+
+![Craps action labels before and after at Android text scale 2.0](evidence/native-large-text-craps.png)
+
+![Baccarat rules and road legend before and after at Android text scale 2.0](evidence/native-large-text-baccarat.png)
+
+The previous native suite also failed its `Play free` startup assertion on the
+current app. The updated suite starts through onboarding, and its dedicated
+onboarding flow checks a returning cold launch into the named Lobby without
+forcing a route through a deep link. Footer notices remain covered by the web
+landing flow; the native notices flow verifies the hypothetical pricing copy.
+
+The first SDK 58 iOS run exposed an onboarding scroll offset retained between
+questions. It placed the name field behind the fixed header, so the test never
+entered a name. Remounting the ScrollView for each step resets that offset while
+preserving the profile and form state. A stronger Android check then showed the
+keyboard hiding the focused field despite successful input and persistence.
+Android now resizes around the keyboard and scrolls the field above it. Native
+screenshots must show the typed name while the keyboard remains open; an
+accessibility-tree assertion alone can pass while the keyboard covers the field.
+The corrected Android screenshot shows the full typed name above the keyboard;
+the same flow verifies it in the Lobby immediately and after a cold relaunch.
+
+Large-text follow-up also corrects fixed-height actions across all five games,
+wrapping Video Poker paytable names and keeping card glyphs within the card's
+fixed geometry. HOLD/HELD uses the existing control scale cap. At enlarged text
+sizes the blackjack bankroll tip uses a full-width row below the felt. These are
+targeted checks, not a claim that every screen supports every maximum text size.
+For example, the redundant Video Poker coin captions still ellipsize while their
+numeric counts remain visible.
+
+Evidence is under `.verify/native/accessibility-20261113/`: the initial build
+failure, compatible baseline build, stale-start failure, baseline and corrected
+screenshots, and source hashes. All nine Android flows passed offline in 5 minutes
+9 seconds on the first corrected bundle, including cold-start destinations and
+Android back navigation. All 29 browser flows passed with zero console errors;
+five focused flows passed again after the card glyph and keyboard-wrapper changes.
+The Android onboarding correction passes its focused flow and visual inspection.
+Final combined Android and iOS simulator verification are still pending. The
+intermediate Android pass does not establish completion of the native release or
+physical Android acceptance.
+
+## Platform gates recorded on 2026-10-22
+
+These results describe the PR #54 source and SDK 57 binaries. They predate the
+SDK 58 dependency versions and PR #55's native startup/navigation changes. The
+remote artifacts expired on November 5; retained local copies remain historical
+evidence. Fresh native builds must use the current dependency graph.
 
 | Gate                                             | Current evidence                                                                                                                                                                                                        |
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -106,8 +170,8 @@ Drills → Your record → Statistics; the backup controls are at the bottom of 
 screen. Physical Android acceptance remains open.
 
 The native workflows are `.eas/workflows/native-smoke.yml` and
-`.eas/workflows/native-repack.yml`. Assertions live in all seven `.maestro/native-*.yml`
-files. The game flow covers Roulette and Baccarat results, a seeded Video Poker
+`.eas/workflows/native-repack.yml`. The October suite contained seven
+`.maestro/native-*.yml` files. The game flow covers Roulette and Baccarat results, a seeded Video Poker
 deal/hint/draw/collection, and a Craps come-out roll establishing the point. The
 broader browser suite covers additional behavior. Release instructions live in
 [releasing.md](releasing.md).
@@ -126,9 +190,9 @@ Standalone iOS testing also exposed an Expo Handoff configuration alert caused b
 rendering browser page metadata through native `Head`. The root now renders `Head`
 only on web. This was invisible in Expo Go, which does not enable the native module.
 
-The final EAS artifacts listed above supersede the October 21 builds, base builds and the local
-debug-signed x86_64 APK. The local APK remains useful as intermediate evidence; use
-the final EAS APK for Android distribution. Physical iPhone distribution outside
+The October 22 EAS artifacts listed above superseded the October 21 builds, base builds and the local
+debug-signed x86_64 APK for that source revision. They must not be used to verify
+or distribute the current SDK 58 source. Physical iPhone distribution outside
 Expo Go requires a separately signed build; the verified iOS artifact targets the simulator.
 The original source manifest records the 395 file hashes used for the local APK
 and first repacks. `release-source-manifest.json` preserves a separate 395-file

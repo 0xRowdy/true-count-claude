@@ -33,6 +33,10 @@ This requires no Expo account, no Apple Developer account, and no Google Play ac
 The phone and computer must share a reachable network for a LAN connection. Development
 client builds are also supported; use `pnpm start` with an installed development build.
 
+Native startup opens onboarding for a new player and the Lobby after onboarding is
+completed or skipped. The marketing landing page is web-only. Test an ordinary
+cold launch as well as deep links; opening a route manually can hide a startup bug.
+
 ## Native builds — needs an Expo account
 
 One-time setup, performed by a human:
@@ -59,15 +63,24 @@ eas build --profile production --platform all
 `.maestro/native-smoke.yml` drives launch, a True Count answer, session ending,
 backup and persistence after relaunch. `.maestro/native-play.yml` exercises a
 blackjack round and its settlement. `.maestro/native-onboarding.yml` checks profile
-creation and persistence; `.maestro/native-games.yml` checks roulette, baccarat,
+creation and a returning cold launch directly into the named Lobby, without forcing
+the destination through a deep link; `.maestro/native-games.yml` checks roulette, baccarat,
 video poker and craps, including a reproducible seeded video poker deal.
 `.maestro/native-layout.yml` checks eight trainer headers without scrolling past
 their controls. `.maestro/native-card-layout.yml` checks wrapping on the Lobby
 and Progress pages and captures the weekly chart. `.maestro/native-notices.yml`
-requires footer notices to appear immediately after tapping and verifies that
-pricing timelines describe hypothetical examples. These seven flows include
-visual regressions that the previous behavior-only smoke test missed.
-`.eas/workflows/native-smoke.yml` builds an iOS artifact and runs all seven flows
+verifies that pricing timelines describe hypothetical examples. Marketing footer
+notices belong to the web landing page; the browser `landing` flow checks their
+visibility at phone width. `.maestro/native-cold-links.yml` opens `/drills`,
+`/strategies/blackjack` and `/live/craps` with the standalone app stopped before each
+link. Expo Go is insufficient for this check because it can drop cold-start paths.
+`.maestro/native-large-text.yml` captures game actions, Baccarat's road legend and
+payout, Video Poker's paytable and held cards, and the blackjack bankroll tip. It
+opens the bet editor, switches road views and deals seeded hands. The iOS workflows run the
+suite at the default text size, then repeat this focused flow at the largest
+Dynamic Type setting and restore the default afterward. Android uses system
+`font_scale=2.0` for the enlarged-text pass.
+`.eas/workflows/native-smoke.yml` builds an iOS artifact and runs the native flows
 on a macOS worker with Apple's simulator, so the
 local host can be Linux. Android uses the APK with a local emulator. Run and inspect
 the iOS workflow with the EAS CLI:
@@ -81,6 +94,14 @@ The workflow uploads Maestro reports and screenshots. A successful JavaScript ex
 does not replace these runtime checks. Interactive Expo Simulators access is separate
 from EAS Workflows and is not enabled for the current account. The workflow uses a
 custom job because this account cannot run the paid built-in Maestro job.
+
+Inspect the enlarged-text screenshots themselves. Accessible names can remain
+complete while the rendered label is clipped. With Pillow and Tesseract installed,
+`python3 scripts/check-native-text.py --all PATH_TO_MAESTRO_SCREENSHOTS` checks the
+rendered action labels, road legend, payout, HOLD/HELD labels and bankroll tip
+through OCR. Run it on the specific enlarged-text evidence directory, not a parent
+containing several test runs. OCR can miss bad line breaks and overlapping card
+glyphs, so inspect those screenshots visually too.
 
 For JavaScript-only changes with an unchanged native dependency fingerprint,
 `.eas/workflows/native-repack.yml` embeds the current bundle and assets into an
@@ -108,8 +129,10 @@ assets and persisted history independently of Metro.
   all seven native flows passed in
   [the simulator workflow](https://expo.dev/accounts/mmgjlegacy/projects/true-count/workflows/01a163e5-da63-7750-9761-95dc7cd8c77a).
 
-These artifacts include the final bundled JavaScript and assets. Expo lists their
-expiration as November 5, 2026; local copies are already retained.
+These are historical SDK 57 artifacts, not builds of the current SDK 58 source.
+Their remote downloads expired on November 5, 2026; local copies are retained.
+Create fresh previews after native dependency changes. Do not repack these older
+binaries with an SDK 58 JavaScript bundle.
 These builds include the native header, card and chart-label layout fixes, plus
 the replay, backup recovery, footer notice and pricing review fixes.
 The submitted source and test snapshot is `.verify/native/review-source-manifest.json`;
