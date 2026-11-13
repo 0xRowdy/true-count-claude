@@ -65,11 +65,11 @@ name: Drill, session backup, and persistence
       text: "1 session recorded"
     direction: DOWN
 - scrollUntilVisible:
-    centerElement: true
     element:
-      text: "Create backup"
+      text: "History stays on this device unless you export a backup.*"
     direction: DOWN
     timeout: 30000
+- assertVisible: Create backup
 - takeScreenshot: native-backup-control
 - tapOn: "Create backup"
 - scrollUntilVisible:

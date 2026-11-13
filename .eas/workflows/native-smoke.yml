@@ -39,11 +39,14 @@ jobs:
           xcrun simctl install "$simulator_id" "${{ steps.app.outputs.artifact_path }}"
           trap 'xcrun simctl ui "$simulator_id" content_size large' EXIT
           xcrun simctl ui "$simulator_id" content_size large
-          /tmp/maestro-cli/maestro/bin/maestro --device "$simulator_id" test .maestro --format junit --output native-evidence/results.xml --test-output-dir native-evidence
+          # Collect enlarged-text evidence even when a default-size flow fails.
+          suite_status=0
+          /tmp/maestro-cli/maestro/bin/maestro --device "$simulator_id" test .maestro --format junit --output native-evidence/results.xml --test-output-dir native-evidence || suite_status=$?
           mkdir -p native-evidence/large-text
           xcrun simctl ui "$simulator_id" content_size accessibility-extra-extra-extra-large
           xcrun simctl ui "$simulator_id" content_size > native-evidence/large-text/content-size.txt
           /tmp/maestro-cli/maestro/bin/maestro --device "$simulator_id" test .maestro/native-large-text.yml --format junit --output native-evidence/large-text/results.xml --test-output-dir native-evidence/large-text
+          exit "$suite_status"
       - uses: eas/upload_artifact
         if: ${{ always() }}
         with:

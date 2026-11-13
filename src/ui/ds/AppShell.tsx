@@ -51,6 +51,7 @@ export function AppShell({
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
+        contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
       >
