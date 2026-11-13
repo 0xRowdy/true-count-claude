@@ -121,6 +121,11 @@ screenshots must show the typed name while the keyboard remains open; an
 accessibility-tree assertion alone can pass while the keyboard covers the field.
 The corrected Android screenshot shows the full typed name above the keyboard;
 the same flow verifies it in the Lobby immediately and after a cold relaunch.
+The subsequent iOS run passed eight of nine flows. Its onboarding log showed the
+name field visible at y=606 before Maestro's centering gesture scrolled it to
+y=101, behind the header. The flow now leaves an already visible name field in
+place and captures it before tapping. This was a test-scroll failure after the
+step-reset correction, not evidence of profile data loss.
 
 Large-text follow-up also corrects fixed-height actions across all five games,
 wrapping Video Poker paytable names and keeping card glyphs within the card's

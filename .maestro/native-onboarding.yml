@@ -34,10 +34,10 @@ name: Native onboarding and navigation
 - tapOn: Continue
 - assertVisible: "Planning a casino trip.*"
 - scrollUntilVisible:
-    centerElement: true
     element:
       text: Your first name
     direction: DOWN
+- takeScreenshot: native-onboarding-name-control
 - tapOn: Your first name
 - inputText: Native Tester
 - assertVisible: Native Tester
