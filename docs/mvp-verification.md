@@ -141,14 +141,14 @@ screenshots, and source hashes. All nine Android flows passed offline in 5 minut
 9 seconds on the first corrected bundle, including cold-start destinations and
 Android back navigation. All 29 browser flows passed with zero console errors;
 five focused flows passed again after the card glyph and keyboard-wrapper changes.
-The final Android APK passes six focused default-size flows in 4 minutes 26 seconds,
+That earlier local Android APK passes six focused default-size flows in 4 minutes 26 seconds,
 the enlarged-text flow in 1 minute 22 seconds, and revised onboarding in 31 seconds,
 all offline. Default and enlarged screenshots pass all ten OCR checks. Visual
 inspection confirms contained card glyphs, the full bankroll tip and the typed name
-above the keyboard. `final-source.json` records the APK hash and source provenance;
+above the keyboard. `final-source.json` records that local APK's hash and source provenance;
 `final-combined-default`, `final-combined-large` and `final-combined-onboarding`
-contain the final run evidence. The other two flows, backup and cold links, passed
-on the preceding bundle; this is not a claim that all nine ran on the final APK.
+contain that run's evidence. The other two flows, backup and cold links, passed
+on its preceding bundle; this is not a claim that all nine ran on that local APK.
 
 The fresh iOS SDK 58 base build is `5ae33010-8d46-4c0f-a5a3-469097e684cb`.
 The [inset verification run](https://expo.dev/accounts/mmgjlegacy/projects/true-count/workflows/01a1d580-966c-7a8d-baf9-7a2ec1da6e50)
@@ -203,14 +203,24 @@ focused flow at default and enlarged text sizes. Screenshot OCR confirms complet
 signed screenshot and passes on the corrected screenshot. The Roulette browser
 flow and static checks pass too.
 
+Full CI on `3f4de88`, whose runtime source matches `24790aa`, passes all 3,087 unit
+tests in 90 files, typecheck, lint, formatting, the web build and all 29 browser
+flows. Downloaded browser results contain zero console errors; the retained report
+is `browser-ci-roulette-label-results.json`.
+
 ![Roulette outside labels before and after at Android text scale 2.0](evidence/native-large-text-roulette.png)
 
 Fresh Android and iOS repacks use immutable source `24790aa`, which includes the
 label fix and an option to skip the quota-blocked iOS simulator job. The
+[iOS build-only workflow](https://expo.dev/accounts/mmgjlegacy/projects/true-count/workflows/01a1d5df-9613-7619-b552-1c2596249e8b)
+produced app `aac89f30-9d59-4532-8079-372a6abec401` successfully. The downloaded
+archive has SHA256 `ad52a7ca58cecd6aab2666e871ebee96ef8bd353497015ba319e3a5f1615632c`,
+contains both x86_64 and arm64 simulator code, and requires iOS 16.4 or later.
+The prepared GitHub fallback now pins that artifact and source, but remains
+unpublished and unrun. The
 [Android workflow](https://expo.dev/accounts/mmgjlegacy/projects/true-count/workflows/01a1d5df-d015-7272-86f5-3f7785824e27)
-and [iOS build-only workflow](https://expo.dev/accounts/mmgjlegacy/projects/true-count/workflows/01a1d5df-9613-7619-b552-1c2596249e8b)
-have been submitted; their artifact results are pending. Source snapshots and
-results are under `ios-large-text-*`, `ios-summary-*`, `ios-roulette-*`,
+is still pending. Source snapshots and results are under
+`ios-large-text-*`, `ios-summary-*`, `ios-roulette-*`,
 `eas-android-preview/`, `roulette-outside-labels/` and `eas-android-roulette-labels/`
 in the evidence directory above. The local label test does not replace verification
 of the new signed APK or the final iOS runtime.
