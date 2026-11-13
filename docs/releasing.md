@@ -98,7 +98,8 @@ custom job because this account cannot run the paid built-in Maestro job.
 Inspect the enlarged-text screenshots themselves. Accessible names can remain
 complete while the rendered label is clipped. With Pillow and Tesseract installed,
 `python3 scripts/check-native-text.py --all PATH_TO_MAESTRO_SCREENSHOTS` checks the
-rendered action labels, road legend, payout, HOLD/HELD labels and bankroll tip
+rendered action labels, road legend, payout, paytable, Roulette dozen labels,
+HOLD/HELD labels and bankroll tip
 through OCR. Run it on the specific enlarged-text evidence directory, not a parent
 containing several test runs. OCR can miss bad line breaks and overlapping card
 glyphs, so inspect those screenshots visually too.
@@ -113,6 +114,20 @@ npx --yes eas-cli@latest workflow:run .eas/workflows/native-repack.yml \
   -F platform=ios -F build_id=EXISTING_SIMULATOR_BUILD_ID --non-interactive
 # Android: use platform=android and an existing preview APK build ID.
 ```
+
+For a layout-only follow-up after a full suite, add `-F flow=large-text` to run the
+game-layout flow at default and maximum text sizes. Record that narrower scope
+alongside the source of the preceding full-suite result.
+
+When simulator minutes are unavailable, `-F flow=skip` produces the repacked app
+without running iOS tests. This is build evidence only. Use `--ref FULL_COMMIT_SHA`
+to build an immutable pushed revision instead of uploading the local worktree.
+
+As of November 13, a GitHub macOS fallback workflow is prepared locally but remains
+unpublished because the GitHub login lacks the `workflow` scope. It is not yet
+available in this branch. The prepared workflow pins the simulator artifact URL,
+SHA256 and source commit, checks for runtime-source differences, then runs the
+native suite and captures screenshots. Its runtime result remains unverified.
 
 A simulator `.app` cannot be installed on a physical iPhone. Use Expo Go for the
 physical-device check until Apple signing is available. Android preview APKs can

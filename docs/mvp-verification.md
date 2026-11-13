@@ -151,10 +151,70 @@ contain the final run evidence. The other two flows, backup and cold links, pass
 on the preceding bundle; this is not a claim that all nine ran on the final APK.
 
 The fresh iOS SDK 58 base build is `5ae33010-8d46-4c0f-a5a3-469097e684cb`.
-The [final source workflow](https://expo.dev/accounts/mmgjlegacy/projects/true-count/workflows/01a1d56e-2fa3-7036-b01d-d1dfb8c12258)
-is checking repacked build `e3c88f92-0db0-4712-94a0-7bb5ddf45590`; its simulator
-runtime result is pending. The source snapshot is `ios-onboarding-source.json`.
-Physical Android acceptance remains open.
+The [inset verification run](https://expo.dev/accounts/mmgjlegacy/projects/true-count/workflows/01a1d580-966c-7a8d-baf9-7a2ec1da6e50)
+passed all nine default-size flows in 11 minutes 15 seconds on source `0400005`.
+Its backup screenshot confirms the full footer above the floating tab bar after
+enabling automatic content insets on pushed pages.
+
+![Statistics backup footer before and after the iOS inset fix](evidence/native-ios-backup-insets.png)
+
+The same run failed the largest Dynamic Type pass while trying to center Video
+Poker's Speed button. The screenshot and hierarchy show the entire control visible
+at the bottom of the page. That scroll now stops when the control is visible.
+Visual inspection also found a separate product defect: the two-column paytable
+left too little width for hand names, breaking Royal Flush into individual letters.
+The paytable now uses one full-width column above the control text-scale threshold.
+Roulette's fixed felt cells and history controls now apply the existing text-scale
+caps; their formerly uncapped labels overflowed at the largest iOS setting.
+
+Source `a639034` passes all 29 browser flows without console errors, 3,087 unit
+tests and static checks. Its [iOS run](https://expo.dev/accounts/mmgjlegacy/projects/true-count/workflows/01a1d59a-1dbb-766d-a7e8-f7295bd73ae2)
+passed all nine default-size flows in 9 minutes 56 seconds and the largest Dynamic
+Type flow in 2 minutes 9 seconds. Visual inspection confirms readable paytable
+names, contained card glyphs, HOLD/HELD, Speed and the full bankroll tip.
+
+![Video Poker paytable before and after at the largest iOS text size](evidence/native-ios-paytable.png)
+
+The same visual review found two remaining control-area overflows: Roulette's bet
+summary occupied most of the viewport, and Blackjack's history strip extended
+beyond its fixed row. Source `0b7c57c` applies the existing control text-scale cap
+to these labels. Its affected browser flows and static checks pass. The [focused iOS run](https://expo.dev/accounts/mmgjlegacy/projects/true-count/workflows/01a1d5ac-2284-7c3e-9e94-3087511e6d6a)
+repacked build `8f0d1033-6b02-4f2c-9bad-0555354f421a` successfully, but its simulator
+job could not start because the Expo account reached its free 60-minute allowance.
+That allowance resets December 1, 2026. A GitHub macOS fallback is prepared locally
+but remains unpublished because the GitHub login lacks the `workflow` scope.
+The full nine-flow result above belongs to `a639034`; the later label changes
+remain unverified on iOS.
+
+A fresh signed Android base build `8035789e-9848-40d2-ab43-a2e9de0fe23c` is complete.
+Its signed repack `4d41d665-85bb-4312-a606-252224b3ac56`, from source `0b7c57c`,
+passed all nine default-size flows offline in 6 minutes 1 second and the enlarged
+text flow in 1 minute 12 seconds. The installed APK matches the downloaded artifact
+with SHA256 `79707da6b2cd77ac0eb070731114f5a54b1bdab185a76c73f2484e3f010a0c13`.
+Its signer matches the base, all four Android ABIs are present, and the app is not
+debuggable. Screenshots show the name above the keyboard and contained summaries.
+
+Visual review found a further Roulette defect despite the passing flows: `BLACK`
+wrapped its final letter and the rotated dozen labels were ellipsized. Commit
+`9935c78` fits outside labels to one line and measures each dozen label along the
+cell's long edge before rotation. A local debug-signed emulator build passes the
+focused flow at default and enlarged text sizes. Screenshot OCR confirms complete
+`BLACK`, `2nd 12` and `3rd 12` labels. The new dozen-label check fails on the earlier
+signed screenshot and passes on the corrected screenshot. The Roulette browser
+flow and static checks pass too.
+
+![Roulette outside labels before and after at Android text scale 2.0](evidence/native-large-text-roulette.png)
+
+Fresh Android and iOS repacks use immutable source `24790aa`, which includes the
+label fix and an option to skip the quota-blocked iOS simulator job. The
+[Android workflow](https://expo.dev/accounts/mmgjlegacy/projects/true-count/workflows/01a1d5df-d015-7272-86f5-3f7785824e27)
+and [iOS build-only workflow](https://expo.dev/accounts/mmgjlegacy/projects/true-count/workflows/01a1d5df-9613-7619-b552-1c2596249e8b)
+have been submitted; their artifact results are pending. Source snapshots and
+results are under `ios-large-text-*`, `ios-summary-*`, `ios-roulette-*`,
+`eas-android-preview/`, `roulette-outside-labels/` and `eas-android-roulette-labels/`
+in the evidence directory above. The local label test does not replace verification
+of the new signed APK or the final iOS runtime.
+Physical Android acceptance remains open; simulator evidence does not replace it.
 
 ## Platform gates recorded on 2026-10-22
 
