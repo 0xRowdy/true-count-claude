@@ -34,20 +34,25 @@ const WIN_REAL_MONEY = {
 /** The page's words, by whether this build can take a payment (`CAN_SELL`, ADR-0007). */
 const COPY = CAN_SELL
   ? {
-      title: "Every game is free. Plus goes deeper.",
+      title: "Every game is free. Plus goes everywhere you do.",
       lead: "No chips to buy and no real-money wagering, on any plan. Your plan follows your account across web, iPhone and Android.",
       plusTag: "Best for trip prep",
-      plus: ["No ads", "Unlimited training sessions"],
+      storage:
+        "On Free, progress stays on this device, and Session backup and restore moves it between devices. Plus syncs it for you.",
+      plus: [
+        "Your progress, Sessions and strategies on every device",
+        "New games and variants as they launch",
+      ],
       lifetime: ["Pay once and keep it on every device", "Includes future games as they launch"],
       faq: [
         WIN_REAL_MONEY,
         {
           q: "Do I need Plus to get ready for a trip?",
-          a: "No. Every game, every supported rule set and the coach on basic strategy are free. Free is enough to walk up to the table knowing the move; Plus removes ads and lets you train without limits.",
+          a: "No. Every game, every supported rule set, every drill and the coach are free, and stay free. Free is enough to walk up to the table knowing the move; Plus keeps your training in step across your devices and adds new games as they launch.",
         },
         {
           q: "What happens to my strategies if I cancel?",
-          a: "They stay yours. Strategies you wrote or forked stay on your device and keep working with the coach on house basic strategy.",
+          a: "They stay yours. Everything stays on your device and keeps working with the coach; only syncing between devices stops.",
         },
       ],
       orderTitle: "YOUR ORDER",
@@ -63,6 +68,8 @@ const COPY = CAN_SELL
       title: "Every game and drill is free in this MVP.",
       lead: "Pricing preview. Purchases and trials are unavailable. All games, drills, session history, and strategy builders are free to use.",
       plusTag: "Preview only",
+      storage:
+        "Progress stays on this device. Session backup and restore can move your Play and Drill history between devices; there is no automatic sync.",
       plus: [
         "Future plan preview; no paid features in this build",
         "All current trainers, history, and strategy drafts stay free",
@@ -175,10 +182,7 @@ export function PricingScreen() {
               {COPY.title}
             </Text>
             <Text style={[ui(17, 400, { lineHeight: 25 }), styles.muted]}>{COPY.lead}</Text>
-            <Text style={[ui(17, 400, { lineHeight: 25 }), styles.muted]}>
-              Progress stays on this device. Session backup and restore can move your Play and Drill
-              history between devices; there is no automatic sync.
-            </Text>
+            <Text style={[ui(17, 400, { lineHeight: 25 }), styles.muted]}>{COPY.storage}</Text>
           </View>
 
           <View style={styles.toggle} accessibilityRole="radiogroup" accessibilityLabel="Billing">

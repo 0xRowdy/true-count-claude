@@ -96,10 +96,22 @@ guessing, and knows what each decision or bet earns or costs.
   and network multiplayer each need a separate product decision before they become real.
 - **Identifiers:** the repository, package, bundle ids (`com.truecount.app`) and URL scheme
   (`truecount`) keep the original True Count name.
+- **Monetisation (decided 2026-11-09, #57; evidence in `docs/research/plus-tiers-and-ads.md`):**
+  - **Free** is everything that ships today, for good: every game and rule set, every drill and
+    Counting System, the coach, local history, backup and restore, the strategy builders. Offline,
+    no account, and no ads in any tier (invariant 9 stands).
+  - **Plus** (\$5.99 a month or \$49 a year, 7-day trial on a first subscription) is a service
+    and new breadth, never training depth (invariant 1): cloud sync of progress, Sessions and
+    strategies across devices, then new games and variants as they ship. Anything free today
+    stays free; Plus gates only what is new. **Lifetime** (\$199.99 once) is the same, for good.
+  - Plus is not sold until sync exists: no production selling build and no store products before
+    then. Its copy promises only what Plus delivers, never "no ads", "unlimited" or "deeper".
+  - The bar is CQ Nexus, the main competitor: Free should match or beat what it gives away, and
+    Plus should match or beat what Nexus Pro sells. Review in six months with real numbers.
+  - How Sync works is decided in ADR-0008: TanStack DB collections on every device, synced
+    through Convex for Plus. The rest of the Plus launch is charted in the wayfinder map "Map:
+    Plus launch spec" (#67).
 - **Undecided:**
-  - The monetisation model: what Plus includes. Plus is a monthly price or $49 a year, and
-    Lifetime $199.99 once; invariant 1 limits any paid tier to breadth, never training depth.
-  - Cloud sync, deferred until a feature needs it (ADR-0003).
   - Simulated live tables for blackjack and roulette ("Opens soon").
 
 ## Brand Commitments
