@@ -44,17 +44,14 @@ export function TableTopBar({
         <Text
           accessibilityRole="header"
           style={[ui(16, 600), { color: colors.foreground }]}
-          numberOfLines={1}
           maxFontSizeMultiplier={textScale.control}
         >
           {title}
         </Text>
         {subtitle ? (
-          // Two lines rather than an ellipsis: at 390 a long rules line ("… 5% commission")
-          // would otherwise lose its last, most specific part.
+          // Let the bar grow so the full rules line survives large system text.
           <Text
             style={[ui(12, 400), { color: colors.mutedForeground }]}
-            numberOfLines={2}
             maxFontSizeMultiplier={textScale.control}
           >
             {subtitle}

@@ -4,7 +4,11 @@ name: Readable trainer headers on a phone
 - launchApp:
     clearState: true
 - extendedWaitUntil:
-    visible: Play free
+    visible: "How well do you know the tables.*"
+    timeout: 30000
+- tapOn: "Skip — just let me play"
+- extendedWaitUntil:
+    visible: "Good (morning|afternoon|evening).*"
     timeout: 30000
 - evalScript: ${output.routes = ["session", "drills", "drills/basic-strategy", "drills/counting", "drills/true-count", "drills/deviation", "rules", "shoe-integrity"]}
 - evalScript: ${output.titles = ["Statistics", "Drills", "Basic Strategy", "Counting", "True Count", "Deviations", "Your table", "Shoe Integrity"]}

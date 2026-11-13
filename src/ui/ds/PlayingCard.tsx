@@ -40,12 +40,22 @@ export function PlayingCard({
         },
       ]}
     >
+      {/* Android's explicit lineHeight ignores the multiplier cap; printed marks stay fixed. */}
       <View style={styles.corner}>
-        <Text style={[ui(px(20), 800), { color: ink, lineHeight: px(20) }]}>{rank}</Text>
-        <Text style={[ui(px(15)), { color: ink, lineHeight: px(15) }]}>{glyph}</Text>
+        <Text
+          style={[ui(px(20), 800), { color: ink, lineHeight: px(20) }]}
+          allowFontScaling={false}
+        >
+          {rank}
+        </Text>
+        <Text style={[ui(px(15)), { color: ink, lineHeight: px(15) }]} allowFontScaling={false}>
+          {glyph}
+        </Text>
       </View>
       <View style={styles.pipRow}>
-        <Text style={[ui(px(30)), { color: ink, lineHeight: px(30) }]}>{glyph}</Text>
+        <Text style={[ui(px(30)), { color: ink, lineHeight: px(30) }]} allowFontScaling={false}>
+          {glyph}
+        </Text>
       </View>
     </View>
   );

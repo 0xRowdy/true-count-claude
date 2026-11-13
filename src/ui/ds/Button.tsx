@@ -89,7 +89,6 @@ export function Button({
       {Icon ? <Icon size={s.icon} color={v.fg} strokeWidth={2} /> : null}
       <Text
         style={[ui(s.font, 600), styles.label, { color: v.fg }]}
-        numberOfLines={1}
         maxFontSizeMultiplier={textScale.control}
       >
         {label}
@@ -110,7 +109,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     paddingVertical: 6,
   },
-  label: { flexShrink: 1 },
+  label: { flexShrink: 1, textAlign: "center" },
   full: { alignSelf: "stretch" },
   pressed: { opacity: 0.85 },
   disabled: { opacity: 0.45 },

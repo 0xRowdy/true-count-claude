@@ -276,7 +276,7 @@ export function LandingScreen() {
                 label="See the coach in 40s"
                 accessibilityHint="Opens the blackjack table, where the coach explains every decision"
                 onPress={() => router.push("/play")}
-                style={{ height: 56 }}
+                style={{ minHeight: 56 }}
               />
             </View>
             <View style={styles.trust}>

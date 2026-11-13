@@ -1,0 +1,121 @@
+appId: com.truecount.app
+name: Native game labels remain readable at the system text size
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "How well do you know the tables.*"
+    timeout: 30000
+- openLink: truecount://games/craps?seed=337
+- runFlow:
+    when:
+      platform: iOS
+      visible: "^Open$"
+    commands:
+      - tapOn: "^Open$"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "Edit bets,.*"
+    direction: DOWN
+# Pixel checks live in scripts/check-native-text.py. Accessible labels alone do not prove this.
+- takeScreenshot: native-large-text-craps
+- tapOn: "Edit bets,.*"
+- assertVisible: Your bets
+- tapOn: Close your bets
+- openLink: truecount://games/baccarat?seed=7
+- runFlow:
+    when:
+      platform: iOS
+      visible: "^Open$"
+    commands:
+      - tapOn: "^Open$"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: Show the big road
+    direction: DOWN
+- takeScreenshot: native-large-text-baccarat
+- assertVisible: Player 0
+- assertVisible: Banker 0
+- assertVisible: Tie 0
+- tapOn: Show the big road
+- assertVisible: Show the bead road
+- takeScreenshot: native-large-text-big-road
+- tapOn: Show the bead road
+- assertVisible: Show the big road
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "^Banker, pays.*"
+    direction: DOWN
+- tapOn: "^Banker, pays.*"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "^Deal · .*"
+    direction: DOWN
+- tapOn: "^Deal · .*"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: Next hand
+    direction: DOWN
+    timeout: 30000
+- takeScreenshot: native-large-text-baccarat-payout
+- tapOn: Next hand
+- openLink: truecount://games/roulette?seed=7
+- runFlow:
+    when:
+      platform: iOS
+      visible: "^Open$"
+    commands:
+      - tapOn: "^Open$"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "^RED,.*"
+    direction: DOWN
+- tapOn: "^RED,.*"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: "^Spin$"
+    direction: DOWN
+- takeScreenshot: native-large-text-roulette
+- tapOn: Clear
+- openLink: truecount://games/video-poker?seed=1981
+- runFlow:
+    when:
+      platform: iOS
+      visible: "^Open$"
+    commands:
+      - tapOn: "^Open$"
+- takeScreenshot: native-large-text-paytable
+# The bottom action can be fully visible without room to center it.
+- scrollUntilVisible:
+    element:
+      text: "Deal speed:.*"
+    direction: DOWN
+- takeScreenshot: native-large-text-video-poker
+- tapOn: 'Deal, bet \$5'
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: Hold 9 of spades
+    direction: UP
+- tapOn: Hold 9 of spades
+- takeScreenshot: native-large-text-held-card
+- openLink: truecount://play
+- runFlow:
+    when:
+      platform: iOS
+      visible: "^Open$"
+    commands:
+      - tapOn: "^Open$"
+- scrollUntilVisible:
+    centerElement: true
+    element:
+      text: Deal
+    direction: DOWN
+- takeScreenshot: native-large-text-play

@@ -36,7 +36,7 @@ export function Road({
           hitSlop={12}
           style={styles.title}
         >
-          <Text style={[type.overline, { color: colors.mutedForeground }]}>
+          <Text style={[type.overline, { color: colors.mutedForeground, flexShrink: 1 }]}>
             {kind === "bead" ? "BEAD ROAD · THIS SHOE" : "BIG ROAD · THIS SHOE"}
           </Text>
           <ArrowLeftRight size={12} color={colors.primary} strokeWidth={2.25} />
@@ -124,9 +124,15 @@ function BigBead({ cell }: { cell: RoadCell }) {
 
 const styles = StyleSheet.create({
   wrap: { gap: 8, paddingTop: 10, paddingHorizontal: 16, paddingBottom: 12 },
-  head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  title: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 20 },
-  legend: { flexDirection: "row", gap: 10 },
+  head: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  title: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 20, maxWidth: "100%" },
+  legend: { flexDirection: "row", flexWrap: "wrap", columnGap: 10, rowGap: 4 },
   legendItem: { flexDirection: "row", alignItems: "center", gap: 4 },
   dot: { width: 8, height: 8, borderRadius: 4 },
   grid: {

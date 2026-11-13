@@ -4,15 +4,12 @@ name: Readable game and progress cards on a phone
 - launchApp:
     clearState: true
 - extendedWaitUntil:
-    visible: Play free
+    visible: "How well do you know the tables.*"
     timeout: 30000
-- openLink: truecount://lobby
-- runFlow:
-    when:
-      platform: iOS
-      visible: "^Open$"
-    commands:
-      - tapOn: "^Open$"
+- tapOn: "Skip — just let me play"
+- extendedWaitUntil:
+    visible: "Good (morning|afternoon|evening).*"
+    timeout: 30000
 - scrollUntilVisible:
     element:
       text: "^Video Poker:.*"
