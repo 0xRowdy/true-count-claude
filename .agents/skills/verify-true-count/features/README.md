@@ -8,6 +8,7 @@ A proof that only drives one convenient entry point is incomplete when the map l
 | [Landing page](landing.md)                           | `/`                     | `flows/landing.mjs`                                 | scripted, PASS |
 | [Onboarding](onboarding.md)                          | `/onboarding`           | `flows/onboarding.mjs`                              | scripted, PASS |
 | [Pricing](pricing.md)                                | `/pricing`              | `flows/pricing.mjs`                                 | scripted, PASS |
+| [Accounts: sign in, account](account.md)             | `/sign-in`, `/account`  | `flows/account.mjs`                                 | scripted, PASS |
 | [Lobby](lobby.md)                                    | `/lobby`                | `flows/lobby.mjs`                                   | scripted, PASS |
 | [Progress & Mastery](progress.md)                    | `/progress`             | `flows/progress.mjs`                                | scripted, PASS |
 | [Play](play.md) (Tableside blackjack table, coach)   | `/play`                 | `flows/play-round.mjs`, `flows/blackjack-coach.mjs` | scripted, PASS |

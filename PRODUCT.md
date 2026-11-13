@@ -64,8 +64,9 @@ guessing, and knows what each decision or bet earns or costs.
 - Practice happens ahead of a casino trip. Most users are expected to be on mobile, so phone-sized
   screens come first. Tablets (portrait and landscape) and a web build on desktop and mobile
   browsers are also supported. Training must work with no signal (ADR-0003).
-- Local-first: no account and no backend. Progress, settings and strategies stay on the device;
-  Session backups leave it only when the user downloads or shares them.
+- Local-first: no account is needed to train. An optional Account (Google or Apple) holds only a
+  paid Plan, on a Convex backend (ADR-0007). Progress, settings and strategies stay on the
+  device; Session backups leave it only when the user downloads or shares them.
 - Onboarding asks for experience level, goal, game, how often the coach speaks up (every decision,
   mistakes only, or on request) and an optional trip date, then proposes a three-lesson starting
   point.
@@ -89,15 +90,28 @@ guessing, and knows what each decision or bet earns or costs.
   - a zero bankroll always offers a one-tap reset in place;
   - no login to train, zero ads, no second paywall.
 - **Labelled, not real:** the live craps table is seeded bots on the device; community strategies
-  (authors, votes, forks, accuracy) are seeded examples; pricing is a preview and processes no
-  payment. Accounts, payments, community publishing and network multiplayer each need a separate
-  product decision before they become real.
+  (authors, votes, forks, accuracy) are seeded examples. Pricing sells (Stripe on the web, the
+  App Store and Google Play in the apps) only in a build with a backend and the store's keys;
+  any other build shows it as a labelled preview that processes no payment. Community publishing
+  and network multiplayer each need a separate product decision before they become real.
 - **Identifiers:** the repository, package, bundle ids (`com.truecount.app`) and URL scheme
   (`truecount`) keep the original True Count name.
+- **Monetisation (decided 2026-11-09, #57; evidence in `docs/research/plus-tiers-and-ads.md`):**
+  - **Free** is everything that ships today, for good: every game and rule set, every drill and
+    Counting System, the coach, local history, backup and restore, the strategy builders. Offline,
+    no account, and no ads in any tier (invariant 9 stands).
+  - **Plus** (\$5.99 a month or \$49 a year, 7-day trial on a first subscription) is a service
+    and new breadth, never training depth (invariant 1): cloud sync of progress, Sessions and
+    strategies across devices, then new games and variants as they ship. Anything free today
+    stays free; Plus gates only what is new. **Lifetime** (\$199.99 once) is the same, for good.
+  - Plus is not sold until sync exists: no production selling build and no store products before
+    then. Its copy promises only what Plus delivers, never "no ads", "unlimited" or "deeper".
+  - The bar is CQ Nexus, the main competitor: Free should match or beat what it gives away, and
+    Plus should match or beat what Nexus Pro sells. Review in six months with real numbers.
+  - How Sync works is decided in ADR-0008: TanStack DB collections on every device, synced
+    through Convex for Plus. The rest of the Plus launch is charted in the wayfinder map "Map:
+    Plus launch spec" (#67).
 - **Undecided:**
-  - The monetisation model. The preview shows a monthly price or $49 a year; invariant 1 limits
-    any paid tier to breadth, never training depth.
-  - Cloud sync, deferred until a feature needs it (ADR-0003).
   - Simulated live tables for blackjack and roulette ("Opens soon").
 
 ## Brand Commitments
@@ -149,8 +163,8 @@ guessing, and knows what each decision or bet earns or costs.
 4. **Never corrupt the practice.** Feedback arrives while the hand is visible, and every legal
    action stays available. A depleted bankroll never leaves the player stuck, and ads or paywalls
    never interrupt training.
-5. **Trust is local and labelled.** No account, data stays on the device, and anything simulated,
-   exemplary or previewed says so plainly.
+5. **Trust is local and labelled.** No account needed to train, practice data stays on the device,
+   and anything simulated, exemplary or previewed says so plainly.
 
 ## Accessibility & Inclusion
 

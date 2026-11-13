@@ -358,8 +358,8 @@ The coach's paper.
 - **Good-Call Green** (#3FA877) on dark; **Good-Call Ink** (#1F7A50) on paper.
 - **Replay Coral** (#E07A5F) on dark; **Replay Rust** (#B4472C) on paper. Replay Rust is also
   the eyebrow and numeral colour on the landing page's paper sections. The design file also
-  defines `destructive` (same value as Replay Coral) and `accent` (#24302B); neither is used
-  by the design system today.
+  defines `destructive` (same value as Replay Coral) and `accent` (#24302B). `destructive`
+  fills the one irreversible button, "Delete my account"; `accent` is unused.
 - **Hint Blue** (#2D6CDF): the hint coach note's edge, and the strategy chart's "Double" cells.
 - **Hint Ink** (#2256BD): hint text and icons on paper (the coach note's "HINT" line, the felt
   tip): Hint Blue darkened to 5.9:1 on Coach Paper.
