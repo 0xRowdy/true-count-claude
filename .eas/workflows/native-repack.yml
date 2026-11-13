@@ -12,7 +12,7 @@ on:
         required: true
       flow:
         type: choice
-        options: [all, large-text]
+        options: [all, large-text, skip]
         default: all
 
 jobs:
@@ -26,7 +26,7 @@ jobs:
 
   smoke:
     needs: [repack]
-    if: ${{ inputs.platform == 'ios' }}
+    if: ${{ inputs.platform == 'ios' && inputs.flow != 'skip' }}
     runs_on: macos-medium
     steps:
       - uses: eas/checkout
