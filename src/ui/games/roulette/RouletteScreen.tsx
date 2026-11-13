@@ -336,8 +336,17 @@ function BetControls({
     <View>
       <View style={styles.summary}>
         <View style={{ flex: 1, gap: 1 }}>
-          <Text style={[ui(15, 700), { color: colors.foreground }]}>{totalBetLabel(state)}</Text>
-          <Text style={[ui(12), { color: colors.mutedForeground }]} numberOfLines={2}>
+          <Text
+            maxFontSizeMultiplier={textScale.control}
+            style={[ui(15, 700), { color: colors.foreground }]}
+          >
+            {totalBetLabel(state)}
+          </Text>
+          <Text
+            maxFontSizeMultiplier={textScale.control}
+            style={[ui(12), { color: colors.mutedForeground }]}
+            numberOfLines={2}
+          >
             {betSummary(state)}
           </Text>
         </View>

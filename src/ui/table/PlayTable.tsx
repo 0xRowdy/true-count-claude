@@ -720,9 +720,19 @@ function HistoryRail({
 }) {
   return (
     <View style={styles.history} accessibilityLabel="Last hands">
-      <Text style={[type.overline, { color: colors.mutedForeground }]}>LAST</Text>
+      <Text
+        maxFontSizeMultiplier={textScale.control}
+        style={[type.overline, { color: colors.mutedForeground }]}
+      >
+        LAST
+      </Text>
       {chips.length === 0 ? (
-        <Text style={[ui(12), { color: colors.mutedForeground }]}>No hands yet</Text>
+        <Text
+          maxFontSizeMultiplier={textScale.control}
+          style={[ui(12), { color: colors.mutedForeground }]}
+        >
+          No hands yet
+        </Text>
       ) : (
         chips.map((chip, i) => {
           const tone = HISTORY_STYLE[chip.tone];
@@ -735,7 +745,12 @@ function HistoryRail({
                 highlightNewest && i === 0 && styles.historyNew,
               ]}
             >
-              <Text style={[ui(12, 700), { color: tone.fg }]}>{chip.label}</Text>
+              <Text
+                maxFontSizeMultiplier={textScale.control}
+                style={[ui(12, 700), { color: tone.fg }]}
+              >
+                {chip.label}
+              </Text>
             </View>
           );
         })

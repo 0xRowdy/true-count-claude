@@ -46,7 +46,7 @@ if all_labels:
     for name, labels in [
         ("paytable", ["Royal Flush", "4,000"]),
         ("roulette", ["Clear", "Undo", "Spin"]),
-        ("video-poker", ["HOLD"]),
+        ("video-poker", ["COINS", "COIN VALUE"]),
         ("held-card", ["HELD", "HOLD"]),
         ("play", ["Keep bets near 2% of your bankroll"]),
     ]:
@@ -65,6 +65,9 @@ for name, image, labels in checks:
     if name == "play":
         # At default size the note sits beside the hand. Exclude that neighbouring label.
         actual += read_pixels(image.crop((0, 0, image.width * 0.34, image.height * 0.78)))
+    if name == "paytable":
+        # A wrapped hand name must be read separately from the payout beside its first line.
+        actual += read_pixels(image.crop((0, 0, image.width * 0.52, image.height)))
     normalized = re.sub(r"[^a-z0-9]", "", actual.lower())
     # At this face/size OCR sometimes reads a visible zero as the letter O.
     normalized = re.sub(r"(player|banker|tie)o", r"\g<1>0", normalized)
