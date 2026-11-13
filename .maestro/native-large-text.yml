@@ -92,8 +92,8 @@ name: Native game labels remain readable at the system text size
     commands:
       - tapOn: "^Open$"
 - takeScreenshot: native-large-text-paytable
+# The bottom action can be fully visible without room to center it.
 - scrollUntilVisible:
-    centerElement: true
     element:
       text: "Deal speed:.*"
     direction: DOWN

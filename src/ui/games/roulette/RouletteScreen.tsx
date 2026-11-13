@@ -36,6 +36,7 @@ import {
   colors,
   radius,
   surfaces,
+  textScale,
   type,
   ui,
   type ChipValue,
@@ -200,9 +201,19 @@ export function RouletteScreen({ seed }: { seed?: string }) {
         />
 
         <View style={styles.history} accessibilityLabel="Last spins" role="list">
-          <Text style={[type.overline, { color: colors.mutedForeground }]}>LAST</Text>
+          <Text
+            maxFontSizeMultiplier={textScale.control}
+            style={[type.overline, { color: colors.mutedForeground }]}
+          >
+            LAST
+          </Text>
           {recent.length === 0 ? (
-            <Text style={[ui(12), { color: colors.mutedForeground }]}>No spins yet</Text>
+            <Text
+              maxFontSizeMultiplier={textScale.control}
+              style={[ui(12), { color: colors.mutedForeground }]}
+            >
+              No spins yet
+            </Text>
           ) : (
             recent.map((p, i) => (
               <View
@@ -215,7 +226,10 @@ export function RouletteScreen({ seed }: { seed?: string }) {
                   { backgroundColor: POCKET_FILL[pocketColor(p)] },
                 ]}
               >
-                <Text style={[ui(i === 0 ? 14 : 12, 700), { color: surfaces.chipInkLight }]}>
+                <Text
+                  maxFontSizeMultiplier={textScale.fixed}
+                  style={[ui(i === 0 ? 14 : 12, 700), { color: surfaces.chipInkLight }]}
+                >
                   {String(p)}
                 </Text>
               </View>
@@ -347,7 +361,12 @@ function BetControls({
           style={styles.edge}
         >
           <Info size={12} color={colors.mutedForeground} strokeWidth={2} />
-          <Text style={[ui(12, 500), { color: colors.mutedForeground }]}>{edgeLabel(state)}</Text>
+          <Text
+            maxFontSizeMultiplier={textScale.control}
+            style={[ui(12, 500), { color: colors.mutedForeground, flexShrink: 1 }]}
+          >
+            {edgeLabel(state)}
+          </Text>
         </Pressable>
       </View>
       {state.error ? (
@@ -444,7 +463,12 @@ function RoundPanel({ state, dispatch }: { state: TableState; dispatch: Dispatch
         accessibilityLabel={`Ball landed on ${pocketName(s.pocket)}. ${netLabel(state)}`}
       >
         <View style={[styles.ball, { backgroundColor: POCKET_FILL[color] }]}>
-          <Text style={[ui(20, 800), { color: surfaces.chipInkLight }]}>{String(s.pocket)}</Text>
+          <Text
+            maxFontSizeMultiplier={textScale.fixed}
+            style={[ui(20, 800), { color: surfaces.chipInkLight }]}
+          >
+            {String(s.pocket)}
+          </Text>
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[ui(17, 700), { color: colors.foreground }]}>
@@ -552,6 +576,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   edge: {
+    flexShrink: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: 6,

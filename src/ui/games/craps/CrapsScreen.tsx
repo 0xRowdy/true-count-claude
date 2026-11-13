@@ -9,7 +9,7 @@ import type { ChipValue } from "@/ui/ds/format";
 import { PhaseStepper } from "@/ui/ds/PhaseStepper";
 import { TableTopBar } from "@/ui/ds/TableTopBar";
 import { TestingBanner, useTestedStrategy } from "@/ui/strategies/TestingBanner";
-import { colors, radius, type, ui } from "@/ui/ds/tokens";
+import { colors, radius, textScale, type, ui } from "@/ui/ds/tokens";
 import { CrapsFelt } from "./CrapsFelt";
 import { Dices, Eraser, Layers, Lightbulb, Repeat, Undo2 } from "@/ui/ds/icons";
 import {
@@ -103,14 +103,24 @@ export function CrapsScreen({ seed }: { seed?: string }) {
           />
 
           <View style={styles.rail}>
-            <Text style={[type.overline, { color: colors.mutedForeground }]}>ROLLS</Text>
+            <Text
+              maxFontSizeMultiplier={textScale.control}
+              style={[type.overline, { color: colors.mutedForeground }]}
+            >
+              ROLLS
+            </Text>
             <View
               style={styles.history}
               role="list"
               accessibilityLabel="Recent rolls, latest first"
             >
               {history.length === 0 ? (
-                <Text style={[ui(12), { color: colors.mutedForeground }]}>No rolls yet</Text>
+                <Text
+                  maxFontSizeMultiplier={textScale.control}
+                  style={[ui(12), { color: colors.mutedForeground }]}
+                >
+                  No rolls yet
+                </Text>
               ) : (
                 history.map((h, i) => (
                   <View
@@ -120,6 +130,7 @@ export function CrapsScreen({ seed }: { seed?: string }) {
                     style={[styles.roll, i === 0 && styles.latest]}
                   >
                     <Text
+                      maxFontSizeMultiplier={textScale.control}
                       style={[
                         ui(13, 700),
                         { color: i === 0 ? colors.primaryForeground : colors.foreground },
@@ -129,6 +140,7 @@ export function CrapsScreen({ seed }: { seed?: string }) {
                     </Text>
                     {h.tag ? (
                       <Text
+                        maxFontSizeMultiplier={textScale.control}
                         style={[
                           ui(11, 600),
                           { color: i === 0 ? craps.latestSub : colors.mutedForeground },

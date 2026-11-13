@@ -44,6 +44,7 @@ checks = [
 ]
 if all_labels:
     for name, labels in [
+        ("paytable", ["Royal Flush", "4,000"]),
         ("roulette", ["Clear", "Undo", "Spin"]),
         ("video-poker", ["HOLD"]),
         ("held-card", ["HELD", "HOLD"]),

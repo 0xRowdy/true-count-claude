@@ -3,7 +3,7 @@
  * `model.ts`.
  */
 
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import type { Card } from "@/engine/cards";
 import {
@@ -26,10 +26,17 @@ import { machine } from "./theme";
 // Pay table
 
 export function PayTablePanel({ left, right }: { left: PayLine[]; right: PayLine[] }) {
+  const { fontScale } = useWindowDimensions();
   return (
     <View style={styles.payPanel} accessibilityLabel="Pay table" role="table">
-      <PayColumn lines={left} />
-      <PayColumn lines={right} />
+      {fontScale > textScale.control ? (
+        <PayColumn lines={[...left, ...right]} />
+      ) : (
+        <>
+          <PayColumn lines={left} />
+          <PayColumn lines={right} />
+        </>
+      )}
     </View>
   );
 }
