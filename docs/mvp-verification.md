@@ -1,9 +1,9 @@
 # MVP completion record
 
 Status, 2026-11-13: the local-first implementation is merged in PRs #54 and #55.
-Fresh native verification is in progress for Expo SDK 58. The October SDK 57
-artifacts and results below are historical evidence, not proof of the current
-native runtime. Physical Android acceptance remains open.
+The signed Expo SDK 58 Android preview passes all nine offline flows and enlarged
+text checks. Final iOS runtime verification and physical Android acceptance remain
+open. The October SDK 57 artifacts and results below are historical evidence.
 
 Scope comes from the user's MVP request, `CONTEXT.md`, accepted ADRs, the 18 frames
 in `design/Truecount-claude.pen`, and platform issue
@@ -55,7 +55,7 @@ A route or passing unit test alone does not establish visual or behavioral compl
 | Buttons and every legal action       | Engine legality tests and actual table controls; insurance, early surrender, no-peek and split/double regressions.                                                                                                     |
 | Offline-first, no login              | Production cache installation, offline grading/reload/routes, and safe update/failure behavior in `offline` and `offline-updates`. Native bundles must run without Metro.                                              |
 | Zero ads                             | No advertising SDK or ad UI in source/dependencies.                                                                                                                                                                    |
-| In-app bug reporting with hand state | `recovery-report` opens the report during a real hand, verifies exact cards, seed and actions with reconstruction/replay flags, and compares the downloaded report byte for byte.                                      |
+| In-app bug reporting with hand state | `recovery-report` opens the report during a real blackjack hand, verifies exact cards, seed and actions with reconstruction/replay flags, and compares the downloaded report byte for byte.                            |
 
 EV values are estimates based on remaining composition. The UI describes the
 solver's replacement-draw and split-continuation approximations. Reference-chart
@@ -217,13 +217,31 @@ produced app `aac89f30-9d59-4532-8079-372a6abec401` successfully. The downloaded
 archive has SHA256 `ad52a7ca58cecd6aab2666e871ebee96ef8bd353497015ba319e3a5f1615632c`,
 contains both x86_64 and arm64 simulator code, and requires iOS 16.4 or later.
 The prepared GitHub fallback now pins that artifact and source, but remains
-unpublished and unrun. The
-[Android workflow](https://expo.dev/accounts/mmgjlegacy/projects/true-count/workflows/01a1d5df-d015-7272-86f5-3f7785824e27)
-is still pending. Source snapshots and results are under
+unpublished and unrun.
+
+The [Android workflow](https://expo.dev/accounts/mmgjlegacy/projects/true-count/workflows/01a1d5df-d015-7272-86f5-3f7785824e27)
+produced signed APK `e7c5871b-8391-4a13-834f-6979fe3b383f` from the same `24790aa`
+source. All nine default-size flows passed offline in 5 minutes 57 seconds; the
+enlarged-text flow passed in 1 minute 12 seconds. All 12 screenshot OCR checks pass
+at both sizes. Separate pixel assertions reject the preceding APK's broken `BLACK`
+and dozen labels and pass on this APK. Visual review confirms complete Roulette
+labels and summaries, readable paytable names, contained card glyphs, HOLD/HELD,
+Speed and the blackjack history and bankroll tip. The before/after Roulette image
+above now uses these two signed builds at the same Android text scale.
+
+The downloaded and installed APKs have SHA256
+`ef03088747a14c180a01312d05abdbe975c11b872d2938e51d1751c77c46b0ed`.
+APK v2/v3 signatures verify with the existing signing certificate, all four Android
+ABIs are included, and the app is not debuggable. The emulator ran in airplane mode
+with Wi-Fi and mobile data disabled. All 391 recorded source, configuration and
+flow hashes match the immutable build commit and current runtime sources.
+
+Source snapshots and results are under
 `ios-large-text-*`, `ios-summary-*`, `ios-roulette-*`,
 `eas-android-preview/`, `roulette-outside-labels/` and `eas-android-roulette-labels/`
-in the evidence directory above. The local label test does not replace verification
-of the new signed APK or the final iOS runtime.
+in the evidence directory above. These Android results do not verify the final iOS
+runtime, which still requires the pending GitHub workflow permission or restored
+Expo simulator capacity.
 Physical Android acceptance remains open; simulator evidence does not replace it.
 
 ## Platform gates recorded on 2026-10-22

@@ -135,6 +135,22 @@ be installed directly; run the same `.maestro` directory against that installed
 artifact. Disable emulator Wi-Fi and mobile data to verify the bundled app,
 assets and persisted history independently of Metro.
 
+## SDK 58 previews, 2026-11-13
+
+Both previews contain the app source at `24790aa`:
+
+- [Signed Android APK](https://expo.dev/accounts/mmgjlegacy/projects/true-count/builds/e7c5871b-8391-4a13-834f-6979fe3b383f):
+  all nine native flows pass offline on the exact installed artifact, plus the
+  enlarged-text flow and 12 screenshot OCR checks at both sizes. The signature
+  matches the existing EAS signing key; ARM64, ARMv7, x86 and x86_64 are included.
+- [iOS simulator app](https://expo.dev/accounts/mmgjlegacy/projects/true-count/builds/aac89f30-9d59-4532-8079-372a6abec401):
+  built successfully with Intel and Apple Silicon simulator support. Its final
+  runtime check remains blocked by Expo's simulator quota and the unpublished
+  GitHub fallback's permission requirement. This app cannot run on a physical iPhone.
+
+Checksums, screenshots, source provenance and remaining physical-device acceptance
+are recorded in [MVP verification](mvp-verification.md#native-follow-up-2026-11-13).
+
 ## Internal artifacts verified on 2026-10-22
 
 - [Android preview APK](https://expo.dev/accounts/mmgjlegacy/projects/true-count/builds/f9c771f5-7ecb-4e85-8dd9-7671094a561c):
