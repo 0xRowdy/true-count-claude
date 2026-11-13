@@ -119,6 +119,8 @@ export function RouletteFelt({ state, winners, onAdd, onRemove, onLoupe, onPick 
         {opts.diamond ? <Diamond fill={opts.fill ?? surfaces.transparent} /> : null}
         <Text
           maxFontSizeMultiplier={textScale.felt}
+          numberOfLines={1}
+          adjustsFontSizeToFit
           style={[ui(11, 700, { letterSpacing: 0.5 }), { color: colors.feltText }]}
         >
           {label}
@@ -149,7 +151,7 @@ export function RouletteFelt({ state, winners, onAdd, onRemove, onLoupe, onPick 
       >
         <Text
           maxFontSizeMultiplier={textScale.felt}
-          style={[ui(11, 700), { color: colors.feltText, transform: [{ rotate: "90deg" }] }]}
+          style={[ui(11, 700), styles.dozenLabel]}
           numberOfLines={1}
         >
           {label}
@@ -629,6 +631,13 @@ const styles = StyleSheet.create({
     borderColor: colors.feltLine,
     alignItems: "center",
     justifyContent: "center",
+  },
+  dozenLabel: {
+    // Rotation happens after layout: measure along the bet's long edge first.
+    width: CELL_H * 4 + GAP * 3 - 8,
+    color: colors.feltText,
+    textAlign: "center",
+    transform: [{ rotate: "90deg" }],
   },
   dozenChip: { position: "absolute", left: (DOZEN_W - MINI) / 2 - 1, top: 20 },
   numbers: { flex: 1, gap: GAP },

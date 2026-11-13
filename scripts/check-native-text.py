@@ -54,6 +54,10 @@ if all_labels:
         checks.append((name, screenshot, labels))
     poker = Image.open(next(root.rglob("native-large-text-video-poker.png")))
     checks.append(("video-poker speed", poker.crop((0, poker.height * 0.75, poker.width / 2, poker.height)), ["Speed"]))
+    roulette = Image.open(next(root.rglob("native-large-text-roulette.png")))
+    # The flow leaves the lower dozen bets visible; rotate their printed labels for OCR.
+    dozens = roulette.crop((roulette.width * 0.17, roulette.height * 0.25, roulette.width * 0.28, roulette.height * 0.62))
+    checks.append(("roulette dozens", dozens.rotate(90, expand=True), ["2nd 12", "3rd 12"]))
     payout = Image.open(next(root.rglob("native-large-text-baccarat-payout.png")))
     checks.extend([
         ("baccarat rebet amount", payout.crop((0, payout.height * 0.75, payout.width / 2, payout.height)), ["Rebet", "25"]),
