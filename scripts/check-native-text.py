@@ -17,15 +17,19 @@ from PIL import Image
 def read_pixels(image):
     with tempfile.TemporaryDirectory() as directory:
         path = Path(directory) / "text.png"
-        image.save(path)
-        return " ".join(
-            subprocess.check_output(
-                ["tesseract", str(path), "stdout", "--psm", mode],
-                stderr=subprocess.DEVNULL,
-                text=True,
+        readings = []
+        # Tesseract handles gold controls and light-on-dark labels differently.
+        for pixels in (image, image.convert("L")):
+            pixels.save(path)
+            readings.extend(
+                subprocess.check_output(
+                    ["tesseract", str(path), "stdout", "--psm", mode],
+                    stderr=subprocess.DEVNULL,
+                    text=True,
+                )
+                for mode in ("6", "11")
             )
-            for mode in ("6", "11")
-        )
+        return " ".join(readings)
 
 
 all_labels = sys.argv[1] == "--all"

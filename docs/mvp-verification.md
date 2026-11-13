@@ -141,10 +141,20 @@ screenshots, and source hashes. All nine Android flows passed offline in 5 minut
 9 seconds on the first corrected bundle, including cold-start destinations and
 Android back navigation. All 29 browser flows passed with zero console errors;
 five focused flows passed again after the card glyph and keyboard-wrapper changes.
-The Android onboarding correction passes its focused flow and visual inspection.
-Final combined Android and iOS simulator verification are still pending. The
-intermediate Android pass does not establish completion of the native release or
-physical Android acceptance.
+The final Android APK passes six focused default-size flows in 4 minutes 26 seconds,
+the enlarged-text flow in 1 minute 22 seconds, and revised onboarding in 31 seconds,
+all offline. Default and enlarged screenshots pass all ten OCR checks. Visual
+inspection confirms contained card glyphs, the full bankroll tip and the typed name
+above the keyboard. `final-source.json` records the APK hash and source provenance;
+`final-combined-default`, `final-combined-large` and `final-combined-onboarding`
+contain the final run evidence. The other two flows, backup and cold links, passed
+on the preceding bundle; this is not a claim that all nine ran on the final APK.
+
+The fresh iOS SDK 58 base build is `5ae33010-8d46-4c0f-a5a3-469097e684cb`.
+The [final source workflow](https://expo.dev/accounts/mmgjlegacy/projects/true-count/workflows/01a1d56e-2fa3-7036-b01d-d1dfb8c12258)
+is checking repacked build `e3c88f92-0db0-4712-94a0-7bb5ddf45590`; its simulator
+runtime result is pending. The source snapshot is `ios-onboarding-source.json`.
+Physical Android acceptance remains open.
 
 ## Platform gates recorded on 2026-10-22
 
