@@ -21,6 +21,19 @@ downloads all routes and assets; subsequent visits and reloads work offline. New
 activate after existing tabs close, so updates do not interrupt a hand. Progress stays in
 local storage when the app cache updates.
 
+## Selling builds: not until Sync ships
+
+A build sells Plus (`CAN_SELL` in `src/ui/account/usePurchase.ts`) when it has a backend
+(`EXPO_PUBLIC_CONVEX_URL` and `EXPO_PUBLIC_CONVEX_SITE_URL`) and is either the web or has a
+RevenueCat key (`EXPO_PUBLIC_REVENUECAT_IOS_KEY` or `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY`).
+Nothing in the code holds a selling build back until Sync exists. `PRODUCT.md` does: no
+production selling build and no store products before Sync ships (ADR-0008), because the
+selling copy promises Sync.
+
+Before a production web export or an `eas build --profile production`, check that the build
+environment sets none of these, or that Sync has shipped. The rule is for production builds
+only: builds against the dev backend sell in test mode, as they do for testing today.
+
 ## Device testing — no accounts needed
 
 The fastest loop, and the one to use daily:
@@ -42,7 +55,7 @@ cold launch as well as deep links; opening a route manually can hide a startup b
 One-time setup, performed by a human:
 
 1. Create a free account at <https://expo.dev/signup>.
-2. `npm install -g eas-cli`
+2. `pnpm add -g eas-cli`
 3. `eas login`
 4. This repo is already linked to the project in `app.json`. Use that project after login;
    run `eas init` only if intentionally creating a different project.
@@ -69,7 +82,8 @@ video poker and craps, including a reproducible seeded video poker deal.
 `.maestro/native-layout.yml` checks eight trainer headers without scrolling past
 their controls. `.maestro/native-card-layout.yml` checks wrapping on the Lobby
 and Progress pages and captures the weekly chart. `.maestro/native-notices.yml`
-verifies that pricing timelines describe hypothetical examples. Marketing footer
+verifies that pricing timelines describe hypothetical examples, as they do in any build with
+no backend (`eas.json` sets none; ADR-0007). Marketing footer
 notices belong to the web landing page; the browser `landing` flow checks their
 visibility at phone width. `.maestro/native-cold-links.yml` opens `/drills`,
 `/strategies/blackjack` and `/live/craps` with the standalone app stopped before each
@@ -86,7 +100,7 @@ local host can be Linux. Android uses the APK with a local emulator. Run and ins
 the iOS workflow with the EAS CLI:
 
 ```sh
-npx --yes eas-cli@latest workflow:run .eas/workflows/native-smoke.yml --non-interactive
+pnpm dlx eas-cli@latest workflow:run .eas/workflows/native-smoke.yml --non-interactive
 ```
 
 The flows accept iOS's system confirmation when opening a deep link.
@@ -110,7 +124,7 @@ existing preview build, preserving its native runtime and Android signing key.
 It runs the iOS suite after repacking:
 
 ```sh
-npx --yes eas-cli@latest workflow:run .eas/workflows/native-repack.yml \
+pnpm dlx eas-cli@latest workflow:run .eas/workflows/native-repack.yml \
   -F platform=ios -F build_id=EXISTING_SIMULATOR_BUILD_ID --non-interactive
 # Android: use platform=android and an existing preview APK build ID.
 ```

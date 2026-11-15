@@ -32,23 +32,28 @@ Store counts and binary sizes in the September report are historical measurement
 
 Use these terms exactly. Do not drift to synonyms.
 
-| Term                       | Definition                                                                                                                                                           |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Shoe**                   | The set of decks in play, plus the cut card position. Owns all randomness.                                                                                           |
-| **Penetration**            | Fraction of the shoe dealt before the cut card. Expressed 0–1.                                                                                                       |
-| **Running Count (RC)**     | Sum of card tags seen so far, per the active Counting System.                                                                                                        |
-| **True Count (TC)**        | RC divided by estimated decks remaining.                                                                                                                             |
-| **Counting System**        | A named tag assignment (Hi-Lo, KO, Omega II, Wong Halves, Zen, Red 7). Carries a tag table, a balanced/unbalanced flag, and an index set.                            |
-| **Balanced system**        | A system whose tags sum to zero over a full shoe. Hi-Lo, Omega II, Wong Halves, Zen are balanced; KO and Red 7 are not.                                              |
-| **Basic Strategy (BS)**    | The count-independent optimal play for a given Rule Set.                                                                                                             |
-| **Deviation / Index Play** | A departure from Basic Strategy triggered when TC crosses an index number. The Illustrious 18 and Fab 4 are the canonical sets.                                      |
-| **Rule Set**               | The table configuration: deck count, S17/H17, 3:2 vs 6:5, DAS, surrender, resplit aces, dealer peek, penetration, min/max. Strategy is a _function of_ the Rule Set. |
-| **Drill**                  | A focused training exercise with scored, per-decision feedback. Distinct from free Play.                                                                             |
-| **Play**                   | Unscored simulated table play.                                                                                                                                       |
-| **Decision**               | One player action (hit/stand/double/split/surrender/insurance) with the hand state that produced it. The unit of scoring and of explanation.                         |
-| **Explanation**            | The _why_ behind a Decision verdict: per-action EV, the governing chart cell, and the count's effect. Never omitted.                                                 |
-| **Session**                | A bounded run of Play or Drill, with its own stats and a replayable Decision log.                                                                                    |
-| **Shoe Integrity Panel**   | The user-facing proof that the shoe is fair: remaining composition, RC returning to zero after the full Shoe (balanced Counting Systems only), exportable history.   |
+| Term                       | Definition                                                                                                                                                                                                           |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Shoe**                   | The set of decks in play, plus the cut card position. Owns all randomness.                                                                                                                                           |
+| **Penetration**            | Fraction of the shoe dealt before the cut card. Expressed 0–1.                                                                                                                                                       |
+| **Running Count (RC)**     | Sum of card tags seen so far, per the active Counting System.                                                                                                                                                        |
+| **True Count (TC)**        | RC divided by estimated decks remaining.                                                                                                                                                                             |
+| **Counting System**        | A named tag assignment (Hi-Lo, KO, Omega II, Wong Halves, Zen, Red 7). Carries a tag table, a balanced/unbalanced flag, and an index set.                                                                            |
+| **Balanced system**        | A system whose tags sum to zero over a full shoe. Hi-Lo, Omega II, Wong Halves, Zen are balanced; KO and Red 7 are not.                                                                                              |
+| **Basic Strategy (BS)**    | The count-independent optimal play for a given Rule Set.                                                                                                                                                             |
+| **Deviation / Index Play** | A departure from Basic Strategy triggered when TC crosses an index number. The Illustrious 18 and Fab 4 are the canonical sets.                                                                                      |
+| **Rule Set**               | The table configuration: deck count, S17/H17, 3:2 vs 6:5, DAS, surrender, resplit aces, dealer peek, penetration, min/max. Strategy is a _function of_ the Rule Set.                                                 |
+| **Drill**                  | A focused training exercise with scored, per-decision feedback. Distinct from free Play.                                                                                                                             |
+| **Play**                   | Unscored simulated table play.                                                                                                                                                                                       |
+| **Decision**               | One player action (hit/stand/double/split/surrender/insurance) with the hand state that produced it. The unit of scoring and of explanation.                                                                         |
+| **Explanation**            | The _why_ behind a Decision verdict: per-action EV, the governing chart cell, and the count's effect. Never omitted.                                                                                                 |
+| **Session**                | A bounded run of Play or Drill, with its own stats and a replayable Decision log.                                                                                                                                    |
+| **Shoe Integrity Panel**   | The user-facing proof that the shoe is fair: remaining composition, RC returning to zero after the full Shoe (balanced Counting Systems only), exportable history.                                                   |
+| **Account**                | Optional sign-in (Google or Apple) that holds a Plan across devices. Never required to train; practice stays on the device (ADR-0007).                                                                               |
+| **Plan**                   | What an Account has: Free, Plus or Lifetime. Resolved on the server from its Entitlements, so every platform shows the same one.                                                                                     |
+| **Entitlement**            | One store's record of one purchase (Stripe on the web, App Store, Google Play): status, expiry, renewal. Inputs to the Plan.                                                                                         |
+| **Sync**                   | Plus keeping an Account's Session history, progress, strategies, profile and Rule Set the same on every signed-in device. Each device keeps its own copy and works offline. Never covers an open Session (ADR-0008). |
+| **Conflicted copy**        | The second strategy draft kept when the same draft was edited on two devices before they synced. Nothing is merged and nothing is lost.                                                                              |
 
 ## Non-negotiable product invariants
 
@@ -89,7 +94,15 @@ src/
 ├── ui/            # React Native components, shared across all three platforms
 ├── state/         # Session/persistence
 └── app/           # Expo Router routes
+convex/            # Backend (ADR-0007): Accounts, Entitlements, Stripe and RevenueCat webhooks
+└── lib/           # Pure: Plan resolution, store payload mapping. Unit-tested like the engine
 ```
+
+The backend is optional by construction: a build without `EXPO_PUBLIC_CONVEX_URL` has no
+Accounts and is the trainer exactly as before. Nothing in `src/engine`, `src/drills` or
+`src/state` knows the backend exists. In `src/ui`, `src/ui/account` and the pricing screen use
+it; the landing page, the Lobby and the App Header only read whether it is there, to show the
+selling copy or the way to `/account`.
 
 `src/engine` is the deep module at the core. It is pure, synchronous, and fully unit-tested,
 which is what makes invariants 4 and 5 enforceable in CI. Nothing in `engine` may import from

@@ -34,7 +34,10 @@ cmd_launch() {
   for a in "$@"; do case "$a" in --tailnet) host="$(tailscale ip -4)";; --no-build) build=0;; esac; done
   state; if ours "${PID:-}"; then echo "already running: $URL (pid $PID)"; return; fi
   if [ "$build" = 1 ] || [ ! -f "$ROOT/dist/index.html" ]; then
-    echo "building web export…"; (cd "$ROOT" && pnpm -s build:web >"$RUN/build.log" 2>&1) || { tail -20 "$RUN/build.log"; exit 1; }
+    # EXPO_NO_DOTENV: build with no backend, as CI does, even where .env.local names a Convex
+    # deployment. Its auth would refuse this server's random port anyway (CORS), so every page
+    # would log an error; accounts are verified against `expo start --web` (localhost:8081).
+    echo "building web export…"; (cd "$ROOT" && EXPO_NO_DOTENV=1 pnpm -s build:web >"$RUN/build.log" 2>&1) || { tail -20 "$RUN/build.log"; exit 1; }
     fingerprint > "$ROOT/dist/.verify-built-from"
   fi
   local built; built="$(cat "$ROOT/dist/.verify-built-from" 2>/dev/null || echo unknown)"
