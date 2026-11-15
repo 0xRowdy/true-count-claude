@@ -119,9 +119,12 @@ opens the bet editor, switches road views and deals seeded hands. The iOS workfl
 suite at the default text size, then repeat this focused flow at the largest
 Dynamic Type setting and restore the default afterward. Android uses system
 `font_scale=2.0` for the enlarged-text pass.
+Since 2026-11-15 the `preview` environment points at the dev backend, so these flows
+run with Accounts available; none of them signs in. The build with no backend that
+ADR-0007 keeps under test is GitHub CI's web export.
 `.eas/workflows/native-smoke.yml` builds an iOS artifact and runs the native flows
 on a macOS worker with Apple's simulator, so the
-local host can be Linux. Android uses the APK with a local emulator. Run and inspect
+local host needs no Xcode. Android uses the APK with a local emulator. Run and inspect
 the iOS workflow with the EAS CLI:
 
 ```sh
@@ -176,7 +179,8 @@ assets and persisted history independently of Metro.
 
 ## Internal artifacts verified on 2026-11-15
 
-Built from `main` plus this branch's EAS profile changes, against the dev backend:
+Built against the dev backend from the commits shown. The Maestro flows weren't run on
+these builds; the checks were by hand.
 
 - [iOS ad hoc build](https://expo.dev/accounts/mmgjlegacy/projects/true-count/builds/4a0b04ab-6c1b-413e-8d0b-6978c3c1df20)
   (`8fa2259`): signed by team `MTGQR6KN8B` with the Sign in with Apple entitlement.
@@ -229,13 +233,16 @@ remaining physical-device checks.
 
 ## Store submission — needs paid accounts
 
-Deferred until after the MVP, by decision on 2026-09-14.
+Deferred until after the MVP, by decision on 2026-09-14, and gated by the go-live
+checklist (#84).
 
-- **Apple Developer Program** — $99/yr. In place (team `MTGQR6KN8B`); it signs the
-  internal iPhone builds and is needed for TestFlight.
+- **Apple Developer Program** — $99/yr. In place; it signs the internal iPhone builds and
+  is needed for TestFlight.
 - **Google Play Developer** — $25 one-time. Required for Play internal testing and release.
 
-Once both exist: `eas submit --platform android` / `eas submit --platform ios`.
+Then: `eas submit --platform android` / `eas submit --platform ios`. `app.json` declares
+the iOS app's encryption exempt (`ITSAppUsesNonExemptEncryption: false`): it uses only the
+system's HTTPS, so App Store Connect doesn't ask about export compliance per build.
 
 Web releases replace the static export. Native releases require a new binary; EAS Update
 is not configured in this MVP. Store publication remains a separate action from internal builds.
