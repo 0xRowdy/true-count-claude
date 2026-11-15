@@ -1,11 +1,16 @@
 /**
- * How the copy names the platforms Tableside runs on, by `Platform.OS`. Pure (no React Native):
- * the screens pass the OS in.
+ * How the copy names the platforms Tableside runs on, by `Platform.OS`. Pure (React Native
+ * only as a type): the screens pass the OS in.
  *
  * App Store guideline 2.3.10 forbids naming other mobile platforms in an iOS app, so on iOS
  * these say "every device" and "the App Store" and never Android or Google Play (#80). The web
  * and Android keep naming every platform.
  */
+
+import type { Platform } from "react-native";
+
+/** `Platform.OS`, so a misspelt "iOS" fails typechecking instead of naming Android. */
+export type OS = (typeof Platform)["OS"];
 
 export interface PlatformCopy {
   /** Where a plan works, after "on": "the web, iPhone and Android". */
@@ -36,6 +41,6 @@ const IOS: PlatformCopy = {
   stores: "the App Store",
 };
 
-export function platformCopy(os: string): PlatformCopy {
+export function platformCopy(os: OS): PlatformCopy {
   return os === "ios" ? IOS : EVERY_PLATFORM;
 }

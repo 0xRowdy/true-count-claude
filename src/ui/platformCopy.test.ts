@@ -4,12 +4,12 @@ import { platformCopy } from "./platformCopy";
 describe("platformCopy", () => {
   it("names no other mobile platform on iOS (App Store guideline 2.3.10)", () => {
     for (const phrase of Object.values(platformCopy("ios"))) {
-      expect(phrase).not.toMatch(/android|google play/i);
+      expect(phrase).not.toMatch(/android|google|play store/i);
     }
   });
 
   it("names every platform on the web and Android", () => {
-    for (const os of ["web", "android"]) {
+    for (const os of ["web", "android"] as const) {
       expect(platformCopy(os).reach).toBe("the web, iPhone and Android");
       expect(platformCopy(os).stores).toBe("the App Store or Google Play");
     }

@@ -9,7 +9,7 @@
  * is shown at all.
  */
 
-import { platformCopy } from "../platformCopy";
+import { type OS, platformCopy } from "@/ui/platformCopy";
 
 export type Billing = "monthly" | "yearly";
 export type PlanId = "free" | "plus" | "lifetime";
@@ -170,7 +170,7 @@ export function order(
   today: string | null,
   offer: Offer,
   p: Prices = PRICES,
-  os = "web",
+  os: OS = "web",
 ): Order {
   const detail =
     offer === "preview"

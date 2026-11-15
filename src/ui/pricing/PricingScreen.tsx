@@ -32,13 +32,13 @@ const WIN_REAL_MONEY = {
   a: "No. Tableside has no real-money wagering, and practice results don't carry over to a casino. The house edge is real; we just help you play each hand correctly.",
 };
 
-const PLATFORM = platformCopy(Platform.OS);
+const PLATFORM_COPY = platformCopy(Platform.OS);
 
 /** The page's words, by whether this build can take a payment (`CAN_SELL`, ADR-0007). */
 const COPY = CAN_SELL
   ? {
       title: "Every game is free. Plus goes everywhere you do.",
-      lead: `No chips to buy and no real-money wagering, on any plan. Your plan follows your account on ${PLATFORM.reach}.`,
+      lead: `No chips to buy and no real-money wagering, on any plan. Your plan follows your account on ${PLATFORM_COPY.reach}.`,
       plusTag: "Best for trip prep",
       storage:
         "On Free, progress stays on this device, and Session backup and restore moves it between devices. Plus syncs it for you.",
@@ -62,7 +62,7 @@ const COPY = CAN_SELL
       pay: "Pay",
       startTrial: "Start free trial with card",
       payWithCard: "Pay with card",
-      orderNote: `Cancel any time from Account → Plan, in two taps. ${PLATFORM.manageStorePurchase} Purchases follow your account to every device.`,
+      orderNote: `Cancel any time from Account → Plan, in two taps. ${PLATFORM_COPY.manageStorePurchase} Purchases follow your account to every device.`,
       reassurance:
         "You're paying for training tools, not chips. Nothing here can be wagered, cashed out or used to win real money.",
     }
