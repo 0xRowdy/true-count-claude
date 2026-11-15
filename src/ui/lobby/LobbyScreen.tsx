@@ -10,7 +10,7 @@
  * the prerendered page is the neutral loading state.
  */
 
-import { StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import { useId, useState } from "react";
 import { GAMES, GAME_NAMES, type GameId, daysUntilTrip } from "@/state/profile";
@@ -25,6 +25,7 @@ import {
   weekTicks,
 } from "@/state/progressSelectors";
 import { useProfile } from "@/ui/profile/profileStore";
+import { ACCOUNTS_AVAILABLE } from "@/ui/account/backend";
 import {
   AppShell,
   Badge,
@@ -54,6 +55,7 @@ import {
   Shuffle,
   Timer,
   Trophy,
+  UserRound,
 } from "@/ui/ds/icons";
 import { GAME_ICON, GameIcon, LinkBox, SampleBanner, TextLink } from "@/ui/progress/parts";
 import { useChipBalance, useProgressView } from "@/ui/progress/progressStore";
@@ -101,6 +103,13 @@ export function LobbyScreen({ demo }: { demo: boolean }) {
                   <Flame size={16} color={colors.chip1k} strokeWidth={2} />
                   <Text style={[ui(13, 500), styles.fg]}>{streakText(streak)}</Text>
                 </View>
+              ) : null}
+              {/* The App Header's avatar leads here on wider web; native and phones have no such bar. */}
+              {ACCOUNTS_AVAILABLE && (Platform.OS !== "web" || narrow) ? (
+                <LinkBox href="/account" label="Account" style={styles.accountLink}>
+                  <UserRound size={16} color={colors.mutedForeground} strokeWidth={2} />
+                  <Text style={[ui(13, 500), styles.fg]}>Account</Text>
+                </LinkBox>
               ) : null}
             </View>
 
@@ -565,6 +574,15 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   greetText: { gap: 6, flexShrink: 1 },
+  accountLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    minHeight: 44,
+    paddingHorizontal: 14,
+    borderRadius: radius.pill,
+    backgroundColor: colors.muted,
+  },
   streak: {
     flexDirection: "row",
     alignItems: "center",

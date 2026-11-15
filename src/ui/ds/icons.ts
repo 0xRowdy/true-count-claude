@@ -90,6 +90,7 @@ export { default as TrendingUp } from "lucide-react-native/icons/trending-up";
 export { default as Trophy } from "lucide-react-native/icons/trophy";
 export { default as Undo2 } from "lucide-react-native/icons/undo-2";
 export { default as UserPlus } from "lucide-react-native/icons/user-plus";
+export { default as UserRound } from "lucide-react-native/icons/user-round";
 export { default as Users } from "lucide-react-native/icons/users";
 export { default as Wifi } from "lucide-react-native/icons/wifi";
 export { default as X } from "lucide-react-native/icons/x";

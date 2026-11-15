@@ -21,6 +21,19 @@ downloads all routes and assets; subsequent visits and reloads work offline. New
 activate after existing tabs close, so updates do not interrupt a hand. Progress stays in
 local storage when the app cache updates.
 
+## Selling builds: not until Sync ships
+
+A build sells Plus (`CAN_SELL` in `src/ui/account/usePurchase.ts`) when it has a backend
+(`EXPO_PUBLIC_CONVEX_URL` and `EXPO_PUBLIC_CONVEX_SITE_URL`) and is either the web or has a
+RevenueCat key (`EXPO_PUBLIC_REVENUECAT_IOS_KEY` or `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY`).
+Nothing in the code holds a selling build back until Sync exists. `PRODUCT.md` does: no
+production selling build and no store products before Sync ships (ADR-0008), because the
+selling copy promises Sync.
+
+Before a production web export or an `eas build --profile production`, check that the build
+environment sets none of these, or that Sync has shipped. The rule is for production builds
+only: builds against the dev backend sell in test mode, as they do for testing today.
+
 ## Device testing — no accounts needed
 
 The fastest loop, and the one to use daily:
@@ -65,7 +78,8 @@ video poker and craps, including a reproducible seeded video poker deal.
 their controls. `.maestro/native-card-layout.yml` checks wrapping on the Lobby
 and Progress pages and captures the weekly chart. `.maestro/native-notices.yml`
 requires footer notices to appear immediately after tapping and verifies that
-pricing timelines describe hypothetical examples. These seven flows include
+pricing timelines describe hypothetical examples, as they do in any build with no backend
+(`eas.json` sets none; ADR-0007). These seven flows include
 visual regressions that the previous behavior-only smoke test missed.
 `.eas/workflows/native-smoke.yml` builds an iOS artifact and runs all seven flows
 on a macOS worker with Apple's simulator, so the

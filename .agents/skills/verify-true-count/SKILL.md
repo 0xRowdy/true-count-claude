@@ -22,7 +22,7 @@ $V stop              # stop the server this worktree started (evidence is kept)
 - `launch` runs `pnpm build:web` (~25 s, CI does the same) then serves `dist/` with `scripts/serve.mjs` (clean URLs: `/play` → `play.html`) on an OS-assigned free port. Ready when it prints `ready: http://127.0.0.1:<port>`; if the server can't start, launch exits non-zero with its log.
 - `--no-build` reuses an existing `dist/`. Each build records a content fingerprint of the tree it was built from (`dist/.verify-built-from`); `doctor` warns when the tree has changed since.
 - `--tailnet` binds the box's Tailscale IP instead of localhost, so a human can open the exact build from another machine. Use it when handing a change over for a look; say the URL in your message.
-- Isolation: state lives in `<worktree>/.verify/` (gitignored), each worktree gets its own port and `dist/`, so parallel worktrees never share an instance. No accounts, no backend, no network: the app is fully local.
+- Isolation: state lives in `<worktree>/.verify/` (gitignored), each worktree gets its own port and `dist/`, so parallel worktrees never share an instance. The build has no backend (`launch` sets `EXPO_NO_DOTENV=1`, as CI has no `.env.local`), so the app is fully local and Accounts report themselves unavailable; `features/account.md` covers driving the backend build.
 
 ## Doctor
 
