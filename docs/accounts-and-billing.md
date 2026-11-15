@@ -34,7 +34,7 @@ Everything below is per deployment. The dev deployment is `determined-kookabura-
   answers "Provider not found" and checkout answers "Purchases aren't set up on this server
   yet", both in place, with nothing charged.
 
-Set Convex variables with `npx convex env set NAME=value` (the `NAME=value` form; a value
+Set Convex variables with `pnpm convex env set NAME=value` (the `NAME=value` form; a value
 starting with `-` is read as a flag otherwise), or in the dashboard under Settings →
 Environment Variables.
 
@@ -46,7 +46,7 @@ Environment Variables.
    Android: every platform signs in through a browser that returns to Convex).
    - Authorized JavaScript origin: `<site>`
    - Authorized redirect URI: `<site>/api/auth/callback/google`
-3. `npx convex env set GOOGLE_CLIENT_ID=… ` and `GOOGLE_CLIENT_SECRET=…`.
+3. `pnpm convex env set GOOGLE_CLIENT_ID=… ` and `GOOGLE_CLIENT_SECRET=…`.
 
 ## Sign in with Apple
 
@@ -61,10 +61,10 @@ Apple Developer → Certificates, Identifiers & Profiles:
    the repo (`*.p8` is git-ignored), and note the Key ID and your Team ID.
 4. Set (the `NAME=value` form: the CLI reads a value starting with `-----` as an option):
    ```sh
-   npx convex env set APPLE_SERVICE_ID=com.truecount.web
-   npx convex env set APPLE_TEAM_ID=<TEAM_ID>
-   npx convex env set APPLE_KEY_ID=<KEY_ID>
-   npx convex env set "APPLE_PRIVATE_KEY=$(cat AuthKey_<KEY_ID>.p8)"
+   pnpm convex env set APPLE_SERVICE_ID=com.truecount.web
+   pnpm convex env set APPLE_TEAM_ID=<TEAM_ID>
+   pnpm convex env set APPLE_KEY_ID=<KEY_ID>
+   pnpm convex env set "APPLE_PRIVATE_KEY=$(cat AuthKey_<KEY_ID>.p8)"
    ```
 
 The backend signs the client secrets Apple asks for with this key (`convex/apple.ts`), one for
@@ -207,7 +207,7 @@ Tableside.
 
 ## Production
 
-1. `npx convex deploy` creates/updates the production deployment
+1. `pnpm convex deploy` creates/updates the production deployment
    (`dazzling-meadowlark-730`). Set every variable above on it, with production values:
    `SITE_URL` is the public web origin, Stripe live keys and live webhook, a second Google
    redirect URI for the production `.convex.site` host, that host added to the Apple Services
@@ -218,8 +218,8 @@ Tableside.
 
 ## Local development
 
-- `npx convex dev` watches `convex/` and pushes to the dev deployment.
+- `pnpm convex dev` watches `convex/` and pushes to the dev deployment.
 - `pnpm web` serves on `localhost:8081`, the dev `SITE_URL`, which Better Auth trusts. The
   verify harness (`verify.sh launch`) builds without a backend, as CI does.
 - Expo Go on a device signs in through `exp://…`: add it with
-  `npx convex env set TRUSTED_ORIGINS=exp://`.
+  `pnpm convex env set TRUSTED_ORIGINS=exp://`.

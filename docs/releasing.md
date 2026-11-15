@@ -51,7 +51,7 @@ client builds are also supported; use `pnpm start` with an installed development
 One-time setup, performed by a human:
 
 1. Create a free account at <https://expo.dev/signup>.
-2. `npm install -g eas-cli`
+2. `pnpm add -g eas-cli`
 3. `eas login`
 4. This repo is already linked to the project in `app.json`. Use that project after login;
    run `eas init` only if intentionally creating a different project.
@@ -87,7 +87,7 @@ local host can be Linux. Android uses the APK with a local emulator. Run and ins
 the iOS workflow with the EAS CLI:
 
 ```sh
-npx --yes eas-cli@latest workflow:run .eas/workflows/native-smoke.yml --non-interactive
+pnpm dlx eas-cli@latest workflow:run .eas/workflows/native-smoke.yml --non-interactive
 ```
 
 The flows accept iOS's system confirmation when opening a deep link.
@@ -102,7 +102,7 @@ existing preview build, preserving its native runtime and Android signing key.
 It runs the iOS suite after repacking:
 
 ```sh
-npx --yes eas-cli@latest workflow:run .eas/workflows/native-repack.yml \
+pnpm dlx eas-cli@latest workflow:run .eas/workflows/native-repack.yml \
   -F platform=ios -F build_id=EXISTING_SIMULATOR_BUILD_ID --non-interactive
 # Android: use platform=android and an existing preview APK build ID.
 ```
