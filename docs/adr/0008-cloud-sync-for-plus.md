@@ -33,7 +33,9 @@ Three facts shaped the design:
 
 - Plus and Lifetime get Sync. It runs on its own whenever the player is signed in, with a
   status line on Account and no switch.
-- Synced: finished Sessions, progress, strategy drafts, the profile and the Rule Set.
+- Synced: finished Sessions, progress, strategy drafts, the profile and the Rule Set. That is
+  everything Tableside stores today, and the profile and the Rule Set are its only settings. A
+  setting added later stays on the device unless the change that adds it says it syncs.
 - Bankrolls stay calculated from hands. The amount folded in when old hands are trimmed becomes
   a synced record of its own, so no device counts it twice.
 - An open Session never syncs: another device never resumes a run in progress.
