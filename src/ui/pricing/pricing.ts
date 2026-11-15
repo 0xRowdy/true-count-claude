@@ -9,6 +9,8 @@
  * is shown at all.
  */
 
+import { type OS, platformCopy } from "@/ui/platformCopy";
+
 export type Billing = "monthly" | "yearly";
 export type PlanId = "free" | "plus" | "lifetime";
 export type Offer = "preview" | "waiting" | "trial" | "paid";
@@ -158,18 +160,22 @@ function dayLabel(today: string | null, offset: number): string {
   return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`;
 }
 
-/** "Your order" for a plan and billing, with the trial timeline counted from `today`. */
+/**
+ * "Your order" for a plan and billing, with the trial timeline counted from `today`. `os` is
+ * `Platform.OS`, which decides how the platforms are named (`platformCopy`).
+ */
 export function order(
   plan: PlanId,
   billing: Billing,
   today: string | null,
   offer: Offer,
   p: Prices = PRICES,
+  os: OS = "web",
 ): Order {
   const detail =
     offer === "preview"
       ? "Example price only. Training stays free in this build."
-      : "Web, iOS and Android, one account";
+      : platformCopy(os).orderDetail;
   if (plan === "free") {
     return {
       name: "Tableside Free",

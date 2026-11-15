@@ -1,11 +1,14 @@
-import { Linking, StyleSheet, Text, View } from "react-native";
+import { Linking, Platform, StyleSheet, Text, View } from "react-native";
 import { AppShell, colors, display, ui } from "@/ui/ds";
+import { platformCopy } from "@/ui/platformCopy";
 
 /**
  * Terms of Use and the Privacy Policy, linked from Pricing (Apple 3.1.2 asks for both where a
  * subscription is sold) and served on the web at /terms and /privacy for the store listings.
  * Each line says what the app actually does; change them together with the code.
  */
+
+const PLATFORM_COPY = platformCopy(Platform.OS);
 
 const APPLE_EULA = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
 
@@ -21,15 +24,15 @@ const DOCS = {
       ],
       [
         "Plans",
-        "Every game and the coach are free. Tableside Plus is a subscription, billed monthly or yearly; Tableside Lifetime is a single payment. Prices are shown before you buy. A plan belongs to your account and works on the web, iPhone and Android.",
+        `Every game and the coach are free. Tableside Plus is a subscription, billed monthly or yearly; Tableside Lifetime is a single payment. Prices are shown before you buy. A plan belongs to your account and works on ${PLATFORM_COPY.reach}.`,
       ],
       [
         "Renewal and cancellation",
-        "Plus renews automatically at the end of each period until you cancel. Cancel where you bought it: Account → Manage billing for the web, or your App Store or Google Play subscription settings in the apps. Canceling stops the next renewal; Plus stays until the end of the period you paid for. A free trial, where offered, is for a first subscription and turns into a paid subscription when it ends unless you cancel before then.",
+        `Plus renews automatically at the end of each period until you cancel. Cancel where you bought it: Account → Manage billing for the web, or ${PLATFORM_COPY.storeSettings}. Canceling stops the next renewal; Plus stays until the end of the period you paid for. A free trial, where offered, is for a first subscription and turns into a paid subscription when it ends unless you cancel before then.`,
       ],
       [
         "Refunds",
-        "Purchases made in the App Store or Google Play are refunded under that store's policy, through the store. Web purchases are handled by Tableside through Stripe.",
+        `Purchases made in ${PLATFORM_COPY.stores} are refunded under that store's policy, through the store. Web purchases are handled by Tableside through Stripe.`,
       ],
       [
         "App Store purchases",

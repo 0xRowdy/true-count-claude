@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { offerFor, order, planView, storeTrial, yearlySaving } from "./pricing";
+import { offerFor, order, planView, PRICES, storeTrial, yearlySaving } from "./pricing";
 
 describe("pricing", () => {
   it("shows the design's yearly prices and saving", () => {
@@ -102,6 +102,15 @@ describe("pricing", () => {
     expect(yearlySaving(pounds)).toBe(33);
     expect(order("plus", "yearly", null, "trial", pounds).dueToday).toBe("£0.00");
     expect(order("lifetime", "yearly", null, "paid", pounds).total).toBe("£179.99");
+  });
+
+  it("names no other mobile platform in the iOS order summary (guideline 2.3.10)", () => {
+    expect(order("plus", "yearly", null, "trial", PRICES, "ios").detail).toBe(
+      "One account, every device",
+    );
+    expect(order("plus", "yearly", null, "trial", PRICES, "android").detail).toBe(
+      "Web, iOS and Android, one account",
+    );
   });
 });
 

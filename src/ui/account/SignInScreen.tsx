@@ -1,7 +1,8 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import { AppShell, Button, colors, display, Notice, ui } from "@/ui/ds";
+import { platformCopy } from "@/ui/platformCopy";
 import { useAccount } from "./account";
 import { SignInOptions } from "./SignInOptions";
 import { safeNext } from "./safeNext";
@@ -32,8 +33,8 @@ export function SignInScreen() {
             Sign in to Tableside
           </Text>
           <Text style={[ui(16, 400, { lineHeight: 24 }), styles.muted]}>
-            An account keeps Plus with you on the web, iPhone and Android. You don&apos;t need one
-            to play: your practice is saved on this device either way.
+            An account keeps Plus with you on {platformCopy(Platform.OS).reach}. You don&apos;t need
+            one to play: your practice is saved on this device either way.
           </Text>
         </View>
         {account.status === "unavailable" ? (
