@@ -146,6 +146,8 @@ describe("who gets a trial", () => {
       dueToday: "—",
       purchasable: true,
     });
+    // Nor a saving worked out from the web's prices.
+    expect(yearlySaving(undefined, "waiting")).toBeNull();
   });
 
   it("takes the store's free intro offer only when the player is eligible for it", () => {

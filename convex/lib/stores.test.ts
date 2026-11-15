@@ -2,9 +2,11 @@ import type Stripe from "stripe";
 import { describe, expect, it } from "vitest";
 import { resolvePlan } from "./plan";
 import {
+  canStillBill,
   fromRevenueCat,
   fromStripeSubscription,
   isLatestRead,
+  onLifetimeBought,
   rcEventUserIds,
   stripeStatus,
   startedSubscription,
@@ -280,5 +282,44 @@ describe("startedSubscription (has had Plus on the web)", () => {
 
   it("doesn't count one whose first payment never went through", () => {
     expect(startedSubscription("incomplete_expired")).toBe(false);
+  });
+});
+
+describe("onLifetimeBought (a web Plus the Lifetime buyer still has)", () => {
+  const sub = (status: Stripe.Subscription.Status, cancel_at_period_end = false) => ({
+    status,
+    cancel_at_period_end,
+  });
+
+  it("ends one with a failed payment now, so Stripe can't collect it and restart it", () => {
+    for (const s of ["past_due", "unpaid", "incomplete"] as const) {
+      expect(onLifetimeBought(sub(s))).toBe("cancel-now");
+      expect(onLifetimeBought(sub(s, true))).toBe("cancel-now");
+    }
+  });
+
+  it("lets a paid or trialing one run out its period", () => {
+    expect(onLifetimeBought(sub("active"))).toBe("cancel-at-period-end");
+    expect(onLifetimeBought(sub("trialing"))).toBe("cancel-at-period-end");
+  });
+
+  it("leaves one already ending, or with nothing left to bill", () => {
+    expect(onLifetimeBought(sub("active", true))).toBe("leave");
+    for (const s of ["canceled", "incomplete_expired", "paused"] as const) {
+      expect(onLifetimeBought(sub(s))).toBe("leave");
+    }
+  });
+});
+
+describe("canStillBill (what deleting an Account cancels)", () => {
+  it("cancels every subscription that could still bill", () => {
+    for (const s of ["trialing", "active", "past_due", "unpaid", "incomplete", "paused"] as const) {
+      expect(canStillBill(s)).toBe(true);
+    }
+  });
+
+  it("skips one that is already over", () => {
+    expect(canStillBill("canceled")).toBe(false);
+    expect(canStillBill("incomplete_expired")).toBe(false);
   });
 });

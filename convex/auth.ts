@@ -4,7 +4,7 @@ import { convex, crossDomain } from "@convex-dev/better-auth/plugins";
 import { betterAuth, type BetterAuthOptions } from "better-auth/minimal";
 import { components, internal } from "./_generated/api";
 import type { DataModel } from "./_generated/dataModel";
-import { APP_BUNDLE_ID, clientSecret, revokeLater } from "./apple";
+import { APP_BUNDLE_ID, clientSecret, revocableToken, revokeLater } from "./apple";
 import authConfig from "./auth.config";
 import { runCleanup } from "./cleanup";
 
@@ -35,13 +35,12 @@ export const authComponent = createClient<DataModel>(components.betterAuth, {
     // that sign-in itself (`apple.revokeFromDevice`).
     account: {
       onDelete: async (ctx, account) => {
-        const token = account.refreshToken ?? account.accessToken;
+        const revocable = revocableToken(account.refreshToken, account.accessToken);
         const clientId = process.env.APPLE_SERVICE_ID;
-        if (account.providerId !== "apple" || !token || !clientId) return;
+        if (account.providerId !== "apple" || !revocable || !clientId) return;
         await revokeLater(ctx, {
           clientId,
-          token,
-          tokenType: account.refreshToken ? "refresh_token" : "access_token",
+          ...revocable,
           whose: `Account ${account.userId}'s web or Android sign-in`,
         });
       },

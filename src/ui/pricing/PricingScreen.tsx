@@ -82,7 +82,7 @@ const COPY = CAN_SELL
         WIN_REAL_MONEY,
         {
           q: "Do I need Plus to get ready for a trip?",
-          a: "No. Every game, every supported rule set, all drills, and your full session history are free in this MVP. There is no separate purchase for deeper training.",
+          a: "No. Every game, every supported rule set, all drills, and your full session history are free in this MVP, and there is nothing to buy to train with them.",
         },
         {
           q: "What happens to my strategies if I cancel?",
@@ -153,7 +153,7 @@ export function PricingScreen() {
   const wide = width === null || width >= WIDE;
   const offer = purchase.offer(billing);
   const prices = purchase.prices;
-  const saving = yearlySaving(prices);
+  const saving = yearlySaving(prices, offer);
   const o = order(plan, billing, today, offer, prices);
   const current = purchase.current;
   // Already this plan, or Lifetime (which covers everything): manage it, don't buy it again.
@@ -193,7 +193,9 @@ export function PricingScreen() {
                   key={b}
                   accessibilityRole="radio"
                   accessibilityLabel={b === "monthly" ? "Monthly" : "Yearly"}
-                  accessibilityHint={b === "yearly" ? `Save ${saving}%` : undefined}
+                  accessibilityHint={
+                    b === "yearly" && saving !== null ? `Save ${saving}%` : undefined
+                  }
                   aria-checked={on}
                   onPress={() => setBilling(b)}
                   style={[styles.toggleItem, on && styles.toggleOn]}
@@ -201,7 +203,7 @@ export function PricingScreen() {
                   <Text style={[ui(14, on ? 600 : 500), on ? styles.fg : styles.muted]}>
                     {b === "monthly" ? "Monthly" : "Yearly"}
                   </Text>
-                  {b === "yearly" ? (
+                  {b === "yearly" && saving !== null ? (
                     <View style={styles.save}>
                       <Text style={[ui(11, 700), { color: colors.primaryForeground }]}>
                         Save {saving}%

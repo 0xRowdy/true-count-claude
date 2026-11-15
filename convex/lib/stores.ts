@@ -40,6 +40,29 @@ export function startedSubscription(status: Stripe.Subscription.Status | string)
 }
 
 /**
+ * What buying Lifetime does to a web Plus subscription the buyer still has. One with a failed
+ * payment (`past_due`, `unpaid`, `incomplete`) ends now: Stripe could otherwise still collect
+ * that invoice and restart it, which a period-end cancel would not stop. A paid one runs out
+ * its period. Anything else has nothing left to bill.
+ */
+export function onLifetimeBought(
+  sub: Pick<Stripe.Subscription, "status" | "cancel_at_period_end">,
+): "cancel-now" | "cancel-at-period-end" | "leave" {
+  if (sub.status === "past_due" || sub.status === "unpaid" || sub.status === "incomplete") {
+    return "cancel-now";
+  }
+  if ((sub.status === "active" || sub.status === "trialing") && !sub.cancel_at_period_end) {
+    return "cancel-at-period-end";
+  }
+  return "leave";
+}
+
+/** Whether a Stripe subscription can still bill, so deleting the Account must cancel it. */
+export function canStillBill(status: Stripe.Subscription.Status): boolean {
+  return status !== "canceled" && status !== "incomplete_expired";
+}
+
+/**
  * `plusPrices`: the Plus price ids. The period and interval come from the item holding one of
  * them, so an item added outside this app's Checkout (in the Dashboard) can't stand in for
  * Plus. Failing that, the first item: a price retired from the settings still bills its

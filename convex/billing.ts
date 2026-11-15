@@ -14,9 +14,11 @@ import {
 import { authComponent } from "./auth";
 import {
   type RcSubscriber,
+  canStillBill,
   fromRevenueCat,
   fromStripeSubscription,
   isLatestRead,
+  onLifetimeBought,
   startedSubscription,
 } from "./lib/stores";
 import { entitlementFields } from "./schema";
@@ -372,14 +374,10 @@ async function lifetimePaid(ctx: AnyActionCtx, session: Stripe.Checkout.Session)
   const customer = idOf(session.customer);
   if (!customer) return;
   for await (const sub of liveSubscriptions(customer)) {
-    if (sub.status === "past_due" || sub.status === "unpaid" || sub.status === "incomplete") {
-      // Canceling stops Stripe collecting the failed invoice, which could otherwise still be
-      // paid and restart the subscription; a period-end cancel would not.
+    const step = onLifetimeBought(sub);
+    if (step === "cancel-now") {
       await stripe().subscriptions.cancel(sub.id);
-    } else if (
-      (sub.status === "active" || sub.status === "trialing") &&
-      !sub.cancel_at_period_end
-    ) {
+    } else if (step === "cancel-at-period-end") {
       await stripe().subscriptions.update(sub.id, { cancel_at_period_end: true });
     }
   }
@@ -436,7 +434,7 @@ export const cancelStripeForDeletedUser = internalAction({
     if (!process.env.STRIPE_SECRET_KEY) return null;
     for (const customer of stripeCustomerIds) {
       for await (const sub of liveSubscriptions(customer)) {
-        if (sub.status !== "canceled" && sub.status !== "incomplete_expired") {
+        if (canStillBill(sub.status)) {
           await stripe().subscriptions.cancel(sub.id);
         }
       }

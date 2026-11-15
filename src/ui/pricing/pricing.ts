@@ -81,8 +81,12 @@ export function money(amount: number, p: Prices = PRICES, cents = false): string
   }).format(amount);
 }
 
-/** Yearly vs twelve months, to the nearest whole percent (design: "Save 32%"). */
-export function yearlySaving(p: Prices = PRICES): number {
+/**
+ * Yearly vs twelve months, to the nearest whole percent (design: "Save 32%"). `null` while the
+ * store hasn't answered: the only prices to hand are the web's, which aren't the store's.
+ */
+export function yearlySaving(p: Prices = PRICES, offer?: Offer): number | null {
+  if (offer === "waiting") return null;
   return Math.round((1 - p.plusYearly / (p.plusMonthly * 12)) * 100);
 }
 

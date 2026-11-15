@@ -123,10 +123,16 @@ export async function deleteAccount(): Promise<"deleted" | "reauthenticate" | "c
     throw new Error(error.message ?? "The account couldn't be deleted");
   }
   if (appleCode && convex) {
-    // The Account is gone either way; the backend logs a failure.
+    // The Account is gone either way, so this never fails the deletion. The backend logs a
+    // failure it saw; this logs one that never reached it (a dropped connection, say).
     await convex
       .action(api.apple.revokeFromDevice, { authorizationCode: appleCode })
-      .catch(() => {});
+      .catch((e: unknown) => {
+        console.error(
+          "Couldn't revoke Sign in with Apple for the deleted Account. Remove Tableside in Settings → your name → Sign-In & Security → Sign in with Apple.",
+          e,
+        );
+      });
   }
   await refreshSession();
   return "deleted";

@@ -8,7 +8,7 @@ import type { Billing, StoreOffer } from "@/ui/pricing/pricing";
 export const STORE_AVAILABLE = false;
 
 /** `unsure`: the store reported a problem of its own, and may or may not have charged. */
-export type StoreOutcome = "purchased" | "cancelled" | "unsure";
+export type StoreOutcome = "purchased" | "canceled" | "unsure";
 
 export async function identifyStoreUser(_userId: string | null): Promise<void> {}
 

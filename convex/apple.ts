@@ -55,11 +55,64 @@ async function postToApple(path: "token" | "revoke", form: Record<string, string
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams(form),
   });
-  if (!res.ok) throw new Error(`Apple /auth/${path} answered ${res.status}: ${await res.text()}`);
+  if (!res.ok)
+    throw new AppleAnswered(
+      res.status,
+      `Apple /auth/${path} answered ${res.status}: ${await res.text()}`,
+    );
   return res;
 }
 
+/** Apple answered the request, but not with success. A failed `fetch` throws its own error. */
+class AppleAnswered extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+/** Waits between tries of the code exchange, well inside the code's five minutes. */
+const EXCHANGE_RETRY_DELAYS_MS = [1_000, 4_000];
+
+/**
+ * Swaps an authorization code for tokens. A code works only once, so a 4xx (spent, expired or
+ * wrong) is final. No answer, or a 5xx, may mean Apple never used it: those are tried again.
+ */
+async function exchangeCode(code: string): Promise<Response> {
+  const form = {
+    client_id: APP_BUNDLE_ID,
+    client_secret: requireSecret(APP_BUNDLE_ID),
+    code,
+    grant_type: "authorization_code",
+  };
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await postToApple("token", form);
+    } catch (e) {
+      const final = e instanceof AppleAnswered && e.status < 500;
+      const delay = EXCHANGE_RETRY_DELAYS_MS[attempt];
+      if (final || delay === undefined) throw e;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+}
+
 const tokenType = v.union(v.literal("refresh_token"), v.literal("access_token"));
+
+/**
+ * The token to revoke for a sign-in: the refresh token, which outlives the access token, else
+ * the access token. `null` when Apple gave neither.
+ */
+export function revocableToken(
+  refreshToken: string | null | undefined,
+  accessToken: string | null | undefined,
+): { token: string; tokenType: Infer<typeof tokenType> } | null {
+  if (refreshToken) return { token: refreshToken, tokenType: "refresh_token" };
+  if (accessToken) return { token: accessToken, tokenType: "access_token" };
+  return null;
+}
 
 /**
  * iOS, right after the Account is deleted. Native sign-in keeps no Apple token, so the app asks
@@ -75,14 +128,9 @@ export const revokeFromDevice = action({
   handler: async (ctx, { authorizationCode }) => {
     let res: Response;
     try {
-      res = await postToApple("token", {
-        client_id: APP_BUNDLE_ID,
-        client_secret: requireSecret(APP_BUNDLE_ID),
-        code: authorizationCode,
-        grant_type: "authorization_code",
-      });
+      res = await exchangeCode(authorizationCode);
     } catch (e) {
-      // A code works once and the Account is already gone: there is nothing to retry.
+      // The Account is already gone, and only the app could get another code.
       console.error(
         "GAVE UP revoking a deleted Account's iOS Sign in with Apple: the code couldn't be exchanged. The player can remove Tableside in Settings → their name → Sign-In & Security → Sign in with Apple.",
         e,
@@ -93,12 +141,11 @@ export const revokeFromDevice = action({
       refresh_token?: string;
       access_token?: string;
     };
-    const token = refresh_token ?? access_token;
-    if (!token) throw new Error("Apple /auth/token answered without a token");
+    const revocable = revocableToken(refresh_token, access_token);
+    if (!revocable) throw new Error("Apple /auth/token answered without a token");
     await ctx.runMutation(internal.apple.startRevoke, {
       clientId: APP_BUNDLE_ID,
-      token,
-      tokenType: refresh_token ? "refresh_token" : "access_token",
+      ...revocable,
       whose: "a deleted Account's iOS sign-in",
     });
     return null;
