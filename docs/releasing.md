@@ -1,8 +1,8 @@
 # Releasing True Count
 
-Three targets, one codebase (ADR-0001). This Linux machine has no Xcode. EAS builds
-native artifacts in the cloud. Task-local Java, Android SDK, emulator and Maestro
-tooling are available under `~/.local/share/true-count-native`, with Java managed by mise.
+Three targets, one codebase (ADR-0001). EAS builds native artifacts in the cloud, so no
+local Xcode or Android SDK is needed to build. A local iOS simulator or Android emulator
+helps to run the artifacts.
 
 ## Web
 
@@ -69,7 +69,32 @@ eas build --profile preview-simulator --platform ios # simulator .app, no Apple 
 eas build --profile production --platform all
 ```
 
-`eas.json` defines development, preview, preview-simulator and production profiles.
+`eas.json` defines development, preview, preview-simulator and production profiles. Each
+reads the EAS environment of the same name (`preview-simulator` reads `preview`), and that
+environment decides the backend the build talks to:
+
+| EAS environment | Convex deployment | RevenueCat keys | So the build                 |
+| --------------- | ----------------- | --------------- | ---------------------------- |
+| `development`   | dev               | Test Store      | signs in, sells in test mode |
+| `preview`       | dev               | none            | signs in, can't sell         |
+| `production`    | none yet          | none yet        | has no Accounts              |
+
+Production gets its variables at go-live (#84), within the selling rule above. List them
+with `eas env:list --environment <name>`.
+
+### A build for a physical iPhone
+
+The `preview` profile builds an ad hoc app for registered devices. It needs the Apple
+Developer account (team `MTGQR6KN8B`), and a human at the terminal for the Apple login:
+
+```sh
+eas device:create                               # once per iPhone: open the link on it
+eas build --profile preview --platform ios      # let EAS manage the certificate and profile
+```
+
+A device registered after the build needs a new build. Open the build page on the
+iPhone to install, then turn on Settings → Privacy & Security → Developer Mode. Native
+Sign in with Apple needs a build like this one: it doesn't work in Expo Go.
 
 ## Automated native smoke test
 
@@ -82,8 +107,8 @@ video poker and craps, including a reproducible seeded video poker deal.
 `.maestro/native-layout.yml` checks eight trainer headers without scrolling past
 their controls. `.maestro/native-card-layout.yml` checks wrapping on the Lobby
 and Progress pages and captures the weekly chart. `.maestro/native-notices.yml`
-verifies that pricing timelines describe hypothetical examples, as they do in any build with
-no backend (`eas.json` sets none; ADR-0007). Marketing footer
+verifies that pricing timelines describe hypothetical examples, as they do in any build that
+can't sell (the `preview` environment has no store keys; ADR-0007). Marketing footer
 notices belong to the web landing page; the browser `landing` flow checks their
 visibility at phone width. `.maestro/native-cold-links.yml` opens `/drills`,
 `/strategies/blackjack` and `/live/craps` with the standalone app stopped before each
@@ -143,11 +168,25 @@ available in this branch. The prepared workflow pins the simulator artifact URL,
 SHA256 and source commit, checks for runtime-source differences, then runs the
 native suite and captures screenshots. Its runtime result remains unverified.
 
-A simulator `.app` cannot be installed on a physical iPhone. Use Expo Go for the
-physical-device check until Apple signing is available. Android preview APKs can
+A simulator `.app` cannot be installed on a physical iPhone; use the `preview` device
+build above. Android preview APKs can
 be installed directly; run the same `.maestro` directory against that installed
 artifact. Disable emulator Wi-Fi and mobile data to verify the bundled app,
 assets and persisted history independently of Metro.
+
+## Internal artifacts verified on 2026-11-15
+
+Built from `main` plus this branch's EAS profile changes, against the dev backend:
+
+- [iOS ad hoc build](https://expo.dev/accounts/mmgjlegacy/projects/true-count/builds/4a0b04ab-6c1b-413e-8d0b-6978c3c1df20)
+  (`8fa2259`): signed by team `MTGQR6KN8B` with the Sign in with Apple entitlement.
+  Installed on a physical iPhone; native Sign in with Apple created a session on the dev
+  deployment through the system sheet.
+- [Android preview APK](https://expo.dev/accounts/mmgjlegacy/projects/true-count/builds/04be6b06-5911-42c5-98bf-5805903d6cf1)
+  (`f2dd8d1`): launches on an emulator; Continue with Apple reaches Apple's sign-in page
+  for Tableside.
+- [iOS simulator app](https://expo.dev/accounts/mmgjlegacy/projects/true-count/builds/40bb912c-9c9b-4eef-a9e7-17349004c8a4)
+  (`f2dd8d1`): launches on the simulator.
 
 ## SDK 58 previews, 2026-11-13
 
@@ -165,7 +204,7 @@ Both previews contain the app source at `24790aa`:
 Checksums, screenshots, source provenance and remaining physical-device acceptance
 are recorded in [MVP verification](mvp-verification.md#native-follow-up-2026-11-13).
 
-## Internal artifacts verified on 2026-10-22
+## Internal artifacts verified on 2026-10-22 (expired)
 
 - [Android preview APK](https://expo.dev/accounts/mmgjlegacy/projects/true-count/builds/f9c771f5-7ecb-4e85-8dd9-7671094a561c):
   EAS signing certificate, APK v2 and v3 signature verified. All seven native flows
@@ -192,8 +231,8 @@ remaining physical-device checks.
 
 Deferred until after the MVP, by decision on 2026-09-14.
 
-- **Apple Developer Program** — $99/yr. Required for EAS internal distribution to
-  physical iPhones and for TestFlight.
+- **Apple Developer Program** — $99/yr. In place (team `MTGQR6KN8B`); it signs the
+  internal iPhone builds and is needed for TestFlight.
 - **Google Play Developer** — $25 one-time. Required for Play internal testing and release.
 
 Once both exist: `eas submit --platform android` / `eas submit --platform ios`.
