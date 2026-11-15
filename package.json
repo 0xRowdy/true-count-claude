@@ -12,7 +12,7 @@
     "build:web": "expo export --platform web && node scripts/build-offline.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p convex",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

@@ -9,7 +9,8 @@
  * is shown at all.
  */
 
-import { type OS, platformCopy } from "@/ui/platformCopy";
+// Relative, not `@/`: convex/billing.ts imports this file, and Convex's tsconfig has no alias.
+import { type OS, platformCopy } from "../platformCopy";
 
 export type Billing = "monthly" | "yearly";
 export type PlanId = "free" | "plus" | "lifetime";
