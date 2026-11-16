@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
   },
-  tall: { height: 52 },
+  tall: { minHeight: 52, alignSelf: "stretch" },
   dealRow: { paddingHorizontal: 16 },
   grow: { flex: 1 },
   waiting: { flex: 1, textAlign: "center", color: colors.mutedForeground, minHeight: 52 },

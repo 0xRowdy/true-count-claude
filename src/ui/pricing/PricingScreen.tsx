@@ -352,7 +352,6 @@ export function PricingScreen() {
               label="Manage your plan"
               onPress={() => router.push("/account")}
               fullWidth
-              style={{ height: 52 }}
             />
           ) : o.purchasable ? (
             <View style={styles.pay}>
@@ -370,7 +369,6 @@ export function PricingScreen() {
                   disabled={purchase.busy}
                   onPress={pay}
                   fullWidth
-                  style={{ height: 52 }}
                 />
               ) : (
                 <>
@@ -393,7 +391,6 @@ export function PricingScreen() {
                     disabled={purchase.busy}
                     onPress={pay}
                     fullWidth
-                    style={{ height: 52 }}
                   />
                 </>
               )}
@@ -413,7 +410,6 @@ export function PricingScreen() {
               label={current === "free" ? "Keep playing free" : "Manage your plan"}
               onPress={() => router.push(current === "free" ? "/lobby" : "/account")}
               fullWidth
-              style={{ height: 52 }}
             />
           )}
           {purchase.notice ? (

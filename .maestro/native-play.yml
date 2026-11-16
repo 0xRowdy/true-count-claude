@@ -4,7 +4,11 @@ name: Native Play hand
 - launchApp:
     clearState: true
 - extendedWaitUntil:
-    visible: Play free
+    visible: "How well do you know the tables.*"
+    timeout: 30000
+- tapOn: "Skip — just let me play"
+- extendedWaitUntil:
+    visible: "Good (morning|afternoon|evening).*"
     timeout: 30000
 - openLink: truecount://play
 - runFlow:

@@ -755,7 +755,7 @@ const styles = StyleSheet.create({
   headNarrow: { flexDirection: "column", alignItems: "flex-start" },
   headLeft: { gap: 14, flexShrink: 1, maxWidth: "100%" },
   rangeWrap: { position: "relative", zIndex: 3 },
-  rangeButton: { height: 40, paddingHorizontal: 20 },
+  rangeButton: { minHeight: 40, paddingHorizontal: 20 },
   menu: {
     position: "absolute",
     top: 46,

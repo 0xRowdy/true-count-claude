@@ -4,7 +4,11 @@ name: Native roulette, craps, baccarat, and video poker
 - launchApp:
     clearState: true
 - extendedWaitUntil:
-    visible: Play free
+    visible: "How well do you know the tables.*"
+    timeout: 30000
+- tapOn: "Skip — just let me play"
+- extendedWaitUntil:
+    visible: "Good (morning|afternoon|evening).*"
     timeout: 30000
 - openLink: truecount://games/roulette?seed=7
 - runFlow:

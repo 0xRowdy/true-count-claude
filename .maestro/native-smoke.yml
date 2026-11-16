@@ -4,7 +4,11 @@ name: Drill, session backup, and persistence
 - launchApp:
     clearState: true
 - extendedWaitUntil:
-    visible: Play free
+    visible: "How well do you know the tables.*"
+    timeout: 30000
+- tapOn: "Skip — just let me play"
+- extendedWaitUntil:
+    visible: "Good (morning|afternoon|evening).*"
     timeout: 30000
 - takeScreenshot: native-launch
 - openLink: truecount://drills/true-count
@@ -62,9 +66,11 @@ name: Drill, session backup, and persistence
     direction: DOWN
 - scrollUntilVisible:
     element:
-      text: "Create backup"
+      text: "History stays on this device unless you export a backup.*"
     direction: DOWN
     timeout: 30000
+- assertVisible: Create backup
+- takeScreenshot: native-backup-control
 - tapOn: "Create backup"
 - scrollUntilVisible:
     centerElement: true
@@ -78,7 +84,7 @@ name: Drill, session backup, and persistence
 - launchApp:
     clearState: false
 - extendedWaitUntil:
-    visible: Play free
+    visible: "Good (morning|afternoon|evening).*"
     timeout: 30000
 - openLink: truecount://session
 - runFlow:

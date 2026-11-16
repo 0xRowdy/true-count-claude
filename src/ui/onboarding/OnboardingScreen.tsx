@@ -1,7 +1,16 @@
 import { Link, Stack, useRouter } from "expo-router";
 import { TripDatePicker } from "./TripDatePicker";
-import { useEffect, useState } from "react";
-import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useEffect, useRef, useState, type ComponentRef } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import {
   COACH_LEVELS,
   GAME_NAMES,
@@ -130,6 +139,8 @@ const WIDE = 1040;
  */
 export function OnboardingScreen() {
   const router = useRouter();
+  const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
+  const nameInput = useRef<ComponentRef<typeof TextInput>>(null);
   const { profile, ready } = useProfile();
   const [step, setStep] = useState<Step>(1);
   const [width, setWidth] = useState<number | null>(null);
@@ -191,7 +202,11 @@ export function OnboardingScreen() {
     : "YOUR STARTING POINT";
 
   return (
-    <View style={styles.root} onLayout={(e) => setWidth(Math.round(e.nativeEvent.layout.width))}>
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === "android" ? "height" : undefined}
+      onLayout={(e) => setWidth(Math.round(e.nativeEvent.layout.width))}
+    >
       <Stack.Screen options={{ headerShown: false }} />
       <View style={[styles.top, narrow && styles.topNarrow]}>
         <Link href="/" asChild>
@@ -237,10 +252,25 @@ export function OnboardingScreen() {
       </View>
 
       <ScrollView
+        key={step}
+        ref={scroll}
         style={styles.root}
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
+        onKeyboardDidShow={() => {
+          if (Platform.OS !== "android" || !nameInput.current?.isFocused()) return;
+          // Android resizes the viewport but does not scroll the focused field into it.
+          scroll.current?.measureInWindow((_x, y) => {
+            if (nameInput.current) {
+              scroll.current?.scrollResponderScrollNativeHandleToKeyboard(
+                nameInput.current,
+                y + 12,
+                true,
+              );
+            }
+          });
+        }}
       >
         <View
           style={[
@@ -404,6 +434,7 @@ export function OnboardingScreen() {
                     <Text style={{ color: colors.mutedForeground }}>(optional)</Text>
                   </Text>
                   <TextInput
+                    ref={nameInput}
                     value={name}
                     onChangeText={(text) => {
                       setName(text);
@@ -514,7 +545,7 @@ export function OnboardingScreen() {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

@@ -1,0 +1,46 @@
+appId: com.truecount.app
+name: Standalone cold-start deep links retain their destination
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "How well do you know the tables.*"
+    timeout: 30000
+- evalScript: ${output.routes = ["drills", "strategies/blackjack", "live/craps"]}
+- evalScript: ${output.destinations = ["Drills", ".*Game & rules.*", "Practice table · simulated players"]}
+- evalScript: ${output.parents = ["Drills", "My strategies", "Live tables"]}
+- evalScript: ${output.page = 0}
+- repeat:
+    times: 3
+    commands:
+      # Every link starts a stopped standalone app. A warm openLink cannot prove this.
+      - stopApp
+      - openLink: truecount://${output.routes[output.page]}
+      - runFlow:
+          when:
+            platform: iOS
+            visible: "^Open$"
+          commands:
+            - tapOn: "^Open$"
+      - extendedWaitUntil:
+          visible: ${output.destinations[output.page]}
+          timeout: 30000
+      - takeScreenshot: native-cold-link-${output.page}
+      - runFlow:
+          when:
+            platform: Android
+            true: ${output.page > 0}
+          commands:
+            - back
+            - assertVisible: ${output.parents[output.page]}
+            - takeScreenshot: native-cold-link-back-${output.page}
+      - runFlow:
+          when:
+            platform: iOS
+            true: ${output.page > 0}
+          commands:
+            - tapOn:
+                id: BackButton
+            - assertVisible: ${output.parents[output.page]}
+            - takeScreenshot: native-cold-link-back-${output.page}
+      - evalScript: ${output.page = output.page + 1}

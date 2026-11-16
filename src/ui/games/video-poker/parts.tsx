@@ -3,11 +3,12 @@
  * `model.ts`.
  */
 
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import type { Card } from "@/engine/cards";
 import {
   PlayingCard,
+  MIN_TAP,
   colors,
   display,
   icons,
@@ -25,10 +26,17 @@ import { machine } from "./theme";
 // Pay table
 
 export function PayTablePanel({ left, right }: { left: PayLine[]; right: PayLine[] }) {
+  const { fontScale } = useWindowDimensions();
   return (
     <View style={styles.payPanel} accessibilityLabel="Pay table" role="table">
-      <PayColumn lines={left} />
-      <PayColumn lines={right} />
+      {fontScale > textScale.control ? (
+        <PayColumn lines={[...left, ...right]} />
+      ) : (
+        <>
+          <PayColumn lines={left} />
+          <PayColumn lines={right} />
+        </>
+      )}
     </View>
   );
 }
@@ -48,7 +56,6 @@ function PayColumn({ lines }: { lines: PayLine[] }) {
               ui(12, line.highlighted ? 700 : 500),
               { color: line.highlighted ? machine.lit : machine.label, flexShrink: 1 },
             ]}
-            numberOfLines={1}
           >
             {line.label}
           </Text>
@@ -140,6 +147,7 @@ function HoldButton({
   const label = held ? "HELD" : "HOLD";
   const text = (
     <Text
+      maxFontSizeMultiplier={textScale.control}
       style={[
         ui(12, 800, { letterSpacing: 1 }),
         { color: held ? colors.primaryForeground : machine.holdInk },
@@ -363,7 +371,7 @@ const styles = StyleSheet.create({
   cardWrapKeep: { borderColor: colors.coachAccent },
   hold: {
     width: 66,
-    height: 44,
+    minHeight: MIN_TAP,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: machine.holdEdge,

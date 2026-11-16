@@ -441,6 +441,8 @@ fixed one. Text inside fixed table geometry is capped with `maxFontSizeMultiplie
 - **control** (1.6×): button labels, the Phase Stepper, segments and the Table Top Bar;
 - **1×**: marks printed on an object, such as a chip's denomination. These are read aloud through
   the object's accessible label.
+  A playing card's rank and suit set `allowFontScaling={false}` instead, because Android
+  scales their explicit `lineHeight` past the 1× cap.
 
 On the felt, `FeltText` applies the ink and the cap together: Felt Print at 1.3×, or 1× with
 `fixed` for a glyph inside a fixed shape (a chip's value, the puck, a tag on a bet spot).
@@ -629,9 +631,10 @@ and restrained, so the eye goes to the table and the coach.
   - inactive items are Sage Grey with a 16px icon;
   - the active item is Cream Type on Quiet Fill with `aria-current="page"`;
   - it collapses as described in Layout.
-- **Table Top Bar** (56 tall): a 44pt back chevron, the game title (Inter 600 16) over a
-  two-line rules caption, then the bankroll and a 44pt rules-book button. The bankroll is a
-  "PRACTICE" overline over a gold amount, which turns Good-Call Green while a payout lands.
+- **Table Top Bar** (at least 56 tall): a 44pt back chevron, the game title (Inter 600 16) over
+  the full rules caption, which wraps and grows the bar rather than truncating, then the
+  bankroll and a 44pt rules-book button. The bankroll is a "PRACTICE" overline over a gold
+  amount, which turns Good-Call Green while a payout lands.
 - **Phase Stepper:** equal steps, each a 3px bar above an 11px numbered label.
   - The current step has a solid gold bar and a bold Cream Type label.
   - Finished steps have gold at 40% and a muted label.
