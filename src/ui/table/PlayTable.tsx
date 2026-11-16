@@ -1262,7 +1262,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
   },
-  // Three to a row at 390: the button's own 20pt sides and 8pt gap would truncate "Next hand".
+  // Three to a row at 390: the button's own 20pt sides and 8pt gap would wrap "Next hand".
   grow: { flex: 1, minHeight: 52, paddingHorizontal: 4, gap: 6, alignSelf: "auto" },
   centerNote: { color: colors.mutedForeground, textAlign: "center", paddingBottom: 8 },
   card: {

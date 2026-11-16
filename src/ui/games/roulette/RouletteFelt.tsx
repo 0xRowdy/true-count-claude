@@ -27,7 +27,7 @@ import {
   pocketColor,
   straightId,
 } from "@/games/roulette";
-import { colors, shadow, surfaces, textScale, ui } from "@/ui/ds";
+import { colors, FeltText, shadow, surfaces, textScale, ui } from "@/ui/ds";
 import {
   type TableState,
   CELL_H,
@@ -117,14 +117,13 @@ export function RouletteFelt({ state, winners, onAdd, onRemove, onLoupe, onPick 
         ]}
       >
         {opts.diamond ? <Diamond fill={opts.fill ?? surfaces.transparent} /> : null}
-        <Text
-          maxFontSizeMultiplier={textScale.felt}
+        <FeltText
           numberOfLines={1}
           adjustsFontSizeToFit
           style={[ui(11, 700, { letterSpacing: 0.5 }), { color: colors.feltText }]}
         >
           {label}
-        </Text>
+        </FeltText>
         {amount > 0 ? (
           <View style={styles.outsideChip} pointerEvents="none">
             <MiniChip amount={amount} dim={!!winners && !won} />
@@ -149,13 +148,9 @@ export function RouletteFelt({ state, winners, onAdd, onRemove, onLoupe, onPick 
         delayLongPress={450}
         style={[styles.dozen, won && styles.won]}
       >
-        <Text
-          maxFontSizeMultiplier={textScale.felt}
-          style={[ui(11, 700), styles.dozenLabel]}
-          numberOfLines={1}
-        >
+        <FeltText style={[ui(11, 700), styles.dozenLabel]} numberOfLines={1}>
           {label}
-        </Text>
+        </FeltText>
         {amount > 0 ? (
           <View style={styles.dozenChip} pointerEvents="none">
             <MiniChip amount={amount} dim={!!winners && !won} />
@@ -220,12 +215,9 @@ export function RouletteFelt({ state, winners, onAdd, onRemove, onLoupe, onPick 
           pocket === n && styles.landed,
         ]}
       >
-        <Text
-          maxFontSizeMultiplier={textScale.felt}
-          style={[ui(zero ? 16 : 15, zero ? 800 : 700), { color: surfaces.chipInkLight }]}
-        >
+        <FeltText style={[ui(zero ? 16 : 15, zero ? 800 : 700), { color: surfaces.chipInkLight }]}>
           {String(n)}
-        </Text>
+        </FeltText>
       </Pressable>
     );
   };
@@ -244,12 +236,7 @@ export function RouletteFelt({ state, winners, onAdd, onRemove, onLoupe, onPick 
         delayLongPress={450}
         style={[styles.colBet, won && styles.won]}
       >
-        <Text
-          maxFontSizeMultiplier={textScale.felt}
-          style={[ui(11, 700), { color: colors.feltText }]}
-        >
-          2 to 1
-        </Text>
+        <FeltText style={[ui(11, 700), { color: colors.feltText }]}>2 to 1</FeltText>
         {amount > 0 ? (
           <View style={styles.colChip} pointerEvents="none">
             <MiniChip amount={amount} dim={!!winners && !won} />
