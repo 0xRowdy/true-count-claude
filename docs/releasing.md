@@ -179,18 +179,21 @@ assets and persisted history independently of Metro.
 
 ## Internal artifacts verified on 2026-11-15
 
-Built against the dev backend from the commits shown. The Maestro flows weren't run on
-these builds; the checks were by hand.
+Built against the dev backend from `main` at `839bb43`, so before #83's native layout
+fixes, plus this change's EAS profile setup; the iPhone build also has the encryption
+declaration and the Convex import fix. EAS lists them under pre-rebase commits
+(`f2dd8d1`, `8fa2259`) that aren't in the repository's history. The Maestro flows weren't
+run on these builds; the checks were by hand.
 
-- [iOS ad hoc build](https://expo.dev/accounts/mmgjlegacy/projects/true-count/builds/4a0b04ab-6c1b-413e-8d0b-6978c3c1df20)
-  (`8fa2259`): signed by team `MTGQR6KN8B` with the Sign in with Apple entitlement.
+- [iOS ad hoc build](https://expo.dev/accounts/mmgjlegacy/projects/true-count/builds/4a0b04ab-6c1b-413e-8d0b-6978c3c1df20):
+  Signed by team `MTGQR6KN8B` with the Sign in with Apple entitlement.
   Installed on a physical iPhone; native Sign in with Apple created a session on the dev
   deployment through the system sheet.
-- [Android preview APK](https://expo.dev/accounts/mmgjlegacy/projects/true-count/builds/04be6b06-5911-42c5-98bf-5805903d6cf1)
-  (`f2dd8d1`): launches on an emulator; Continue with Apple reaches Apple's sign-in page
+- [Android preview APK](https://expo.dev/accounts/mmgjlegacy/projects/true-count/builds/04be6b06-5911-42c5-98bf-5805903d6cf1):
+  Launches on an emulator; Continue with Apple reaches Apple's sign-in page
   for Tableside.
-- [iOS simulator app](https://expo.dev/accounts/mmgjlegacy/projects/true-count/builds/40bb912c-9c9b-4eef-a9e7-17349004c8a4)
-  (`f2dd8d1`): launches on the simulator.
+- [iOS simulator app](https://expo.dev/accounts/mmgjlegacy/projects/true-count/builds/40bb912c-9c9b-4eef-a9e7-17349004c8a4):
+  Launches on the simulator.
 
 ## SDK 58 previews, 2026-11-13
 
