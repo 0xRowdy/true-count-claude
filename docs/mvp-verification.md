@@ -297,6 +297,7 @@ The October 22 EAS artifacts listed above superseded the October 21 builds, base
 debug-signed x86_64 APK for that source revision. They must not be used to verify
 or distribute the current SDK 58 source. Physical iPhone distribution outside
 Expo Go requires a separately signed build; the verified iOS artifact targets the simulator.
+(Since 2026-11-15 an ad hoc `preview` build covers physical iPhones; see `releasing.md`.)
 The original source manifest records the 395 file hashes used for the local APK
 and first repacks. `release-source-manifest.json` preserves a separate 395-file
 snapshot for the final Head correction and iOS confirmation handling; all of those
